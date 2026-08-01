@@ -1,0 +1,39 @@
+# There is deliberately no live-database pipeline for fhir-oracle yet.
+#
+# Until 2026-07-31 this file provisioned `mysql:8.4` and ran
+# `--test mysql_ddl` — a target that does not exist in this package — so the
+# pipeline failed on `no test target named mysql_ddl`, and no Oracle was
+# involved anywhere in it.
+#
+# Spec O10.12 and C0.10 forbid provisioning a substitute engine. A pipeline that
+# starts *some* database for a port that cannot talk to one produces a result
+# that means nothing, and the summary still reports a database gate. Audit
+# finding F-06.
+#
+# It was removed rather than repointed because there is nothing to point it at.
+# This port is Scaffold level (spec C0.8, M14.28):
+#
+#   - `ddl.rs` is still the MySQL emitter and does not produce Oracle DDL
+#     (audit F-08); its eleven MySQL-asserting tests are `#[ignore]`d so that a
+#     green run cannot be mistaken for Oracle conformance.
+#   - `crates/fhir-oracle-map/tests/` does not exist.
+#   - There is no store, and no driver in the workspace.
+#   - Whether an Oracle Database Free image runs on arm64 at all is an open
+#     question, and it decides whether live verification can be promised on a
+#     developer machine (spec M14.23).
+#
+# A removed gate is honestly absent. A green gate against the wrong engine is a
+# false claim about clinical software. The gap is recorded in
+# ../spec/conformance-matrix.md, which is where a reader looks for it.
+#
+# This pipeline comes back when there is Oracle DDL to install and an engine to
+# install it on. See spec/14-oracle-dialect.md for what has to be decided first.
+when:
+  - event: manual
+
+steps:
+  - name: no-live-gate
+    image: docker.io/library/debian:stable-slim
+    commands:
+      - echo "fhir-oracle has no live-database gate yet; see this file's header."
+      - echo "Port status: spec/index.md and ../spec/conformance-matrix.md"

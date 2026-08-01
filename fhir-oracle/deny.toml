@@ -1,0 +1,39 @@
+# Supply-chain policy (spec O10.10).
+#
+# fhir-oracle stores patient data, so its dependency set is evidence someone will
+# be asked to produce. Keeping this green continuously is far cheaper than
+# reconstructing it during an audit.
+
+[advisories]
+# Any unpatched advisory fails the build. When one has no fix yet, add it
+# here with a dated note rather than lowering the bar globally.
+yanked = "deny"
+ignore = []
+
+[licenses]
+# Permissive licences only. Anything copyleft in a linked dependency would
+# change the licensing of a deployment we do not control.
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Unicode-3.0",
+    "Zlib",
+    "CC0-1.0",
+    "MPL-2.0",
+]
+confidence-threshold = 0.9
+
+[bans]
+# Duplicate major versions are allowed but visible: they are how a
+# vulnerable transitive copy survives an upgrade of its sibling.
+multiple-versions = "warn"
+wildcards = "deny"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]

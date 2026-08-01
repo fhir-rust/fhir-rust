@@ -1,0 +1,52 @@
+[workspace]
+# The fuzz crate needs nightly-only libfuzzer-sys, so it stays out of the
+# workspace: a normal `cargo build` must not require a nightly toolchain.
+exclude = ["fuzz"]
+resolver = "3"
+members = [
+    "crates/fhir-oracle-map",
+    "crates/fhir-oracle-gen",
+    "crates/fhir-oracle-store",
+]
+
+[workspace.package]
+version = "0.1.0"
+keywords = ["fhir", "healthcare", "oracle", "hl7", "medical"]
+categories = ["database", "science", "command-line-utilities"]
+edition = "2024"
+license = "MIT OR Apache-2.0 OR BSD-3-Clause OR GPL-2.0-only OR GPL-3.0-only"
+repository = "https://github.com/fhir-rust/fhir-oracle"
+rust-version = "1.90"
+
+[workspace.dependencies]
+fhir-oracle-map = { path = "crates/fhir-oracle-map", version = "0.1.0" }
+fhir-oracle-gen = { path = "crates/fhir-oracle-gen", version = "0.1.0" }
+fhir-oracle-store = { path = "crates/fhir-oracle-store", version = "0.1.0" }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["arbitrary_precision", "preserve_order"] }
+thiserror = "2"
+anyhow = "1"
+flate2 = "1"
+unicode-normalization = "0.1"
+sha2 = "0.10"
+sha3 = "0.10"
+hmac = "0.12"
+subtle = "2"
+zeroize = { version = "1", features = ["zeroize_derive"] }
+getrandom = "0.3"
+clap = { version = "4", features = ["derive", "env"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal", "sync", "time"] }
+# No database driver yet, deliberately. This port is Scaffold level: `ddl.rs`
+# is still the MySQL emitter (spec/audit.md F-08) and there is no store, so a
+# driver here would imply a connection nothing can make. Choosing one is
+# blocked on two open questions in spec/14-oracle-dialect.md — which crate,
+# and whether an Oracle Database Free image runs on arm64 at all, since that
+# decides whether live verification can be promised.
+#
+# Decision D5's reason for rejecting sqlx will hold here as it does elsewhere:
+# the SQL is generated, so compile-time checked queries buy nothing.
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[profile.release]
+lto = "thin"
