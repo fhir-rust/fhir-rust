@@ -1,0 +1,34 @@
+[package]
+name = "fhir-mysql-store"
+description = "MySQL storage layer for fhir-mysql"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+fhir-mysql-map.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+mysql_async.workspace = true
+tracing.workspace = true
+sha2.workspace = true
+sha3.workspace = true
+hmac.workspace = true
+subtle.workspace = true
+zeroize.workspace = true
+getrandom.workspace = true
+
+[dev-dependencies]
+fhir-mysql-map.workspace = true
+# The upgrade suite simulates a pre-asset install by deleting a meta row, which
+# needs a connection the store deliberately does not expose.
+mysql_async.workspace = true
+fhir-mysql-gen.workspace = true
+tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
+tracing.workspace = true
+tracing-subscriber.workspace = true

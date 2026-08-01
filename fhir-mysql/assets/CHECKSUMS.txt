@@ -1,0 +1,3 @@
+18ab3b6c67d24db1f46bda1f0349df32934aca3fcb8df4566a5da5663dd04f8d  fhir-mysql-relmap-r3.json.gz
+1a3faf97215287b590dcce4cfeebcba6dcb7682047c90d9456ec6bf189c377b9  fhir-mysql-relmap-r4.json.gz
+67f45cdd4e29ff4235c99f8e3c469a0f58f0eee657c3d91f42dac1f553c7e0b1  fhir-mysql-relmap-r5.json.gz

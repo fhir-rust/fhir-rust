@@ -1,0 +1,35 @@
+# Advisories, licenses, and a bill of materials.
+#
+# A component handling clinical data is part of someone's IEC 62304 file
+# (spec O10.10). This evidence is cheap to keep green continuously and
+# expensive to reconstruct after the fact, which is why it runs on every
+# push rather than at release time.
+when:
+  - event: push
+    branch: main
+  - event: pull_request
+  - event: manual
+  - event: cron
+
+variables:
+  - &rust "docker.io/library/rust:1"
+  - &cargo_env
+    CARGO_TERM_COLOR: always
+    CARGO_HOME: /woodpecker/src/.cargo
+    CARGO_TARGET_DIR: /woodpecker/src/target
+
+steps:
+  - name: cargo-deny
+    image: *rust
+    environment: *cargo_env
+    commands:
+      - cargo install cargo-deny --locked
+      - cargo deny check
+
+  - name: sbom
+    image: *rust
+    environment: *cargo_env
+    commands:
+      - cargo install cargo-cyclonedx --locked
+      - cargo cyclonedx --format json --all
+      - find . -name '*.cdx.json' -print
