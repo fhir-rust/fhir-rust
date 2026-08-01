@@ -1,0 +1,77 @@
+# Live-database tests against real MariaDB 11.4.
+#
+# fhir-mariadb's guarantees are database guarantees — isolation, locking, the
+# append-only trigger, the hash chain, index-using search plans. None of them
+# can be tested without the real engine, so this pipeline is not optional
+# coverage; it is where most of the suite is meant to run. See
+# doc/containers.md to run the same thing locally from the same pinned image.
+when:
+  - event: push
+    branch: main
+  - event: pull_request
+  - event: manual
+
+variables:
+  - &rust "docker.io/library/rust:1"
+
+services:
+  - name: db
+    image: docker.io/library/mariadb:11.4
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: "1"
+      MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: "1"
+
+steps:
+  # Probed over TCP on purpose: both official images run a temporary server with
+  # networking disabled while initializing, so a socket probe reports ready
+  # before the port is open and the first test to connect fails for no visible
+  # reason.
+  - name: wait-for-db
+    image: docker.io/library/mariadb:11.4
+    commands:
+      - until mariadb --protocol=TCP -h db -u root -e 'select 1' >/dev/null 2>&1; do sleep 1; done
+      - echo "MariaDB 11.4 is accepting connections"
+
+  # The live tests need the FHIR definitions (to generate the maps) and the
+  # example corpora (to gate round-tripping against real resources).
+  - name: fetch-spec
+    image: docker.io/library/debian:stable-slim
+    commands:
+      - apt-get update -qq && apt-get install -y -qq curl unzip ca-certificates
+      - mkdir -p spec-cache corpus
+      - |
+        for pair in "r5 R5" "r4 R4" "r3 STU3"; do
+          set -- $pair
+          mkdir -p "spec-cache/$1/fhir-definitions-json"
+          curl -sSL "https://hl7.org/fhir/$2/definitions.json.zip" -o defs.zip
+          unzip -qo defs.zip -d "spec-cache/$1/fhir-definitions-json"
+          curl -sSL "https://hl7.org/fhir/$2/examples-json.zip" -o ex.zip
+          cdir=$(echo "$1" | sed 's/r3/stu3/')
+          mkdir -p "corpus/$cdir"
+          unzip -qo ex.zip -d "corpus/$cdir"
+        done
+
+  - name: live-tests
+    image: *rust
+    environment:
+      CARGO_TERM_COLOR: always
+      CARGO_HOME: /woodpecker/src/.cargo
+      CARGO_TARGET_DIR: /woodpecker/src/target
+      FHIR_MARIADB_TEST_DSN: mysql://root@db:3306
+      FHIR_MARIADB_DDL_FULL: "1"
+      FHIR_MARIADB_SPEC_DIR: /woodpecker/src/spec-cache
+      FHIR_MARIADB_CORPUS_DIR: /woodpecker/src/corpus
+      FHIR_MARIADB_TEST_CORPUS_LIMIT: "400"
+      FHIR_MARIADB_PROPTEST_CASES: "10000"
+    commands:
+      - apt-get update -qq && apt-get install -y -qq mariadb-client || apt-get install -y -qq default-mysql-client
+      # Installs the generated schema on the real server and proves the
+      # append-only triggers refuse writes. The pipeline's core claim today, and
+      # it does not depend on the store port (T64).
+      - cargo test --release --locked -p fhir-mariadb-map --test mariadb_ddl -- --nocapture --test-threads=1
+      - cargo test --release --locked -p fhir-mariadb-gen --test proptest_roundtrip -- --nocapture
+      # The store suite still speak tokio-postgres (T64), so they
+      # self-skip rather than exercising MariaDB 11.4. Run anyway, so the gap is
+      # visible in the log instead of inferred from its absence.
+      - echo "store live suite are not yet ported to MariaDB 11.4 (T64); they self-skip"
+      - cargo test --release --locked -p fhir-mariadb-store -- --nocapture --test-threads=1

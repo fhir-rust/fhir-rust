@@ -1,0 +1,17 @@
+/target
+
+# Podman/Compose local PostgreSQL state, if a bind mount is ever used in place
+# of the named volume in compose.yaml.
+/.pgdata/
+
+# mdBook build output (Phase 6).
+/book/book/
+/book/book/
+
+# Fuzzing: the seed corpus and the RelMap fixture under fuzz/ are committed
+# and small; the working corpus libfuzzer grows from them is not. Crash
+# artifacts are uploaded by CI on failure rather than stored here.
+/fuzz/target/
+/fuzz/corpus/
+/fuzz/artifacts/
+/fuzz/Cargo.lock

@@ -1,0 +1,46 @@
+[workspace]
+# The fuzz crate needs nightly-only libfuzzer-sys, so it stays out of the
+# workspace: a normal `cargo build` must not require a nightly toolchain.
+exclude = ["fuzz"]
+resolver = "3"
+members = [
+    "crates/fhir-mariadb-map",
+    "crates/fhir-mariadb-gen",
+    "crates/fhir-mariadb-store",
+]
+
+[workspace.package]
+version = "0.1.0"
+keywords = ["fhir", "healthcare", "mariadb", "hl7", "medical"]
+categories = ["database", "science", "command-line-utilities"]
+edition = "2024"
+license = "MIT OR Apache-2.0 OR BSD-3-Clause OR GPL-2.0-only OR GPL-3.0-only"
+repository = "https://github.com/fhir-rust/fhir-mariadb"
+rust-version = "1.90"
+
+[workspace.dependencies]
+fhir-mariadb-map = { path = "crates/fhir-mariadb-map", version = "0.1.0" }
+fhir-mariadb-gen = { path = "crates/fhir-mariadb-gen", version = "0.1.0" }
+fhir-mariadb-store = { path = "crates/fhir-mariadb-store", version = "0.1.0" }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["arbitrary_precision", "preserve_order"] }
+thiserror = "2"
+anyhow = "1"
+flate2 = "1"
+unicode-normalization = "0.1"
+sha2 = "0.10"
+sha3 = "0.10"
+hmac = "0.12"
+subtle = "2"
+zeroize = { version = "1", features = ["zeroize_derive"] }
+getrandom = "0.3"
+clap = { version = "4", features = ["derive", "env"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal", "sync", "time"] }
+# The MySQL/MariaDB driver: async and pure Rust, so it needs no client
+# library on the host and no spawn_blocking.
+mysql_async = { version = "0.34", default-features = false, features = ["minimal"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[profile.release]
+lto = "thin"

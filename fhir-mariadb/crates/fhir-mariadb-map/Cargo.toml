@@ -1,0 +1,17 @@
+[package]
+name = "fhir-mariadb-map"
+description = "Relational map model and generic shred/reconstruct engine for fhir-mariadb"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+flate2.workspace = true
+unicode-normalization.workspace = true
