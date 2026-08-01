@@ -1,0 +1,103 @@
+#!/usr/bin/env python3
+"""Regenerate the constraint tables in spec/10-invariants-coverage.md.
+
+Usage: bin/invariant-counts [key ...]      (default: the keys spec 10 lists)
+
+Prints, per release, the distinct invariant keys and the constraint
+occurrences, then a per-key table. Paste the output into spec 10 when the
+vendored definitions change.
+
+# Why this exists
+
+Spec 10 told the reader to "regenerate these tables from
+`ElementDefinition.constraint`" and shipped nothing to do it with. The scope
+that produces its published figures then had to be rediscovered by trying
+combinations against the numbers, because three separate choices are load-bearing
+and none of them were written down:
+
+  * `snapshot` only, not `differential`. Counting both inflates R5 from
+    10,992 occurrences to 11,374.
+  * `profiles-resources` and `profiles-types` only, not `profiles-others`.
+    Including it moves R5 from 314 distinct keys to 321.
+  * `StructureDefinition` entries only.
+
+With those three, every figure in spec 10 reproduces exactly, which is how they
+were confirmed rather than assumed.
+
+# What the numbers mean
+
+The occurrence counts measure how often a release's published snapshots
+*restate* a rule, not whether this crate enforces it — enforcement lives in
+`invariant_stmts` in `fhir-derive-macros` and applies to every release at once.
+R2 states 147 distinct rules in 155 occurrences; R5 states 314 in 10,992,
+because 8,363 of those are `ele-1` repeated on every element. Compare the key
+counts, not the occurrences.
+"""
+
+import json
+import os
+import sys
+from collections import Counter
+
+RELEASES = ["r6", "r5", "r4", "r3", "r2"]
+FILES = ["profiles-resources.json", "profiles-types.json"]
+DEFAULT_KEYS = [
+    "ext-1", "dom-2", "dom-4",
+    "ele-1", "dom-3", "dom-5", "dom-6", "dom-1", "cnl-1", "cnl-0",
+    "qty-3", "inv-1", "org-3", "att-1", "age-1", "cnt-3", "drq-1",
+]
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def scan(release):
+    """Count constraints in one release's definitions, keyed by invariant key."""
+    per_key = Counter()
+    for name in FILES:
+        path = os.path.join(
+            ROOT, "doc", "fhir-specifications", release, "fhir-definitions-json", name
+        )
+        if not os.path.exists(path):
+            continue
+        with open(path, encoding="utf-8") as handle:
+            bundle = json.load(handle)
+        for entry in bundle.get("entry", []):
+            resource = entry.get("resource", {})
+            if resource.get("resourceType") != "StructureDefinition":
+                continue
+            for element in resource.get("snapshot", {}).get("element") or []:
+                for constraint in element.get("constraint", []) or []:
+                    key = constraint.get("key")
+                    if key:
+                        per_key[key] += 1
+    return per_key
+
+
+def main():
+    keys = sys.argv[1:] or DEFAULT_KEYS
+    counts = {}
+    for release in RELEASES:
+        counts[release] = scan(release)
+        if not counts[release]:
+            print(f"warning: no definitions found for {release}", file=sys.stderr)
+
+    print("## Scale\n")
+    print("| Release | Distinct invariant keys | Constraint occurrences | `ele-1` occurrences |")
+    print("|---|---:|---:|---:|")
+    for release in RELEASES:
+        per_key = counts[release]
+        print(
+            f"| {release.upper()} | {len(per_key)} "
+            f"| {sum(per_key.values()):,} | {per_key.get('ele-1', 0):,} |"
+        )
+
+    print("\n## Per key\n")
+    header = " | ".join(r.upper() for r in RELEASES)
+    print(f"| Key | {header} |")
+    print("|---|" + "---:|" * len(RELEASES))
+    for key in keys:
+        cells = " | ".join(str(counts[r].get(key, 0)) for r in RELEASES)
+        print(f"| `{key}` | {cells} |")
+
+
+if __name__ == "__main__":
+    main()

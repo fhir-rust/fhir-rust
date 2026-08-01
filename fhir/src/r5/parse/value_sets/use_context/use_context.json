@@ -1,0 +1,16 @@
+{
+  "code": {
+    "system": "http://terminology.hl7.org/CodeSystem/usage-context-type",
+    "code": "venue"
+  },
+  "valueCodeableConcept": {
+    "text": "for CCDA Usage"
+  },
+  "valueQuantity": {
+    "value": 18,
+    "comparator": ">",
+    "unit": "yrs",
+    "system": "http://unitsofmeasure.org",
+    "code": "a"
+  }
+}

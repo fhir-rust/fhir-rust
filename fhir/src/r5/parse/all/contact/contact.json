@@ -1,0 +1,7 @@
+{
+    "name" : "FHIR project team",
+    "telecom" : [{
+        "system" : "url",
+        "value" : "http://hl7.org/fhir"
+    }]
+}

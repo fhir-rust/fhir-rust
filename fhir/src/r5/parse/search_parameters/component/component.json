@@ -1,0 +1,4 @@
+{
+  "definition": "http://hl7.org/fhir/SearchParameter/CanonicalResource-context-type",
+  "expression": "code"
+}

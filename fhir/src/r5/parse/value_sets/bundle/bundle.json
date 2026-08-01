@@ -1,0 +1,7 @@
+{
+    "resourceType": "Bundle",
+    "id" : "types",
+    "meta" : {},
+    "type" : "collection",
+    "entry": []
+}

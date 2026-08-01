@@ -1,0 +1,1 @@
+<Questionnaire xmlns="http://hl7.org/fhir"><status value="active"/><item><linkId value="a"/><type value="group"/><item><linkId value="b"/><type value="string"/></item></item></Questionnaire>

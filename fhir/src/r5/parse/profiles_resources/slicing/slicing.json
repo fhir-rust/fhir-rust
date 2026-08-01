@@ -1,0 +1,10 @@
+{
+  "discriminator": [
+    {
+      "type": "value",
+      "path": "url"
+    }
+  ],
+  "description": "Extensions are always sliced by (at least) url",
+  "rules": "open"
+}

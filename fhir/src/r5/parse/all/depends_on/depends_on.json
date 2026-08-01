@@ -1,0 +1,8 @@
+{
+  "attribute": "ex3",
+  "valueCoding": {
+    "system": "http://example.org/fhir/example3",
+    "code": "some-code",
+    "display": "Something Coded"
+  }
+}

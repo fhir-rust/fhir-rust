@@ -1,0 +1,28 @@
+{
+  "lockedDate": "2012-06-13",
+  "inactive": true,
+  "include": [
+    {
+      "system": "http://terminology.hl7.org/CodeSystem/v3-ActMood",
+      "filter": [
+        {
+          "property": "concept",
+          "op": "descendent-of",
+          "value": "_ActMoodPredicate"
+        }
+      ]
+    }
+  ],
+  "exclude": [
+    {
+      "system": "http://loinc.org",
+      "concept": [
+        {
+          "code": "5932-9",
+          "display": "Cholesterol [Presence] in Blood by Test strip"
+        }
+      ]
+    }
+  ],
+  "property": ["status"]
+}

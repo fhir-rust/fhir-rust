@@ -1,0 +1,31 @@
+{
+    "fullUrl" : "http://hl7.org/fhir/StructureDefinition/de-date.id",
+    "resource" : {
+      "resourceType" : "StructureDefinition",
+      "id" : "de-date.id",
+      "meta" : {
+        "lastUpdated" : "2023-03-26T15:21:02.749+11:00"
+      },
+      "url" : "http://hl7.org/fhir/StructureDefinition/de-date.id",
+      "version" : "5.0.0",
+      "name" : "date.id",
+      "title" : "date.id",
+      "status" : "draft",
+      "experimental" : true,
+      "date" : "2023-03-26T15:21:02+11:00",
+      "publisher" : "HL7 FHIR Standard",
+      "contact" : [],
+      "description" : "Data Element for date.id",
+      "jurisdiction" : [],
+      "purpose" : "Data Elements are defined for each element to assist in questionnaire construction etc",
+      "fhirVersion" : "5.0.0",
+      "kind" : "logical",
+      "abstract" : false,
+      "type" : "date.id",
+      "baseDefinition" : "http://hl7.org/fhir/StructureDefinition/Element",
+      "derivation" : "specialization",
+      "snapshot" : {
+        "element" : []
+      }
+    }
+}

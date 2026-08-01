@@ -1,0 +1,37 @@
+[package]
+name = "fhir-core"
+description = "Release-independent core for the FHIR crates: decimal, validation, coded values, builders, temporal parsing, XML, and the REST client."
+version = "3.0.0"
+edition = "2024"
+rust-version = "1.88"
+license = "MIT"
+repository = "https://github.com/fhir-rust-crate/fhir-rust-crate"
+keywords = ["fhir", "hl7", "healthcare", "medical", "interoperability"]
+categories = ["data-structures", "encoding"]
+include = ["/src/**", "/README.md"]
+
+[features]
+# Mirrors of the parent crate's features, forwarded rather than redefined, so
+# a consumer enabling `fhir/xml` gets `fhir-core/xml` and the two cannot drift.
+client = ["dep:reqwest", "dep:tokio"]
+xml = ["dep:quick-xml"]
+precise-decimal = []
+
+[dependencies]
+serde = { version = "~1.0.228", features = ["derive"] }
+# Not optional, for the same reason as in the parent crate: FHIR treats
+# decimal precision as clinical data, and without `arbitrary_precision`
+# `0.50` serializes back as `0.5`.
+serde_json = { version = "~1.0.150", features = ["arbitrary_precision"] }
+vec1 = { version = "1.12", features = ["serde"] }
+convert_case = { version = "0.11" }
+reqwest = { version = "0.12", features = ["json"], optional = true }
+tokio = { version = "1", features = [
+    "rt-multi-thread",
+    "macros",
+    "time",
+], optional = true }
+quick-xml = { version = "0.41", optional = true }
+
+[lints.rust]
+unsafe_code = "forbid"

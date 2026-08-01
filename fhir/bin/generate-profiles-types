@@ -1,0 +1,23 @@
+#!/bin/sh
+set -euf
+
+generate_profiles_types() {
+    kind="$1"
+    dir="$2"
+    mkdir -p "$dir"
+    <profiles-types.json \
+    jq -r ".entry | map(select(.resource.kind == \"$kind\")) | map(.resource.id)[]" |
+    while read -r id
+    do
+        snake="$(echo "$id" | snake-case)"
+        printf %s\\n "pub use mod $snake;" >> "$dir/mod.rs"
+        touch "$dir/$snake.rs"
+    done
+}
+
+main() {
+    generate_profiles_types "primitive-type" "src/r5/primitive_types"
+    generate_profiles_types "complex-type" "src/r5/complex_types"
+}
+
+main

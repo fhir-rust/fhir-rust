@@ -1,0 +1,23 @@
+{
+    "version": "0.2",
+    "ignorePaths": [],
+    "dictionaryDefinitions": [],
+    "dictionaries": [],
+    "words": [
+        "codeable",
+        "codeable_concept",
+        "codeable_reference",
+        "conceptmaps.json",
+        "dataelements.json",
+        "FHIR",
+        "formatdoc",
+        "indoc",
+        "json",
+        "rsplitn",
+        "serde",
+        "splitn",
+        "valuesets.json"
+    ],
+    "ignoreWords": [],
+    "import": []
+}

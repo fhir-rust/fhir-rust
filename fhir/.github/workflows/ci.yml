@@ -1,0 +1,433 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    # 03:00 UTC daily, for the per-release fuzzing matrix below.
+    - cron: "0 3 * * *"
+
+env:
+  CARGO_TERM_COLOR: always
+  # Debug info and incremental output buy nothing on a throwaway runner, and
+  # both cost disk. Measured: 3.7 GB -> 3.2 GB of target/ for a two-model
+  # build. Worth having, but note this is *not* what fixes the memory
+  # problem below - it moves peak RSS by only about a tenth.
+  CARGO_PROFILE_DEV_DEBUG: "0"
+  CARGO_PROFILE_TEST_DEBUG: "0"
+  CARGO_INCREMENTAL: "0"
+
+jobs:
+# The three release models are separate crates, so enabling them together is
+# three rustc processes rather than one. Peak RSS measured on this
+# repository, for `cargo build --all-targets --features "r3 r4"`:
+#
+#   before the split   12.9 GB   (one crate, ~554k lines, single threaded)
+#   after the split     5.0 GB   (peak is the largest crate, not the sum)
+#
+# A standard runner has 7 GB, which is why the combined job below was killed
+# (SIGTERM, exit 143) six to eleven minutes in before the split and fits
+# afterwards. The per-model matrix is kept as well: it is what tells you
+# *which* model broke, and it is nearly free next to the combined build.
+
+  build:
+    name: Build (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: r5, flags: "" }
+          - { name: r4, flags: "--no-default-features --features r4" }
+          - { name: r3, flags: "--no-default-features --features r3" }
+          - { name: r2, flags: "--no-default-features --features r2" }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: build-${{ matrix.name }}
+      - run: cargo build --all-targets ${{ matrix.flags }}
+
+  test:
+    name: Test (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Integration tests and doctests are written against the default
+          # model, which is why the non-default rows are --lib only; that is
+          # the same split the `features` job already uses.
+          - { name: r5, flags: "", scope: "" }
+          - { name: r4, flags: "--no-default-features --features r4", scope: "--lib" }
+          - { name: r3, flags: "--no-default-features --features r3", scope: "--lib" }
+          - { name: r2, flags: "--no-default-features --features r2", scope: "--lib" }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: test-${{ matrix.name }}
+      - run: cargo test ${{ matrix.flags }} ${{ matrix.scope }}
+      - name: Doctests (default model only)
+        if: matrix.name == 'r5'
+        run: cargo test --doc
+      # The step above covers the root package only: this workspace has a root
+      # package, so a bare `cargo test` does not descend into its members.
+      # fhir-core's unit tests therefore never ran here — and they were shipped
+      # broken once, when `ElementMeta` gained a field and four `#[cfg(test)]`
+      # literals in `meta.rs` and `summary.rs` were missed. The whole gate was
+      # green with `cargo test -p fhir-core --lib` failing to compile.
+      #
+      # This is the same shape of hole that `release-crate-doctests` exists to
+      # close, in the one package that job does not reach.
+      - name: fhir-core unit tests
+        if: matrix.name == 'r5'
+        run: |
+          cargo test -p fhir-core --lib
+          cargo test -p fhir-core --lib --features "xml client"
+
+  release-crate-tests:
+    name: Tests (fhir-release-${{ matrix.release }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 5 belongs here too: it is the default model, but its own
+        # doctests live in the fhir-release-5 package, and the `test`
+        # job's `cargo test --doc` only covers the root package. All
+        # 220 of them had never run in CI.
+        release: [2, 3, 4, 5, 6]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: doctests-${{ matrix.release }}
+      # The `test` job runs `cargo test --doc` for the root package only, so
+      # the per-release crates' own doctests — several hundred each, and the
+      # main documentation for the generated model — never ran. Five broken
+      # examples shipped in a release crate before this job existed: they had
+      # been copied from another release and referenced fields it lacks.
+      #
+      # Each crate's README is included here as doctests too, so the examples
+      # in it are compiled and run rather than merely written.
+      - run: cargo test -p fhir-release-${{ matrix.release }} --doc
+      # `--doc` runs doctests and nothing else, so each release crate's own unit
+      # tests — 276 to 496 of them, including the invariant checks the derive
+      # macro emits — were as invisible here as fhir-core's were in the `test`
+      # job. Adding four structural invariants broke the R2 and R3 builds
+      # outright (DSTU2 models `Age` as an empty struct beside `AgeQuantity`;
+      # R3 types `DataRequirement.codeFilter.path` as `1..1`) and the default
+      # gate stayed green, because neither release is in the default features
+      # and nothing compiled their test targets.
+      - run: cargo test -p fhir-release-${{ matrix.release }} --lib
+
+  all-releases:
+    name: All releases together
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: all-releases
+      # The case the per-model matrix cannot see: a collision at the crate
+      # root, such as a shared type defined once in fhir-core and re-exported
+      # by every model.
+      - run: cargo test --features r2 --test roundtrip_r2_spec
+      - run: cargo test --test content_reference
+      - run: cargo build --all-targets --features "r3 r4 xml client"
+      - run: cargo test --features "r3 r4 xml client"
+      - run: cargo clippy --all-targets --features "r3 r4 xml client" -- -D warnings
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo clippy --all-targets --features "xml client" -- -D warnings
+      - run: cargo clippy --all-targets --no-default-features --features "r4 xml client" -- -D warnings
+      - run: cargo clippy --all-targets --no-default-features --features "r3 xml client" -- -D warnings
+
+  msrv:
+    name: MSRV (1.88)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.88.0
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build --all-targets
+      - run: cargo test
+
+  llms:
+    name: llms.txt sync
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: bin/check-llms
+
+  features:
+    name: Feature builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      # The `client` feature (reqwest/tokio); HAPI integration tests are #[ignore].
+      - run: cargo test --features client
+      - run: cargo test --features xml
+      - run: cargo build --features precise-decimal
+      # The release features are independent: each must stand on its own.
+      - run: cargo test --no-default-features --features "r4 xml client" --lib
+      - run: cargo test --no-default-features --features "r3 xml client" --lib
+
+  book:
+    name: mdBook
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install mdBook
+        run: |
+          mkdir -p "$HOME/.local/bin"
+          curl -sSL https://github.com/rust-lang/mdBook/releases/download/v0.4.40/mdbook-v0.4.40-x86_64-unknown-linux-gnu.tar.gz \
+            | tar -xz -C "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - run: mdbook build book
+
+  doc:
+    name: Docs
+    runs-on: ubuntu-latest
+    env:
+      RUSTDOCFLAGS: -D warnings
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo doc --no-deps
+      - run: cargo doc --no-deps --features "r3 r4 xml client"
+
+  publish-dry-run:
+    name: Publish dry-run
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      # A crates.io version is immutable, so if this tree carries a version
+      # that is already published, the two must agree. When they do not, every
+      # local build still looks fine — it uses the path dependency — and the
+      # divergence only appears when someone packages a dependent.
+      #
+      # That is exactly what happened: fhir-derive-macros 1.0.1 knew releases
+      # r2/r6 here and only r3/r4/r5 on crates.io, so packaging a release
+      # crate failed with `unknown FHIR version`. Hence 1.1.0.
+      - name: A published version must match what is published
+        run: |
+          fail=0
+          for crate in fhir fhir-core fhir-release-2 fhir-release-3 fhir-release-4 fhir-release-5 fhir-release-6 fhir-derive-macros; do
+            dir=$crate
+            [ "$crate" = fhir ] && dir=.
+            version=$(cargo metadata --format-version 1 --no-deps \
+              | python3 -c "import json,sys;print(next(p['version'] for p in json.load(sys.stdin)['packages'] if p['name']=='$crate'))")
+            url="https://static.crates.io/crates/$crate/$crate-$version.crate"
+            if ! curl -sfL "$url" -o /tmp/pub.crate; then
+              echo "$crate $version: unpublished, nothing to compare"
+              continue
+            fi
+            rm -rf /tmp/pubx && mkdir -p /tmp/pubx && tar xzf /tmp/pub.crate -C /tmp/pubx
+            if diff -rq "/tmp/pubx/$crate-$version/src" "$dir/src" >/dev/null 2>&1; then
+              echo "$crate $version: matches crates.io"
+            else
+              echo "::error::$crate $version is published but differs from this tree; bump the version"
+              diff -rq "/tmp/pubx/$crate-$version/src" "$dir/src" || true
+              fail=1
+            fi
+          done
+          exit "$fail"
+      # The proc-macro crate has no path deps, so its dry-run must be green.
+      - run: cargo publish --dry-run -p fhir-derive-macros
+      # fhir-core has no unpublished path dependencies, so its dry-run must
+      # also be green.
+      - run: cargo publish --dry-run -p fhir-core
+      # The release crates and the facade resolve their path dependencies
+      # against the registry, so they cannot dry-run until the crates below
+      # them are published. Publish order is: fhir-derive-macros, fhir-core,
+      # fhir-release-2 … fhir-release-6, then fhir.
+      #
+      # This is not cosmetic. The local fhir-derive-macros 1.0.1 knew releases
+      # r2 and r6; the *published* 1.0.1 knows only r3, r4 and r5, and a
+      # crates.io version is immutable. Packaging a release crate therefore
+      # failed with hundreds of copies of `unknown FHIR version` — invisible
+      # to every local build, which uses the path dependency. Hence 1.1.0.
+      - run: cargo publish --dry-run -p fhir
+        continue-on-error: true
+
+  supply-chain:
+    name: SBOM
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      # A FHIR data model is a component in someone's IEC 62304 file
+      # (spec 13, R13.13). Continuous evidence beats reconstruction. The
+      # advisory, license, source, and ban half of that evidence lives in
+      # `.github/workflows/security.yml`, which scans `--all-features`.
+      - name: CycloneDX SBOM
+        run: |
+          cargo install cargo-cyclonedx --locked
+          cargo cyclonedx --format json --all
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: "**/*.cdx.json"
+
+  package-size:
+    name: Published package stays small
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      # R13.15: a consumer compiles `src/`, not a 22 MB LLM transcript.
+      # Every downstream `cargo vendor` and CI cache pays for whatever ships.
+      - name: Measure every published .crate
+        run: |
+          # The facade is a few hundred lines of re-exports since the split;
+          # measuring it alone would pass however large the models grew. The
+          # release crates are what a consumer downloads, so check each.
+          #
+          # `cargo package` resolves every path+version dependency against
+          # crates.io, so a crate is unpackageable in the window between
+          # bumping a workspace sibling and publishing it. That is a normal
+          # transient state, not a size regression — it is skipped with a
+          # reason. The `measured` guard below stops the job degrading into
+          # a no-op if every crate ends up skipped.
+          measured=0
+          fail=0
+          for crate in fhir-core fhir-release-2 fhir-release-3 fhir-release-4 fhir-release-5 fhir-release-6; do
+            if ! out=$(cargo package --allow-dirty --no-verify -p "$crate" 2>&1); then
+              if grep -q "failed to select a version for the requirement" <<<"$out"; then
+                echo "$crate: skipped — depends on a workspace version not yet on crates.io"
+                continue
+              fi
+              echo "::error::$crate failed to package"
+              echo "$out" | tail -20
+              fail=1
+              continue
+            fi
+            version=$(cargo metadata --format-version 1 --no-deps \
+              | python3 -c "import json,sys;print(next(p['version'] for p in json.load(sys.stdin)['packages'] if p['name']=='$crate'))")
+            size=$(stat -c%s "target/package/$crate-$version.crate")
+            measured=$((measured + 1))
+            echo "$crate $version: $size bytes"
+            if [ "$size" -ge 10485760 ]; then
+              echo "::error::$crate exceeds 10 MB ($size bytes)"
+              fail=1
+            fi
+          done
+          if [ "$measured" -eq 0 ]; then
+            echo "::error::no crate could be measured; this job proved nothing"
+            fail=1
+          fi
+          echo "measured $measured crate(s)"
+          exit "$fail"
+
+  fuzz:
+    name: Fuzz (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Every push fuzzes the default model. The other releases are in
+        # `fuzz-releases` below, on a schedule: twelve targets each needing
+        # their own ~4-minute build is too much per push, and the readers
+        # they share are already exercised here.
+        include:
+          - { target: parse_xml_r5, release: r5 }
+          - { target: roundtrip_json_r5, release: r5 }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: fuzz-${{ matrix.target }}
+      - run: cargo install cargo-fuzz --locked
+      - name: Run ${{ matrix.target }}
+        run: |
+          mkdir -p /tmp/corpus/${{ matrix.target }}
+          cp fuzz/seeds/${{ matrix.target }}/* /tmp/corpus/${{ matrix.target }}/ 2>/dev/null || true
+          cargo +nightly fuzz run ${{ matrix.target }} /tmp/corpus/${{ matrix.target }} \
+            --features ${{ matrix.release }} -- -max_total_time=120 -rss_limit_mb=4096
+      - name: Upload any crash artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-artifacts-${{ matrix.target }}
+          path: fuzz/artifacts/
+
+  fuzz-releases:
+    name: Fuzz ${{ matrix.target }}
+    # The readers are shared, but the `ElementMeta` table driving them is
+    # per-release, and so are the generated structs and choice enums. A
+    # document that is harmless in R5 can take a different path in DSTU1,
+    # whose model has no Bundle, no isSummary, and its own resource names —
+    # so fuzzing R5 alone leaves five releases unexercised.
+    #
+    # Nightly rather than per-push: each target needs its own build because
+    # compiling the models together is what forced the crate split (12.9 GB
+    # against a 7 GB runner), so these cannot share one.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        release: [r2, r3, r4, r5, r6]
+        kind: [parse_xml, roundtrip_json]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: fuzz-${{ matrix.kind }}-${{ matrix.release }}
+      - run: cargo install cargo-fuzz --locked
+      - name: Run ${{ matrix.kind }}_${{ matrix.release }}
+        run: |
+          target=${{ matrix.kind }}_${{ matrix.release }}
+          mkdir -p /tmp/corpus/$target
+          cp fuzz/seeds/$target/* /tmp/corpus/$target/ 2>/dev/null || true
+          cargo +nightly fuzz run "$target" /tmp/corpus/$target \
+            --features ${{ matrix.release }} -- -max_total_time=300 -rss_limit_mb=4096
+      - name: Upload any crash artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-artifacts-${{ matrix.kind }}-${{ matrix.release }}
+          path: fuzz/artifacts/
+
+  corpus:
+    name: Full official example corpus
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      # R13.1: the curated subset is chosen to pass, so it cannot detect a
+      # regression in the examples it does not run. The gate is the whole
+      # corpus, with a named allowlist that can only shrink (R13.2).
+      - name: Fetch the official examples
+        run: |
+          bin/fetch-examples r5
+          bin/fetch-examples r4
+          bin/fetch-examples r3
+      - name: Round-trip every example
+        run: cargo test --release --features "r3 r4" --test roundtrip_r5_examples --test roundtrip_r4_examples --test roundtrip_r3_examples -- --nocapture

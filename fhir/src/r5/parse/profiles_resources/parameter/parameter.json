@@ -1,0 +1,11 @@
+{
+  "name": "activityDefinition",
+  "use": "in",
+  "scope": [
+    "type"
+  ],
+  "min": 0,
+  "max": "1",
+  "documentation": "The activity definition to apply. If the operation is invoked on an instance, this parameter is not allowed. If the operation is invoked at the type level, this parameter is required",
+  "type": "ActivityDefinition"
+}

@@ -1,0 +1,4 @@
+{
+  "name": "validate",
+  "definition": "http://hl7.org/fhir/OperationDefinition/resource-validate"
+}

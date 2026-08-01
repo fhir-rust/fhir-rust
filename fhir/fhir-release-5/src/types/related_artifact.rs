@@ -1,0 +1,126 @@
+//! RelatedArtifact
+//!
+//! URL: http://hl7.org/fhir/StructureDefinition/RelatedArtifact
+//!
+//! Version: 5.0.0
+//!
+//! RelatedArtifact Type: Related artifacts such as additional documentation, justification, or bibliographic references.
+//!
+//! FHIR: <https://build.fhir.org/>
+//!
+//! UML: <https://build.fhir.org/uml.html>
+
+// Allow unused crate::r5::types as types;
+#![allow(unused_imports)]
+
+use crate::r5::types;
+use ::serde::{Deserialize, Serialize};
+use fhir_derive_macros::{Builder, Validate};
+
+/// Related artifacts such as additional documentation, justification, or
+/// bibliographic references. RelatedArtifact links a knowledge artifact to
+/// supporting materials such as documentation, citations, predecessors,
+/// successors, or dependencies. It is used throughout FHIR R5 to describe the
+/// relationships between resources and the external artifacts that inform them.
+///
+/// # Examples
+///
+/// ```
+/// use fhir::r5::types::related_artifact::RelatedArtifact;
+/// use fhir::r5::types;
+///
+/// let value = RelatedArtifact {
+///     publication_date: Some(types::Date("2019-11-01".to_string())),
+///     ..Default::default()
+/// };
+/// let json = ::serde_json::to_value(&value).unwrap();
+/// // `publicationDate` is the name this serializes to on the wire.
+/// assert_eq!(json["publicationDate"], ::serde_json::json!("2019-11-01"));
+///
+/// let back: RelatedArtifact = ::serde_json::from_value(json).unwrap();
+/// assert_eq!(value, back);
+/// ```
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
+#[serde(rename_all = "camelCase")]
+pub struct RelatedArtifact {
+    /// Unique id for inter-element referencing
+    pub id: Option<types::String>,
+
+    /// Additional content defined by implementations
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub extension: Vec<types::Extension>,
+
+    /// The type of relationship to the related artifact.
+    /// documentation | justification | citation | predecessor | successor | derived-from | depends-on | composed-of | part-of | amends | amended-with | appends | appended-with | cites | cited-by | comments-on | comment-in | contains | contained-in | corrects | correction-in | replaces | replaced-with | retracts | retracted-by | signs | similar-to | supports | supported-with | transforms | transformed-into | transformed-with | documents | specification-of | created-with | cite-as
+    pub r#type: crate::r5::coded::Coded<crate::r5::codes::RelatedArtifactType>,
+    /// Primitive extension sibling for [`type`](Self::r#type) (FHIR `_type`).
+    #[serde(rename = "_type")]
+    pub type_ext: Option<types::Element>,
+
+    /// Additional classifiers, such as trust, evidence quality, or usage classification.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub classifier: Vec<types::CodeableConcept>,
+
+    /// Short label
+    pub label: Option<types::String>,
+    /// Primitive extension sibling for [`label`](Self::label) (FHIR `_label`).
+    #[serde(rename = "_label")]
+    pub label_ext: Option<types::Element>,
+
+    /// Brief description of the related artifact
+    pub display: Option<types::String>,
+    /// Primitive extension sibling for [`display`](Self::display) (FHIR `_display`).
+    #[serde(rename = "_display")]
+    pub display_ext: Option<types::Element>,
+
+    /// Bibliographic citation for the artifact
+    pub citation: Option<types::Markdown>,
+    /// Primitive extension sibling for [`citation`](Self::citation) (FHIR `_citation`).
+    #[serde(rename = "_citation")]
+    pub citation_ext: Option<types::Element>,
+
+    /// What document is being referenced
+    pub document: Option<types::Attachment>,
+
+    /// What artifact is being referenced
+    pub resource: Option<types::Canonical>,
+    /// Primitive extension sibling for [`resource`](Self::resource) (FHIR `_resource`).
+    #[serde(rename = "_resource")]
+    pub resource_ext: Option<types::Element>,
+
+    /// What artifact, if not a conformance resource
+    pub resource_reference: Option<types::Reference>,
+
+    /// The publication status of the artifact being referred to.
+    /// draft | active | retired | unknown
+    pub publication_status: Option<crate::r5::coded::Coded<crate::r5::codes::PublicationStatus>>,
+    /// Primitive extension sibling for [`publication_status`](Self::publication_status) (FHIR `_publicationStatus`).
+    #[serde(rename = "_publicationStatus")]
+    pub publication_status_ext: Option<types::Element>,
+
+    /// Date of publication of the artifact being referred to
+    pub publication_date: Option<types::Date>,
+    /// Primitive extension sibling for [`publication_date`](Self::publication_date) (FHIR `_publicationDate`).
+    #[serde(rename = "_publicationDate")]
+    pub publication_date_ext: Option<types::Element>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    type T = RelatedArtifact;
+
+    #[test]
+    fn test_default() {
+        let _ = T::default();
+    }
+
+    #[test]
+    fn test_serde_round_trip() {
+        let value = T::default();
+        let json = ::serde_json::to_value(&value).expect("to_value");
+        let back: T = ::serde_json::from_value(json).expect("from_value");
+        assert_eq!(value, back);
+    }
+}

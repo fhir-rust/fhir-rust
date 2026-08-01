@@ -1,0 +1,14 @@
+{
+  "code": "chol-mmol",
+  "display": "SChol (mmol/L)",
+  "definition": "Serum Cholesterol, in mmol/L",
+  "designation": [
+    {
+      "use": {
+        "system": "http://acme.com/config/fhir/codesystems/internal",
+        "code": "internal-label"
+      },
+      "value": "From ACME POC Testing"
+    }
+  ]
+}

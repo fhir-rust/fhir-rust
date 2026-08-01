@@ -1,0 +1,30 @@
+#!/bin/sh
+# Verify llms.txt and llms.json mention every top-level module.
+#
+# The AI-readable crate summaries must stay in sync with the module tree. This
+# extracts every `pub mod <name>;` declared in the crate root (src/lib.rs) and
+# in each release root (src/r3.rs, src/r4.rs, src/r5.rs), and fails if any module name is
+# absent from either llms.txt or llms.json.
+set -euf
+
+ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+cd "$ROOT"
+
+# Collect declared module names (the identifier after `pub mod`).
+mods="$(grep -hoE '^[[:space:]]*pub mod [a-z_]+' src/lib.rs src/r3.rs src/r4.rs src/r5.rs \
+        | sed -E 's/.*pub mod //' | sort -u)"
+
+status=0
+for m in $mods; do
+    for f in llms.txt llms.json; do
+        if ! grep -q "$m" "$f"; then
+            echo "MISSING: module '$m' is not mentioned in $f" >&2
+            status=1
+        fi
+    done
+done
+
+if [ "$status" -eq 0 ]; then
+    echo "OK: llms.txt and llms.json mention all $(printf '%s\n' $mods | wc -l | tr -d ' ') modules."
+fi
+exit "$status"

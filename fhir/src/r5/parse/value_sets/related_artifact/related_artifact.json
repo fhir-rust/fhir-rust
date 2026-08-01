@@ -1,0 +1,4 @@
+{
+    "type" : "derived-from",
+    "resource" : "http://hl7.org/fhir/ConceptMap/example"
+}

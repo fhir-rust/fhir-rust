@@ -1,0 +1,20 @@
+{
+  "mode": "server",
+  "documentation": "An empty Capability Statement",
+  "security": {
+    "cors": true,
+    "service": [
+      {
+        "coding": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/restful-security-service",
+            "code": "SMART-on-FHIR",
+            "display": "SMART-on-FHIR"
+          }
+        ],
+        "text": "See http://docs.smarthealthit.org/"
+      }
+    ],
+    "description": "This is the Capability Statement to declare that the server supports SMART-on-FHIR. See the SMART-on-FHIR docs for the extension that would go with such a server"
+  }
+}

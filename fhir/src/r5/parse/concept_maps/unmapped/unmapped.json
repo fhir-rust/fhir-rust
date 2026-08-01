@@ -1,0 +1,4 @@
+{
+          "mode" : "other-map",
+          "otherMap" : "http://example.org/fhir/ConceptMap/map2"
+}

@@ -1,0 +1,25 @@
+{
+  "label": "my label",
+  "value": {
+    "alfa": "bravo"
+  },
+  "valueBoolean": true,
+  "valueCanonical": "my canonical",
+  "valueCode": "my code",
+  "valueDateTime": "2025-01-01T00:00:00Z",
+  "valueId": "my id",
+  "valueInteger": 2147483647,
+  "valueInteger64": "9223372036854775807",
+  "valueMarkdown": "my markdown",
+  "valuePeriod": {
+    "start": "my start",
+    "end": "my end"
+  },
+  "valuePositiveInt": 2147483647,
+  "valuePositiveInt64": "9223372036854775807",
+  "valueString": "my string",
+  "valueUnsignedInt": 4294967295,
+  "valueUnsignedInt64": "18446744073709551615",
+  "valueUri": "https://example.com",
+  "valueUrl": "https://example.com"
+}

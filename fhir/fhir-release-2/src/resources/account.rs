@@ -1,0 +1,139 @@
+//! Account
+//!
+//! URL: http://hl7.org/fhir/StructureDefinition/Account
+//!
+//!
+//!
+//! FHIR R2: <https://hl7.org/fhir/DSTU2/>
+
+// The `types` import is unused by a handful of types that have only primitive fields.
+#![allow(unused_imports)]
+
+use crate::r2::types;
+use ::serde::{Deserialize, Serialize};
+use fhir_derive_macros::{Builder, Validate};
+
+/// Base StructureDefinition for Account Resource
+///
+/// # Examples
+///
+/// ```
+/// use fhir::r2::resources::account::Account;
+/// use fhir::r2::types;
+///
+/// let value = Account {
+///     name: Some(types::String("abc".to_string())),
+///     ..Default::default()
+/// };
+/// let json = ::serde_json::to_value(&value).unwrap();
+/// // `name` is the name this serializes to on the wire.
+/// assert_eq!(json["name"], ::serde_json::json!("abc"));
+///
+/// let back: Account = ::serde_json::from_value(json).unwrap();
+/// assert_eq!(value, back);
+/// ```
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
+#[serde(rename_all = "camelCase")]
+#[fhir_version("r2")]
+pub struct Account {
+    /// Logical id of this artifact
+    pub id: Option<types::Id>,
+
+    /// Metadata about the resource
+    pub meta: Option<types::Meta>,
+
+    /// A set of rules under which this content was created
+    pub implicit_rules: Option<types::Uri>,
+    /// Primitive extension sibling for [`implicit_rules`](Self::implicit_rules) (FHIR `_implicitRules`):
+    /// carries `id` and/or `extension` for the primitive value.
+    #[serde(rename = "_implicitRules")]
+    pub implicit_rules_ext: Option<types::Element>,
+
+    /// Language of the resource content
+    pub language: Option<types::Code>,
+    /// Primitive extension sibling for [`language`](Self::language) (FHIR `_language`):
+    /// carries `id` and/or `extension` for the primitive value.
+    #[serde(rename = "_language")]
+    pub language_ext: Option<types::Element>,
+
+    /// Text summary of the resource, for human interpretation
+    pub text: Option<types::Narrative>,
+
+    /// Contained, inline Resources
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub contained: Vec<::serde_json::Value>,
+
+    /// Additional Content defined by implementations
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub extension: Vec<types::Extension>,
+
+    /// Extensions that cannot be ignored
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub modifier_extension: Vec<types::Extension>,
+
+    /// Account number
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub identifier: Vec<types::Identifier>,
+
+    /// Human-readable label
+    pub name: Option<types::String>,
+    /// Primitive extension sibling for [`name`](Self::name) (FHIR `_name`):
+    /// carries `id` and/or `extension` for the primitive value.
+    #[serde(rename = "_name")]
+    pub name_ext: Option<types::Element>,
+
+    /// E.g. patient, expense, depreciation
+    pub r#type: Option<types::CodeableConcept>,
+
+    /// active | inactive
+    pub status: Option<types::Code>,
+    /// Primitive extension sibling for [`status`](Self::status) (FHIR `_status`):
+    /// carries `id` and/or `extension` for the primitive value.
+    #[serde(rename = "_status")]
+    pub status_ext: Option<types::Element>,
+
+    /// Valid from..to
+    pub active_period: Option<types::Period>,
+
+    /// Base currency in which balance is tracked
+    pub currency: Option<types::Coding>,
+
+    /// How much is in account?
+    pub balance: Option<types::Quantity>,
+
+    /// Transaction window
+    pub coverage_period: Option<types::Period>,
+
+    /// What is account tied to?
+    pub subject: Option<types::Reference>,
+
+    /// Who is responsible?
+    pub owner: Option<types::Reference>,
+
+    /// Explanation of purpose/use
+    pub description: Option<types::String>,
+    /// Primitive extension sibling for [`description`](Self::description) (FHIR `_description`):
+    /// carries `id` and/or `extension` for the primitive value.
+    #[serde(rename = "_description")]
+    pub description_ext: Option<types::Element>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    type T = Account;
+
+    #[test]
+    fn test_default() {
+        let _ = T::default();
+    }
+
+    #[test]
+    fn test_serde_round_trip() {
+        let value = T::default();
+        let json = ::serde_json::to_value(&value).expect("to_value");
+        let back: T = ::serde_json::from_value(json).expect("from_value");
+        assert_eq!(value, back);
+    }
+}

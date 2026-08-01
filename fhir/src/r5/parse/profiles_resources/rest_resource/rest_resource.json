@@ -1,0 +1,64 @@
+{
+  "type": "Account",
+  "profile": "http://hl7.org/fhir/StructureDefinition/Account",
+  "interaction": [
+    {
+      "code": "read",
+      "documentation": "Implemented per the specification (or Insert other doco here)"
+    },
+    {
+      "code": "vread",
+      "documentation": "Implemented per the specification (or Insert other doco here)"
+    },
+    {
+      "code": "update",
+      "documentation": "Implemented per the specification (or Insert other doco here)"
+    },
+    {
+      "code": "delete",
+      "documentation": "Implemented per the specification (or Insert other doco here)"
+    },
+    {
+      "code": "history-instance",
+      "documentation": "Implemented per the specification (or Insert other doco here)"
+    },
+    {
+      "code": "history-type",
+      "documentation": "Implemented per the specification (or Insert other doco here)"
+    },
+    {
+      "code": "create",
+      "documentation": "Implemented per the specification (or Insert other doco here)"
+    },
+    {
+      "code": "search-type",
+      "documentation": "Implemented per the specification (or Insert other doco here)"
+    }
+  ],
+  "conditionalCreate": true,
+  "conditionalUpdate": true,
+  "conditionalDelete": "multiple",
+  "referencePolicy": ["literal", "logical"],
+  "searchInclude": [
+    "Account.owner",
+    "Account.patient",
+    "Account.subject",
+    "Account.guarantor",
+    "Account.relatedaccount"
+  ],
+  "searchRevInclude": [
+    "Account.relatedaccount",
+    "ChargeItem.account",
+    "Encounter.account",
+    "Invoice.account",
+    "PaymentReconciliation.allocation-account"
+  ],
+  "searchParam": [
+    {
+      "name": "owner",
+      "definition": "http://hl7.org/fhir/SearchParameter/Account-owner",
+      "type": "reference",
+      "documentation": "Entity managing the Account"
+    }
+  ]
+}

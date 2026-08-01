@@ -1,0 +1,125 @@
+# Fuzz targets for spec R13.4 and R13.17: deep or adversarial input must not
+# crash a process embedding this crate.
+#
+# Kept out of the workspace so a normal `cargo build` does not need the
+# nightly-only libfuzzer-sys.
+#
+# # One release per binary, deliberately
+#
+# The readers are shared, but the `ElementMeta` table that drives them is
+# not: `element_meta`, `is_datatype`, and `coerce` all branch on per-release
+# metadata, so a fault can exist in one release and not another. Each release
+# therefore gets its own target.
+#
+# They are separate binaries rather than one binary over every release
+# because compiling the models together is what forced the crate split in the
+# first place: `--features "r3 r4"` peaked at 12.9 GB against a 7 GB runner.
+# Building one bin pulls in one release, so peak memory stays where the split
+# put it.
+#
+#     cargo +nightly fuzz run parse_xml_r4 --features r4 -- -max_total_time=60
+#
+[package]
+name = "fhir-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[package.metadata]
+cargo-fuzz = true
+
+[features]
+r2 = ["fhir/r2"]
+r3 = ["fhir/r3"]
+r4 = ["fhir/r4"]
+r5 = ["fhir/r5"]
+r6 = ["fhir/r6"]
+
+[dependencies]
+libfuzzer-sys = "0.4"
+serde_json = "1"
+
+[dependencies.fhir]
+path = ".."
+default-features = false
+features = ["xml"]
+
+[[bin]]
+name = "parse_xml_r2"
+path = "fuzz_targets/parse_xml_r2.rs"
+test = false
+doc = false
+bench = false
+required-features = ["r2"]
+
+[[bin]]
+name = "roundtrip_json_r2"
+path = "fuzz_targets/roundtrip_json_r2.rs"
+test = false
+doc = false
+bench = false
+required-features = ["r2"]
+
+[[bin]]
+name = "parse_xml_r3"
+path = "fuzz_targets/parse_xml_r3.rs"
+test = false
+doc = false
+bench = false
+required-features = ["r3"]
+
+[[bin]]
+name = "roundtrip_json_r3"
+path = "fuzz_targets/roundtrip_json_r3.rs"
+test = false
+doc = false
+bench = false
+required-features = ["r3"]
+
+[[bin]]
+name = "parse_xml_r4"
+path = "fuzz_targets/parse_xml_r4.rs"
+test = false
+doc = false
+bench = false
+required-features = ["r4"]
+
+[[bin]]
+name = "roundtrip_json_r4"
+path = "fuzz_targets/roundtrip_json_r4.rs"
+test = false
+doc = false
+bench = false
+required-features = ["r4"]
+
+[[bin]]
+name = "parse_xml_r5"
+path = "fuzz_targets/parse_xml_r5.rs"
+test = false
+doc = false
+bench = false
+required-features = ["r5"]
+
+[[bin]]
+name = "roundtrip_json_r5"
+path = "fuzz_targets/roundtrip_json_r5.rs"
+test = false
+doc = false
+bench = false
+required-features = ["r5"]
+
+[[bin]]
+name = "parse_xml_r6"
+path = "fuzz_targets/parse_xml_r6.rs"
+test = false
+doc = false
+bench = false
+required-features = ["r6"]
+
+[[bin]]
+name = "roundtrip_json_r6"
+path = "fuzz_targets/roundtrip_json_r6.rs"
+test = false
+doc = false
+bench = false
+required-features = ["r6"]

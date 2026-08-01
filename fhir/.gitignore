@@ -1,0 +1,18 @@
+/target
+
+# Full official FHIR example sets, fetched on demand by `bin/fetch-examples`
+# for the `#[ignore]` round-trip tests. ~190 MB each, not committed. The curated
+# always-on subsets under tests/data/roundtrip_examples_<release>/ ARE committed.
+/doc/fhir-specifications/*/fhir-examples-json/
+
+# mdBook build output
+/book/book/
+
+# Fuzzing: the seed corpus under fuzz/seeds/ is committed and small; the
+# working corpus libfuzzer grows from it is not — it reached 26 MB in two
+# minutes. Crash artifacts are uploaded by CI on failure rather than stored
+# here, so a crash arrives as a build failure with the input attached.
+/fuzz/target/
+/fuzz/corpus/
+/fuzz/artifacts/
+/fuzz/Cargo.lock

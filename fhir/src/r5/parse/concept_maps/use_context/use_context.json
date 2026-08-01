@@ -1,0 +1,9 @@
+{
+    "code" : {
+        "system" : "http://terminology.hl7.org/CodeSystem/usage-context-type",
+        "code" : "venue"
+    },
+    "valueCodeableConcept" : {
+        "text" : "for CCDA Usage"
+    }
+}

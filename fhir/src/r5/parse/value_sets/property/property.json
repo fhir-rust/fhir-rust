@@ -1,0 +1,13 @@
+{
+  "code": "priority",
+  "_code": {
+    "extension": [
+      {
+        "url": "http://hl7.org/fhir/StructureDefinition/rendered-value",
+        "valueString": "FHIRPath Equivalent"
+      }
+    ]
+  },
+  "description": "The priority with which to choose this mapping over the other mappings for the same code",
+  "type": "string"
+}

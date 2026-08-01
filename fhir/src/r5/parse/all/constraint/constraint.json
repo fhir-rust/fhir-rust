@@ -1,0 +1,13 @@
+{
+  "key": "sdf-4",
+  "severity": "error",
+  "human": "If the structure is not abstract, then there SHALL be a baseDefinition",
+  "expression": "abstract = true or baseDefinition.exists()",
+  "source": "http://hl7.org/fhir/StructureDefinition/StructureDefinition",
+  "requirements": "Ensure that the base types are abstract",
+  "extension": [
+    {
+      "url": "http://example.com"
+    }
+  ]
+}

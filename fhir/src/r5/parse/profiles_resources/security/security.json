@@ -1,0 +1,15 @@
+{
+  "cors": true,
+  "service": [
+    {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/restful-security-service",
+          "code": "SMART-on-FHIR",
+          "display": "SMART-on-FHIR"
+        }
+      ],
+      "text": "See http://docs.smarthealthit.org/"
+    }
+  ]
+}

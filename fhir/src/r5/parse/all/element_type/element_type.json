@@ -1,0 +1,12 @@
+{
+  "code": "http://hl7.org/fhirpath/System.String",
+  "targetProfile": [
+    "http://hl7.org/fhir/StructureDefinition/StructureDefinition"
+  ],
+  "extension": [
+    {
+      "url": "http://hl7.org/fhir/StructureDefinition/structuredefinition-fhir-type",
+      "valueUrl": "id"
+    }
+  ]
+}

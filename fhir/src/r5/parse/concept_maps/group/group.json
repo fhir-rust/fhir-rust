@@ -1,0 +1,10 @@
+{
+
+        "source" : "http://example.org/fhir/example1",
+        "target" : "http://example.org/fhir/example2",
+        "element" : [],
+        "unmapped" : {
+          "mode" : "other-map",
+          "otherMap" : "http://example.org/fhir/ConceptMap/map2"
+        }
+}

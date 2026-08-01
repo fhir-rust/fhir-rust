@@ -1,0 +1,44 @@
+#!/bin/sh
+# Fetch a FHIR release's official example resources for the round-trip tests.
+#
+# Usage: bin/fetch-examples [r3|r4|r5]     (default: r5)
+#
+# Downloads `examples-json.zip` from hl7.org and unpacks it into
+# `doc/fhir-specifications/<release>/fhir-examples-json/`. That directory is
+# git-ignored (~190 MB unpacked, ~2900 files) and is consumed by the
+# `#[ignore]`-by-default `roundtrip_full_official_examples` test:
+#
+#     bin/fetch-examples r4
+#     cargo test --features r4 --test roundtrip_r4_examples -- --ignored --nocapture
+#
+# The always-on `roundtrip_curated_subset` test does NOT need this download; it
+# uses the ~50 files committed under `tests/data/roundtrip_examples_<release>/`.
+set -euf
+
+RELEASE="${1:-r5}"
+case "$RELEASE" in
+    # R3 is published under its STU3 name, and its archive holds only the
+    # definitional resources (StructureDefinition, ValueSet, CodeSystem, …);
+    # the clinical examples are published as individual files.
+    r3) URL="https://hl7.org/fhir/STU3/examples-json.zip" ;;
+    r4) URL="https://hl7.org/fhir/R4/examples-json.zip" ;;
+    r5) URL="https://hl7.org/fhir/R5/examples-json.zip" ;;
+    *)  echo "unknown release: $RELEASE (expected r3, r4 or r5)" >&2; exit 2 ;;
+esac
+
+ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+DEST="$ROOT/doc/fhir-specifications/$RELEASE/fhir-examples-json"
+ZIP="$DEST/examples-json.zip"
+
+mkdir -p "$DEST"
+
+echo "Downloading $URL"
+curl -fL --retry 3 -o "$ZIP" "$URL"
+
+echo "Unpacking into $DEST"
+# -o overwrite without prompting; -q quiet.
+unzip -oq "$ZIP" -d "$DEST"
+rm -f "$ZIP"
+
+count="$(find "$DEST" -name '*.json' | wc -l | tr -d ' ')"
+echo "Done: $count JSON files in $DEST"

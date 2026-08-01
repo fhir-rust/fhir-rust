@@ -1,0 +1,6 @@
+{
+    "code" : "priority",
+    "description" : "The priority with which to choose this mapping over the other mappings for the same code",
+    "type" : "string",
+    "uri": "http://example.org/property/"
+}

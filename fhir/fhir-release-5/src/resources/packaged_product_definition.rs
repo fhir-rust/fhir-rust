@@ -1,0 +1,436 @@
+//! PackagedProductDefinition
+//!
+//! URL: http://hl7.org/fhir/StructureDefinition/PackagedProductDefinition
+//!
+//! Version: 5.0.0
+//!
+//! PackagedProductDefinition Resource: A medically related item or items, in a container or package.
+//!
+//! FHIR: <https://build.fhir.org/>
+//!
+//! UML: <https://build.fhir.org/uml.html>
+
+// Allow unused crate::r5::types as types;
+#![allow(unused_imports)]
+
+use crate::r5::types;
+use ::serde::{Deserialize, Serialize};
+use fhir_derive_macros::Validate;
+
+/// A medically related item or items, in a container or package.
+///
+/// PackagedProductDefinition describes how a medicinal or medically related
+/// product is physically packaged and supplied. It captures the complete
+/// packaging hierarchy, such as a box that contains blisters that in turn
+/// contain tablets, or a bottle of liquid, or a multi-component kit with a
+/// diluent, together with the medically related items held at each level. The
+/// resource records the pack size, the legal status of supply as classified by
+/// a regulator, the marketing status and jurisdictions where the pack is placed
+/// on the market, the manufacturers, and shelf life and storage information for
+/// each packaging component.
+///
+/// In FHIR R5 this resource is part of the medication and regulated products
+/// group and is used chiefly in the context of medicinal product regulation,
+/// for example ISO IDMP submissions and pharmaceutical dossiers, to describe
+/// how an authorized product is presented to the market. It does not describe
+/// the substances or the abstract product itself; instead it references those
+/// definitions and concentrates on presentation, containment, and supply.
+///
+/// # Related resources
+///
+/// This resource typically references product and administrable definitions via
+/// [`Reference`](crate::r5::types::Reference), and the items within a package
+/// are recorded with [`CodeableReference`](crate::r5::types::CodeableReference).
+/// Regulatory classifications use [`CodeableConcept`](crate::r5::types::CodeableConcept),
+/// availability on the market uses [`MarketingStatus`](crate::r5::types::MarketingStatus),
+/// and shelf life uses [`ProductShelfLife`](crate::r5::types::ProductShelfLife).
+/// It is commonly used alongside the related regulated product resources such as
+/// `MedicinalProductDefinition`, `ManufacturedItemDefinition`, and
+/// `AdministrableProductDefinition`.
+///
+/// # Examples
+///
+/// ```
+/// use fhir::r5::resources::packaged_product_definition::PackagedProductDefinition;
+/// use fhir::r5::types;
+///
+/// let value = PackagedProductDefinition {
+///     status_date: Some(types::DateTime("2019-11-01T09:29:23Z".to_string())),
+///     ..Default::default()
+/// };
+/// let json = ::serde_json::to_value(&value).unwrap();
+/// // `statusDate` is the name this serializes to on the wire.
+/// assert_eq!(json["statusDate"], ::serde_json::json!("2019-11-01T09:29:23Z"));
+///
+/// let back: PackagedProductDefinition = ::serde_json::from_value(json).unwrap();
+/// assert_eq!(value, back);
+/// ```
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
+#[serde(rename_all = "camelCase")]
+pub struct PackagedProductDefinition {
+    /// Logical id of this artifact
+    pub id: Option<types::String>,
+
+    /// Metadata about the resource
+    pub meta: Option<types::Meta>,
+
+    /// A set of rules under which this content was created
+    pub implicit_rules: Option<types::Uri>,
+    /// Primitive extension sibling for [`implicit_rules`](Self::implicit_rules) (FHIR `_implicitRules`).
+    #[serde(rename = "_implicitRules")]
+    pub implicit_rules_ext: Option<types::Element>,
+
+    /// Language of the resource content
+    pub language: Option<types::Code>,
+    /// Primitive extension sibling for [`language`](Self::language) (FHIR `_language`).
+    #[serde(rename = "_language")]
+    pub language_ext: Option<types::Element>,
+
+    /// Text summary of the resource, for human interpretation
+    pub text: Option<types::Narrative>,
+
+    /// Contained, inline Resources
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub contained: Vec<::serde_json::Value>,
+
+    /// Additional content defined by implementations
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub extension: Vec<types::Extension>,
+
+    /// Extensions that cannot be ignored
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub modifier_extension: Vec<types::Extension>,
+
+    /// A unique identifier for this package as whole - not for the content of the package
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub identifier: Vec<types::Identifier>,
+
+    /// A name for this package. Typically as listed in a drug formulary, catalogue, inventory etc
+    pub name: Option<types::String>,
+    /// Primitive extension sibling for [`name`](Self::name) (FHIR `_name`).
+    #[serde(rename = "_name")]
+    pub name_ext: Option<types::Element>,
+
+    /// A high level category e.g. medicinal product, raw material, shipping container etc
+    pub r#type: Option<types::CodeableConcept>,
+
+    /// References the medicinal or manufactured product definitions that this package is a pack for.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub package_for: Vec<types::Reference>,
+
+    /// The status within the lifecycle of this item. High level - not intended to duplicate details elsewhere e.g. legal status, or authorization/marketing status
+    pub status: Option<types::CodeableConcept>,
+
+    /// The date at which the given status became applicable
+    pub status_date: Option<types::DateTime>,
+    /// Primitive extension sibling for [`status_date`](Self::status_date) (FHIR `_statusDate`).
+    #[serde(rename = "_statusDate")]
+    pub status_date_ext: Option<types::Element>,
+
+    /// A total of the complete count of contained items of a particular type/form, independent of sub-packaging or organization. This can be considered as the pack size
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub contained_item_quantity: Vec<types::Quantity>,
+
+    /// Textual description. Note that this is not the name of the package or product
+    pub description: Option<types::Markdown>,
+    /// Primitive extension sibling for [`description`](Self::description) (FHIR `_description`).
+    #[serde(rename = "_description")]
+    pub description_ext: Option<types::Element>,
+
+    /// The regulator-classified legal status of supply for this pack, optionally scoped by jurisdiction.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub legal_status_of_supply: Vec<PackagedProductDefinitionLegalStatusOfSupply>,
+
+    /// Allows specifying that an item is on the market for sale, or that it is not available, and the dates and locations associated
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub marketing_status: Vec<types::MarketingStatus>,
+
+    /// Identifies if the drug product is supplied with another item such as a diluent or adjuvant
+    pub copackaged_indicator: Option<types::Boolean>,
+    /// Primitive extension sibling for [`copackaged_indicator`](Self::copackaged_indicator) (FHIR `_copackagedIndicator`).
+    #[serde(rename = "_copackagedIndicator")]
+    pub copackaged_indicator_ext: Option<types::Element>,
+
+    /// Manufacturer of this package type (multiple means these are all possible manufacturers)
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub manufacturer: Vec<types::Reference>,
+
+    /// Additional information or supporting documentation about the packaged product
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub attached_document: Vec<types::Reference>,
+
+    /// The outermost packaging item, forming the root of the nested container hierarchy and the medically related items it holds.
+    pub packaging: Option<PackagedProductDefinitionPackaging>,
+
+    /// Allows the key features to be recorded, such as "hospital pack",
+    /// "nurse prescribable".
+    ///
+    /// FHIR defines this by `contentReference` to
+    /// `PackagedProductDefinition.packaging.property`, so it has that
+    /// backbone's shape. It was previously `Vec<serde_json::Value>` — the
+    /// data survived a round trip, but callers got no structure, no
+    /// validation, and no compile-time help (T35).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub characteristic: Vec<PackagedProductDefinitionPackagingProperty>,
+}
+
+/// The legal status of supply of the packaged item as classified by the regulator.
+/// # Examples
+///
+/// ```
+/// use fhir::r5::resources::packaged_product_definition::PackagedProductDefinitionLegalStatusOfSupply;
+/// use fhir::r5::types;
+///
+/// let value = PackagedProductDefinitionLegalStatusOfSupply {
+///     id: Some(types::String("abc".to_string())),
+///     ..Default::default()
+/// };
+/// let json = ::serde_json::to_value(&value).unwrap();
+/// // `id` is the name this serializes to on the wire.
+/// assert_eq!(json["id"], ::serde_json::json!("abc"));
+///
+/// let back: PackagedProductDefinitionLegalStatusOfSupply = ::serde_json::from_value(json).unwrap();
+/// assert_eq!(value, back);
+/// ```
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
+#[serde(rename_all = "camelCase")]
+pub struct PackagedProductDefinitionLegalStatusOfSupply {
+    /// Unique id for inter-element referencing
+    pub id: Option<types::String>,
+
+    /// Additional content defined by implementations
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub extension: Vec<types::Extension>,
+
+    /// Extensions that cannot be ignored even if unrecognized
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub modifier_extension: Vec<types::Extension>,
+
+    /// The actual status of supply. In what situation this package type may be supplied for use
+    pub code: Option<types::CodeableConcept>,
+
+    /// The place where the legal status of supply applies
+    pub jurisdiction: Option<types::CodeableConcept>,
+}
+
+/// A packaging item, as a container for medically related items, possibly with
+/// other packaging items within, or a packaging component, such as bottle cap.
+/// # Examples
+///
+/// ```
+/// use fhir::r5::resources::packaged_product_definition::PackagedProductDefinitionPackaging;
+/// use fhir::r5::types;
+///
+/// let value = PackagedProductDefinitionPackaging {
+///     component_part: Some(types::Boolean(true)),
+///     ..Default::default()
+/// };
+/// let json = ::serde_json::to_value(&value).unwrap();
+/// // `componentPart` is the name this serializes to on the wire.
+/// assert_eq!(json["componentPart"], ::serde_json::json!(true));
+///
+/// let back: PackagedProductDefinitionPackaging = ::serde_json::from_value(json).unwrap();
+/// assert_eq!(value, back);
+/// ```
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
+#[serde(rename_all = "camelCase")]
+pub struct PackagedProductDefinitionPackaging {
+    /// Unique id for inter-element referencing
+    pub id: Option<types::String>,
+
+    /// Additional content defined by implementations
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub extension: Vec<types::Extension>,
+
+    /// Extensions that cannot be ignored even if unrecognized
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub modifier_extension: Vec<types::Extension>,
+
+    /// An identifier that is specific to this particular part of the packaging. Including possibly a Data Carrier Identifier
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub identifier: Vec<types::Identifier>,
+
+    /// The physical type of the container of the items
+    pub r#type: Option<types::CodeableConcept>,
+
+    /// Is this a part of the packaging (e.g. a cap or bottle stopper), rather than the packaging itself (e.g. a bottle or vial)
+    pub component_part: Option<types::Boolean>,
+    /// Primitive extension sibling for [`component_part`](Self::component_part) (FHIR `_componentPart`).
+    #[serde(rename = "_componentPart")]
+    pub component_part_ext: Option<types::Element>,
+
+    /// The quantity of this level of packaging in the package that contains it (with the outermost level being 1)
+    pub quantity: Option<types::Integer>,
+    /// Primitive extension sibling for [`quantity`](Self::quantity) (FHIR `_quantity`).
+    #[serde(rename = "_quantity")]
+    pub quantity_ext: Option<types::Element>,
+
+    /// Material type of the package item
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub material: Vec<types::CodeableConcept>,
+
+    /// A possible alternate material for this part of the packaging, that is allowed to be used instead of the usual material
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub alternate_material: Vec<types::CodeableConcept>,
+
+    /// Shelf Life and storage information
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub shelf_life_storage: Vec<types::ProductShelfLife>,
+
+    /// Manufacturer of this packaging item (multiple means these are all potential manufacturers)
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub manufacturer: Vec<types::Reference>,
+
+    /// General characteristics of this item
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub property: Vec<PackagedProductDefinitionPackagingProperty>,
+
+    /// The item(s) within the packaging
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub contained_item: Vec<PackagedProductDefinitionPackagingContainedItem>,
+
+    /// Allows containers (and parts of containers) within containers, still as a part of single packaged product
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub packaging: Vec<PackagedProductDefinitionPackaging>,
+}
+
+/// General characteristics of a packaging item.
+/// # Examples
+///
+/// ```
+/// use fhir::r5::resources::packaged_product_definition::PackagedProductDefinitionPackagingProperty;
+/// use fhir::r5::types;
+///
+/// let value = PackagedProductDefinitionPackagingProperty {
+///     id: Some(types::String("abc".to_string())),
+///     ..Default::default()
+/// };
+/// let json = ::serde_json::to_value(&value).unwrap();
+/// // `id` is the name this serializes to on the wire.
+/// assert_eq!(json["id"], ::serde_json::json!("abc"));
+///
+/// let back: PackagedProductDefinitionPackagingProperty = ::serde_json::from_value(json).unwrap();
+/// assert_eq!(value, back);
+/// ```
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
+#[serde(rename_all = "camelCase")]
+pub struct PackagedProductDefinitionPackagingProperty {
+    /// Unique id for inter-element referencing
+    pub id: Option<types::String>,
+
+    /// Additional content defined by implementations
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub extension: Vec<types::Extension>,
+
+    /// Extensions that cannot be ignored even if unrecognized
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub modifier_extension: Vec<types::Extension>,
+
+    /// A code expressing the type of characteristic
+    pub r#type: types::CodeableConcept,
+
+    /// The `PackagedProductDefinition.packaging.property.value[x]` choice element (0..1); see [`PackagedProductDefinitionPackagingPropertyValue`].
+    #[serde(flatten)]
+    pub value: Option<PackagedProductDefinitionPackagingPropertyValue>,
+}
+
+/// The item(s) within the packaging.
+/// # Examples
+///
+/// ```
+/// use fhir::r5::resources::packaged_product_definition::PackagedProductDefinitionPackagingContainedItem;
+/// use fhir::r5::types;
+///
+/// let value = PackagedProductDefinitionPackagingContainedItem {
+///     id: Some(types::String("abc".to_string())),
+///     ..Default::default()
+/// };
+/// let json = ::serde_json::to_value(&value).unwrap();
+/// // `id` is the name this serializes to on the wire.
+/// assert_eq!(json["id"], ::serde_json::json!("abc"));
+///
+/// let back: PackagedProductDefinitionPackagingContainedItem = ::serde_json::from_value(json).unwrap();
+/// assert_eq!(value, back);
+/// ```
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
+#[serde(rename_all = "camelCase")]
+pub struct PackagedProductDefinitionPackagingContainedItem {
+    /// Unique id for inter-element referencing
+    pub id: Option<types::String>,
+
+    /// Additional content defined by implementations
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub extension: Vec<types::Extension>,
+
+    /// Extensions that cannot be ignored even if unrecognized
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub modifier_extension: Vec<types::Extension>,
+
+    /// The actual item(s) of medication, as manufactured, or a device, or other medically related item (food, biologicals, raw materials, medical fluids, gases etc.), as contained in the package
+    pub item: types::CodeableReference,
+
+    /// The number of this type of item within this packaging or for continuous items such as liquids it is the quantity (for example 25ml)
+    pub amount: Option<types::Quantity>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    type T = PackagedProductDefinition;
+
+    #[test]
+    fn test_default() {
+        let _ = T::default();
+    }
+
+    #[test]
+    fn test_serde_round_trip() {
+        let value = T::default();
+        let json = ::serde_json::to_value(&value).expect("to_value");
+        let back: T = ::serde_json::from_value(json).expect("from_value");
+        assert_eq!(value, back);
+    }
+}
+/// The `PackagedProductDefinition.packaging.property.value[x]` choice element (see spec/11-choice-types.md).
+#[derive(Debug, Clone, PartialEq, Eq, fhir_derive_macros::FhirChoice, Validate)]
+#[allow(clippy::large_enum_variant)]
+pub enum PackagedProductDefinitionPackagingPropertyValue {
+    /// `valueCodeableConcept` variant.
+    #[fhir("valueCodeableConcept")]
+    CodeableConcept(Box<types::CodeableConcept>),
+    /// `valueQuantity` variant.
+    #[fhir("valueQuantity")]
+    Quantity(Box<types::Quantity>),
+    /// `valueDate` variant.
+    #[fhir("valueDate")]
+    Date(crate::r5::choice::Primitive<types::Date>),
+    /// `valueBoolean` variant.
+    #[fhir("valueBoolean")]
+    Boolean(crate::r5::choice::Primitive<types::Boolean>),
+    /// `valueAttachment` variant.
+    #[fhir("valueAttachment")]
+    Attachment(Box<types::Attachment>),
+}
+
+#[cfg(test)]
+mod drift_tests {
+    use super::*;
+
+    /// `characteristic` is a `contentReference` to `packaging.property`, not
+    /// an untyped blob. The old `Vec<serde_json::Value>` round-tripped, so
+    /// no corpus example could reveal it — the loss was type safety, not
+    /// data (T35).
+    #[test]
+    fn characteristic_is_typed() {
+        let json = r#"{"characteristic":[{"type":{"text":"hospital pack"}}]}"#;
+        let parsed: PackagedProductDefinition = ::serde_json::from_str(json).expect("deserialize");
+        assert_eq!(parsed.characteristic.len(), 1);
+        assert!(parsed.characteristic[0].r#type.text.is_some());
+        assert_eq!(::serde_json::to_string(&parsed).expect("serialize"), json);
+    }
+}

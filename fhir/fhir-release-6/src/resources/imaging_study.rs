@@ -1,0 +1,388 @@
+//! ImagingStudy
+//!
+//! URL: http://hl7.org/fhir/StructureDefinition/ImagingStudy
+//!
+//! Version: 6.0.0-ballot3
+//!
+//! A set of images or image-related data produced in single study
+//!
+//! FHIR R6: <https://hl7.org/fhir/6.0.0-ballot3/>
+
+// The `types` import is unused by a handful of types that have only primitive fields.
+#![allow(unused_imports)]
+
+use crate::r6::types;
+use ::serde::{Deserialize, Serialize};
+use fhir_derive_macros::{Builder, Validate};
+
+/// Representation of the content produced in a DICOM imaging study. A study
+/// comprises a set of series, each of which includes a set of Service-Object
+/// Pair Instances (SOP Instances - images or other data) acquired or produced
+/// in a common context. A series is of only one modality (e.g. X-ray, CT, MR,
+/// ultrasound), but a study may have multiple series of different modality
+/// values.
+///
+/// # Examples
+///
+/// ```
+/// use fhir::r6::resources::imaging_study::ImagingStudy;
+/// use fhir::r6::types;
+///
+/// let value = ImagingStudy {
+///     number_of_series: Some(types::UnsignedInt(0)),
+///     ..Default::default()
+/// };
+/// let json = ::serde_json::to_value(&value).unwrap();
+/// // `numberOfSeries` is the name this serializes to on the wire.
+/// assert_eq!(json["numberOfSeries"], ::serde_json::json!(0));
+///
+/// let back: ImagingStudy = ::serde_json::from_value(json).unwrap();
+/// assert_eq!(value, back);
+/// ```
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
+#[serde(rename_all = "camelCase")]
+#[fhir_version("r6")]
+pub struct ImagingStudy {
+    /// Logical id of this artifact
+    pub id: Option<types::String>,
+
+    /// Metadata about the resource
+    pub meta: Option<types::Meta>,
+
+    /// A set of rules under which this content was created
+    pub implicit_rules: Option<types::Uri>,
+    /// Primitive extension sibling for [`implicit_rules`](Self::implicit_rules) (FHIR `_implicitRules`):
+    /// carries `id` and/or `extension` for the primitive value.
+    #[serde(rename = "_implicitRules")]
+    pub implicit_rules_ext: Option<types::Element>,
+
+    /// Language of the resource content
+    pub language: Option<types::Code>,
+    /// Primitive extension sibling for [`language`](Self::language) (FHIR `_language`):
+    /// carries `id` and/or `extension` for the primitive value.
+    #[serde(rename = "_language")]
+    pub language_ext: Option<types::Element>,
+
+    /// Text summary of the resource, for human interpretation
+    pub text: Option<types::Narrative>,
+
+    /// Contained, inline Resources
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub contained: Vec<::serde_json::Value>,
+
+    /// Additional content defined by implementations
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub extension: Vec<types::Extension>,
+
+    /// Extensions that cannot be ignored
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub modifier_extension: Vec<types::Extension>,
+
+    /// Business identifier for imaging study
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub identifier: Vec<types::Identifier>,
+
+    /// registered | available | cancelled | entered-in-error | unknown |
+    /// inactive
+    pub status: crate::coded::Coded<crate::r6::codes::ImagingstudyStatus>,
+    /// Primitive extension sibling for [`status`](Self::status) (FHIR `_status`):
+    /// carries `id` and/or `extension` for the primitive value.
+    #[serde(rename = "_status")]
+    pub status_ext: Option<types::Element>,
+
+    /// The distinct values for series' modalities
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub modality: Vec<types::CodeableConcept>,
+
+    /// Who or what is the subject of the study
+    pub subject: types::Reference,
+
+    /// Encounter with which this imaging study is associated
+    pub encounter: Option<types::Reference>,
+
+    /// When the study was started
+    pub started: Option<types::DateTime>,
+    /// Primitive extension sibling for [`started`](Self::started) (FHIR `_started`):
+    /// carries `id` and/or `extension` for the primitive value.
+    #[serde(rename = "_started")]
+    pub started_ext: Option<types::Element>,
+
+    /// Fulfills plan or order
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub based_on: Vec<types::Reference>,
+
+    /// Part of referenced event
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub part_of: Vec<types::Reference>,
+
+    /// Referring physician
+    pub referrer: Option<types::Reference>,
+
+    /// Study access endpoint
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub endpoint: Vec<types::Reference>,
+
+    /// Associated procedure(s)
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub procedure: Vec<types::CodeableReference>,
+
+    /// Where imaging study occurred
+    pub location: Option<types::Reference>,
+
+    /// Why was imaging study performed?
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub reason: Vec<types::CodeableReference>,
+
+    /// Comments made about the imaging study
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub note: Vec<types::Annotation>,
+
+    /// Study Description or Classification
+    pub description: Option<types::String>,
+    /// Primitive extension sibling for [`description`](Self::description) (FHIR `_description`):
+    /// carries `id` and/or `extension` for the primitive value.
+    #[serde(rename = "_description")]
+    pub description_ext: Option<types::Element>,
+
+    /// Number of Study Related Series
+    pub number_of_series: Option<types::UnsignedInt>,
+    /// Primitive extension sibling for [`number_of_series`](Self::number_of_series) (FHIR `_numberOfSeries`):
+    /// carries `id` and/or `extension` for the primitive value.
+    #[serde(rename = "_numberOfSeries")]
+    pub number_of_series_ext: Option<types::Element>,
+
+    /// Number of Study Related Instances
+    pub number_of_instances: Option<types::UnsignedInt>,
+    /// Primitive extension sibling for [`number_of_instances`](Self::number_of_instances) (FHIR `_numberOfInstances`):
+    /// carries `id` and/or `extension` for the primitive value.
+    #[serde(rename = "_numberOfInstances")]
+    pub number_of_instances_ext: Option<types::Element>,
+
+    /// The set of Series belonging to the study
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub series: Vec<ImagingStudySeries>,
+}
+
+/// The set of Series belonging to the study. Each Series contains a set of SOP
+/// Instances, which could be images, waveforms, or other content.
+///
+/// # Examples
+///
+/// ```
+/// use fhir::r6::resources::imaging_study::ImagingStudySeries;
+/// use fhir::r6::types;
+///
+/// let value = ImagingStudySeries {
+///     number_of_instances: Some(types::UnsignedInt(0)),
+///     ..Default::default()
+/// };
+/// let json = ::serde_json::to_value(&value).unwrap();
+/// // `numberOfInstances` is the name this serializes to on the wire.
+/// assert_eq!(json["numberOfInstances"], ::serde_json::json!(0));
+///
+/// let back: ImagingStudySeries = ::serde_json::from_value(json).unwrap();
+/// assert_eq!(value, back);
+/// ```
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
+#[serde(rename_all = "camelCase")]
+#[fhir_version("r6")]
+pub struct ImagingStudySeries {
+    /// Unique id for inter-element referencing
+    pub id: Option<types::String>,
+
+    /// Additional content defined by implementations
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub extension: Vec<types::Extension>,
+
+    /// Extensions that cannot be ignored even if unrecognized
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub modifier_extension: Vec<types::Extension>,
+
+    /// DICOM Series Instance UID
+    pub uid: types::Id,
+    /// Primitive extension sibling for [`uid`](Self::uid) (FHIR `_uid`):
+    /// carries `id` and/or `extension` for the primitive value.
+    #[serde(rename = "_uid")]
+    pub uid_ext: Option<types::Element>,
+
+    /// Numeric identifier of this series
+    pub number: Option<types::UnsignedInt>,
+    /// Primitive extension sibling for [`number`](Self::number) (FHIR `_number`):
+    /// carries `id` and/or `extension` for the primitive value.
+    #[serde(rename = "_number")]
+    pub number_ext: Option<types::Element>,
+
+    /// The modality used for this series
+    pub modality: types::CodeableConcept,
+
+    /// Series Description or Classification
+    pub description: Option<types::String>,
+    /// Primitive extension sibling for [`description`](Self::description) (FHIR `_description`):
+    /// carries `id` and/or `extension` for the primitive value.
+    #[serde(rename = "_description")]
+    pub description_ext: Option<types::Element>,
+
+    /// Number of Series Related Instances
+    pub number_of_instances: Option<types::UnsignedInt>,
+    /// Primitive extension sibling for [`number_of_instances`](Self::number_of_instances) (FHIR `_numberOfInstances`):
+    /// carries `id` and/or `extension` for the primitive value.
+    #[serde(rename = "_numberOfInstances")]
+    pub number_of_instances_ext: Option<types::Element>,
+
+    /// Series access endpoint
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub endpoint: Vec<types::Reference>,
+
+    /// Body part examined
+    pub body_site: Option<types::CodeableReference>,
+
+    /// Body part laterality
+    pub laterality: Option<types::CodeableConcept>,
+
+    /// Specimen imaged
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub specimen: Vec<types::Reference>,
+
+    /// When the series started
+    pub started: Option<types::DateTime>,
+    /// Primitive extension sibling for [`started`](Self::started) (FHIR `_started`):
+    /// carries `id` and/or `extension` for the primitive value.
+    #[serde(rename = "_started")]
+    pub started_ext: Option<types::Element>,
+
+    /// Who performed the series
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub performer: Vec<ImagingStudySeriesPerformer>,
+
+    /// A single SOP instance from the series
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub instance: Vec<ImagingStudySeriesInstance>,
+}
+
+/// A single SOP instance within the series, e.g. an image, or presentation
+/// state.
+///
+/// # Examples
+///
+/// ```
+/// use fhir::r6::resources::imaging_study::ImagingStudySeriesInstance;
+/// use fhir::r6::types;
+///
+/// let value = ImagingStudySeriesInstance {
+///     number: Some(types::UnsignedInt(0)),
+///     ..Default::default()
+/// };
+/// let json = ::serde_json::to_value(&value).unwrap();
+/// // `number` is the name this serializes to on the wire.
+/// assert_eq!(json["number"], ::serde_json::json!(0));
+///
+/// let back: ImagingStudySeriesInstance = ::serde_json::from_value(json).unwrap();
+/// assert_eq!(value, back);
+/// ```
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
+#[serde(rename_all = "camelCase")]
+#[fhir_version("r6")]
+pub struct ImagingStudySeriesInstance {
+    /// Unique id for inter-element referencing
+    pub id: Option<types::String>,
+
+    /// Additional content defined by implementations
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub extension: Vec<types::Extension>,
+
+    /// Extensions that cannot be ignored even if unrecognized
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub modifier_extension: Vec<types::Extension>,
+
+    /// DICOM SOP Instance UID
+    pub uid: types::Id,
+    /// Primitive extension sibling for [`uid`](Self::uid) (FHIR `_uid`):
+    /// carries `id` and/or `extension` for the primitive value.
+    #[serde(rename = "_uid")]
+    pub uid_ext: Option<types::Element>,
+
+    /// DICOM class type
+    pub sop_class: types::Oid,
+    /// Primitive extension sibling for [`sop_class`](Self::sop_class) (FHIR `_sopClass`):
+    /// carries `id` and/or `extension` for the primitive value.
+    #[serde(rename = "_sopClass")]
+    pub sop_class_ext: Option<types::Element>,
+
+    /// The number of this instance in the series
+    pub number: Option<types::UnsignedInt>,
+    /// Primitive extension sibling for [`number`](Self::number) (FHIR `_number`):
+    /// carries `id` and/or `extension` for the primitive value.
+    #[serde(rename = "_number")]
+    pub number_ext: Option<types::Element>,
+
+    /// Description of instance
+    pub title: Option<types::String>,
+    /// Primitive extension sibling for [`title`](Self::title) (FHIR `_title`):
+    /// carries `id` and/or `extension` for the primitive value.
+    #[serde(rename = "_title")]
+    pub title_ext: Option<types::Element>,
+}
+
+/// Indicates who or what performed the series and how they were involved.
+///
+/// # Examples
+///
+/// ```
+/// use fhir::r6::resources::imaging_study::ImagingStudySeriesPerformer;
+/// use fhir::r6::types;
+///
+/// let value = ImagingStudySeriesPerformer {
+///     id: Some(types::String("abc".to_string())),
+///     ..Default::default()
+/// };
+/// let json = ::serde_json::to_value(&value).unwrap();
+/// // `id` is the name this serializes to on the wire.
+/// assert_eq!(json["id"], ::serde_json::json!("abc"));
+///
+/// let back: ImagingStudySeriesPerformer = ::serde_json::from_value(json).unwrap();
+/// assert_eq!(value, back);
+/// ```
+#[serde_with::skip_serializing_none]
+#[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
+#[serde(rename_all = "camelCase")]
+#[fhir_version("r6")]
+pub struct ImagingStudySeriesPerformer {
+    /// Unique id for inter-element referencing
+    pub id: Option<types::String>,
+
+    /// Additional content defined by implementations
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub extension: Vec<types::Extension>,
+
+    /// Extensions that cannot be ignored even if unrecognized
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub modifier_extension: Vec<types::Extension>,
+
+    /// Type of performance
+    pub function: Option<types::CodeableConcept>,
+
+    /// Who performed the series
+    pub actor: types::Reference,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    type T = ImagingStudy;
+
+    #[test]
+    fn test_default() {
+        let _ = T::default();
+    }
+
+    #[test]
+    fn test_serde_round_trip() {
+        let value = T::default();
+        let json = ::serde_json::to_value(&value).expect("to_value");
+        let back: T = ::serde_json::from_value(json).expect("from_value");
+        assert_eq!(value, back);
+    }
+}

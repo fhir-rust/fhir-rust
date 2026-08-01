@@ -1,0 +1,6 @@
+{
+  "name": "owner",
+  "definition": "http://hl7.org/fhir/SearchParameter/Account-owner",
+  "type": "reference",
+  "documentation": "Entity managing the Account"
+}

@@ -1,0 +1,40 @@
+name: Security Audit
+
+# Supply-chain gate (spec 13, R13.13): cargo-deny scans the dependency tree
+# for RUSTSEC advisories, disallowed licenses, banned crates, and untrusted
+# sources, per `deny.toml`. cargo-deny's advisory check uses the same RUSTSEC
+# database as cargo-audit but also honours the `[advisories] ignore` policy in
+# deny.toml, so it is the single gate here.
+#
+# `--all-features` is a global flag, so it precedes the subcommand. Without it
+# the graph is the default features only, which leaves the `client`
+# (reqwest/tokio/native-tls), `xml`, `r3`, `r4`, and `precise-decimal` trees
+# unscanned — and those are the dependencies that carry the network and
+# parsing surface a deployment is actually exposed through.
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  schedule:
+    # Weekly, Monday 02:00 UTC — catches advisories filed after merge.
+    - cron: '0 2 * * 1'
+
+jobs:
+  cargo-deny:
+    name: cargo deny (advisories + licenses + bans + sources)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      # `cache-bin` (on by default) restores ~/.cargo/bin, so the install
+      # below is a no-op after the first run rather than a 2-4 minute build.
+      # A distinct key keeps this job off the caches the build matrix writes.
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: cargo-deny
+      - name: Install cargo-deny
+        run: cargo install cargo-deny --locked
+      - name: Run cargo deny
+        run: cargo deny --all-features check

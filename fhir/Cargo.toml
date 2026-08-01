@@ -1,0 +1,192 @@
+[package]
+name = "fhir"
+version = "3.0.0"
+edition = "2024"
+authors = ["Joel Parker Henderson <joel@joelparkerhenderson.com>"]
+homepage = "https://github.com/fhir-rust/fhir/"
+description = "Fast Healthcare Interoperability Resources (FHIR) data model for Rust: the complete FHIR R5, R4, and R3 resources, datatypes, and code systems as serde-serializable types, plus a spec-driven code generator."
+readme = "README.md"
+repository = "https://github.com/fhir-rust/fhir/"
+license = "MIT OR Apache-2.0 OR BSD-3-Clause OR GPL-2.0-only OR GPL-3.0-only"
+keywords = ["medical", "healthcare", "hospital", "patient", "health"]
+categories = ["api-bindings", "data-structures", "science"]
+rust-version = "1.97"
+# What a consumer compiles, and nothing else (spec R13.15). `llms.txt` is
+# 22 MB of generated transcript; shipping it would put that in every
+# downstream `cargo vendor`, CI cache, and docs.rs build. It lives in the
+# repository and can be a release asset.
+include = [
+    "/src/**",
+    "/examples/**",
+    "/README.md",
+    "/LICENSE.md",
+    "/CHANGELOG.md",
+    "/llms.json",
+]
+
+[package.metadata.docs.rs]
+all-features = true
+
+[package.metadata.wix]
+upgrade-guid = "641DA961-135A-4BF8-9D03-13CA038FDAB1"
+path-guid = "0ED797FA-7E35-4848-A1E1-1E8FDB5B148E"
+license = false
+eula = false
+
+[features]
+# Which FHIR releases to compile. Each release is a complete, independent model
+# (~135k lines of generated Rust), so they are opt-in: enable only what you use.
+# `r5` is on by default because it is the release this crate shipped first.
+default = ["r5"]
+# The FHIR Release 3 (3.0.2, also called STU3) model: `fhir::r3`.
+# FHIR DSTU2 (1.0.2). Retired by HL7 but still deployed.
+# FHIR DSTU1 (0.0.82). Retired; modelled for systems that still speak it.
+r2 = ["dep:fhir-release-2"]
+r3 = ["dep:fhir-release-3"]
+# The FHIR Release 4 (4.0.1) model: `fhir::r4`.
+r4 = ["dep:fhir-release-4"]
+# The FHIR Release 5 (5.0.0) model: `fhir::r5`.
+r5 = ["dep:fhir-release-5"]
+# FHIR R6, **in ballot and not final**. Off by default: the model is generated
+# from a draft specification (6.0.0-ballot3) and can change between ballots in
+# ways a released FHIR version never would.
+r6 = ["dep:fhir-release-6"]
+# Deprecated, and now a no-op: `serde_json/arbitrary_precision` is always on,
+# because decimal precision is clinical data rather than an opt-in (R2.2).
+# Kept for one release so dependents' manifests keep building.
+precise-decimal = ["fhir-core/precise-decimal"]
+# An async FHIR REST client (`fhir::client`). Pulls in reqwest + tokio.
+client = ["fhir-core/client"]
+# FHIR XML serialization (`fhir::r3::xml`, `fhir::r4::xml`, `fhir::r5::xml`).
+# Pulls in quick-xml.
+xml = ["fhir-core/xml"]
+
+[workspace]
+members = [
+    "fhir-core",
+    "fhir-release-1",
+    "fhir-release-2",
+    "fhir-release-3",
+    "fhir-release-4",
+    "fhir-release-5",
+    "fhir-release-6",
+    # Name reservations. No specification exists for these releases; they hold
+    # the crate names and the layout, and carry the procedure for filling
+    # them in. They are not dependencies of this crate and enable no feature.
+    "fhir-release-7",
+    "fhir-release-8",
+    "fhir-release-9",
+    "fhir-release-10",
+    "fhir-derive-macros",
+]
+# The fuzz crate needs nightly-only libfuzzer-sys, so it stays out of the
+# workspace: a normal `cargo build` must not require a nightly toolchain.
+exclude = ["fuzz"]
+
+# Config for 'cargo dist'
+[workspace.metadata.dist]
+# The preferred cargo-dist version to use in CI (Cargo.toml SemVer syntax)
+cargo-dist-version = "0.14.1"
+# CI backends to support
+ci = "github"
+# The installers to generate for each app
+installers = ["shell", "powershell", "npm", "homebrew", "msi"]
+# Target platforms to build apps for (Rust target-triple syntax)
+targets = ["aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu", "x86_64-unknown-linux-musl", "x86_64-pc-windows-msvc"]
+# The archive format to use for windows builds (defaults .zip)
+windows-archive = ".tar.gz"
+# The archive format to use for non-windows builds (defaults .tar.xz)
+unix-archive = ".tar.gz"
+# Publish jobs to run in CI
+pr-run-mode = "plan"
+# Whether to install an updater program
+install-updater = false
+
+# The examples are written against a specific release's model, so each one
+# declares the feature that provides it. Without this, `cargo build
+# --all-targets --no-default-features --features r4` would try to compile the
+# R5 examples against a crate that has no `r5` module.
+[[example]]
+name = "build_patient"
+required-features = ["r5"]
+
+[[example]]
+name = "client_crud"
+required-features = ["r5", "client"]
+
+[[example]]
+name = "code_systems"
+required-features = ["r5"]
+
+[[example]]
+name = "extensions"
+required-features = ["r5"]
+
+[[example]]
+name = "operation_outcome"
+required-features = ["r5"]
+
+[[example]]
+name = "primitive_extensions"
+required-features = ["r5"]
+
+[[example]]
+name = "read_bundle"
+required-features = ["r5"]
+
+[[example]]
+name = "transaction_bundle"
+required-features = ["r5"]
+
+[[example]]
+name = "validate_resource"
+required-features = ["r5"]
+
+[[example]]
+name = "tutorial"
+required-features = ["r5"]
+
+[[example]]
+name = "r3_patient"
+required-features = ["r3"]
+
+[[example]]
+name = "r4_patient"
+required-features = ["r4"]
+
+[[example]]
+name = "r4_and_r5_side_by_side"
+required-features = ["r4", "r5"]
+
+[dependencies]
+fhir-core = { path = "fhir-core", version = "3.0.0" } # Release-independent core: Decimal, Validate, Coded, temporal, XML, client.
+fhir-release-2 = { path = "fhir-release-2", version = "3.0.0", optional = true } # The FHIR DSTU2 model (feature `r2`).
+fhir-release-3 = { path = "fhir-release-3", version = "3.0.0", optional = true } # The FHIR R3 model (feature `r3`).
+fhir-release-4 = { path = "fhir-release-4", version = "3.0.0", optional = true } # The FHIR R4 model (feature `r4`).
+fhir-release-5 = { path = "fhir-release-5", version = "3.0.0", optional = true } # The FHIR R5 model (feature `r5`).
+fhir-release-6 = { path = "fhir-release-6", version = "3.0.0", optional = true } # The FHIR R6 draft model (feature `r6`), off by default.
+fhir-derive-macros = { path = "fhir-derive-macros", version = "1.1.0" } # Procedural macros for this crate (e.g. #[derive(Validate)]).
+serde = { version = "~1.0.228", features = ["derive"] } # A serialization/deserialization framework.
+# `arbitrary_precision` is not optional: FHIR treats decimal precision as
+# clinical data (spec R2.2), and without it `0.50` serializes back as `0.5`.
+# Cargo features are additive, so making it a hard dependency feature is what
+# turns precision from a default into a guarantee. It is global to the built
+# binary — see `crate::decimal` for the trade.
+serde_json = { version = "~1.0.150", features = ["arbitrary_precision"] } # Serde serialization/deserialization of JSON data.
+serde_with = { version = "3.21" } # Serde annotation helpers for serde "with" and "serde_as"
+indoc = { version = "2.0" } # Indented string literal procedural macro.
+convert_case = { version = "0.11" } # Convert text case, such as from camel case to snake case.
+vec1 = { version = "1.12", features = ["serde"] } # Non-empty Vec for FHIR 1..* elements.
+# `time` is named explicitly for the retry backoff: it currently arrives
+# through reqwest, and a dependency we rely on but do not declare is one
+# upstream refactor away from a build break.
+
+[dev-dependencies]
+wiremock = "0.6" # Mock HTTP server for `client` unit tests.
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] } # Async runtime for tests.
+reqwest = { version = "0.12", features = ["json"] } # Used directly by the client integration test.
+
+# The profile that 'cargo dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"

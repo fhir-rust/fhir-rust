@@ -1,0 +1,10 @@
+[book]
+title = "The fhir crate — a guide to FHIR in Rust"
+authors = ["Joel Parker Henderson"]
+description = "A task-oriented guide to the `fhir` crate: the HL7 FHIR R5 and R4 data models in idiomatic, serde-serializable Rust."
+language = "en"
+src = "src"
+
+[output.html]
+default-theme = "rust"
+git-repository-url = "https://github.com/joelparkerhenderson/fhir-rust-crate"

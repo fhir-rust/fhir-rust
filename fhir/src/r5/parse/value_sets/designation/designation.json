@@ -1,0 +1,8 @@
+{
+  "language": "en",
+  "use": {
+    "system": "http://acme.com/config/fhir/codesystems/internal",
+    "code": "internal-label"
+  },
+  "value": "Obdurate Labs uses this with both kinds of units..."
+}
