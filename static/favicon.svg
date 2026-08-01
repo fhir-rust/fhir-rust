@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="fhir-rust">
+	<!-- A table: rows and a column divider. The one idea the project rests on
+	     is that a FHIR resource becomes real relational tables, not a blob. -->
+	<rect width="64" height="64" rx="14" fill="#1f2937" />
+	<g fill="#f8fafc">
+		<rect x="14" y="16" width="36" height="8" rx="2" />
+	</g>
+	<g fill="#94a3b8">
+		<rect x="14" y="28" width="15" height="6" rx="2" />
+		<rect x="35" y="28" width="15" height="6" rx="2" />
+		<rect x="14" y="38" width="15" height="6" rx="2" />
+		<rect x="35" y="38" width="15" height="6" rx="2" />
+	</g>
+	<g fill="#38bdf8">
+		<rect x="14" y="48" width="15" height="6" rx="2" />
+		<rect x="35" y="48" width="15" height="6" rx="2" />
+	</g>
+</svg>

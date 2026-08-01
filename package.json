@@ -1,0 +1,27 @@
+{
+	"name": "fhir-rust.github.io",
+	"version": "0.1.0",
+	"description": "The fhir-rust website: FHIR in Rust, stored as real relational tables.",
+	"type": "module",
+	"private": "true",
+	"scripts": {
+		"sync": "node bin/sync-content.mjs && node bin/sync-lily.mjs",
+		"sync:content": "node bin/sync-content.mjs",
+		"sync:lily": "node bin/sync-lily.mjs",
+		"dev": "vite dev",
+		"build": "vite build",
+		"preview": "vite preview",
+		"check": "svelte-kit sync"
+	},
+	"devDependencies": {
+		"@sveltejs/adapter-static": "^3.0.10",
+		"@sveltejs/kit": "^2.70.2",
+		"@sveltejs/vite-plugin-svelte": "^7.2.0",
+		"svelte": "^5.56.8",
+		"vite": "^8.2.0"
+	},
+	"dependencies": {
+		"github-slugger": "^2.0.0",
+		"marked": "^18.0.7"
+	}
+}
