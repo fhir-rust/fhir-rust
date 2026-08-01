@@ -1,0 +1,36 @@
+# Fuzz targets for spec T11.9: adversarial input must not crash a server that
+# accepts documents and queries from the network.
+#
+# Kept out of the workspace so a normal `cargo build` does not need the
+# nightly-only libfuzzer-sys. Run with:
+#
+#     cargo +nightly fuzz run search_sql -- -max_total_time=60
+#
+[package]
+name = "fhir-postgresql-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+serde_json = "1"
+fhir-postgresql-map = { path = "../crates/fhir-postgresql-map" }
+fhir-postgresql-store = { path = "../crates/fhir-postgresql-store" }
+
+[[bin]]
+name = "search_sql"
+path = "fuzz_targets/search_sql.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "shred"
+path = "fuzz_targets/shred.rs"
+test = false
+doc = false
+bench = false

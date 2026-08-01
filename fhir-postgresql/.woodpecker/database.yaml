@@ -1,0 +1,87 @@
+# Live-database tests against real PostgreSQL.
+#
+# fhir-postgresql's guarantees are database guarantees — snapshot isolation, advisory
+# locks, the append-only trigger, the hash chain, index-using search plans.
+# None of them can be tested without a server, so this pipeline is not
+# optional coverage; it is where most of the suite actually runs.
+when:
+  - event: push
+    branch: main
+  - event: pull_request
+  - event: manual
+
+variables:
+  - &rust "docker.io/library/rust:1"
+
+services:
+  - name: postgres
+    image: docker.io/library/postgres:18
+    environment:
+      POSTGRES_USER: fhir-postgresql
+      POSTGRES_PASSWORD: fhir-postgresql
+      POSTGRES_DB: fhir-postgresql
+      # max_locks_per_transaction: the suites install several version schemas
+      # and touch thousands of relations per transaction.
+      # max_parallel_maintenance_workers=0: building thousands of indexes
+      # spawns parallel workers that allocate dynamic shared memory, and
+      # /dev/shm in a container is small — the failure reads as "could not
+      # resize shared memory segment ... No space left on device", which
+      # sounds like a full disk and is not. The indexes here are all on empty
+      # tables, so parallel builds buy nothing.
+      POSTGRES_INITDB_ARGS: >-
+        -c max_locks_per_transaction=512
+        -c max_parallel_maintenance_workers=0
+
+steps:
+  - name: wait-for-postgres
+    image: docker.io/library/postgres:18
+    commands:
+      - until pg_isready -h postgres -U fhir-postgresql -t 2; do sleep 1; done
+      - echo "postgres is accepting connections"
+
+  # The live tests need the FHIR definitions (to generate the maps) and the
+  # example corpora (to gate round-tripping against real resources).
+  - name: fetch-spec
+    image: docker.io/library/debian:stable-slim
+    commands:
+      - apt-get update -qq && apt-get install -y -qq curl unzip ca-certificates
+      - mkdir -p spec-cache corpus
+      - |
+        for pair in "r5 R5" "r4 R4" "r3 STU3"; do
+          set -- $pair
+          mkdir -p "spec-cache/$1/fhir-definitions-json"
+          curl -sSL "https://hl7.org/fhir/$2/definitions.json.zip" -o defs.zip
+          unzip -qo defs.zip -d "spec-cache/$1/fhir-definitions-json"
+          curl -sSL "https://hl7.org/fhir/$2/examples-json.zip" -o ex.zip
+          cdir=$(echo "$1" | sed 's/r3/stu3/')
+          mkdir -p "corpus/$cdir"
+          unzip -qo ex.zip -d "corpus/$cdir"
+        done
+
+  - name: live-tests
+    image: *rust
+    environment:
+      CARGO_TERM_COLOR: always
+      CARGO_HOME: /woodpecker/src/.cargo
+      CARGO_TARGET_DIR: /woodpecker/src/target
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGUSER: fhir-postgresql
+      PGPASSWORD: fhir-postgresql
+      FHIR_POSTGRESQL_TEST_DB: fhir-postgresql
+      FHIR_POSTGRESQL_SPEC_DIR: /woodpecker/src/spec-cache
+      FHIR_POSTGRESQL_CORPUS_DIR: /woodpecker/src/corpus
+      FHIR_POSTGRESQL_TEST_CORPUS_LIMIT: "400"
+      FHIR_POSTGRESQL_PROPTEST_CASES: "10000"
+    commands:
+      - cargo test --release --locked -p fhir-postgresql-gen --test proptest_roundtrip -- --nocapture
+      # One test thread: several of these install a full FHIR schema and two
+      # doing so concurrently can exhaust the server's lock budget.
+      - cargo test --release --locked -p fhir-postgresql-store -- --nocapture --test-threads=1
+      # Keyed run: without it the MAC path is never executed, and the audit
+      # test passes unkeyed, so the gap would be silent (M3.16b). The key is
+      # a throwaway constant, deliberately committed — it protects nothing,
+      # and a real key here would be in reach of every fork's runner.
+      - FHIR_POSTGRESQL_CHAIN_KEY=4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f
+        FHIR_POSTGRESQL_CHAIN_KEY_ID=ci
+        cargo test --release --locked -p fhir-postgresql-store --test audit

@@ -1,0 +1,39 @@
+[package]
+name = "fhir-postgresql-store"
+description = "PostgreSQL storage layer for fhir-postgresql"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+fhir-postgresql-map.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tokio-postgres.workspace = true
+deadpool-postgres.workspace = true
+tracing.workspace = true
+sha2.workspace = true
+sha3.workspace = true
+hmac.workspace = true
+subtle.workspace = true
+zeroize.workspace = true
+getrandom.workspace = true
+futures-util = "0.3"
+tokio-postgres-rustls = "0.14"
+rustls = "0.23"
+rustls-native-certs = "0.8"
+
+[dev-dependencies]
+fhir-postgresql-gen.workspace = true
+# `chain_portability.rs` reads history rows over a plain connection, because a
+# test that a *foreign* verifier can recompute the chain must not go through the
+# store that wrote it.
+tokio-postgres.workspace = true
+tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
+tracing.workspace = true
+tracing-subscriber.workspace = true
