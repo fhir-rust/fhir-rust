@@ -1,0 +1,30 @@
+[package]
+name = "fhir-mssql-store"
+description = "SQL Server storage layer for fhir-mssql (scaffold: no store yet)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+fhir-mssql-map.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+sha2.workspace = true
+sha3.workspace = true
+hmac.workspace = true
+subtle.workspace = true
+zeroize.workspace = true
+getrandom.workspace = true
+
+[dev-dependencies]
+fhir-mssql-map.workspace = true
+fhir-mssql-gen.workspace = true
+tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
+tracing.workspace = true
+tracing-subscriber.workspace = true

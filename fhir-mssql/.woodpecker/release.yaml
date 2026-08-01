@@ -1,0 +1,57 @@
+# Tag → build artifacts and attach them to a Codeberg release.
+#
+# As on GitHub, tagging publishes *artifacts* only. Pushing to crates.io is
+# not automated from a tag: a crates.io version is immutable, and a tag is
+# easy to create by accident.
+when:
+  - event: tag
+    ref: refs/tags/v*
+
+variables:
+  - &rust "docker.io/library/rust:1"
+
+steps:
+  # A statically linked musl binary is the one that runs anywhere, which
+  # matters more than host-native tuning for a deployable server. The map
+  # assets are compiled in, so the artifact is one self-contained file.
+  - name: build
+    image: *rust
+    environment:
+      CARGO_TERM_COLOR: always
+      CARGO_HOME: /woodpecker/src/.cargo
+      CARGO_TARGET_DIR: /woodpecker/src/target
+    commands:
+      - apt-get update -qq && apt-get install -y -qq musl-tools
+      - rustup target add x86_64-unknown-linux-musl
+      - cargo build --release --locked -p fhir-mssql --target x86_64-unknown-linux-musl
+      - version="${CI_COMMIT_TAG#v}"
+      - name="fhir-mssql-$version-x86_64-unknown-linux-musl"
+      - mkdir -p "dist/$name"
+      - cp target/x86_64-unknown-linux-musl/release/fhir-mssql "dist/$name/"
+      - cp README.md CHANGELOG.md LICENSE-MIT LICENSE-APACHE "dist/$name/"
+      - tar -C dist -czf "dist/$name.tar.gz" "$name"
+      - cd dist && sha256sum "$name.tar.gz" > "$name.tar.gz.sha256"
+
+  # The bill of materials ships with the release, not only with the CI run
+  # that built it — a CI log ages out, a release artifact does not.
+  - name: sbom
+    image: *rust
+    environment:
+      CARGO_HOME: /woodpecker/src/.cargo
+      CARGO_TARGET_DIR: /woodpecker/src/target
+    commands:
+      - cargo install cargo-cyclonedx --locked
+      - cargo cyclonedx --format json --all
+      - find . -name '*.cdx.json' -exec cp {} dist/ \;
+
+  - name: publish
+    image: docker.io/woodpeckerci/plugin-release
+    settings:
+      api_key:
+        from_secret: codeberg_token
+      files:
+        - "dist/*.tar.gz"
+        - "dist/*.sha256"
+        - "dist/*.cdx.json"
+      title: ${CI_COMMIT_TAG}
+      note: CHANGELOG.md

@@ -1,0 +1,94 @@
+# Live-database tests against real Microsoft SQL Server.
+#
+# fhir-mssql's guarantees are database guarantees — the generated T-SQL parses
+# and installs, the append-only triggers refuse writes, index keys fit inside
+# SQL Server's 900-byte budget. None of them can be tested without the real
+# engine, so this pipeline is not optional coverage.
+#
+# It provisioned `mysql:8.4` until 2026-07-31, and invoked `--test mysql_ddl`,
+# a target that does not exist in this package — so the job failed on
+# `no test target named mysql_ddl` and had never executed a single assertion of
+# the T-SQL it exists to verify. See spec O10.12 and C0.10; audit F-06.
+#
+# See doc/containers.md to run the same thing locally from the same pinned
+# image.
+when:
+  - event: push
+    branch: main
+  - event: pull_request
+  - event: manual
+
+variables:
+  - &rust "docker.io/library/rust:1"
+  - &sqlserver "mcr.microsoft.com/mssql/server:2022-latest"
+
+services:
+  - name: db
+    image: *sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "Fhir-Mssql-CI-2026!"
+      MSSQL_PID: Developer
+
+steps:
+  # SQL Server accepts TCP connections well before it finishes recovering the
+  # system databases, and a `CREATE SCHEMA` issued in that window fails in a way
+  # that looks like a DDL bug. Probe with a real query rather than a port check.
+  - name: wait-for-db
+    image: *sqlserver
+    environment:
+      SA_PASSWORD: "Fhir-Mssql-CI-2026!"
+    commands:
+      - |
+        for i in $(seq 1 60); do
+          if /opt/mssql-tools18/bin/sqlcmd -C -S db -U sa -P "$SA_PASSWORD" -Q 'SELECT 1' >/dev/null 2>&1; then
+            echo "SQL Server is accepting queries"; exit 0
+          fi
+          sleep 2
+        done
+        echo "SQL Server did not become ready" >&2; exit 1
+
+  # The live tests need the FHIR definitions (to generate the maps) and the
+  # example corpora (to gate round-tripping against real resources).
+  - name: fetch-spec
+    image: docker.io/library/debian:stable-slim
+    commands:
+      - apt-get update -qq && apt-get install -y -qq curl unzip ca-certificates
+      - mkdir -p spec-cache corpus
+      - |
+        for pair in "r5 R5" "r4 R4" "r3 STU3"; do
+          set -- $pair
+          mkdir -p "spec-cache/$1/fhir-definitions-json"
+          curl -sSL "https://hl7.org/fhir/$2/definitions.json.zip" -o defs.zip
+          unzip -qo defs.zip -d "spec-cache/$1/fhir-definitions-json"
+          curl -sSL "https://hl7.org/fhir/$2/examples-json.zip" -o ex.zip
+          cdir=$(echo "$1" | sed 's/r3/stu3/')
+          mkdir -p "corpus/$cdir"
+          unzip -qo ex.zip -d "corpus/$cdir"
+        done
+
+  - name: live-tests
+    image: *rust
+    environment:
+      CARGO_TERM_COLOR: always
+      CARGO_HOME: /woodpecker/src/.cargo
+      CARGO_TARGET_DIR: /woodpecker/src/target
+      FHIR_MSSQL_TEST_DSN: "server=tcp:db,1433;user=sa;password=Fhir-Mssql-CI-2026!;TrustServerCertificate=true"
+      # A skip is indistinguishable from a pass in a CI summary (T11.12), and
+      # this is the port's only live evidence. Make an absent or unreachable
+      # database a failure rather than a quiet success (M14.30).
+      FHIR_MSSQL_REQUIRE_DB: "1"
+      FHIR_MSSQL_DDL_FULL: "1"
+      FHIR_MSSQL_SPEC_DIR: /woodpecker/src/spec-cache
+      FHIR_MSSQL_CORPUS_DIR: /woodpecker/src/corpus
+      FHIR_MSSQL_TEST_CORPUS_LIMIT: "400"
+      FHIR_MSSQL_PROPTEST_CASES: "10000"
+    commands:
+      # Note the target name: `mssql_ddl`, which is the file that exists.
+      - cargo test --release --locked -p fhir-mssql-map --test mssql_ddl -- --nocapture --test-threads=1
+      - cargo test --release --locked -p fhir-mssql-gen --test proptest_roundtrip -- --nocapture
+
+# There is deliberately no store step. `crates/fhir-mssql-store` contains
+# `lib.rs` and `chain.rs` and no implementation (M14.28), so a step invoking it
+# would report a pass for code that does not exist. That gap belongs in the
+# conformance matrix, not in a green pipeline.

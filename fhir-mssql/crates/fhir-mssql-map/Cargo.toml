@@ -1,0 +1,22 @@
+[package]
+name = "fhir-mssql-map"
+description = "Relational map model and generic shred/reconstruct engine for fhir-mssql"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+flate2.workspace = true
+unicode-normalization.workspace = true
+
+[dev-dependencies]
+tiberius.workspace = true
+tokio-util.workspace = true
+tokio = { workspace = true, features = ["rt-multi-thread", "macros", "net"] }
