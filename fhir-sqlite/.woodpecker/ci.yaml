@@ -1,0 +1,111 @@
+# Build, lint, test — the mirror of .github/workflows/ci.yml `test` and
+# `msrv` jobs, so a Codeberg push is gated exactly as a GitHub push is.
+#
+# Woodpecker shares the workspace between steps of one pipeline but gives no
+# cache between pipelines, so CARGO_HOME and CARGO_TARGET_DIR are pinned into
+# the workspace: the steps below then reuse one download and one target dir
+# instead of rebuilding the dependency graph four times.
+when:
+  - event: push
+    branch: main
+  - event: pull_request
+  - event: manual
+
+variables:
+  - &rust "docker.io/library/rust:1"
+  - &cargo_env
+    CARGO_TERM_COLOR: always
+    CARGO_HOME: /woodpecker/src/.cargo
+    CARGO_TARGET_DIR: /woodpecker/src/target
+
+steps:
+  - name: fmt
+    image: *rust
+    environment: *cargo_env
+    commands:
+      - rustup component add rustfmt
+      - cargo fmt --all --check
+
+  - name: clippy
+    image: *rust
+    environment: *cargo_env
+    commands:
+      - rustup component add clippy
+      - cargo clippy --all-targets --locked -- -D warnings
+
+  # Unit tests pass with no database and no spec packages present; the
+  # corpus- and spec-driven tests skip themselves when their inputs are
+  # absent. The live-database run is .woodpecker/database.yaml.
+  - name: test
+    image: *rust
+    environment: *cargo_env
+    commands:
+      - cargo test --workspace --locked
+
+  # `rust-version` in Cargo.toml is a promise to downstream users; without a
+  # build on exactly that toolchain it is only a claim, and it breaks silently
+  # the first time anyone uses a newer language feature.
+  - name: msrv
+    image: *rust
+    environment: *cargo_env
+    commands:
+      - msrv=$(grep -m1 '^rust-version' Cargo.toml | sed 's/.*"\(.*\)".*/\1/')
+      - echo "MSRV is $msrv"
+      - rustup toolchain install "$msrv" --profile minimal
+      - cargo "+$msrv" check --workspace --all-targets --locked
+
+  # A crates.io version is immutable, so a version already published must
+  # match this tree. Otherwise the published artifact and the source diverge
+  # while every local build stays green — a local build resolves the path
+  # dependency and never fetches the registry copy — and it surfaces only
+  # when someone packages a dependent.
+  # T11.9: adversarial input must be fuzzed, and the targets must be run.
+  # `search_sql` asserts that no attacker-controlled value reaches the SQL —
+  # every one must be a bind — which is the property that makes injection
+  # impossible rather than merely unlikely.
+  - name: fuzz
+    image: *rust
+    environment: *cargo_env
+    commands:
+      - rustup toolchain install nightly --profile minimal
+      - cargo install cargo-fuzz --locked
+      - |
+        for target in search_sql shred; do
+          mkdir -p /tmp/corpus/$target
+          cp fuzz/seeds/$target/* /tmp/corpus/$target/ 2>/dev/null || true
+          cargo +nightly fuzz run "$target" /tmp/corpus/$target -- \
+            -max_total_time=120 -rss_limit_mb=4096
+        done
+
+  - name: published-versions
+    image: *rust
+    environment: *cargo_env
+    commands:
+      - version=$(grep -m1 '^version' Cargo.toml | sed 's/.*"\(.*\)".*/\1/')
+      - echo "workspace version is $version"
+      - fail=0
+      - |
+        for crate in fhir-sqlite-map fhir-sqlite-gen fhir-sqlite-store; do
+          url="https://static.crates.io/crates/$crate/$crate-$version.crate"
+          if ! curl -sfL "$url" -o /tmp/pub.crate; then
+            echo "$crate $version: unpublished, nothing to compare"
+            continue
+          fi
+          rm -rf /tmp/pubx && mkdir -p /tmp/pubx
+          tar xzf /tmp/pub.crate -C /tmp/pubx
+          if diff -rq "/tmp/pubx/$crate-$version/src" "crates/$crate/src" >/dev/null 2>&1; then
+            echo "$crate $version: matches crates.io"
+          else
+            echo "ERROR: $crate $version is published but differs from this tree; bump it"
+            diff -rq "/tmp/pubx/$crate-$version/src" "crates/$crate/src" || true
+            fail=1
+          fi
+        done
+        exit "$fail"
+
+  - name: book
+    image: *rust
+    environment: *cargo_env
+    commands:
+      - curl -sSL https://github.com/rust-lang/mdBook/releases/download/v0.4.52/mdbook-v0.4.52-x86_64-unknown-linux-gnu.tar.gz | tar -xz
+      - ./mdbook build book

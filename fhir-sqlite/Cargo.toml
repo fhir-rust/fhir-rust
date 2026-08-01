@@ -1,0 +1,48 @@
+[workspace]
+# The fuzz crate needs nightly-only libfuzzer-sys, so it stays out of the
+# workspace: a normal `cargo build` must not require a nightly toolchain.
+exclude = ["fuzz"]
+resolver = "3"
+members = [
+    "crates/fhir-sqlite-map",
+    "crates/fhir-sqlite-gen",
+    "crates/fhir-sqlite-store",
+]
+
+[workspace.package]
+version = "0.1.0"
+keywords = ["fhir", "healthcare", "sqlite", "hl7", "medical"]
+categories = ["database", "science", "command-line-utilities"]
+edition = "2024"
+license = "MIT OR Apache-2.0 OR BSD-3-Clause OR GPL-2.0-only OR GPL-3.0-only"
+repository = "https://github.com/fhir-rust/fhir-sqlite"
+rust-version = "1.90"
+
+[workspace.dependencies]
+fhir-sqlite-map = { path = "crates/fhir-sqlite-map", version = "0.1.0" }
+fhir-sqlite-gen = { path = "crates/fhir-sqlite-gen", version = "0.1.0" }
+fhir-sqlite-store = { path = "crates/fhir-sqlite-store", version = "0.1.0" }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["arbitrary_precision", "preserve_order"] }
+thiserror = "2"
+anyhow = "1"
+flate2 = "1"
+unicode-normalization = "0.1"
+sha2 = "0.10"
+sha3 = "0.10"
+hmac = "0.12"
+subtle = "2"
+zeroize = { version = "1", features = ["zeroize_derive"] }
+getrandom = "0.3"
+clap = { version = "4", features = ["derive", "env"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal", "sync", "time"] }
+# The SQLite driver. `bundled` compiles a known SQLite rather than linking
+# whatever the host ships: the generated DDL depends on version-specific
+# behaviour, so the engine is pinned the same way doc/containers.md pins the
+# sqlite3 CLI. Sync API, so calls are wrapped in spawn_blocking.
+rusqlite = { version = "0.32", features = ["bundled"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[profile.release]
+lto = "thin"

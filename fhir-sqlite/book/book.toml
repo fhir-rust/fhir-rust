@@ -1,0 +1,8 @@
+[book]
+title = "fhir-sqlite — FHIR in PostgreSQL, relationally"
+authors = ["Joel Parker Henderson"]
+language = "en"
+src = "src"
+
+[output.html]
+default-theme = "light"

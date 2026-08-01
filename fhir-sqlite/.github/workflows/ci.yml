@@ -1,0 +1,210 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: Build, lint, test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --all --check
+      - run: cargo clippy --all-targets -- -D warnings
+      # Unit tests pass with no database and no spec packages present;
+      # the corpus/spec-driven tests skip themselves when inputs are absent.
+      - run: cargo test --workspace
+      - name: Build the book
+        run: |
+          curl -sSL https://github.com/rust-lang/mdBook/releases/download/v0.4.52/mdbook-v0.4.52-x86_64-unknown-linux-gnu.tar.gz | tar -xz
+          ./mdbook build book
+
+  database:
+    name: Live SQLite tests
+    runs-on: ubuntu-latest
+    # No service container: SQLite is a library, not a server. What CI pins
+    # instead is the sqlite3 *version*, because SQLite's DDL features move
+    # between releases and "passed on the runner's default" is a weaker claim
+    # than "passed on a known version". doc/containers.md does the same locally.
+    env:
+      FHIR_SQLITE_TEST_DB: ${{ github.workspace }}/target/ci.sqlite
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install sqlite3
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends sqlite3
+          sqlite3 --version
+      # The live tests need the FHIR definitions and an example corpus.
+      - name: Fetch FHIR spec packages and example corpora
+        run: |
+          mkdir -p spec-cache corpus
+          for pair in "r5 R5" "r4 R4" "r3 STU3"; do
+            set -- $pair
+            mkdir -p "spec-cache/$1/fhir-definitions-json"
+            curl -sSL "https://hl7.org/fhir/$2/definitions.json.zip" -o defs.zip
+            unzip -qo defs.zip -d "spec-cache/$1/fhir-definitions-json"
+            curl -sSL "https://hl7.org/fhir/$2/examples-json.zip" -o ex.zip
+            cdir=$(echo "$1" | sed 's/r3/stu3/')
+            mkdir -p "corpus/$cdir"
+            unzip -qo ex.zip -d "corpus/$cdir"
+          done
+      # Installs every generated schema — all three FHIR versions, thousands of
+      # tables each — into a real SQLite database. This is the job's core claim
+      # today, and it does not depend on the store port (T64).
+      - name: Generated DDL installs in real SQLite
+        run: cargo test --release -p fhir-sqlite-map --test sqlite_ddl -- --nocapture --test-threads=1
+      - name: Round-trip and property tests + 10k proptests
+        env:
+          FHIR_SQLITE_SPEC_DIR: ${{ github.workspace }}/spec-cache
+          FHIR_SQLITE_CORPUS_DIR: ${{ github.workspace }}/corpus
+          FHIR_SQLITE_TEST_CORPUS_LIMIT: "400"
+          FHIR_SQLITE_PROPTEST_CASES: "10000"
+        run: |
+          set -o pipefail
+          cargo test --release -p fhir-sqlite-gen --test proptest_roundtrip -- --nocapture
+      # NOTE: the store suite still speak tokio-postgres (T64), so
+      # they self-skip here rather than exercising SQLite. This step exists so
+      # the gap is visible in the run rather than inferred from its absence.
+      - name: Store and server suites (expected to skip until T64)
+        env:
+          FHIR_SQLITE_SPEC_DIR: ${{ github.workspace }}/spec-cache
+          FHIR_SQLITE_CORPUS_DIR: ${{ github.workspace }}/corpus
+        run: |
+          echo "::notice::store live suite are not yet ported to SQLite (T64); they self-skip"
+          cargo test --release -p fhir-sqlite-store -- --nocapture --test-threads=1
+
+  # The TLS-only database job from the PostgreSQL original is removed here, not
+  # ported. A SQLite database is a local file; there is no
+  # transport to secure, and the store's SslPolicy surface does not apply
+  # (spec M14.25). Keeping a PostgreSQL TLS job would have tested nothing this
+  # project ships. At-rest protection is tracked separately.
+
+  msrv:
+    name: Minimum supported Rust version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # `rust-version` in Cargo.toml is a promise to downstream users. Without
+      # a job that builds on exactly that toolchain it is only a claim, and it
+      # breaks silently the first time anyone uses a newer language feature.
+      - name: Read rust-version from Cargo.toml
+        id: msrv
+        run: |
+          v=$(grep -m1 '^rust-version' Cargo.toml | sed 's/.*"\(.*\)".*/\1/')
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          echo "MSRV is $v"
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ steps.msrv.outputs.version }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: msrv-${{ steps.msrv.outputs.version }}
+      - run: cargo check --workspace --all-targets --locked
+
+  fuzz:
+    name: Fuzz (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [search_sql, shred]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: fuzz-${{ matrix.target }}
+      # T11.9: targets that are committed but never executed prove nothing.
+      #
+      # `search_sql` checks a property, not just the absence of a crash:
+      # every attacker-controlled search value must end up in the bind list,
+      # never spliced into the SQL. That separation is what makes injection
+      # impossible, and a fuzzer can check it directly. Verified by breaking
+      # it — interpolating one value into the query fails the target at once.
+      #
+      # Both targets read a committed two-resource map, so neither needs a
+      # specification download or a database.
+      - run: cargo install cargo-fuzz --locked
+      - name: Run ${{ matrix.target }}
+        run: |
+          mkdir -p /tmp/corpus/${{ matrix.target }}
+          cp fuzz/seeds/${{ matrix.target }}/* /tmp/corpus/${{ matrix.target }}/ 2>/dev/null || true
+          cargo +nightly fuzz run ${{ matrix.target }} /tmp/corpus/${{ matrix.target }} -- \
+            -max_total_time=120 -rss_limit_mb=4096
+      - name: Upload any crash artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-artifacts-${{ matrix.target }}
+          path: fuzz/artifacts/
+
+  published-versions:
+    name: No version diverges from crates.io
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      # A crates.io version is immutable. If this tree carries a version that
+      # is already published, the two must agree — otherwise the published
+      # artifact and the source disagree while every local build stays green,
+      # because a local build resolves the path dependency and never fetches
+      # the registry copy. The divergence then surfaces only when someone
+      # packages a dependent, as an error about code they did not touch.
+      - name: Compare each published version against this tree
+        run: |
+          fail=0
+          for crate in fhir-sqlite-map fhir-sqlite-gen fhir-sqlite-store; do
+            version=$(cargo metadata --format-version 1 --no-deps \
+              | python3 -c "import json,sys;print(next(p['version'] for p in json.load(sys.stdin)['packages'] if p['name']=='$crate'))")
+            url="https://static.crates.io/crates/$crate/$crate-$version.crate"
+            if ! curl -sfL "$url" -o /tmp/pub.crate; then
+              echo "$crate $version: unpublished, nothing to compare"
+              continue
+            fi
+            rm -rf /tmp/pubx && mkdir -p /tmp/pubx
+            tar xzf /tmp/pub.crate -C /tmp/pubx
+            if diff -rq "/tmp/pubx/$crate-$version/src" "crates/$crate/src" >/dev/null 2>&1; then
+              echo "$crate $version: matches crates.io"
+            else
+              echo "::error::$crate $version is published but differs from this tree; bump it"
+              diff -rq "/tmp/pubx/$crate-$version/src" "crates/$crate/src" || true
+              fail=1
+            fi
+          done
+          exit "$fail"
+
+  supply-chain:
+    name: Advisories, licenses, SBOM
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      # A component handling clinical data is part of someone's IEC 62304
+      # file (spec O10.10). This evidence is cheap to keep green continuously
+      # and expensive to reconstruct after the fact.
+      - name: cargo-deny (advisories, licenses, sources, bans)
+        uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check
+      - name: CycloneDX SBOM
+        run: |
+          cargo install cargo-cyclonedx --locked
+          cargo cyclonedx --format json --all
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: "**/*.cdx.json"
