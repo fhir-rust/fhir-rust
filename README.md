@@ -81,12 +81,22 @@ Requirement ids written in backticks — `` `C0.5` ``, `` `X15.6` ``, `` `F-01` 
 
 ## Repository URLs
 
-`src/lib/site.js` holds every outbound repository URL. **Only `REPO_CRATE` is
-verified** — `fhir-rust-crate` is the one sibling checkout with a git remote. At
-the time this site was written `fhir-databases` and `fhir-store` had no remote,
-so their URLs assume they will be published under the `fhir-rust` organization
-that owns this site. If they land elsewhere, change them there; nothing else
-hard-codes them.
+`src/lib/site.js` holds every outbound repository URL. Checked against the
+GitHub API on 2026-08-01:
+
+| Constant | Status |
+| --- | --- |
+| `REPO_CRATE` | exists — `fhir-rust/fhir-rust-crate` |
+| `REPO_SITE` | exists — this repository |
+| `REPO_OPENEHR` | exists — `openehr-rust/openehr` |
+| `REPO_DATABASES` | **404 — not published yet** |
+| `REPO_STORE` | **404 — not published yet** |
+
+`fhir-databases` is the repository this site renders, so until it exists every
+rewritten source link and every "Edit this page on GitHub" 404s. The name
+assumes it will be published alongside the crate, which is where
+`fhir-rust-crate` landed. Change it in `site.js` if it goes elsewhere — nothing
+else hard-codes it.
 
 ## Deploying
 

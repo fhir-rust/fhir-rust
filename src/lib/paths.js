@@ -1,7 +1,7 @@
 // Mapping between vendored content files and site routes.
 // Content paths are always relative to content/, e.g. "doc/storage-model.md".
 
-import { REPOSITORY, REPO_OPENEHR } from './site.js';
+import { ORG_OPENEHR, REPOSITORY, REPO_OPENEHR } from './site.js';
 
 /** Resolve `href` (as written inside `fromFile`) to a content path. */
 export function contentPath(href, fromFile) {
@@ -51,11 +51,19 @@ export function routeFor(path) {
 // rather than leaving a relative href that 404s on this site.
 const looksLikeFile = (path) => /\.[a-z0-9]+$/i.test(path);
 
+const blobOrTree = (repo, path) =>
+	path ? `${repo}/${looksLikeFile(path) ? 'blob' : 'tree'}/main/${path}` : repo;
+
 /** GitHub URL for a content path this site does not publish. */
 export function sourceUrl(path) {
-	const repo = path.startsWith('openehr') ? REPO_OPENEHR : REPOSITORY;
-	const kind = looksLikeFile(path) ? 'blob' : 'tree';
-	return `${repo}/${kind}/main/${path}`;
+	// The openEHR family is a separate workspace. Its `openehr` crate is a
+	// repository of its own, so `openehr/spec/index.md` is `spec/index.md`
+	// there; the rest of that family is unpublished and gets the org page.
+	if (path === 'openehr' || path.startsWith('openehr/')) {
+		return blobOrTree(REPO_OPENEHR, path.slice('openehr/'.length));
+	}
+	if (path.startsWith('openehr')) return ORG_OPENEHR;
+	return blobOrTree(REPOSITORY, path);
 }
 
 /** Rewrite a Markdown link into a site link, leaving external links untouched. */

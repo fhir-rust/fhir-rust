@@ -7,19 +7,28 @@ export const SITE_TAGLINE = 'FHIR in Rust, stored as real relational tables';
 
 // Repository URLs.
 //
-// Only REPO_CRATE is verified: fhir-rust-crate is the one sibling checkout
-// with a git remote (git@github.com:fhir-rust-crate/fhir-rust-crate.git).
-// fhir-databases and fhir-store have no remote yet, so the URLs below assume
-// they will be published under the same organization that owns this site.
-// If they land elsewhere, change them here — nothing else hard-codes them.
-export const REPO_DATABASES = 'https://github.com/fhir-rust/fhir-databases';
-export const REPO_CRATE = 'https://github.com/fhir-rust-crate/fhir-rust-crate';
-export const REPO_STORE = 'https://github.com/fhir-rust/fhir-store';
+// Verified against the GitHub API on 2026-08-01: REPO_CRATE and REPO_SITE
+// exist. The old fhir-rust-crate/fhir-rust-crate now 301s to the fhir-rust
+// organization, so the canonical URL is used here.
+export const REPO_CRATE = 'https://github.com/fhir-rust/fhir-rust-crate';
 export const REPO_SITE = 'https://github.com/fhir-rust/fhir-rust.github.io';
 
-// The openEHR family lives in a separate workspace. The documents synced into
-// content/ mention it, so unresolved openehr* links need somewhere to go.
-export const REPO_OPENEHR = 'https://github.com/openehr-rust/openehr-databases';
+// NOT YET PUBLISHED. These two 404 today: neither sibling checkout has a git
+// remote, and neither repository exists in the fhir-rust organization. The
+// names assume they will be published alongside the crate, which is where
+// fhir-rust-crate landed. Every rewritten source link and every "Edit this
+// page on GitHub" resolves through REPO_DATABASES, so it starts working the
+// moment that repository exists — and nothing else hard-codes it.
+export const REPO_DATABASES = 'https://github.com/fhir-rust/fhir-databases';
+export const REPO_STORE = 'https://github.com/fhir-rust/fhir-store';
+
+// The openEHR family lives in a separate workspace, and only its `openehr`
+// crate is published. Paths below `openehr/` resolve into that repository;
+// anything else in that family (openehr-store, openehr-sqlite, …) has no
+// repository yet and falls back to the organization page, which at least
+// exists.
+export const REPO_OPENEHR = 'https://github.com/openehr-rust/openehr';
+export const ORG_OPENEHR = 'https://github.com/openehr-rust';
 
 /** The repository whose Markdown this site renders. */
 export const REPOSITORY = REPO_DATABASES;
