@@ -1,0 +1,29 @@
+[package]
+name = "fhir-store"
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0 OR BSD-3-Clause OR GPL-2.0-only OR GPL-3.0-only"
+description = "The engine-agnostic half of FHIR persistence: tamper-evident audit chain, attribution records, and the value types every SQL port returns"
+readme = "README.md"
+repository = "https://github.com/fhir-rust/fhir-rust/"
+keywords = ["fhir", "healthcare", "hl7", "audit", "medical"]
+categories = ["database", "science", "data-structures"]
+# No `rust-version` yet: the six ports promise 1.90 and CI builds on exactly
+# that toolchain, but this crate's own floor has not been measured, and
+# AGENTS/release.md is explicit that an unverified MSRV is a guess.
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+# `arbitrary_precision` is not a preference: FHIR `decimal` must keep the
+# precision it was written with (M3.6), and without it serde_json turns 9.60
+# into 9.6. `preserve_order` keeps object key order stable, which the canonical
+# form the chain commits to depends on.
+serde_json = { version = "1", features = ["arbitrary_precision", "preserve_order"] }
+thiserror = "2"
+# The chain is SHA-256 + SHA3-256 with an optional HMAC (M3.16).
+sha2 = "0.10"
+sha3 = "0.10"
+hmac = "0.12"
+subtle = "2"
+zeroize = { version = "1", features = ["zeroize_derive"] }
+getrandom = "0.3"
