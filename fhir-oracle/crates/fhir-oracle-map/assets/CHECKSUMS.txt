@@ -1,0 +1,3 @@
+bcaa9cf597dcb202c684c6f977824449797c733f425a36a666aba2fbd93f2fff  fhir-oracle-relmap-r3.json.gz
+76c27b6f86b4a64cfab33c54e7dc3e2a17ef33b6189e70be6ec7c3d7e5f57363  fhir-oracle-relmap-r4.json.gz
+f43a424287a7a05f09b6ca3866dd69fb80772451a9c6eb42ecd6aa73f8561854  fhir-oracle-relmap-r5.json.gz

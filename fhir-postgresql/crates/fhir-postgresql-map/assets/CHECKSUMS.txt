@@ -1,0 +1,3 @@
+8ebdebcb4a1cfbf4b1b6222b5ffc6355e3999e63ba192369e5d19b70a7b948a7  fhir-postgresql-relmap-r3.json.gz
+51185a0caf4eb833cf3b790886c90901304f8ec841e25b0e803f38c19bd5761f  fhir-postgresql-relmap-r4.json.gz
+6dbb5456647be212873c9c05c4238b265495ba99c41a0dc8cb09eaa7264bee7b  fhir-postgresql-relmap-r5.json.gz
