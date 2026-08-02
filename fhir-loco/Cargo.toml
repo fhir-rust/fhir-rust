@@ -1,0 +1,77 @@
+[workspace]
+
+[package]
+name = "fhir-loco"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0 OR BSD-3-Clause OR GPL-2.0-only OR GPL-3.0-only"
+description = "FHIR RESTful API server: Loco.rs, Axum, Tokio and Hyper over the fhir-* relational stores"
+readme = "README.md"
+repository = "https://github.com/fhir-rust/fhir-rust/"
+keywords = ["fhir", "healthcare", "hl7", "rest", "medical"]
+categories = ["web-programming::http-server", "science", "database"]
+# No `rust-version` yet, deliberately. The six ports promise 1.90 and CI builds
+# on exactly that toolchain; this crate's floor has never been measured, and
+# `AGENTS/release.md` is explicit that an unverified MSRV is a guess. Measure it
+# against loco-rs and axum before promising one.
+default-run = "fhir_loco-cli"
+
+# Publishing is blocked on its dependencies, not on this manifest: the two
+# fhir-sqlite crates below must reach crates.io first (spec/publishing.md P-3).
+# They now carry `version` alongside `path`, which is what Cargo requires at
+# publish time — path wins locally, the registry version is what ships.
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[workspace.dependencies]
+loco-rs = { version = "1.0", default-features = false }
+
+[dependencies]
+loco-rs = { workspace = true , features = ["cli"] }
+serde = { version = "1", features = ["derive"] }
+# `arbitrary_precision` is not optional here, and not a preference. FHIR
+# `decimal` must keep the precision it was written with (spec M3.6): without
+# this feature serde_json parses 9.60 into an f64 and hands back 9.6, so the
+# fidelity the storage layer works hard to preserve would be destroyed on the
+# way out of the HTTP layer. `preserve_order` keeps object key order stable,
+# which matters for readable diffs and for byte-comparable responses.
+serde_json = { version = "1", features = ["arbitrary_precision", "preserve_order"] }
+
+# The FHIR database crates. Path dependencies to the sibling repos: these are
+# libraries by design (each of those projects dropped its own server and CLI),
+# and this project is the HTTP surface they never had.
+fhir-sqlite-store = { path = "../fhir-sqlite/crates/fhir-sqlite-store", version = "0.4.0" }
+fhir-sqlite-map = { path = "../fhir-sqlite/crates/fhir-sqlite-map", version = "0.4.0" }
+tokio = { version = "1.53", default-features = false, features = [
+  "rt-multi-thread",
+] }
+async-trait = { version = "0.1" }
+axum = { version = "0.8" }
+tracing = { version = "0.1" }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+regex = { version = "1.13" }
+# Server-assigned resource ids on POST.
+uuid = { version = "1", features = ["v4"] }
+# PASETO v4.public token verification. `pasetors` rather than a JWT library:
+# PASETO fixes the algorithm per version, so there is no `alg` field to confuse
+# and no "alg: none" class of bug. v4.public is Ed25519 — this service only
+# ever *verifies*, and never holds a key that could mint a token.
+pasetors = { version = "0.8", default-features = false, features = ["v4", "std"] }
+hex = "0.4"
+
+[[bin]]
+name = "fhir_loco-cli"
+path = "src/bin/main.rs"
+required-features = []
+
+[dev-dependencies]
+# The request tests mint tokens for a throwaway keypair, because there is no
+# unauthenticated path left to test through.
+pasetors = { version = "0.8", default-features = false, features = ["v4", "std"] }
+hex = "0.4"
+fhir-sqlite-map = { path = "../fhir-sqlite/crates/fhir-sqlite-map", version = "0.4.0" }
+fhir-sqlite-store = { path = "../fhir-sqlite/crates/fhir-sqlite-store", version = "0.4.0" }
+loco-rs = { workspace = true, features = ["testing"] }
+serial_test = { version = "3.5.0" }
+rstest = { version = "0.25" }
+insta = { version = "1.48", features = ["redactions", "yaml", "filters"] }

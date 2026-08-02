@@ -1,0 +1,652 @@
+//! FHIR RESTful endpoints, mounted per version at `/{r3|r4|r5}`.
+//!
+//! Deliberately thin. Every guarantee this service makes — history, the audit
+//! chain, search semantics, erasure — belongs to the storage crate; this layer
+//! translates HTTP to store calls and back, and its own job is to get the status
+//! codes right. Where a distinction exists in the store it must survive the
+//! translation: "deleted" and "never existed" are 410 and 404, and collapsing
+//! them would tell a caller that a record it once held never was.
+
+use axum::body::Bytes;
+use axum::extract::{Path, Query};
+use axum::http::{header, HeaderMap, StatusCode};
+use axum::response::{IntoResponse, Response as AxumResponse};
+use loco_rs::prelude::*;
+
+use crate::store;
+
+/// FHIR's own JSON media type. Returning `application/json` would be wrong
+/// enough that conformance tooling rejects it.
+const FHIR_JSON: &str = "application/fhir+json";
+
+/// An OperationOutcome, which is how FHIR reports a problem.
+///
+/// The text is deliberately about the request, never about storage: it names
+/// what the caller asked for, so it can be returned verbatim without leaking
+/// schema names or stored values.
+fn outcome(status: StatusCode, severity: &str, code: &str, text: &str) -> AxumResponse {
+    let body = serde_json::json!({
+        "resourceType": "OperationOutcome",
+        "issue": [{
+            "severity": severity,
+            "code": code,
+            "diagnostics": text,
+        }]
+    });
+    (
+        status,
+        [(header::CONTENT_TYPE, FHIR_JSON)],
+        serde_json::to_string(&body).unwrap_or_default(),
+    )
+        .into_response()
+}
+
+fn fhir_json(
+    status: StatusCode,
+    body: &serde_json::Value,
+    version_id: Option<i64>,
+) -> AxumResponse {
+    let mut headers = HeaderMap::new();
+    headers.insert(header::CONTENT_TYPE, FHIR_JSON.parse().expect("static"));
+    if let Some(v) = version_id {
+        // A weak ETag, because FHIR versions are not byte-identity: two
+        // representations of the same version may differ in whitespace.
+        if let Ok(tag) = format!("W/\"{v}\"").parse() {
+            headers.insert(header::ETAG, tag);
+        }
+    }
+    (
+        status,
+        headers,
+        serde_json::to_string(body).unwrap_or_default(),
+    )
+        .into_response()
+}
+
+/// Resolve a mounted version, or explain that it is not served.
+///
+/// The error side is a whole `AxumResponse`, which clippy notes is large. That
+/// is deliberate: the alternative is an error enum that every caller must
+/// re-translate into the same response, which trades one wide return value for
+/// duplicated status-code logic — and getting status codes right is this
+/// layer's only real job.
+#[allow(clippy::result_large_err)]
+fn version_of(
+    v: &str,
+) -> Result<&'static std::sync::Arc<fhir_sqlite_store::sqlite::SqliteStore>, AxumResponse> {
+    let Some(versions) = store::versions() else {
+        return Err(outcome(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "fatal",
+            "transient",
+            "the store is not initialised",
+        ));
+    };
+    versions.get(v).ok_or_else(|| {
+        outcome(
+            StatusCode::NOT_FOUND,
+            "error",
+            "not-supported",
+            &format!(
+                "FHIR version {v:?} is not served here; mounted: {}",
+                versions.mounted().join(", ")
+            ),
+        )
+    })
+}
+
+/// `GET /{version}/{type}/{id}`
+#[debug_handler]
+async fn read(
+    Path((version, rtype, id)): Path<(String, String, String)>,
+    headers: HeaderMap,
+) -> AxumResponse {
+    let store = match version_of(&version) {
+        Ok(s) => s,
+        Err(r) => return r,
+    };
+
+    match store.get(&rtype, &id).await {
+        Ok(Some(mut body)) => {
+            // The stored version travels in `meta.versionId` and the ETag; a
+            // client cannot do optimistic concurrency without it.
+            let v = match store.status(&rtype, &id).await {
+                Ok(fhir_sqlite_store::ResourceStatus::Active(v)) => Some(v),
+                _ => None,
+            };
+            if let (Some(v), Some(obj)) = (v, body.as_object_mut()) {
+                obj.insert(
+                    "meta".to_string(),
+                    serde_json::json!({ "versionId": v.to_string() }),
+                );
+            }
+            disclose(
+                store,
+                &headers,
+                "read",
+                Some(&rtype),
+                Some(&id),
+                v,
+                "ok",
+                Some(1),
+            )
+            .await;
+            fhir_json(StatusCode::OK, &body, v)
+        }
+        Ok(None) => {
+            disclose(
+                store,
+                &headers,
+                "read",
+                Some(&rtype),
+                Some(&id),
+                None,
+                "not-found",
+                Some(0),
+            )
+            .await;
+            match store.status(&rtype, &id).await {
+                // Deleted and never-existed are different answers, and a caller
+                // that once held this record needs to be able to tell them apart.
+                Ok(fhir_sqlite_store::ResourceStatus::Deleted(v)) => outcome(
+                    StatusCode::GONE,
+                    "error",
+                    "deleted",
+                    &format!("{rtype}/{id} was deleted at version {v}"),
+                ),
+                _ => outcome(
+                    StatusCode::NOT_FOUND,
+                    "error",
+                    "not-found",
+                    &format!("{rtype}/{id} not found"),
+                ),
+            }
+        }
+        Err(e) => store_error(e),
+    }
+}
+
+/// `GET /{version}/{type}/{id}/_history/{vid}`
+#[debug_handler]
+async fn vread(
+    Path((version, rtype, id, vid)): Path<(String, String, String, i64)>,
+    headers: HeaderMap,
+) -> AxumResponse {
+    let store = match version_of(&version) {
+        Ok(s) => s,
+        Err(r) => return r,
+    };
+    let found = matches!(store.vread(&rtype, &id, vid).await, Ok(Some(_)));
+    disclose(
+        store,
+        &headers,
+        "vread",
+        Some(&rtype),
+        Some(&id),
+        Some(vid),
+        if found { "ok" } else { "not-found" },
+        Some(i64::from(found)),
+    )
+    .await;
+    match store.vread(&rtype, &id, vid).await {
+        Ok(Some(entry)) => match entry.resource {
+            Some(body) => fhir_json(StatusCode::OK, &body, Some(entry.version_id)),
+            // A deletion is a real version with no content: 410, not 404.
+            None => outcome(
+                StatusCode::GONE,
+                "error",
+                "deleted",
+                &format!("{rtype}/{id} version {vid} is a deletion"),
+            ),
+        },
+        Ok(None) => outcome(
+            StatusCode::NOT_FOUND,
+            "error",
+            "not-found",
+            &format!("{rtype}/{id} has no version {vid}"),
+        ),
+        Err(e) => store_error(e),
+    }
+}
+
+/// `GET /{version}/metadata` — the CapabilityStatement.
+#[debug_handler]
+async fn metadata(Path(version): Path<String>) -> AxumResponse {
+    let store = match version_of(&version) {
+        Ok(s) => s,
+        Err(r) => return r,
+    };
+    let mut types: Vec<serde_json::Value> = store
+        .map()
+        .resources
+        .keys()
+        .map(|t| {
+            serde_json::json!({
+                "type": t,
+                "interaction": [{ "code": "read" }, { "code": "vread" }, { "code": "search-type" }],
+            })
+        })
+        .collect();
+    types.sort_by(|a, b| a["type"].as_str().cmp(&b["type"].as_str()));
+
+    let body = serde_json::json!({
+        "resourceType": "CapabilityStatement",
+        "status": "active",
+        "kind": "instance",
+        "fhirVersion": store.map().fhir_version,
+        "format": ["application/fhir+json"],
+        "software": { "name": "fhir-store", "version": env!("CARGO_PKG_VERSION") },
+        "rest": [{ "mode": "server", "resource": types }],
+    });
+    fhir_json(StatusCode::OK, &body, None)
+}
+
+/// Translate a store failure into a response.
+///
+/// `Unsupported` is the only variant safe to return verbatim: it describes the
+/// request in the caller's own terms. Everything else may name schema objects or
+/// stored values, so it is logged and answered with a generic 500 — the detail
+/// belongs in an operator's log, not a response body.
+fn store_error(e: fhir_sqlite_store::StoreError) -> AxumResponse {
+    use fhir_sqlite_store::StoreError as E;
+    match e {
+        E::Unsupported(msg) => outcome(StatusCode::BAD_REQUEST, "error", "not-supported", &msg),
+        E::Conflict { expected, found } => outcome(
+            StatusCode::PRECONDITION_FAILED,
+            "error",
+            "conflict",
+            &format!("version conflict: expected {expected}, found {found}"),
+        ),
+        other => {
+            tracing::error!(error = %other, "store failure");
+            outcome(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "fatal",
+                "exception",
+                "internal error",
+            )
+        }
+    }
+}
+
+/// The version named by `If-Match`, if any.
+///
+/// FHIR uses weak ETags (`W/"3"`), so the prefix and quotes are stripped. A
+/// header that is present but unparseable is *not* silently ignored: a client
+/// asking for optimistic concurrency and not getting it would be worse than an
+/// error, because it would believe a write was checked when it was not.
+#[allow(clippy::result_large_err)]
+fn if_match(headers: &HeaderMap) -> Result<Option<i64>, AxumResponse> {
+    let Some(raw) = headers.get(header::IF_MATCH) else {
+        return Ok(None);
+    };
+    let text = raw.to_str().unwrap_or("");
+    let trimmed = text.trim().trim_start_matches("W/").trim_matches('"');
+    trimmed.parse::<i64>().map(Some).map_err(|_| {
+        outcome(
+            StatusCode::BAD_REQUEST,
+            "error",
+            "structure",
+            &format!("If-Match {text:?} is not a version"),
+        )
+    })
+}
+
+/// Parse a request body as a FHIR resource of the expected type.
+#[allow(clippy::result_large_err)]
+fn parse_body(bytes: &Bytes, rtype: &str) -> Result<serde_json::Value, AxumResponse> {
+    let v: serde_json::Value = serde_json::from_slice(bytes).map_err(|e| {
+        outcome(
+            StatusCode::BAD_REQUEST,
+            "error",
+            "structure",
+            &format!("body is not JSON: {e}"),
+        )
+    })?;
+    match v.get("resourceType").and_then(serde_json::Value::as_str) {
+        Some(t) if t == rtype => Ok(v),
+        Some(t) => Err(outcome(
+            StatusCode::BAD_REQUEST,
+            "error",
+            "invariant",
+            &format!("resourceType {t:?} does not match {rtype:?} in the URL"),
+        )),
+        None => Err(outcome(
+            StatusCode::BAD_REQUEST,
+            "error",
+            "required",
+            "resource has no resourceType",
+        )),
+    }
+}
+
+/// Wrap ids in a searchset Bundle.
+fn bundle(kind: &str, entries: Vec<serde_json::Value>, total: Option<i64>) -> serde_json::Value {
+    let mut b = serde_json::json!({
+        "resourceType": "Bundle",
+        "type": kind,
+        "entry": entries,
+    });
+    if let (Some(t), Some(o)) = (total, b.as_object_mut()) {
+        o.insert("total".to_string(), serde_json::json!(t));
+    }
+    b
+}
+
+/// Record a disclosure (PR12.5).
+///
+/// A store that logs only mutations cannot answer "who looked at this patient",
+/// which is the question an audit usually opens with — so this is a read-path
+/// obligation, and reads are where it is easiest to forget.
+///
+/// A logging failure is reported but never fails the request: refusing to serve
+/// because the audit sink is unavailable is a trade some deployments want and
+/// most do not, and making that choice silently here would be wrong either way.
+// Eight parameters, which clippy dislikes. They are the columns of one access
+// log row; grouping them into a struct would mean building that struct at every
+// call site to satisfy a lint, and the call sites are where forgetting a field
+// would be easiest to miss.
+#[allow(clippy::too_many_arguments)]
+async fn disclose(
+    store: &fhir_sqlite_store::sqlite::SqliteStore,
+    headers: &HeaderMap,
+    interaction: &str,
+    rtype: Option<&str>,
+    id: Option<&str>,
+    version_id: Option<i64>,
+    outcome: &str,
+    result_count: Option<i64>,
+) {
+    // A disclosure is written even when the token is rejected: the read did
+    // not happen, but the *attempt* is the thing PR12 wants recorded, and an
+    // unattributable attempt is more interesting than a missing line.
+    let rec = fhir_sqlite_store::AccessRecord {
+        audit: crate::auth::audit_from(headers).unwrap_or_else(|_| fhir_sqlite_store::Audit {
+            actor: "unauthenticated".to_string(),
+            actor_source: Some("rejected-token".to_string()),
+            client: None,
+            request_id: None,
+            reason: None,
+        }),
+        interaction: interaction.to_string(),
+        rtype: rtype.map(str::to_string),
+        id: id.map(str::to_string),
+        version_id,
+        outcome: outcome.to_string(),
+        result_count,
+    };
+    if let Err(e) = store.log_access(&rec).await {
+        tracing::error!(error = %e, interaction, "failed to record a disclosure");
+    }
+}
+
+/// `POST /{version}/{type}` — create.
+///
+/// FHIR lets the server assign the id. The storage layer requires one, so a
+/// body without an id gets a UUID here — and *never* reuses a client-supplied
+/// id on POST, which is what `PUT` is for.
+#[debug_handler]
+async fn create(
+    Path((version, rtype)): Path<(String, String)>,
+    headers: HeaderMap,
+    body: Bytes,
+) -> AxumResponse {
+    let store = match version_of(&version) {
+        Ok(s) => s,
+        Err(r) => return r,
+    };
+    // Refuse before touching the store: an unattributable write is exactly
+    // what PR12 exists to prevent, so the token is checked first.
+    let audit = match crate::auth::audit_from(&headers) {
+        Ok(a) => a,
+        Err(r) => return r,
+    };
+    let mut resource = match parse_body(&body, &rtype) {
+        Ok(v) => v,
+        Err(r) => return r,
+    };
+    let id = uuid::Uuid::new_v4().to_string();
+    if let Some(obj) = resource.as_object_mut() {
+        obj.insert("id".to_string(), serde_json::json!(id));
+    }
+    match store.put_audited(&resource, None, &audit).await {
+        Ok(out) => {
+            let mut headers = HeaderMap::new();
+            headers.insert(header::CONTENT_TYPE, FHIR_JSON.parse().expect("static"));
+            if let Ok(loc) = format!("/{version}/{rtype}/{}", out.id).parse() {
+                headers.insert(header::LOCATION, loc);
+            }
+            if let Ok(tag) = format!("W/\"{}\"", out.version_id).parse() {
+                headers.insert(header::ETAG, tag);
+            }
+            (
+                StatusCode::CREATED,
+                headers,
+                serde_json::to_string(&resource).unwrap_or_default(),
+            )
+                .into_response()
+        }
+        Err(e) => store_error(e),
+    }
+}
+
+/// `PUT /{version}/{type}/{id}` — update, or create at a client-chosen id.
+#[debug_handler]
+async fn update(
+    Path((version, rtype, id)): Path<(String, String, String)>,
+    headers: HeaderMap,
+    body: Bytes,
+) -> AxumResponse {
+    let store = match version_of(&version) {
+        Ok(s) => s,
+        Err(r) => return r,
+    };
+    let mut resource = match parse_body(&body, &rtype) {
+        Ok(v) => v,
+        Err(r) => return r,
+    };
+    // A body whose id disagrees with the URL is a mistake worth refusing rather
+    // than resolving: either answer would silently discard what the caller
+    // meant.
+    match resource.get("id").and_then(serde_json::Value::as_str) {
+        Some(b) if b != id => {
+            return outcome(
+                StatusCode::BAD_REQUEST,
+                "error",
+                "invariant",
+                &format!("body id {b:?} does not match {id:?} in the URL"),
+            );
+        }
+        _ => {
+            if let Some(obj) = resource.as_object_mut() {
+                obj.insert("id".to_string(), serde_json::json!(id));
+            }
+        }
+    }
+    // Refuse before touching the store: an unattributable write is exactly
+    // what PR12 exists to prevent, so the token is checked first.
+    let audit = match crate::auth::audit_from(&headers) {
+        Ok(a) => a,
+        Err(r) => return r,
+    };
+    let expected = match if_match(&headers) {
+        Ok(v) => v,
+        Err(r) => return r,
+    };
+    match store.put_audited(&resource, expected, &audit).await {
+        Ok(out) => {
+            let status = if out.created {
+                StatusCode::CREATED
+            } else {
+                StatusCode::OK
+            };
+            fhir_json(status, &resource, Some(out.version_id))
+        }
+        Err(e) => store_error(e),
+    }
+}
+
+/// `DELETE /{version}/{type}/{id}`
+///
+/// Deleting something already gone is not an error: FHIR treats delete as
+/// idempotent, and a client retrying after a dropped response must not get a
+/// failure for having succeeded.
+#[debug_handler]
+async fn delete_(
+    Path((version, rtype, id)): Path<(String, String, String)>,
+    headers: HeaderMap,
+) -> AxumResponse {
+    let store = match version_of(&version) {
+        Ok(s) => s,
+        Err(r) => return r,
+    };
+    // Refuse before touching the store: an unattributable write is exactly
+    // what PR12 exists to prevent, so the token is checked first.
+    let audit = match crate::auth::audit_from(&headers) {
+        Ok(a) => a,
+        Err(r) => return r,
+    };
+    match store.delete_audited(&rtype, &id, &audit).await {
+        Ok(_) => StatusCode::NO_CONTENT.into_response(),
+        Err(e) => store_error(e),
+    }
+}
+
+/// `GET /{version}/{type}?name=value…` — search.
+#[debug_handler]
+async fn search(
+    Path((version, rtype)): Path<(String, String)>,
+    Query(params): Query<Vec<(String, String)>>,
+    headers: HeaderMap,
+) -> AxumResponse {
+    let store = match version_of(&version) {
+        Ok(s) => s,
+        Err(r) => return r,
+    };
+    // `_count`/`_offset`/`_total` are FHIR control parameters, not search
+    // criteria; passing them through would look like an unknown search
+    // parameter and fail the whole request.
+    let mut count: i64 = 50;
+    let mut offset: i64 = 0;
+    let mut want_total = false;
+    let mut criteria: Vec<(String, String)> = Vec::new();
+    for (k, v) in params {
+        match k.as_str() {
+            "_count" => count = v.parse().unwrap_or(50).clamp(1, 1000),
+            "_offset" => offset = v.parse().unwrap_or(0).max(0),
+            "_total" => want_total = v != "none",
+            _ => criteria.push((k, v)),
+        }
+    }
+    let page = match store
+        .search_full(&rtype, &criteria, count, offset, &[], want_total)
+        .await
+    {
+        Ok(p) => p,
+        Err(e) => return store_error(e),
+    };
+    let mut entries = Vec::with_capacity(page.ids.len());
+    for id in &page.ids {
+        match store.get(&rtype, id).await {
+            Ok(Some(resource)) => entries.push(serde_json::json!({
+                "fullUrl": format!("/{version}/{rtype}/{id}"),
+                "resource": resource,
+            })),
+            // A result that vanished between the search and the read is a race,
+            // not a failure: skip it rather than fail the page.
+            Ok(None) => tracing::debug!(%rtype, %id, "search hit disappeared before read"),
+            Err(e) => return store_error(e),
+        }
+    }
+    disclose(
+        store,
+        &headers,
+        "search",
+        Some(&rtype),
+        None,
+        None,
+        "ok",
+        i64::try_from(entries.len()).ok(),
+    )
+    .await;
+    fhir_json(
+        StatusCode::OK,
+        &bundle("searchset", entries, page.total),
+        None,
+    )
+}
+
+/// `GET /{version}/{type}/{id}/_history`
+#[debug_handler]
+async fn history(
+    Path((version, rtype, id)): Path<(String, String, String)>,
+    headers: HeaderMap,
+) -> AxumResponse {
+    let store = match version_of(&version) {
+        Ok(s) => s,
+        Err(r) => return r,
+    };
+    match store.history(&rtype, &id).await {
+        Ok(entries) if entries.is_empty() => outcome(
+            StatusCode::NOT_FOUND,
+            "error",
+            "not-found",
+            &format!("{rtype}/{id} has no history"),
+        ),
+        Ok(entries) => {
+            let out: Vec<serde_json::Value> = entries
+                .iter()
+                .map(|e| {
+                    // A deletion is a real entry with no resource. Emitting it
+                    // is the point: history that hid its deletions would not be
+                    // an audit trail.
+                    let method = match e.op {
+                        'C' => "POST",
+                        'D' => "DELETE",
+                        'X' => "DELETE",
+                        _ => "PUT",
+                    };
+                    let mut entry = serde_json::json!({
+                        "fullUrl": format!("/{version}/{rtype}/{id}"),
+                        "request": { "method": method, "url": format!("{rtype}/{id}") },
+                        "response": {
+                            "status": if e.resource.is_some() { "200" } else { "204" },
+                            "etag": format!("W/\"{}\"", e.version_id),
+                            "lastModified": e.last_updated,
+                        },
+                    });
+                    if let (Some(r), Some(o)) = (&e.resource, entry.as_object_mut()) {
+                        o.insert("resource".to_string(), r.clone());
+                    }
+                    entry
+                })
+                .collect();
+            let total = i64::try_from(out.len()).ok();
+            disclose(
+                store,
+                &headers,
+                "history",
+                Some(&rtype),
+                Some(&id),
+                None,
+                "ok",
+                total,
+            )
+            .await;
+            fhir_json(StatusCode::OK, &bundle("history", out, total), None)
+        }
+        Err(e) => store_error(e),
+    }
+}
+
+pub fn routes() -> Routes {
+    Routes::new()
+        .add("/{version}/metadata", get(metadata))
+        .add("/{version}/{rtype}", get(search).post(create))
+        .add(
+            "/{version}/{rtype}/{id}",
+            get(read).put(update).delete(delete_),
+        )
+        .add("/{version}/{rtype}/{id}/_history", get(history))
+        .add("/{version}/{rtype}/{id}/_history/{vid}", get(vread))
+}
