@@ -1,0 +1,52 @@
+# The gates that cannot live in a per-port workflow.
+#
+# X15.1 requires the pure-Rust core to be identical across all six database
+# ports, and W16.6 requires CI to verify it. That check is inherently
+# cross-port: no workflow under fhir-<engine>/ can make it, because each sees
+# only its own tree.
+#
+# Both are cross-cutting: the shared-core check compares six ports against each
+# other, and the doc-example check compiles prose that describes all of them.
+#
+# It is also, as of F-49, the only workflow in this repository that runs at all.
+# The other eight families keep theirs under <family>/.github/workflows/, which
+# GitHub does not read — correct when each family was its own repository, inert
+# once they were merged. Consolidating those is tracked in F-49 and is not this
+# file's job.
+name: repository gates
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  shared-core:
+    name: X15.1 — shared core identical across six ports
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # bash, python3, and diff only. Deliberately no Rust toolchain: this
+      # compares text and must stay fast enough that nobody is tempted to skip
+      # it, and it must keep working if a port stops compiling.
+      - name: Check
+        run: ./scripts/check-shared-core.sh --diff
+
+  doc-examples:
+    name: F-60 — every documented example compiles
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      # Unlike the shared-core check this one needs a toolchain: it compiles
+      # each ```rust block from doc/ and README.md against the real crates.
+      # It found six defects on its first run, one of which did not parse.
+      - name: Check
+        run: ./scripts/check-doc-examples.sh
