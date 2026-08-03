@@ -33,8 +33,13 @@ for d in fhir-postgresql fhir-mysql fhir-mariadb fhir-mssql fhir-oracle; do
 done
 ```
 
-`scripts/check-shared-core.sh` gates this in CI (**F-10** fixed) — the loop above
-is what it automates. It currently carries **no exemptions**: `fhir-postgresql-map`
+`scripts/check-shared-core.sh` gates this (**F-10** fixed) — the loop above is
+what it automates, across 100 files including `gen/tests/`. It runs from
+`.github/workflows/gates.yml`, the one workflow in this repository that is in a
+directory GitHub reads (**F-49**). Note that the
+script compares *tokens*, not lines, which the loop above does not: rustfmt
+wraps by crate-name length, so two ports can differ by whitespace with no code
+difference (`X15.1a`, **F-48**). It currently carries **no exemptions**: `fhir-postgresql-map`
 had no `canon.rs` until **F-07** was closed, and that was the only one. Keep the
 list empty if you can; an entry there is a divergence that survived review, and
 must cite the finding or `M14.x` departure that allows it.

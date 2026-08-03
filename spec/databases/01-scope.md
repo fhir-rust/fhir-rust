@@ -27,12 +27,18 @@ Non-normative summary; each port's annex is authoritative for its own row.
 | `fhir-mysql` | MySQL | 8.4 | database (`CREATE DATABASE r5`) |
 | `fhir-mariadb` | MariaDB | 11.4 | database (`CREATE DATABASE r5`) |
 | `fhir-mssql` | SQL Server | 2019+ | `CREATE SCHEMA r5` |
-| `fhir-oracle` | Oracle Database | 12.2+, undeclared | user/schema |
+| `fhir-oracle` | Oracle Database | **12.2+**, declared in `M14.2` | user/schema |
 
-Oracle's row is the open one: identifiers were 30 bytes before 12.2 and 128
-after, so the generator's identifier budget (`G2.4`) is only safe on 12.2+ and
-that floor has not yet been written into the annex. Tracked as
-[`audit.md`](audit.md) **F-09**.
+Oracle's row was the open one: identifiers were 30 bytes before 12.2 and 128
+after, so the generator's identifier budget (`G2.4`) is only safe on 12.2+.
+**Closed** — `M14.2` declares the 12.2 floor and states the identifier fact that
+sets it, and `M14.3` requires `init` to verify the server version and refuse
+below it ([`audit.md`](audit.md) **F-09**).
+
+Both halves are now measured rather than cited: on Oracle 26ai a 128-byte
+identifier creates and a 129-byte one fails with `ORA-00972: ... exceeds the
+maximum length of 128 bytes`, so the 63-byte budget is safe and conservative
+above the floor (`M14.23b`).
 
 ## Out of scope
 

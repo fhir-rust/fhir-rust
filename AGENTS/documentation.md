@@ -1,5 +1,16 @@
 # Documentation
 
+**An example must compile** (`T11.9` in spirit, **F-60**). Run
+`scripts/check-doc-examples.sh`. A ```` ```rust ```` block is a promise that the
+code works; if it cannot compile — it targets another port, continues a previous
+block, elides a struct — mark it ```` ```rust,ignore ```` and say why in an HTML
+comment. Marking it to silence the gate is the failure this repository keeps
+finding in other forms.
+
+Listings of values or constructors are not code. Use ```` ```text ````: nine
+blocks were ```` ```rust ```` while being tuples of search parameters, and the
+gate has no way to distinguish those from a broken example.
+
 ## What is normative and what is not
 
 Only [`/spec`](../spec/index.md) is normative. READMEs, books, `plan.md`,
@@ -92,9 +103,9 @@ only in `fhir-mysql`, for as long as the forks have existed.
 1. Does the change alter behaviour? Then `/spec` first
    ([spec-workflow](spec-workflow.md)).
 2. Does it change what a port can do? Update
-   [`spec/conformance-matrix.md`](../spec/conformance-matrix.md).
+   [`spec/conformance-matrix.md`](../spec/databases/conformance-matrix.md).
 3. Does it close or open a finding? Update
-   [`spec/audit.md`](../spec/audit.md).
+   [`spec/audit.md`](../spec/databases/audit.md).
 4. Does it change a documented example? Run the example.
 5. Does it apply to all six ports? Then it is six edits, in one commit
    (`W16.7`).

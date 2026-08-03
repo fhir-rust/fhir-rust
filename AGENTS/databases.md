@@ -15,6 +15,32 @@
 generated DDL depends on version-specific behaviour and the engine should be
 pinned the same way the container images are.
 
+## Regenerating the map assets
+
+The maps in `assets/*.json.gz` are committed (`G2.1`) so a build never needs the
+FHIR packages. They are produced by, and only by:
+
+```sh
+cargo run -p fhir-<engine>-gen --bin regen-assets            # rewrite them
+cargo run -p fhir-<engine>-gen --bin regen-assets -- --check # gate: writes nothing
+```
+
+`--check` exits non-zero when the committed maps are not what the generator
+produces. Run it after **any** change to `gen/src` — a generator change with
+stale assets means the tree and the artifact disagree, which is how `where()`
+restrictions stayed dropped in six shipped maps (**F-38**, **F-40**).
+
+The packages are found via `FHIR_<ENGINE>_SPEC_DIR`, else
+`fhir/doc/fhir-specifications` in this monorepo. Both the tool and
+`gen/tests/assets_current.rs` skip loudly when they are absent, because absent
+input is not drift.
+
+**Regenerating is not a file edit.** It changes `map_checksum`, which is what a
+store records at `init` and compares at `upgrade`. Measure before you commit:
+if the column set is unchanged, an installed database stays structurally valid
+and only the checksum moves; if columns appear, it is a schema migration
+(`L12`, `O10.4a`) and four ports have no `upgrade` to carry one (**F-15**).
+
 ## Running one locally
 
 ```sh

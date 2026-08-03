@@ -1,8 +1,8 @@
 # Security, PHI, and the audit trail
 
-Governing sections: [`spec/03-storage-model.md`](../spec/03-storage-model.md)
-(`M3.15`–`M3.18`), [`spec/12-trust-principal-and-audit.md`](../spec/12-trust-principal-and-audit.md),
-[`spec/13-compliance-mapping.md`](../spec/13-compliance-mapping.md).
+Governing sections: [`spec/03-storage-model.md`](../spec/databases/03-storage-model.md)
+(`M3.15`–`M3.18`), [`spec/12-trust-principal-and-audit.md`](../spec/databases/12-trust-principal-and-audit.md),
+[`spec/13-compliance-mapping.md`](../spec/databases/13-compliance-mapping.md).
 
 Everything in these libraries assumes the data is **protected health
 information**. That assumption changes which mistakes are recoverable.

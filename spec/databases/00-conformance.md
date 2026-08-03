@@ -99,6 +99,19 @@ conform, and how the text is changed.
   | `A7.11` | `T11.7`, `T11.11` | no submitted value echoed in an OperationOutcome |
   | `A7.12` | §13 (ONC/HTI) | CapabilityStatement conformance |
   | `M8` | §13 (ONC/HTI Bulk Data) | `$export` |
+
+  **Where that behaviour lives, as of 2026-08-03.** These ids were retired as
+  "out of scope", meaning out of scope *for the ports*. The REST API they
+  describe exists — it is `fhir-loco` — so they are dangling in this
+  specification rather than obsolete in the repository. `A7.12` in particular is
+  cited by a live audit finding (**F-57**), where it caught a
+  CapabilityStatement that declared a read-only server while the router served
+  writes.
+
+  They are **not** un-retired here: `spec/databases/` governs the ports, and
+  §7 does not describe them. Moving them to a specification that governs
+  `fhir-loco` — or giving `fhir-loco` one that adopts them — is the open
+  decision in [`audit.md`](audit.md) **F-04** and **F-58**.
   | §7 | `T11.2` | "every REST interaction in §7" |
 
   A reader MUST treat a requirement citing one of these as **partially

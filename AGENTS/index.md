@@ -3,6 +3,10 @@
 Companion files to [`../AGENTS.md`](../AGENTS.md), which you should read first.
 Each covers one area in enough depth to work in it without reading the others.
 
+These guides are for the **database family** (`fhir-<engine>/`). The model crate
+has its own set in [`../fhir/AGENTS/`](../fhir/AGENTS/architecture.md); read
+those instead when working in [`../fhir/`](../fhir/).
+
 | Guide | Read it when you are | Key rules |
 | --- | --- | --- |
 | [spec-workflow.md](spec-workflow.md) | changing behaviour, or amending a requirement | `C0.19`–`C0.22` |
@@ -15,8 +19,12 @@ Each covers one area in enough depth to work in it without reading the others.
 
 ## The shortest possible summary
 
-- `/spec` is normative and lives once. Ports add annexes, not copies.
+- `/spec/databases` is normative and lives once. Ports add annexes, not copies.
+  [`/spec/index.md`](../spec/index.md) says which family's spec applies at all.
 - The pure-Rust core is identical in all six ports. Change it in all six.
 - A dialect difference is an `M14.x` departure that cites what it amends.
 - Do not claim more than the port's conformance level.
 - Say what you did not verify.
+- Before releasing, run `scripts/check-published-match.sh` — a published version
+  must match the source that claims it (`O10.11`), and nothing else checks it
+  across all four families.

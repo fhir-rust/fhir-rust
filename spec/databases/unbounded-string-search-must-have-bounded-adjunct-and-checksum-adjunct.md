@@ -1,8 +1,17 @@
 # Unbounded string search: bounded adjunct and checksum adjunct
 
-Normative rules for making an unbounded text column searchable on an engine that
-cannot index or compare it as bound (`P6.4a`). Requirements are numbered `U<n>`
-and use RFC 2119 keywords.
+Normative rules for making a **search-reachable column** searchable on an engine
+that cannot index or compare it as bound (`P6.4a`). Requirements are numbered
+`U<n>` and use RFC 2119 keywords.
+
+**The filename is narrower than the section.** It says "unbounded string"
+because that is the case the problem was found in, and the file is not renamed
+because a citation must keep resolving (`C0.5` is about ids, and the same
+argument applies to a path other documents link). `U1a` states the actual
+trigger: any column a search reaches that the dialect cannot index or compare as
+bound — unbounded character, binary large object, or a fixed-shape column no
+per-type rule reaches. `U11` says which columns the generator must walk to find
+them.
 
 This is its own section for the same reason [locale and accent
 folding](locale-accent-folding.md) is: it is one decision that several sections
@@ -24,6 +33,12 @@ construction. Engines disagree about what may then be done with it:
 | SQL Server | `NVARCHAR(MAX)` | **no** | yes |
 | Oracle | `CLOB` | **no** | **no** |
 
+The Oracle row was measured on 2026-08-02 against Oracle AI Database 26ai Free
+(23.26.2.0.0), not taken from documentation: `ORA-22848: cannot use CLOB type as
+comparison key` and `ORA-02327: cannot create index on expression with data type
+LOB`. It is the row this whole section exists for, so it is the one worth having
+evidence for.
+
 The last row is the sharp one. On SQL Server an unindexable column still answers
 `=`, so the affected searches are correct and merely scan. On Oracle a `CLOB`
 answers neither, so the same design makes those searches **fail rather than slow
@@ -43,7 +58,27 @@ rather than in `ddl.rs`. This section is that conclusion made normative.
   | Adjunct | Type | Serves |
   |---|---|---|
   | `<col>_idx` | bounded character, binary collation | prefix, range, ordering |
-  | `<col>_h` | fixed-width digest of the **full** value | equality, `:exact`, token match |
+  | `<col>_h` | SHA-256 of the **full** value, stored as 32 binary bytes (`U4a`) | equality, `:exact`, token match |
+
+- **U1a** *Generalizes `U1`.* The trigger is **not the FHIR type and not the SQL
+  type**. It is the pair *(a search reaches this column, this dialect cannot
+  index or compare it as bound)*. Wherever both hold, adjuncts are required —
+  whatever the column is called and whatever it stores.
+
+  `U1` was written from the `string` case because that is where the problem was
+  found. Stating it as "a text column" made the rule read as though it were
+  about FHIR strings, and three other classes of column meet the same condition:
+
+  | Class | Example | Why it qualifies |
+  |---|---|---|
+  | Unbounded character | `CLOB`, `TEXT`, `NVARCHAR(MAX)` | the original case (`U1`) |
+  | Binary large object | `BLOB`, `bytea`, `VARBINARY(MAX)` | a `BLOB` is no more comparable than a `CLOB`; on Oracle both fail with `ORA-22848` |
+  | Fixed-shape table columns | `url`, `leaf`, `v_text` in the extension and deep tables | not `ColTy`-driven, so no per-type rule reaches them (`U11`, **F-46**) |
+  | Bounded-but-unindexable | a column past the engine's index key limit | bounded is not the same as indexable |
+
+  A rule that names a type will be wrong the next time a column of a different
+  type meets the same condition, which is precisely how the extension tables
+  were missed.
 
 - **U2** **Both are required; neither substitutes for the other.** A bounded
   adjunct cannot answer equality, because two values agreeing in their first *n*
@@ -54,6 +89,30 @@ rather than in `ddl.rs`. This section is that conclusion made normative.
   the wrong rows. A port emitting only the checksum adjunct has no prefix search
   at all. Emitting one and calling the problem solved is the failure this
   requirement is written to prevent.
+
+- **U2a** *Qualifies `U2`.* "Both" means **both of the operations the search
+  actually performs on that column**, not both adjuncts unconditionally.
+
+  The pairing in `U2` holds because a `string` search does prefix *and*
+  equality. Where a column is only ever compared for equality — a binary blob, a
+  digest, a token that has no meaningful prefix — the bounded adjunct answers a
+  question nobody asks, and ordering the raw bytes of a JPEG is not a search
+  anyone performs.
+
+  So: a column a search compares for **equality** MUST have the checksum
+  adjunct. A column a search compares by **prefix, range, or ordering** MUST
+  have the bounded adjunct. A column subject to both MUST have both, which is
+  every `string` target and is why `U2` reads as it does.
+
+  This MUST NOT be read as licence to omit one because a port has not
+  implemented that search yet. The test is what the **search parameter**
+  requires, not what the port currently supports — omitting on those grounds is
+  how `U2`'s failure arrives by a different road.
+
+- **U2b** The map MUST record, per column, **which** adjuncts exist. A query
+  builder that assumes a pairing `U2a` no longer guarantees would emit a
+  predicate against a column that was never generated, and it would do so only
+  for the search shapes nobody exercised.
 
 ## What they are, and are not
 
@@ -69,6 +128,28 @@ rather than in `ddl.rs`. This section is that conclusion made normative.
 - **U4** The checksum MUST be computed in Rust, over the same canonical bytes
   the rest of the project uses (`X15.2`), and MUST NOT be computed by a SQL
   function.
+
+- **U4a** The digest MUST be **SHA-256**, and MUST be stored as its **32 raw
+  bytes** in a binary column — `BINARY(32)`, `RAW(32)`, `bytea`, `BLOB`, as the
+  engine spells it. It MUST NOT be stored as hexadecimal text.
+
+  Naming the algorithm makes the column comparable across ports and makes a
+  change to it a visible migration rather than a silent one; `M3.16` already
+  fixes SHA-256 for the hash chain, and a second digest function in the same
+  system would be a second answer to "are these two values the same".
+
+  Hexadecimal doubles the width of a column that exists to be compared and
+  indexed, on exactly the engines that adopted it because they could not index
+  the source. It also invites the comparison to be written against a rendering
+  rather than a value: two encoders that disagree on case produce two texts for
+  one digest, which is `L1`'s failure in a new place.
+
+  The cost is real and is accepted: a binary column obliges every store to bind
+  a byte-valued parameter, and per-port binding of a new value type is where
+  **F-20** was found — booleans, integers, and dates silently dropped on one
+  engine and panicking on two others. `T11.10` therefore applies with force
+  here: a port that materializes this column MUST have a test that round-trips a
+  digest through its driver and fails if the binding is wrong.
 
   This is `L1`'s argument in a second place: two implementations of "the same
   string" — one in SQL, one in Rust — must agree for every codepoint in Unicode
@@ -101,6 +182,66 @@ rather than in `ddl.rs`. This section is that conclusion made normative.
   therefore be written so that it fails if the confirmation step is removed —
   mutation-verified (`T11.10`), because a missing confirmation is invisible
   until two values collide.
+
+## Which columns are in scope
+
+- **U11** The generator MUST consider **every column a search can reach**, not
+  only the columns named by a `string` search parameter.
+
+  Three sets are in scope, and the narrow reading — columns named by a `string`
+  parameter — covers only part of the first:
+
+  - columns reached by `token`, `reference`, and `uri` parameters, whose targets
+    are compared for equality and therefore need the checksum adjunct under
+    `U2a` even where no prefix search exists;
+  - the **extension and deep tables** — `url`, `leaf`, `v_text` — which searches
+    filter on and which no `ColTy` rule reaches, because their shape is fixed
+    rather than derived from the map. A generator MUST reach them by whatever
+    second path this costs; being awkward to enumerate is not an exemption.
+
+    `path` is deliberately **not** in this set. It is a structural locator the
+    store filters by exact value, and a port MAY bind it to an indexable type
+    instead, which `U12` then requires in preference to adjuncts. Adding it to
+    the map as bounded while the DDL emits it unbounded is the specific error
+    **F-46** records — a map that misdescribes the schema is worse than one that
+    omits the column, because omission is visible and a wrong type reads as
+    authoritative.
+  - any column a **dialect** chooses to bind to an unindexable type even though
+    another port binds it to an indexable one. The requirement is per-dialect
+    (`U9`), so the *set* of adjunct columns legitimately differs between ports.
+
+  **U11a** Where the map and the DDL emitter can disagree about which adjunct
+  columns exist — which is anywhere a table's shape is not map-driven — a port
+  MUST carry a test asserting they agree, over every table of every resource.
+  Neither side's own tests can catch this: each is self-consistent while the two
+  contradict each other, and the contradiction only surfaces as a runtime error
+  on a query path. The test MUST also fail if it inspects nothing, so that a
+  dialect with no adjuncts does not turn it vacuous (`T11.12`).
+
+  A port that materializes adjuncts MUST NOT claim `P6.4a` while a search-
+  reachable column of an unindexable type has none.
+
+- **U12** Where a fixed-shape column is **bounded in practice**, a port SHOULD
+  bind it to an indexable type rather than give it adjuncts.
+
+  Adjuncts are the answer to "this cannot be indexed or compared". They are not
+  the answer to "this was declared larger than it needs to be". An extension
+  `path` is a FHIR element path — bounded by the specification's own naming
+  rules — so binding it to a bounded character type is both simpler and faster
+  than binding it to a LOB and then adding two derived columns to reach it.
+
+  Recording that judgement is `U10`'s job: a port states which columns got
+  adjuncts and why the others did not need them.
+
+- **U13** A column holding **opaque bytes** — `Attachment.data` and its kin —
+  MUST NOT be given a bounded adjunct.
+
+  `U2a` already implies it, and it is stated separately because the mistake is
+  attractive: a bounded adjunct over binary looks like it enables a "starts
+  with" search, and there is no such FHIR search. What it would actually enable
+  is ordering by the first *n* bytes of an encoded payload, which is not a
+  question about the resource. The checksum adjunct alone serves the one
+  meaningful operation, equality — "is this the same attachment".
 
 ## Which ports materialize them
 

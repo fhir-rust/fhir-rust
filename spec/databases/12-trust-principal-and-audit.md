@@ -21,6 +21,30 @@ the reason this section survives the retirement of §7 intact: identity
   request a 401. Deployments handling PHI are expected to set it. Without it,
   writes record `actor = 'unauthenticated'` and the service logs a startup
   warning.
+- **PR12.9** **[service]** A service MAY establish the principal by
+  **verifying a signed token** instead of by trusting a header, and where it
+  does, `PR12.1`–`PR12.3` are satisfied by construction rather than by
+  configuration: there is no header to length-cap, no proxy allowlist to get
+  right, and no unattributable request to decide about, because a request
+  without a valid token never reaches a handler.
+
+  `actor_source` MUST name the mechanism and its version — `paseto:v4.public`,
+  not `token` — so an auditor reading a history row years later can tell which
+  scheme produced the attribution and judge what it was worth.
+
+  A service that takes this option SHOULD NOT also accept the header. Two
+  mechanisms mean one is a fallback, and a fallback that requires no key is the
+  one a misconfigured deployment gets: it runs unauthenticated while appearing
+  configured. `fhir-loco` removed its header for exactly this reason, and
+  because it had never implemented `PR12.2`'s trusted-proxy check — it could
+  not tell a perimeter-set header from a client-set one, which is the condition
+  under which `PR12.2` says the header must be ignored rather than honoured.
+
+  The asymmetric case is preferred where the choice exists. A symmetric token
+  key verifies *and* mints, so every instance that checks credentials could
+  issue them; an asymmetric one lets a service hold only the public half and be
+  incapable of forging an identity it would then record as fact.
+
 - **PR12.3a** The store MUST make the unattributed case **explicit and
   visible**, never a default that looks like an identity. A store API that
   accepts a write with no audit argument, and silently records something
@@ -77,7 +101,7 @@ the reason this section survives the retirement of §7 intact: identity
   rate limiting per identity, TLS termination), and what neither provides yet. A
   boundary nobody can point at is not a boundary.
 
-  See [`doc/trust-boundary.md`](../doc/trust-boundary.md) for the monorepo-wide
+  See [`doc/trust-boundary.md`](../../doc/trust-boundary.md) for the monorepo-wide
   table; a port's book chapter MUST agree with it or amend it by number.
 
 ---

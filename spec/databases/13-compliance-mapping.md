@@ -22,12 +22,24 @@ a regulation to a numbered requirement to a test.
 
 ~~Struck~~ identifiers belong to retired sections (`C0.16`). Their rows are
 **unsatisfied as written**, not satisfied by something else, and the strike is
-there so a reviewer does not read a retired citation as a met obligation. Three
-of these rows — transmission security at a service edge, FHIR conformance
-statement, and Bulk Data — depend on a service layer this monorepo does not
-contain, and the corresponding evidence cells ("Inferno run", "live TLS smoke
-test") describe runs that cannot happen against a library. Tracked as
-[`audit.md`](audit.md) **F-04**.
+there so a reviewer does not read a retired citation as a met obligation.
+
+**Corrected 2026-08-03.** This paragraph said those three rows "depend on a
+service layer this monorepo does not contain". It does contain one:
+[`fhir-loco`](../../fhir-loco/), a Loco/Axum FHIR REST API. The evidence cells
+therefore describe runs that *can* happen — against `fhir-loco`, not against a
+port — and the honest status per row is:
+
+| Row | Against `fhir-loco` |
+| --- | --- |
+| HIPAA §164.312(e) transmission security (~~`A7.8`~~) | **not met.** Plain HTTP; TLS is expected from a proxy the deployment supplies, and no requirement currently states that (**F-58**, **F-59**) |
+| ONC/HTI FHIR conformance (~~`A7.12`~~) | **partly.** A CapabilityStatement is served and was corrected under **F-57**; no Inferno run has been performed |
+| ONC/HTI Bulk Data (~~`M8`~~) | **not met.** No `$export` |
+
+The strikes stay, because a retired id is retired however live the behaviour it
+describes, and because `fhir-loco` is governed by no specification at all. That
+is the decision this waits on — see [`audit.md`](audit.md) **F-04** and
+**F-58**.
 
 ## Deliberate gaps
 

@@ -11,6 +11,23 @@
 
 - **G2.2** Generation MUST be deterministic: same spec input → byte-identical
   output. `assets/CHECKSUMS.txt` records SHA-256 of every artifact.
+
+- **G2.2a** *Amends `G2.2`.* The "output" whose determinism is required is the
+  **map content** — the JSON inside the container — not the compressed file.
+  Drift detection MUST compare content; `CHECKSUMS.txt` continues to record the
+  file digest, which answers a different question (was this artifact corrupted
+  in transit) and MUST remain verifiable by `shasum -a 256 -c`.
+
+  Driven by `fhir-mysql` and `fhir-mariadb` (`C0.22`). Their store crates depend
+  on `mysql_async`, which enables `flate2/zlib`; the map crate uses `flate2`'s
+  default `miniz_oxide`. Cargo unifies features across a workspace, so the same
+  map compresses to **different bytes** depending on which other crates are in
+  the build — `cargo run -p <port>-gen` and `cargo test --workspace` disagreed,
+  and the second failed against assets the first had just written (**F-41**).
+
+  `G2.2` as originally written was therefore unsatisfiable for two ports, and
+  satisfiable elsewhere only by accident of which backend happened to be
+  selected. Compression is an encoding of the artifact, not the artifact.
 - **G2.3** Identifier naming: element paths convert to snake_case (`birthDate` →
   `birth_date`). Table names concatenate the resource name and element path
   (`Patient.name.given` → `patient_name_given`).

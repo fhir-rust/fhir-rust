@@ -1,6 +1,6 @@
 # Testing
 
-The governing section is [`spec/11-conformance-testing.md`](../spec/11-conformance-testing.md).
+The governing section is [`spec/11-conformance-testing.md`](../spec/databases/11-conformance-testing.md).
 This file is how to work with it.
 
 ## `cargo test` passing means little
@@ -49,10 +49,30 @@ original corpus test resolved its inputs through an absolute path into one
 machine's temp directory: it skipped silently in CI for its entire life.
 Resolve inputs relative to the repository or an environment variable.
 
-**An ignored test is a tracked gap** (`T11.14`). `fhir-oracle` has eleven
-`#[ignore]`d MySQL-asserting tests — correctly ignored, and correctly recorded
-in its `tasks.md`. Ignoring without recording turns a known gap into a forgotten
-one.
+**When two artifacts must agree, test the agreement itself** (`U11a`). Where
+one component describes what another emits — the relational map naming columns
+that `ddl.rs` writes, an asset naming what the generator produces — each side's
+own tests pass while the two contradict each other, because each is internally
+consistent. The contradiction shows up only at runtime, on a path unit tests do
+not reach. Assert the correspondence directly, over the whole set rather than a
+sample: `tests/adjuncts_in_ddl.rs` walks every table of every resource. And
+guard against the loop finding nothing to check — assert the count is non-zero
+exactly when it should be, or a dialect that legitimately produces none turns
+the test vacuous without anyone noticing (`T11.12` again, one level up).
+
+**A test must be deterministic** (`T11.15`). Same tree, same engine, same
+verdict. An intermittently-passing test is worse than a failing one: it teaches
+you to re-run, and a re-run looks exactly like a fix. If a live test clears
+shared state first, make the teardown fail loudly and assert the state is
+actually clean — a discarded teardown error does not disappear, it comes back
+later disguised as a failure in correct code. `fhir-mssql`'s DDL test failed two
+runs in three and blamed a `CREATE TABLE` that was fine (**F-52**).
+
+**An ignored test is a tracked gap** (`T11.14`). `fhir-oracle` had eleven
+`#[ignore]`d MySQL-asserting tests — correctly ignored, correctly recorded in
+its `tasks.md`, and now **replaced** with Oracle-asserting ones (**F-08**). That
+is the point of tracking: the entry is what made them findable when the port
+caught up. Ignoring without recording turns a known gap into a forgotten one.
 
 ## The test taxonomy
 
@@ -78,7 +98,7 @@ Only `fhir-postgresql` has the full suite: `concurrency.rs`, `audit.rs`,
 `search_semantics.rs`, `bench.rs`. The other stores have one test file each, and
 two ports have none.
 
-The consequence is in the [conformance matrix](../spec/conformance-matrix.md):
+The consequence is in the [conformance matrix](../spec/databases/conformance-matrix.md):
 `R4.5`, `H5.4`, `T11.6`, `T11.7`, and `T11.8` are `?` outside PostgreSQL. Those
 are the concurrency and audit guarantees — the ones §13 maps to HIPAA
 §164.312(b) and (c). Porting `concurrency.rs`, `redaction.rs`, and `audit.rs` to

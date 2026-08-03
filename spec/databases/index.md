@@ -1,16 +1,21 @@
 # The fhir-databases specification
 
-This is the **normative core** for every database port in this monorepo. It is
-the single source of truth: one copy of every requirement that is not about a
-particular SQL dialect, cited by stable number, implemented six times and
-verified six times.
+This is the **normative core** for every database port in this monorepo: one
+copy of every requirement that is not about a particular SQL dialect, cited by
+stable number, implemented six times and verified six times.
+
+It is one of the repository's specification families, not the whole of it —
+[`spec/index.md`](../index.md) is the root index, and it is the one to read
+first if you are not certain which family governs the code you are changing. It
+also records the one requirement-id prefix (`R4`) that this specification shares
+with another family, and how to cite it unambiguously.
 
 Requirements use RFC 2119 keywords (MUST, SHOULD, MAY) as defined in
 [§0 Conformance](00-conformance.md).
 
 Behaviour is defined here first, then implemented and verified. When code and
 spec disagree, reconcile them — do not let them drift. Operational guidance for
-contributors lives in [`AGENTS.md`](../AGENTS.md); this directory defines
+contributors lives in [`AGENTS.md`](../../AGENTS.md); this directory defines
 **what must be true**, not how to work.
 
 ## Why one core
@@ -24,10 +29,12 @@ only where it *departs*, in its own dialect annex, and a departure has to be
 written down to exist.
 
 ```
-spec/                            the normative core — this directory
-  00-conformance.md ..  16-repository-and-release.md
-  locale-accent-folding.md
-  unbounded-string-search-must-have-bounded-adjunct-and-checksum-adjunct.md
+spec/
+  index.md                       the monorepo root index: all three families
+  databases/                     the normative core — this directory
+    00-conformance.md ..  16-repository-and-release.md
+    locale-accent-folding.md
+    unbounded-string-search-must-have-bounded-adjunct-and-checksum-adjunct.md
 
 fhir-postgresql/spec/index.md    port index: links this core
 fhir-sqlite/spec/
@@ -90,8 +97,12 @@ still means what it meant. Several retired ids are still cited from §11 and §1
 
 - [Unbounded string search: bounded adjunct and checksum
   adjunct](unbounded-string-search-must-have-bounded-adjunct-and-checksum-adjunct.md)
-  — normative for making an unbounded text column searchable where the engine
-  cannot index or compare it as bound (`P6.4a`, `P6.9`). Numbered `U<n>`.
+  — normative for making any **search-reachable** column searchable where the
+  engine cannot index or compare it as bound (`P6.4a`, `P6.9`). Numbered `U<n>`:
+  `U1a` generalizes the trigger beyond strings to CLOBs, BLOBs and the
+  fixed-shape extension columns, `U2a` matches the adjuncts to the operations a
+  search actually performs, `U4a` fixes the digest at SHA-256 in 32 binary
+  bytes, and `U11`–`U13` say which columns the generator must walk.
   Unnumbered as a section because it changes the **generated map**, which is
   upstream of every dialect and shared verbatim across all six ports (`X15.1`).
   It is what closes SQL Server's `P6.4a` departure and unblocks the Oracle DDL
@@ -113,12 +124,12 @@ still means what it meant. Several retired ids are still cited from §11 and §1
 
 | Port | Engine | Store status |
 | --- | --- | --- |
-| [`fhir-postgresql`](../fhir-postgresql/spec/index.md) | PostgreSQL 18 | reference implementation |
-| [`fhir-sqlite`](../fhir-sqlite/spec/index.md) | SQLite 3 | native store, embeddable |
-| [`fhir-mysql`](../fhir-mysql/spec/index.md) | MySQL 8.4 | native store |
-| [`fhir-mariadb`](../fhir-mariadb/spec/index.md) | MariaDB 11.4 | native store |
-| [`fhir-mssql`](../fhir-mssql/spec/index.md) | SQL Server | DDL only, no store |
-| [`fhir-oracle`](../fhir-oracle/spec/index.md) | Oracle Database | scaffold only |
+| [`fhir-postgresql`](../../fhir-postgresql/spec/index.md) | PostgreSQL 18 | reference implementation |
+| [`fhir-sqlite`](../../fhir-sqlite/spec/index.md) | SQLite 3 | native store, embeddable |
+| [`fhir-mysql`](../../fhir-mysql/spec/index.md) | MySQL 8.4 | native store |
+| [`fhir-mariadb`](../../fhir-mariadb/spec/index.md) | MariaDB 11.4 | native store |
+| [`fhir-mssql`](../../fhir-mssql/spec/index.md) | SQL Server | DDL only, no store |
+| [`fhir-oracle`](../../fhir-oracle/spec/index.md) | Oracle Database | scaffold only |
 
 The [conformance matrix](conformance-matrix.md) is the detailed version of that
 last column, and is the one to trust.

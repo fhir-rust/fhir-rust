@@ -9,10 +9,38 @@ covers what you are about to touch.
 
 ## What this is
 
-A monorepo of six FHIR-to-relational database libraries. Each stores FHIR R3,
-R4, and R5 resources as **real relational tables** — typed columns, child
-tables, constraints — generated from the FHIR specification itself, and gives
-them back losslessly.
+A FHIR monorepo with **four families**. They share a domain and this file's
+discipline; they do not share requirement numbers, release cadence, or a
+conformance model.
+
+| Family | Directory | Its spec | Its own guide |
+| --- | --- | --- | --- |
+| Model | [`fhir/`](fhir/) | [`fhir/spec/`](fhir/spec/index.md), ids `R1.x`–`R14.x` | [`fhir/AGENTS.md`](fhir/AGENTS.md) |
+| Persistence core | [`fhir-store/`](fhir-store/) | [`spec/databases/`](spec/databases/index.md) — `M3.16`, `PR12.x` | **this file** |
+| Databases | `fhir-<engine>/` ×6 | [`spec/databases/`](spec/databases/index.md) | **this file** |
+| HTTP surface | [`fhir-loco/`](fhir-loco/) | none yet — a recorded [gap](spec/index.md#gaps) | — |
+
+They stack downward only: the model knows nothing about databases, the
+persistence core links no driver, the ports carry no HTTP or CLI, and the server
+adds only status codes. Nothing lower may
+depend on something higher, and **no family's requirements bind another** — see
+[`spec/index.md`](spec/index.md) for the precedence rule.
+
+**Before citing `R4.x`, read [the collision
+note](spec/index.md#the-r4-collision--read-this-before-citing-r4x).**
+`R4.1`–`R4.7` exist in both the model and database specs and mean unrelated
+things. Qualify the citation (`db:R4.2`, `model:R4.2`); neither family may
+renumber (`C0.5`).
+
+The rest of this file is about the **database family**, the largest of the
+three. For the model crate work from [`fhir/AGENTS.md`](fhir/AGENTS.md) and
+[`fhir/AGENTS/`](fhir/AGENTS/architecture.md) instead.
+
+## The database ports
+
+Six libraries. Each stores FHIR R3, R4, and R5 resources as **real relational
+tables** — typed columns, child tables, constraints — generated from the FHIR
+specification itself, and gives them back losslessly.
 
 ```
 fhir-postgresql   PostgreSQL 18    Reference — full store, full test suite
@@ -20,12 +48,12 @@ fhir-sqlite       SQLite 3         Store
 fhir-mysql        MySQL 8.4        Store
 fhir-mariadb      MariaDB 11.4     Store
 fhir-mssql        SQL Server       Scaffold — DDL only, no store
-fhir-oracle       Oracle           Scaffold — DDL is still MySQL's
+fhir-oracle       Oracle           Scaffold — real Oracle DDL, no store
 ```
 
 Those are conformance levels (`C0.8`), and they are load-bearing: what a port is
 allowed to claim depends on which one it has earned. The
-[conformance matrix](spec/conformance-matrix.md) is the detail.
+[conformance matrix](spec/databases/conformance-matrix.md) is the detail.
 
 Each port is a **self-contained Cargo workspace** of three crates:
 
@@ -33,21 +61,44 @@ Each port is a **self-contained Cargo workspace** of three crates:
 | --- | --- | --- |
 | `fhir-<engine>-map` | the relational map, shred, reconstruct, fold, canon, **ddl** | only `ddl.rs` |
 | `fhir-<engine>-gen` | FHIR spec packages → map + DDL | no |
-| `fhir-<engine>-store` | driver, transactions, search, hash chain | yes |
+| `fhir-<engine>-store` | driver, transactions, search-SQL builder | yes |
 
-There is **no server crate and no CLI crate** anywhere, in any port, despite
-what the READMEs say. See `C0.17`/`C0.18`.
+Each store crate also **depends on [`fhir-store`](fhir-store/)** for the
+engine-agnostic half — the audit chain, `Audit`, `AccessRecord`, and the result
+types — and re-exports it, so `fhir_sqlite_store::Audit` still resolves. That is
+one crate rather than six copies: `chain.rs` alone was 618 lines byte-identical
+in all six, and the shared-core gate did not watch it (**F-45**).
+
+A consequence worth knowing: a change to the shared half now needs a
+`fhir-store` release before a port can take it. That version coupling is the
+price of the duplication being impossible rather than merely visible.
+
+There is **no server crate and no CLI crate** in any port (`C0.17`, `C0.18`).
+The REST server is a separate crate, [`fhir-loco`](fhir-loco/) — Loco.rs, Axum,
+Tokio, Hyper — mounted over `fhir-sqlite`. Endpoint work goes there, not into a
+port; a port's job is the store API the server calls.
+
+That is settled, and it settled **F-27** class 1: the ports' REST milestones
+were misattributed rather than unfinished.
 
 ## The five rules
 
-1. **The spec is one file, at the root.** `/spec` holds every normative
-   requirement that is not about a specific SQL dialect. Do not copy a section
-   into a port (`W16.5`) — that duplication is what this revision removed.
+1. **The spec is one copy, at the root.** `/spec/databases` holds every
+   normative requirement that is not about a specific SQL dialect. Do not copy a
+   section into a port (`W16.5`) — that duplication is what this revision
+   removed.
 2. **Change shared code in every port, in one commit** (`W16.7`). The pure-Rust
    core — `model.rs`, `shred.rs`, `reconstruct.rs`, `value.rs`, `fold.rs`,
-   `canon.rs`, `error.rs`, and all of `gen/` — is identical across all six ports
-   and must stay that way (`X15.1`). Check with
-   `./scripts/check-shared-core.sh`; CI runs it too.
+   `canon.rs`, `error.rs`, and all of `gen/` **including its tests** — is
+   identical across all six ports and must stay that way (`X15.1`). Check with
+   `./scripts/check-shared-core.sh` — 100 files. It compares tokens rather than
+   lines (`X15.1a`), because rustfmt wraps by crate-name length and a line-based
+   gate reports that as a divergence nobody can fix.
+   **Run it yourself.** `.github/workflows/gates.yml` at the root runs this and
+   `scripts/check-doc-examples.sh`, and is the *only* workflow here that
+   executes — the other eight families keep theirs under
+   `<family>/.github/workflows/`, which GitHub does not read (**F-49**). It is
+   also inert until `scripts/` is committed.
 3. **A dialect difference goes in the annex, by number** (`C0.12`). If the port
    cannot do what the core requires, write an `M14.x` departure that names the
    requirement it amends. An undeclared departure is a defect, not an
@@ -56,17 +107,19 @@ what the READMEs say. See `C0.17`/`C0.18`.
    2026-07-31 (**F-01**); the per-port books still do.
 5. **Say what you did not verify.** A skipped test, an unset DSN, an untried
    engine — all of it goes in the commit message and, if it persists, in
-   [`spec/audit.md`](spec/audit.md). `T11.12` exists because a silent skip reads
+   [`spec/audit.md`](spec/databases/audit.md). `T11.12` exists because a silent skip reads
    as a pass.
 
 ## Where things live
 
 | You want | Go to |
 | --- | --- |
-| What must be true | [`spec/index.md`](spec/index.md) |
-| How ports may differ | [`spec/15-portability-and-dialects.md`](spec/15-portability-and-dialects.md) |
-| What is currently broken | [`spec/audit.md`](spec/audit.md) |
-| Which port does what | [`spec/conformance-matrix.md`](spec/conformance-matrix.md) |
+| Which spec governs what | [`spec/index.md`](spec/index.md) |
+| What must be true of a port | [`spec/databases/index.md`](spec/databases/index.md) |
+| What must be true of the model crate | [`fhir/spec/index.md`](fhir/spec/index.md) |
+| How ports may differ | [`spec/databases/15-portability-and-dialects.md`](spec/databases/15-portability-and-dialects.md) |
+| What is currently broken | [`spec/audit.md`](spec/databases/audit.md) |
+| Which port does what | [`spec/conformance-matrix.md`](spec/databases/conformance-matrix.md) |
 | Tutorials and examples | [`doc/`](doc/index.md) |
 | A port's design decisions | `fhir-<engine>/plan.md` |
 | A port's work breakdown | `fhir-<engine>/tasks.md` |
@@ -133,5 +186,8 @@ gate against a substitute engine is worse than none (**F-06**).
 - Do not add a test that cannot fail. Verify it by mutation (`T11.10`).
 - Do not delete an audit finding because the text that stated it was rewritten.
   Findings close when they are fixed.
-- Do not push. Every port's `origin` is still the ancestor project's repository
-  (**F-11**).
+- Ask before pushing — but not for the reason this line used to give. The six
+  ports no longer have their own `origin`s (**F-11** is resolved: they are
+  directories in one repository, remote `fhir-rust/fhir-rust`). What is still
+  unsettled is `fhir-store/`, a nested repository with no remote that the parent
+  does not track (**F-37**) — pushing would silently omit it.

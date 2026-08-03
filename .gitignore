@@ -1,3 +1,9 @@
 target/
 tmp/
 .sota
+
+# CycloneDX SBOMs (O10.10). Generated per release by `cargo cyclonedx` and
+# uploaded as a CI artifact, not committed: an SBOM describes one build, and a
+# stale one in the tree is worse than none — the same failure the map assets
+# had before F-40 gave them a regeneration path.
+*.cdx.json

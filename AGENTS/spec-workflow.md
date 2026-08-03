@@ -26,7 +26,8 @@ commit lands, not after.
 ## Requirement identifiers
 
 Every normative statement has an id: `M3.16b`, `PR12.6`, `T11.12`, `L4`. The
-prefix is fixed per section; the [core index](../spec/index.md) lists them.
+prefix is fixed per section; the [core index](../spec/databases/index.md) lists
+them, and [`spec/index.md`](../spec/index.md) lists every family's.
 
 **Ids are permanent and never reused** (`C0.5`). This is the rule that costs
 nothing to keep and cannot be repaired once broken:
@@ -43,13 +44,14 @@ them.
 
 ## Amending the core
 
-1. Edit the file in `/spec`. Once — there are no other copies (`W16.5`).
+1. Edit the file in [`/spec/databases`](../spec/databases/index.md). Once —
+   there are no other copies (`W16.5`).
 2. State the reason in the commit. If the amendment exists to match what a port
    already does, **say which port** (`C0.22`). A considered generalization and a
    rubber stamp are indistinguishable afterwards.
-3. Check the [conformance matrix](../spec/conformance-matrix.md): does the
+3. Check the [conformance matrix](../spec/databases/conformance-matrix.md): does the
    amendment change any port's status?
-4. Check [`audit.md`](../spec/audit.md): does it close a finding, or create one?
+4. Check [`audit.md`](../spec/databases/audit.md): does it close a finding, or create one?
 
 ## Adding a dialect departure
 
@@ -101,7 +103,7 @@ thing from different angles: **a gap that is not written down reads as a pass**.
   `?`. Sharing a correct implementation is not evidence that this port runs it.
 
 The register of everything currently in that state is
-[`spec/audit.md`](../spec/audit.md). Add to it rather than carrying the
+[`spec/audit.md`](../spec/databases/audit.md). Add to it rather than carrying the
 knowledge in your head or in a commit message nobody will re-read.
 
 ## Worked example: the accent fold
@@ -110,7 +112,7 @@ The change that widened the fold to reach `Ærø` shows the whole loop, includin
 the parts that are easy to skip.
 
 1. **Spec.** The fold is normative in
-   [`locale-accent-folding.md`](../spec/locale-accent-folding.md). Widening it
+   [`locale-accent-folding.md`](../spec/databases/locale-accent-folding.md). Widening it
    meant `L6` gained mappings — a change to `L4`/`L6` is by `L12` a **data
    migration**, not a code change.
 2. **Consequence.** `L13`: a deployment that changes the fold must backfill
