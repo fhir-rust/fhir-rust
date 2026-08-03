@@ -35,7 +35,7 @@ put patient data in:
 | **TLS to clients** | Terminate at the perimeter, or use the in-process `tls` feature. |
 | **Rate limiting per identity** | fhir-sqlite bounds concurrency and request cost, not per-user quotas. |
 | **Network isolation** | The API, `/metrics`, and the database link should not share a network with untrusted clients. |
-| **Backup and retention** | Plain PostgreSQL (`pg_dump`, PITR). fhir-sqlite guarantees a consistent snapshot is a valid store; it does not schedule anything. |
+| **Backup and retention** | Your engine's own tooling — a file copy, or SQLite's online backup API / `VACUUM INTO`. fhir-sqlite guarantees a consistent snapshot is a valid store; it does not schedule anything. |
 | **Key management and at-rest encryption** | Filesystem, volume, or cloud-provider encryption. fhir-sqlite stores no secrets and manages no keys. |
 
 ## What neither provides yet

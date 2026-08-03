@@ -16,6 +16,6 @@ Three things to know before editing anything here:
    filters against `information_schema`, and both filters run *after* the adds.
    The live suites need a DSN — `scripts/db.sh up` prints it; they found F-20,
    F-21, F-23, F-24 and F-28.
-3. Normative behaviour is [`../spec/`](../spec/index.md), not this directory.
-   Check [`../spec/audit.md`](../spec/audit.md) before reporting a defect — it
+3. Normative behaviour is [`../spec/`](../spec/databases/index.md), not this directory.
+   Check [`../spec/audit.md`](../spec/databases/audit.md) before reporting a defect — it
    may already be tracked.

@@ -34,7 +34,7 @@ fn dsn() -> Option<String> {
 
 fn sampled(schema: &str) -> Option<Arc<RelMap>> {
     let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../assets/fhir-mysql-relmap-r5.json.gz");
+        .join("../fhir-mysql-map/assets/fhir-mysql-relmap-r5.json.gz");
     let bytes = std::fs::read(path).ok()?;
     let mut m = RelMap::from_gz_bytes(&bytes).ok()?;
     m.resources.retain(|k, _| k == "Patient");

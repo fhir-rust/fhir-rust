@@ -35,7 +35,7 @@ put patient data in:
 | **TLS to clients** | Terminate at the perimeter, or use the in-process `tls` feature. |
 | **Rate limiting per identity** | fhir-mssql bounds concurrency and request cost, not per-user quotas. |
 | **Network isolation** | The API, `/metrics`, and the database link should not share a network with untrusted clients. |
-| **Backup and retention** | Plain PostgreSQL (`pg_dump`, PITR). fhir-mssql guarantees a consistent snapshot is a valid store; it does not schedule anything. |
+| **Backup and retention** | Your engine's own tooling — native `BACKUP DATABASE`, log shipping, point-in-time restore. fhir-mssql guarantees a consistent snapshot is a valid store; it does not schedule anything. |
 | **Key management and at-rest encryption** | Filesystem, volume, or cloud-provider encryption. fhir-mssql stores no secrets and manages no keys. |
 
 ## What neither provides yet

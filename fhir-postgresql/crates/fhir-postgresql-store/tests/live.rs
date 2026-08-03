@@ -15,9 +15,10 @@ fn spec_root() -> Option<PathBuf> {
         std::env::var("FHIR_POSTGRESQL_SPEC_DIR")
             .ok()
             .map(PathBuf::from),
+        // This monorepo: the model family carries the specification packages.
         Some(PathBuf::from(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../../fhir-rust-crate/doc/fhir-specifications"
+            "/../../../fhir/doc/fhir-specifications"
         ))),
     ];
     candidates.into_iter().flatten().find(|p| p.exists())

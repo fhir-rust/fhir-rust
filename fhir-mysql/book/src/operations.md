@@ -67,6 +67,7 @@ interrupted, rerunning `--upgrade` continues where it stopped.
 
 ## Backup
 
-A fhir-mysql store is plain PostgreSQL: `pg_dump`, physical replication, and
-point-in-time recovery all apply unchanged, and any consistent snapshot
-is a valid store.
+A fhir-mysql store is plain MySQL: `mysqldump` for a logical dump, binary-log
+replication, and any consistent snapshot is a valid store. Point-in-time
+recovery is binlog replay — not PostgreSQL's WAL-based PITR, which this chapter
+described for every port until 2026-08-03 (audit **F-56**).

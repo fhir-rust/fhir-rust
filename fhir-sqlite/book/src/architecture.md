@@ -10,14 +10,15 @@ Five crates:
   integrity error instead of silent data loss.
 - **fhir-sqlite-gen** — reads a FHIR specification package
   (StructureDefinitions + SearchParameters) and builds the map:
-  identifier fitting under PostgreSQL's 63-byte limit, width-based
+  identifier fitting under a 63-byte budget (below every supported
+  engine's own limit, so one map serves all six), width-based
   force-splitting, cycle detection (type cycles spill; contentReference
   recursion shares tables via ordinal sign lanes), and the search
   compiler that resolves FHIRPath expressions by walking the map tree.
-- **fhir-sqlite-store** — tokio-postgres + deadpool. Transactional writes with
+- **fhir-sqlite-store** — `rusqlite`, one connection per store. Transactional writes with
   history append, optimistic concurrency, multi-op transactions,
   pipelined multi-table reads, search execution, install/upgrade. All
-  values cross the wire as text with explicit casts, preserving the
+  values bind as text, preserving the
   engine's lexical-fidelity guarantees.
 - **fhir-sqlite-server** — axum. The FHIR RESTful API, bundle processing,
   generated CapabilityStatements, request ids, metrics.

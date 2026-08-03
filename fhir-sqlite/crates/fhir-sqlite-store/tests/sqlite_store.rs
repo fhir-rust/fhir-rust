@@ -12,7 +12,7 @@ use fhir_sqlite_store::sqlite::SqliteStore;
 
 fn relmap(version: &str) -> Option<Arc<RelMap>> {
     let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../assets")
+        .join("../fhir-sqlite-map/assets")
         .join(format!("fhir-sqlite-relmap-{version}.json.gz"));
     let bytes = std::fs::read(path).ok()?;
     RelMap::from_gz_bytes(&bytes).ok().map(Arc::new)

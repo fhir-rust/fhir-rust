@@ -23,7 +23,7 @@ with its own generated schema in its own database file.
 > 43 tests covering round-trip by column type, concurrency, redaction, search,
 > history, and the audit chain. Writing the concurrency and redaction suites
 > found four real defects, three of them High — see **F-20** to **F-23** in the
-> [audit register](../spec/audit.md). Notably, `Patient.active` did not survive
+> [audit register](../spec/databases/audit.md). Notably, `Patient.active` did not survive
 > a round trip, and nothing in 27 passing tests noticed, because every fixture
 > was built from strings.
 >
@@ -32,9 +32,9 @@ with its own generated schema in its own database file.
 > each fails saying so rather than pretending. Two `T11.8`
 > gaps remain: per-algorithm independent tamper detection, and the
 > truncated-chain-versus-checkpoint case. Read the
-> [conformance matrix](../spec/conformance-matrix.md) before deploying.
+> [conformance matrix](../spec/databases/conformance-matrix.md) before deploying.
 >
-> Normative behaviour: the shared [core spec](../spec/index.md) plus this port's
+> Normative behaviour: the shared [core spec](../spec/databases/index.md) plus this port's
 > [dialect annex](spec/14-sqlite-dialect.md).
 
 ## Why relational
@@ -71,8 +71,7 @@ use fhir_sqlite_store::{Audit, sqlite::SqliteStore};
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // The relational map ships as a committed asset — no FHIR packages needed.
-    let bytes = std::fs::read("assets/fhir-sqlite-relmap-r5.json.gz")?;
-    let map = Arc::new(RelMap::from_gz_bytes(&bytes)?);
+        let map = Arc::new(RelMap::bundled("r5")?);   // compiled in (feature `r5`)
 
     let store = SqliteStore::open("clinic.sqlite", map).await?;
     store.init("r5-baseline").await?;        // ~7,400 tables, one transaction
@@ -178,9 +177,9 @@ table of what is guaranteed here and what you must provide.
 - **[The book](book/src/SUMMARY.md)** — getting started, storage model,
   querying, search, operations, architecture.
 - [`spec/index.md`](spec/index.md) — this port's spec index and departures; the
-  normative core is shared at [`../spec/`](../spec/index.md).
+  normative core is shared at [`../spec/`](../spec/databases/index.md).
 - [`../doc/`](../doc/index.md) — monorepo tutorials and examples.
-- [`../spec/conformance-matrix.md`](../spec/conformance-matrix.md) — what this
+- [`../spec/conformance-matrix.md`](../spec/databases/conformance-matrix.md) — what this
   port actually satisfies.
 - [`plan.md`](plan.md) · [`tasks.md`](tasks.md) · [`CHANGELOG.md`](CHANGELOG.md)
 - [`doc/benchmarks.md`](doc/benchmarks.md) · [`doc/ci.md`](doc/ci.md)

@@ -16,7 +16,7 @@ fn dsn() -> Option<String> {
 
 fn relmap(version: &str) -> Option<Arc<RelMap>> {
     let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../assets")
+        .join("../fhir-mariadb-map/assets")
         .join(format!("fhir-mariadb-relmap-{version}.json.gz"));
     let bytes = std::fs::read(path).ok()?;
     RelMap::from_gz_bytes(&bytes).ok().map(Arc::new)

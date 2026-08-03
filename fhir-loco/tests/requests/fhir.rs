@@ -119,6 +119,50 @@ async fn metadata_lists_what_is_actually_served() {
     .await;
 }
 
+/// The CapabilityStatement must name every interaction the router serves.
+///
+/// It did not. The routes have carried `POST`, `PUT` and `DELETE` since they
+/// were written, while `metadata` advertised `read`, `vread` and `search-type`
+/// alone — so a client doing conformance-driven discovery would have concluded
+/// this server was read-only and never attempted a write.
+///
+/// `A7.12` is normally read as "do not declare what you cannot do". This is the
+/// same requirement in the other direction, and it went unnoticed because
+/// nothing compared the two lists. That is the shape `U11a` names: where two
+/// artifacts must agree, assert the agreement, because each is self-consistent
+/// while contradicting the other.
+#[tokio::test]
+#[serial]
+async fn metadata_declares_every_interaction_the_router_serves() {
+    store_ready().await;
+    request::<App, _, _>(|request, _ctx| async move {
+        let body = body_of(&request.get("/r5/metadata").await.text());
+        let res = &body["rest"][0]["resource"];
+        let patient = res
+            .as_array()
+            .expect("resource array")
+            .iter()
+            .find(|r| r["type"] == "Patient")
+            .expect("Patient must be listed");
+        let declared: Vec<&str> = patient["interaction"]
+            .as_array()
+            .expect("interaction array")
+            .iter()
+            .filter_map(|i| i["code"].as_str())
+            .collect();
+        // Keep this list in step with `controllers::fhir::routes`.
+        for want in ["read", "vread", "search-type", "create", "update", "delete"] {
+            assert!(
+                declared.contains(&want),
+                "the router serves `{want}` but the CapabilityStatement does not \
+                 declare it; a conformance-driven client would never try it. \
+                 Declared: {declared:?}"
+            );
+        }
+    })
+    .await;
+}
+
 #[tokio::test]
 #[serial]
 async fn an_unmounted_version_says_what_is_mounted() {

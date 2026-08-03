@@ -1,13 +1,13 @@
 # fhir-postgresql tasks
 
-> **Parts of this file are untrue of this port (audit [F-27](../spec/audit.md#f-27)).**
+> **Parts of this file are untrue of this port (audit [F-27](../spec/databases/audit.md#f-27)).**
 > The `M4 — REST server` milestone, `T8 CLI v1`, and `T23 Multi-version serve`
 > are checked off, and none of that code exists in any port: there is no
 > `fhir-*-server` crate, no `serve` binary, and no REST test suite anywhere in
 > this repository.
 >
 > Do not read a `[x]` here as evidence. The
-> [conformance matrix](../spec/conformance-matrix.md) is the status document to
+> [conformance matrix](../spec/databases/conformance-matrix.md) is the status document to
 > trust.
 
 Work breakdown for the plan's milestones. Each task lists its acceptance
@@ -106,40 +106,34 @@ criterion. Order within a milestone is roughly dependency order.
   scans. *Note:* ILIKE-prefix string search bypasses btree — revisit with
   text_pattern_ops if profiles demand.
 
-## M4 — REST server
+## M4 — REST server: **moved to `fhir-loco`**
 
-> **The whole of M4 is untrue of this port (audit [F-27](../spec/audit.md#f-27)).**
-> No port in this repository has a `fhir-*-server` crate, a `serve` binary, or a
-> REST integration suite; every workspace is exactly `-map`, `-gen`, and
-> `-store`. The `[x]` marks below record the ancestor project's history, not
-> this port's. Whether a server is planned here at all is undecided — see
-> **F-05**.
+The REST server exists. It is **not** in this port and never will be: it is a
+separate crate, [`fhir-loco`](../fhir-loco/), built on Loco.rs, Axum, Tokio and
+Hyper, and it currently mounts over `fhir-sqlite`.
 
-- [x] **T16 axum skeleton.** `fhir-postgresql-server` crate + `fhir-postgresql serve`:
-  versioned base paths, application/fhir+json, 32 MiB body limit,
-  OperationOutcome error mapping (400/404/410/412/501/500 with opaque
-  internals), /health + /ready. *Accept met* in the rest integration
-  suite. *Remaining:* request ids, graceful-shutdown wiring (M6).
-- [x] **T17 Full CRUD + history endpoints.** create (server-assigned ids,
-  Location + ETag), read (404 vs 410), update with If-Match → 412, delete
-  (idempotent 204), instance history bundle, vread.
-  *Accept met:* §7 rest suite green, including If-None-Exist conditional
-  create (0 → create, 1 → 200 with the match, many → 412).
-  *Remaining:* conditional delete-by-search.
-- [x] **T18 Search over HTTP.** GET + POST `_search` (query + form
-  merged), searchset bundles with fullUrl, self/next links; next-link
-  paging verified by walking it in the test. `_count` capped at 1000;
-  unimplemented result params answer 501 rather than lying.
-- [x] **T19 Batch/transaction.** Batch: independent entries (GET read,
-  POST, PUT, DELETE) with per-entry statuses. Transaction: DELETE→POST→PUT
-  ordering, urn:uuid reference rewriting (JSON-walk, whole-string match),
-  single database transaction via `Store::transact`.
-  *Accept met:* urn resolution verified end-to-end; poison-entry
-  transaction provably rolls back. *Remaining:* GET entries inside
-  transactions, conditional references.
-- [x] **T20 CapabilityStatement generation.** Generated per version from
-  the map + compiled search params (only supported params listed) — never
-  hand-edited. *Remaining:* touchstone-style external validation (M6).
+That resolves what **F-27** class 1 recorded as undecided. These milestones were
+not "planned and unfinished" — they were **misattributed**, inherited from the
+ancestor project where the server lived inside the port. Deleting them is
+therefore correct, and unticking them would have been wrong: it would have
+asserted that this port is going to grow a server, which it is not
+(`C0.17`, `C0.18`).
+
+What `fhir-loco` serves today:
+
+| Route | Methods |
+| --- | --- |
+| `/{version}/metadata` | `GET` |
+| `/{version}/{rtype}` | `GET` (search), `POST` (create) |
+| `/{version}/{rtype}/{id}` | `GET`, `PUT`, `DELETE` |
+| `/{version}/{rtype}/{id}/_history` | `GET` |
+| `/{version}/{rtype}/{id}/_history/{vid}` | `GET` |
+
+Authentication is PASETO v4.public, and there is no unauthenticated mode.
+
+**What this port owes the server** is the store API it calls, which is
+everything in M1–M3 and M6–M7 below. If you came here looking for endpoint
+work, it is in `fhir-loco`.
 
 ## M5 — R4 and R3
 
@@ -156,9 +150,10 @@ criterion. Order within a milestone is roughly dependency order.
 - [ ] **T22 R3 artifacts.** Same for 3.0.2.
   *Accept:* full R3 examples corpus round-trips live; REST suite green on
   `/r3`.
-- [x] **T23 Multi-version serve.** `fhir-postgresql serve` mounts every version
-  whose assets exist and whose schema is installed; per-version capability
-  statements. *Verified:* one process serving r3 + r4 + r5, curl-checked.
+- [x] **T23 Multi-version serve.** *Done, in [`fhir-loco`](../fhir-loco/),
+  not here.* It loads `r3`, `r4` and `r5` maps at startup and routes on
+  `/{version}/…`; this port supplies the store it reads. Not `fhir-postgresql
+  serve`, which does not exist (`C0.18`).
 
 ## M6 — Production hardening
 
@@ -174,7 +169,10 @@ criterion. Order within a milestone is roughly dependency order.
   *Accept met:* `validate_tests` covers R3/R4/R5 and records the one thing
   `--validate` does not catch (unknown elements — serde ignores them; the
   shredder rejects them per D12).
-- [x] **T-graceful.** `fhir-postgresql serve` shuts down cleanly on SIGINT/SIGTERM.
+- [x] **T-graceful.** *Belongs to [`fhir-loco`](../fhir-loco/).* Shutdown
+  is the server's concern, and Loco owns the signal handling; a library
+  has no process to shut down.
+
 - [~] **T24 Observability.** Done: /health, /ready, /metrics (Prometheus
   text: request/response-class/latency counters), X-Request-Id
   (propagated or generated) with per-request tracing that logs
@@ -238,18 +236,33 @@ guarantees, P2 items are reach.
   `sslmode`/`PGSSLROOTCERT`, default `prefer`, and refuse a non-loopback
   `--bind` over an unencrypted connection without `--allow-insecure-db`.
   *Done:* `SslPolicy`, rustls connector, `PGSSLROOTCERT` trust anchors,
-  `Store::connect_with`, the `serve` startup guard, and a startup warning
-  whenever the link is unencrypted. fhir-postgresql's `require` validates the
-  certificate where libpq's does not — a documented deviation, in the safe
-  direction. The startup refusal is now split out as `refuse_insecure_db`
-  and tested as a policy table (`startup_guard_tests`), including the case
-  where the bind will not resolve — "I could not tell" must count as
-  not-loopback, or the check silently skips itself.
-  The live test against a TLS-only PostgreSQL now runs in CI
-  (`ci.yml`, `tls-database`): a `hostssl`-only server, with a step that first
-  proves plaintext really is refused — a gate that silently permits downgrade
-  tests nothing — then runs the live suite with `PGSSLMODE=require` and the
-  self-signed certificate as its own trust anchor.
+  `Store::connect_with`, and a startup warning whenever the link is
+  unencrypted. fhir-postgresql's `require` validates the certificate where
+  libpq's does not — a documented deviation, in the safe direction.
+
+  **Not done, and previously claimed as done:** the startup refusal.
+  `refuse_insecure_db`, the `startup_guard_tests` policy table, and the
+  `--bind`/`--allow-insecure-db` interaction do not exist in any port, and
+  there is no `serve` binary for them to guard (`C0.17`, `C0.18`). The
+  reasoning recorded there — that a bind which will not resolve must count as
+  not-loopback, or the check silently skips itself — is a sound argument about
+  code nobody has written. Corrected under **F-27**; it belongs with the REST
+  milestones, whose fate is undecided.
+
+  **The default is still `Prefer`, which does not verify** — `O10.7` asks for a
+  verifying default and this port does not have one. Tracked as **F-17**; it is
+  a breaking change and the owner's call.
+
+  A live test against a TLS-only PostgreSQL is **written but does not run**.
+  The job exists — `.github/workflows/ci.yml`, `tls-database` — but this
+  repository's workflows all sit under `<family>/.github/workflows/`, which
+  GitHub does not read, so none of them execute (**F-49**).
+
+  What it *would* do, and what someone running it by hand gets: a
+  `hostssl`-only server, a step that first proves plaintext really is refused —
+  a gate that silently permits downgrade tests nothing — then the live suite
+  with `PGSSLMODE=require` and the self-signed certificate as its own trust
+  anchor. The design is right; nothing has executed it.
 
   *Remaining:* nothing on GitHub. There is no Woodpecker counterpart, because
   Woodpecker starts services before workspace steps run, so a certificate
@@ -466,13 +479,16 @@ guarantees, P2 items are reach.
   `histogram_quantile` answers p99. A running total plus a count gives only
   the mean, and the mean cannot tell "every request took 40ms" from "99%
   took 5ms and 1% took 4 seconds" — which is the case anyone is paged for.
-- [x] **T46 Honest CapabilityStatement (A7.12).** Declare
-  `conditionalCreate`/`Update`/`Delete`, `searchInclude`, `searchRevInclude`,
-  `readHistory`, `versioning`, and the `security` block; drop interactions
-  that are not implemented. *Done:* per-resource `versioning`, `readHistory`,
-  `updateCreate`, `conditionalCreate`/`Update`/`Delete`, `referencePolicy`,
-  `searchInclude`/`RevInclude`; system-level `transaction` and `batch`; and a
-  `security.description` stating plainly that fhir-postgresql verifies no identity.
+- [x] **T46 Honest CapabilityStatement (A7.12).** *In
+  [`fhir-loco`](../fhir-loco/)* — `GET /{version}/metadata`, generated from
+  the map this port produces.
+
+  Corrected 2026-08-03: it declared `read`, `vread` and `search-type` while
+  the router also served `POST`, `PUT` and `DELETE`, so a
+  conformance-driven client would have concluded the server was read-only.
+  `A7.12` in the other direction. Now asserted by
+  `metadata_declares_every_interaction_the_router_serves`.
+
 - [x] **T47 Supply-chain evidence (O10.10).** `cargo deny` + `cargo audit`
   in CI, CycloneDX SBOM per release, checksums for published artifacts.
   *Done:* a `supply-chain` CI job (cargo-deny + CycloneDX, SBOM uploaded as

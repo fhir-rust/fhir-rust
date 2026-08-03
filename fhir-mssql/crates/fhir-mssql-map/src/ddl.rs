@@ -29,6 +29,45 @@ use crate::model::{ColTy, RelMap, ResourceMap, Table, TableKind};
 const ID_COL: &str = "NVARCHAR(64) COLLATE Latin1_General_100_BIN2";
 
 /// SQL Server type mapping for the map's column types (M14.6).
+/// Does this dialect need the unbounded-string adjuncts (`U1`, `U9`)?
+///
+/// `NVARCHAR(MAX)` cannot be indexed, so U1 requires both adjuncts.
+///
+/// The generator reads this to decide whether to put `<col>_idx` and `<col>_h`
+/// in the map at all. `gen` is byte-identical across all six ports (`X15.1`);
+/// this constant is in `ddl.rs`, which is the one file a dialect may own.
+pub const TEXT_ADJUNCTS: bool = true;
+
+/// Can this dialect **not** index or compare a column of this type as bound?
+///
+/// The second half of `U1a`'s trigger. The first — that a search reaches the
+/// column — is the generator's to know; this is the dialect's, and only the two
+/// together justify an adjunct.
+///
+/// `NVARCHAR(MAX)` cannot be part of an index key on this engine.
+///
+/// Getting this wrong is not free in either direction. Return `true` too widely
+/// and every boolean a token search touches grows a derived column nothing
+/// reads; too narrowly and a search silently fails on the engine.
+///
+/// Every variant is listed rather than wildcarded, so adding a `ColTy` is a
+/// compile error here and forces the decision instead of defaulting it.
+pub fn needs_adjunct(ty: ColTy) -> bool {
+    match ty {
+        ColTy::Bool => false,
+        ColTy::Int => false,
+        ColTy::BigInt => false,
+        ColTy::Numeric => true,
+        ColTy::Text => true,
+        ColTy::TextC => false,
+        ColTy::TextIdx => false,
+        ColTy::Digest => false,
+        ColTy::Date => false,
+        ColTy::Timestamptz => false,
+        ColTy::Jsonb => true,
+    }
+}
+
 pub fn col_sql(ty: ColTy) -> &'static str {
     match ty {
         // SQL Server has a real BIT type; it stores 0/1 and packs 8 to a byte.
@@ -50,6 +89,11 @@ pub fn col_sql(ty: ColTy) -> &'static str {
         // rather than by the old byte-wise rule, which is what the folded
         // column's Rust-side ordering assumes.
         ColTy::TextC => "NVARCHAR(450) COLLATE Latin1_General_100_BIN2",
+        // U1/U10: this port materializes both adjuncts. The bound is 450 —
+        // recorded in the annex as U10 requires. The digest is 64 lowercase hex
+        // bytes (SHA-256) stored binary, per U4a — not hex text.
+        ColTy::TextIdx => "NVARCHAR(450) COLLATE Latin1_General_100_BIN2",
+        ColTy::Digest => "BINARY(32)",
         ColTy::Date => "DATE",
         // DATETIME2(6) rather than DATETIME: DATETIME rounds to 1/300th of a
         // second, which would silently alter a timestamp the hash chain commits
@@ -432,8 +476,12 @@ pub fn create_table(schema: &str, rm: &ResourceMap, t: &Table) -> String {
                  \x20 [v_kind] CHAR(1) NOT NULL,\n\
                  \x20 [v_text] NVARCHAR(MAX),\n\
                  \x20 [v_num] NVARCHAR(MAX),\n\
-                 \x20 [v_bool] BIT,\n\
-                 \x20 INDEX [{0}] ([rid]),\n\
+                 \x20 [v_bool] BIT",
+            );
+            push_adjunct_cols(&mut sql, t);
+            let _ = write!(
+                sql,
+                ",\n  INDEX [{0}] ([rid]),\n\
                  \x20 CONSTRAINT [{1}] FOREIGN KEY ([rid]) REFERENCES [{schema}].[{base}] ([id]) ON DELETE CASCADE",
                 rid_index_name(&t.name),
                 fk_name(&t.name)
@@ -450,8 +498,12 @@ pub fn create_table(schema: &str, rm: &ResourceMap, t: &Table) -> String {
                  \x20 [v_kind] CHAR(1) NOT NULL,\n\
                  \x20 [v_text] NVARCHAR(MAX),\n\
                  \x20 [v_num] NVARCHAR(MAX),\n\
-                 \x20 [v_bool] BIT,\n\
-                 \x20 INDEX [{0}] ([rid]),\n\
+                 \x20 [v_bool] BIT",
+            );
+            push_adjunct_cols(&mut sql, t);
+            let _ = write!(
+                sql,
+                ",\n  INDEX [{0}] ([rid]),\n\
                  \x20 CONSTRAINT [{1}] FOREIGN KEY ([rid]) REFERENCES [{schema}].[{base}] ([id]) ON DELETE CASCADE",
                 rid_index_name(&t.name),
                 fk_name(&t.name)
@@ -503,6 +555,28 @@ fn rid_index_name(table: &str) -> String {
     index_name(table, &["rid"])
 }
 
+/// Emit the `U1` adjuncts a fixed-shape table carries.
+///
+/// `Ext` and `Deep` hardcode their data columns, so `push_data_cols` never sees
+/// them, and the adjunct columns the generator attached to `url`, `leaf` and
+/// `v_text` would never reach the schema — leaving the map describing columns
+/// the database does not have (**F-46**).
+///
+/// This writes nothing on a dialect that indexes its unbounded text type,
+/// because `add_adjunct_columns` attached nothing there (`U9`). It must be
+/// called *before* the trailing key and constraint clauses: SQLite requires
+/// every column definition to precede them.
+fn push_adjunct_cols(sql: &mut String, t: &Table) {
+    for a in &t.adjunct_cols {
+        if let Some(n) = &a.bounded {
+            let _ = write!(sql, ",\n  [{n}] {}", col_sql(ColTy::TextIdx));
+        }
+        if let Some(n) = &a.digest {
+            let _ = write!(sql, ",\n  [{n}] {}", col_sql(ColTy::Digest));
+        }
+    }
+}
+
 fn push_data_cols(sql: &mut String, t: &Table) {
     for c in &t.cols {
         let _ = write!(sql, ",\n  [{}] {}", c.name, col_sql(c.ty));
@@ -528,6 +602,7 @@ mod tests {
             path: String::new(),
             cols,
             norm_cols: Vec::new(),
+            adjunct_cols: Vec::new(),
         }
     }
 

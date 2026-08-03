@@ -4,7 +4,7 @@
 NOT be cited as evidence for a conformance level until it is.
 
 This annex records where the PostgreSQL port departs from the
-[monorepo core](../../spec/index.md), and — as importantly — where it does not.
+[monorepo core](../../spec/databases/index.md), and — as importantly — where it does not.
 Requirements are numbered `M14.x` and use RFC 2119 keywords.
 
 ## Why this annex exists at all
@@ -124,7 +124,7 @@ were invisible while this port defined the spec.
   dispatch on. The project elected to treat itself as having no installed base
   rather than carry a dual-format verifier or add a per-row marker; **the
   migration for an existing database is a reload**, and its old rows report as
-  breaks until then. Tracked as [`audit.md`](../../spec/audit.md) **F-07**.
+  breaks until then. Tracked as [`audit.md`](../../spec/databases/audit.md) **F-07**.
 
 - **M14.13** **Departure.** `M3.6c` requires `Jsonb` bind to a type that does
   not re-normalize JSON. `jsonb` re-normalizes by definition — that is what it
@@ -233,31 +233,47 @@ were invisible while this port defined the spec.
 - **M14.26** TLS is `rustls`, configured from `PGSSLMODE` or the DSN, with
   `PGSSLROOTCERT` for the trust anchor (`O10.7`).
 
-- **M14.27** **Departure.** `O10.7` requires that a port default to verifying
-  the server certificate. `SslPolicy` has three effective modes and defaults to
-  `Prefer`, which does not verify:
+- **M14.27** **No longer a departure.** This entry recorded a violation of
+  `O10.7` — the default did not verify the server certificate — and the
+  violation is fixed (**F-17**, 2026-08-03). The id stays, because ids are
+  permanent (`C0.5`) and because what it now records is still dialect-specific:
+  how libpq's `sslmode` vocabulary maps onto this port's three modes, and where
+  that mapping is deliberately **stricter** than libpq.
+
+  Stricter-than-the-core is not a departure under `C0.12`, which is about a port
+  being unable to meet a requirement. Nothing here amends `O10.7`; the port
+  satisfies it.
+
+  `SslPolicy` has three effective modes and defaults to `Require`, which
+  verifies:
 
   | `sslmode` input | Effective mode | Verifies certificate? |
   |---|---|---|
   | `disable` | `Disable` | — |
-  | `prefer`, `allow` | `Prefer` **(default)** | no |
-  | `require`, `verify-ca`, `verify-full` | `Require` | yes, certificate **and** hostname |
+  | `prefer`, `allow` | `Prefer` | no |
+  | `require`, `verify-ca`, `verify-full` | `Require` **(default)** | yes, certificate **and** hostname |
 
-  Two things about that table are deliberate and one is not.
+  Both departures from libpq are deliberate and both are stricter.
 
-  Deliberate: `require` here is **stricter than libpq's**, which encrypts
-  without validating anything and therefore does not survive an active attacker.
-  Collapsing `verify-ca` into full verification is also deliberate — stricter
-  than asked, and the safe direction to err.
+  `require` here validates the certificate, where libpq's encrypts without
+  validating anything and so does not survive an active attacker. `verify-ca`
+  collapses into full verification — stricter than asked, and the safe direction
+  to err.
 
-  Not deliberate: the **default**. `Prefer` matches libpq, which is why it was
-  chosen, but libpq's default is a compatibility decision for a general-purpose
-  client and this is a component that carries PHI on every connection. A
-  deployment that sets nothing gets an unverified connection and no warning.
+  **The default is `Require`, not libpq's `prefer`.** `O10.7` requires a port to
+  default to verifying, and this one carries PHI on every connection; a
+  deployment that sets nothing must not get an unverified link and no warning.
+  Matching libpq was the original choice and was wrong: libpq's default is a
+  compatibility decision for a general-purpose client, which this is not.
 
-  Until the default changes, deployments MUST set `PGSSLMODE=verify-full`
-  explicitly, and the documentation MUST say so rather than describing
-  `verify-full` as "the production setting" as though it were in force.
+  Changed 2026-08-03 (**F-17**). It was deferred as breaking until someone
+  checked whether anything could break — the database crates have never been
+  published, so nothing could. `PGSSLMODE=prefer` still selects the weaker mode
+  for a deployment that wants it; it must now be asked for.
+
+  Documentation MUST NOT describe a weaker mode as "the production setting", and
+  MUST NOT tell readers to set `verify-full` as a workaround, which was the
+  correct instruction only while the default was wrong.
 
 ## Backup
 
@@ -269,4 +285,4 @@ were invisible while this port defined the spec.
 ---
 
 Part of the [fhir-postgresql specification](index.md), which is part of the
-[fhir-databases specification](../../spec/index.md).
+[fhir-databases specification](../../spec/databases/index.md).

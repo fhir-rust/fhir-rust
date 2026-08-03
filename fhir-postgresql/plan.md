@@ -1,5 +1,11 @@
 # fhir-postgresql plan
 
+> **A record of decisions, not of status.** Two things this plan assumes are
+> true of no port: there is no CLI, and the REST server is a separate crate,
+> [`fhir-loco`](../fhir-loco/) (`C0.17`, `C0.18`). The
+> [conformance matrix](../spec/databases/conformance-matrix.md) is the status
+> document (audit **F-61**).
+
 Ground-up rewrite of fhir-postgresql: fully normalized relational storage of FHIR
 R3/R4/R5 in PostgreSQL 18, with a FHIR REST server and CLI. The prior
 fhirbase-style implementation (jsonb bodies) remains in git history and is a
@@ -69,9 +75,10 @@ Work breakdown: [`tasks.md`](tasks.md).
 - **D14 — Workspace layout.** One cargo workspace:
   `fhir-postgresql-map` (relational map types + generic shred/reconstruct engine),
   `fhir-postgresql-gen` (spec → DDL + map), `fhir-postgresql-store` (PostgreSQL layer:
-  init/load/search/history), `fhir-postgresql-server` (axum), `fhir-postgresql` (CLI binary
-  tying it together). Generated artifacts live in `assets/` and are embedded
-  in the binary.
+  init/load/search/history). **There is no `fhir-postgresql-server` and no
+  `fhir-postgresql` CLI binary** — this decision was the ancestor project's, and the
+  REST surface became a separate crate, `fhir-loco` (`C0.17`, `C0.18`).
+  Generated artifacts live in `assets/` and are embedded in the crate.
 - **D15 — Attribution is core, even though authentication is not.** D13
   keeps identity *verification* outside; it does not excuse anonymous
   history. fhir-postgresql accepts a principal from a trusted proxy (PR12.1–PR12.3)
@@ -157,9 +164,11 @@ Work breakdown: [`tasks.md`](tasks.md).
   transactional writes; ETag concurrency; `fhir_postgresql_meta` and idempotent init.
 - **M3 — Search.** Search-parameter compiler, indexes, result parameters,
   paging; generated support matrix; search test suite.
-- **M4 — REST server.** axum server: CRUD, vread/history, search,
-  capability statement, batch/transaction, OperationOutcome errors, limits;
-  integration suite for §7.
+- **M4 — REST server.** *Not this port's milestone.* It became
+  [`fhir-loco`](../fhir-loco/) — Loco.rs, Axum — serving CRUD, vread/history,
+  search and a CapabilityStatement over a store. Retained here because the
+  decision to keep HTTP out of the port is a real design decision and this is
+  where it is recorded.
 - **M5 — R4 and R3.** Run the same generator + engine over 4.0.1 and 3.0.2
   spec packages; version-specific quirks fixed; full example-corpus
   round-trip per version.

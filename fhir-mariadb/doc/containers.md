@@ -62,14 +62,23 @@ thousands of files.
 Discovery order, first hit wins:
 
 1. `FHIR_MARIADB_SPEC_DIR`, if set.
-2. `../fhir-rust-crate/doc/fhir-specifications` next to this repo.
-3. `~/git/joelparkerhenderson/fhir-rust-crate/doc/fhir-specifications`.
+2. `../fhir/doc/fhir-specifications` — the model family in this monorepo, which
+   is where the definitions and the example corpus actually live.
 
-Set `FHIR_MARIADB_SPEC_DIR` to point somewhere else. The tests themselves fall back to
-the same sibling-checkout path relative to their own crate, so they work with no
-environment set at all — but they **skip silently** when the inputs are missing,
-which is the behaviour to remember when a suite reports success suspiciously
-fast. A live test that finishes in 0.00s did not run.
+Entries 2 and 3 used to name `../fhir-rust-crate/…` and a path under one
+developer's home directory, both from the layout that preceded this monorepo.
+Neither existed here, so every spec-dependent test resolved nothing and skipped
+while reporting success — **F-39** and **F-42**, 7,399 round-trips per port that
+had never run.
+
+Set `FHIR_MARIADB_SPEC_DIR` to point somewhere else. The tests resolve the same two
+candidates relative to their own crate, so they work with no environment set at
+all in a normal checkout.
+
+When the inputs really are missing the tests still skip — but they now **say so**
+rather than passing quietly, because a skip that reads as a pass is the failure
+`T11.12` exists to prevent. The habit is worth keeping either way: a live test
+that finishes in 0.00s did not run.
 
 ## Environment the tests read
 

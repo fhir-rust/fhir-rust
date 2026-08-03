@@ -5,7 +5,7 @@
 Normative behaviour for this port is the monorepo core, plus this port's
 departures.
 
-- **The core** — [`../../spec/index.md`](../../spec/index.md). Sections 0–16,
+- **The core** — [`../../spec/index.md`](../../spec/databases/index.md). Sections 0–16,
   engine-neutral, shared by all six ports. Requirement ids (`M3.16b`, `PR12.6`,
   `T11.12`) mean the same thing here as anywhere.
 - **This port's departures** — [`14-mssql-dialect.md`](14-mssql-dialect.md),
@@ -59,27 +59,27 @@ Summarized from the annex; the annex governs.
   database fails rather than skips.
 - **F-16 (High)** — the annex described MySQL. **Fixed**, as above.
 - **F-02**, **F-03** — crate description and stale driver comment. **Fixed.**
-- **F-11** — shared; see the [register](../../spec/audit.md).
+- **F-11** — shared; see the [register](../../spec/databases/audit.md).
 
 ## Contents of the core
 
 | | Section | Prefix |
 | --- | --- | --- |
-| 0 | [Conformance](../../spec/00-conformance.md) | `C0.x` |
-| 1 | [Scope](../../spec/01-scope.md) | `S1.x` |
-| 2 | [Schema generation](../../spec/02-schema-generation.md) | `G2.x` |
-| 3 | [Storage model](../../spec/03-storage-model.md) | `M3.x` |
-| 4 | [Shredding and reconstruction](../../spec/04-shredding-and-reconstruction.md) | `R4.x` |
-| 5 | [Versioning and history](../../spec/05-versioning-and-history.md) | `H5.x` |
-| 6 | [Search](../../spec/06-search.md) | `P6.x` |
-| 9 | [Validation](../../spec/09-validation.md) | `V9.x` |
-| 10 | [Operations](../../spec/10-operations.md) | `O10.x` |
-| 11 | [Conformance testing](../../spec/11-conformance-testing.md) | `T11.x` |
-| 12 | [Trust, principal, and audit](../../spec/12-trust-principal-and-audit.md) | `PR12.x` |
-| 13 | [Compliance mapping](../../spec/13-compliance-mapping.md) | — |
+| 0 | [Conformance](../../spec/databases/00-conformance.md) | `C0.x` |
+| 1 | [Scope](../../spec/databases/01-scope.md) | `S1.x` |
+| 2 | [Schema generation](../../spec/databases/02-schema-generation.md) | `G2.x` |
+| 3 | [Storage model](../../spec/databases/03-storage-model.md) | `M3.x` |
+| 4 | [Shredding and reconstruction](../../spec/databases/04-shredding-and-reconstruction.md) | `R4.x` |
+| 5 | [Versioning and history](../../spec/databases/05-versioning-and-history.md) | `H5.x` |
+| 6 | [Search](../../spec/databases/06-search.md) | `P6.x` |
+| 9 | [Validation](../../spec/databases/09-validation.md) | `V9.x` |
+| 10 | [Operations](../../spec/databases/10-operations.md) | `O10.x` |
+| 11 | [Conformance testing](../../spec/databases/11-conformance-testing.md) | `T11.x` |
+| 12 | [Trust, principal, and audit](../../spec/databases/12-trust-principal-and-audit.md) | `PR12.x` |
+| 13 | [Compliance mapping](../../spec/databases/13-compliance-mapping.md) | — |
 | **14** | [**SQL Server dialect**](14-mssql-dialect.md) | `M14.x` |
-| 15 | [Portability and dialects](../../spec/15-portability-and-dialects.md) | `X15.x` |
-| 16 | [Repository and release](../../spec/16-repository-and-release.md) | `W16.x` |
-| — | [Locale and accent folding](../../spec/locale-accent-folding.md) | `Lx` |
+| 15 | [Portability and dialects](../../spec/databases/15-portability-and-dialects.md) | `X15.x` |
+| 16 | [Repository and release](../../spec/databases/16-repository-and-release.md) | `W16.x` |
+| — | [Locale and accent folding](../../spec/databases/locale-accent-folding.md) | `Lx` |
 
 Sections 7 and 8 are retired (`C0.15`).

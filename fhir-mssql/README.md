@@ -15,15 +15,17 @@ constraints — not JSON blobs.
 > not.
 >
 > **What does not exist:** the store. `crates/fhir-mssql-store/src/` contains
-> `lib.rs` and `chain.rs` and no implementation, and there are no store tests.
+> `lib.rs` and no implementation — 48 lines that re-export the shared audit
+> chain (`fhir-store`, **F-45**) and define an error type — and there are no
+> store tests.
 > You cannot write or read a resource with this crate today.
 >
 > **What was wrong until 2026-07-31**, worth knowing if you have read an older
 > copy of this file: it claimed 7,399 FHIR example resources round-tripped
 > through live SQL Server and that `fhir-mssql serve` mounted a REST API.
 > Neither was ever true here — the text was the `fhir-postgresql` README with
-> the engine name substituted. Tracked as [`audit.md`](../spec/audit.md)
-> **F-01**. The [conformance matrix](../spec/conformance-matrix.md) is the
+> the engine name substituted. Tracked as [`audit.md`](../spec/databases/audit.md)
+> **F-01**. The [conformance matrix](../spec/databases/conformance-matrix.md) is the
 > status document to trust.
 
 Supported FHIR versions in the generator and DDL: **R5 (5.0.0), R4 (4.0.1),
@@ -39,8 +41,7 @@ use std::sync::Arc;
 use fhir_mssql_map::model::RelMap;
 use fhir_mssql_map::{ddl, shred};
 
-let bytes = std::fs::read("assets/fhir-mssql-relmap-r5.json.gz")?;
-let map = Arc::new(RelMap::from_gz_bytes(&bytes)?);
+let map = Arc::new(RelMap::bundled("r5")?);   // compiled in (feature `r5`)
 
 // The T-SQL this port emits.
 for stmt in ddl::ddl(&map) {
@@ -115,8 +116,8 @@ In order, from [`tasks.md`](tasks.md) and the annex:
 ## Documentation
 
 - [`spec/index.md`](spec/index.md) — this port's spec index and departures; the
-  normative core is shared at [`../spec/`](../spec/index.md).
-- [`../spec/conformance-matrix.md`](../spec/conformance-matrix.md) — what this
+  normative core is shared at [`../spec/`](../spec/databases/index.md).
+- [`../spec/conformance-matrix.md`](../spec/databases/conformance-matrix.md) — what this
   port actually satisfies, requirement by requirement.
 - [`../doc/`](../doc/index.md) — monorepo tutorials and examples. Use
   `fhir-postgresql` or `fhir-sqlite` to follow them; this port has no store.

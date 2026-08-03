@@ -10,18 +10,18 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.4.0"
 keywords = ["fhir", "healthcare", "mysql", "hl7", "medical"]
-categories = ["database", "science", "command-line-utilities"]
+categories = ["database", "science", "data-structures"]
 edition = "2024"
 license = "MIT OR Apache-2.0 OR BSD-3-Clause OR GPL-2.0-only OR GPL-3.0-only"
-repository = "https://github.com/fhir-rust/fhir-mysql"
+repository = "https://github.com/fhir-rust/fhir-rust/"
 rust-version = "1.90"
 
 [workspace.dependencies]
-fhir-mysql-map = { path = "crates/fhir-mysql-map", version = "0.1.0" }
-fhir-mysql-gen = { path = "crates/fhir-mysql-gen", version = "0.1.0" }
-fhir-mysql-store = { path = "crates/fhir-mysql-store", version = "0.1.0" }
+fhir-mysql-map = { path = "crates/fhir-mysql-map", version = "0.4.0" }
+fhir-mysql-gen = { path = "crates/fhir-mysql-gen", version = "0.4.0" }
+fhir-mysql-store = { path = "crates/fhir-mysql-store", version = "0.4.0" }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["arbitrary_precision", "preserve_order"] }
 thiserror = "2"
@@ -40,7 +40,11 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal", "syn
 # the host and no spawn_blocking around every call. Decision D5's reason for
 # rejecting sqlx holds here too — the SQL is generated, so compile-time
 # checked queries buy nothing.
-mysql_async = { version = "0.34", default-features = false, features = ["minimal"] }
+# `rustls-tls`, not `minimal` alone: `minimal` excludes TLS entirely, which is
+# how this port shipped a plaintext-only connection (O10.7, F-54). rustls
+# rather than native-tls to match every other port and avoid an OpenSSL build
+# dependency.
+mysql_async = { version = "0.34", default-features = false, features = ["minimal", "rustls-tls"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 

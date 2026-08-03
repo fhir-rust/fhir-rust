@@ -30,10 +30,12 @@ schemas `r5`, `r4`, `r3`.
 > this file documented `cargo install --path crates/fhir-postgresql` and a
 > `fhir-postgresql serve` REST API; neither exists here, and spec sections 7
 > (REST API) and 8 (CLI) are retired for that reason
-> ([`C0.15`](../spec/00-conformance.md), audit **F-01**).
+> ([`C0.15`](../spec/databases/00-conformance.md), audit **F-01**).
 >
-> **One open defect:** `PGSSLMODE` defaults to `prefer`, which does not verify
-> the server certificate — set `verify-full` (**F-17**, `M14.27`).
+> **TLS verifies by default.** `PGSSLMODE` defaults to `require`, which
+> validates the server certificate *and* hostname — stricter than libpq, whose
+> `require` validates nothing. Set `PGSSLMODE=prefer` or `disable` only if you
+> mean it (**F-17**, `M14.27`).
 >
 > The hash-chain pre-image is now computed in Rust from the shared `canon.rs`
 > (**F-07** fixed, [`M14.12`](spec/14-postgresql-dialect.md)), so a chain
@@ -41,7 +43,7 @@ schemas `r5`, `r4`, `r3`.
 > **format change**: a database written before this release must be reloaded,
 > and its existing rows will report as chain breaks until it is.
 >
-> Normative behaviour: the shared [core spec](../spec/index.md) plus this
+> Normative behaviour: the shared [core spec](../spec/databases/index.md) plus this
 > port's [dialect annex](spec/14-postgresql-dialect.md); measurements:
 > [`doc/benchmarks.md`](doc/benchmarks.md).
 
@@ -78,10 +80,10 @@ use fhir_postgresql_store::{Store, pg_config};
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // The relational map ships as a committed asset — no FHIR packages needed.
-    let bytes = std::fs::read("assets/fhir-postgresql-relmap-r5.json.gz")?;
-    let map = Arc::new(RelMap::from_gz_bytes(&bytes)?);
+        let map = Arc::new(RelMap::bundled("r5")?);   // compiled in (feature `r5`)
 
-    // Set PGSSLMODE=verify-full in production: the default does not verify.
+    // TLS verifies by default (PGSSLMODE=require). Set PGSSLROOTCERT if
+    // your server uses a private CA.
     let cfg = pg_config(Some("host=localhost user=you dbname=clinic"))?;
     let store = Store::connect(cfg, map).await?;
     store.init("r5-baseline").await?;   // 7,355 tables, staged and renamed in
@@ -166,14 +168,15 @@ and a versioned `init --upgrade` migration path — the only port that has one.
 
 Metrics, health endpoints, and HTTP-level concerns belong to a service layer
 that does not exist in this monorepo; the requirements for it are retained and
-marked `[service]` in [`../spec/10-operations.md`](../spec/10-operations.md).
+marked `[service]` in [`../spec/10-operations.md`](../spec/databases/10-operations.md).
 
 `fhir-postgresql` handles PHI. It does **not** authenticate or authorize — that
 is the deployment's perimeter — but it does record who acted, on every write and
 every read. See the [trust boundary](../doc/trust-boundary.md) for the full
 table of what is guaranteed here and what you must provide. Two operational
-notes that are easy to miss: set `PGSSLMODE=verify-full` (the default does not
-verify, `M14.27`), and supply the chain key from a **file** rather than an
+notes that are easy to miss: TLS now verifies by default (`M14.27`), so the
+thing to check is that `PGSSLROOTCERT` points at your CA if the server uses a
+private one — and supply the chain key from a **file** rather than an
 environment variable (`M3.16b`).
 
 ## Documentation
@@ -182,9 +185,9 @@ environment variable (`M3.16b`).
   model, querying, search, operations, architecture. Its REST chapters describe
   a service layer that does not exist here (`C0.17`).
 - [`spec/index.md`](spec/index.md) — this port's spec index; the normative
-  core is shared at [`../spec/`](../spec/index.md), and this port's departures
+  core is shared at [`../spec/`](../spec/databases/index.md), and this port's departures
   are in [`spec/14-postgresql-dialect.md`](spec/14-postgresql-dialect.md).
-- [`../spec/conformance-matrix.md`](../spec/conformance-matrix.md) — what this
+- [`../spec/conformance-matrix.md`](../spec/databases/conformance-matrix.md) — what this
   port actually satisfies, requirement by requirement.
 - [`../doc/`](../doc/index.md) — monorepo tutorials and examples.
 - [`plan.md`](plan.md) — design decisions, risks, milestones.

@@ -1,0 +1,67 @@
+# Production configuration.
+#
+# This file was **empty** until 2026-08-03, and Loco selects its configuration
+# by `LOCO_ENV`, so `LOCO_ENV=production` did not fall back to defaults — it
+# refused to boot at all:
+#
+#     Error: YAMLFile(Error("missing field `logger`"), "config/production.yaml")
+#
+# The one environment this service exists to run in was the one it could not
+# run in. Audit F-59.
+
+logger:
+  enable: true
+  # `false` in production: a backtrace can carry file paths and argument
+  # values, and this process handles PHI. The audit chain and the access log
+  # are the record that matters (`PR12.5`), not a stack dump.
+  pretty_backtrace: false
+  level: info
+  # JSON so a log shipper can parse it. `compact` is for a terminal.
+  format: json
+
+server:
+  port: 5150
+  # Loopback by default. Binding 0.0.0.0 would put a FHIR API carrying PHI on
+  # every interface the host has, and that must be a deliberate act by whoever
+  # deploys it — not something inherited from a config file they did not read.
+  #
+  # Put a TLS-terminating proxy in front. This service speaks plain HTTP:
+  # `O10.7` covers the *database* link, and nothing in the specification yet
+  # states a requirement for the listener's own TLS (F-58).
+  binding: 127.0.0.1
+  host: http://localhost
+
+  middlewares:
+    # O10.8 — resource limits at the edge, not only at the pool.
+    #
+    # A FHIR Bundle is legitimately large, so this is not small; what it stops
+    # is a body that never ends.
+    limit_payload:
+      enable: true
+      body_limit: 32mb
+
+    # O10.8 — a per-request timeout. Generous for a store call, and short
+    # enough that a stuck request cannot hold a connection indefinitely.
+    timeout_request:
+      enable: true
+      timeout: 30000
+
+    # A panic must become a 500, not a dropped connection: a client that cannot
+    # distinguish "server fault" from "network fault" may retry a write it
+    # should not.
+    catch_panic:
+      enable: true
+
+    logger:
+      enable: true
+
+    # Not enabled, deliberately:
+    #
+    #   cors        — this API is not for browsers. Enabling it invites a
+    #                 credentialed cross-origin request against PHI.
+    #   compression — compressing attacker-influenced responses is the BREACH
+    #                 pattern, and buys little on JSON of this size.
+    #
+    # O10.8 also asks for a bounded concurrency limit and a maximum in-flight
+    # count, shedding as 503 with `Retry-After`. Loco 1.0.1 exposes neither, so
+    # they are **unmet** here rather than silently assumed — see F-58.

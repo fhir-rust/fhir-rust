@@ -1,19 +1,38 @@
 # Introduction
 
-fhir-mysql stores [FHIR](https://hl7.org/fhir/) resources in PostgreSQL 18 as
+> ## ⚠ Read this first
+>
+> This book was written for `fhir-postgresql` and copied to every port. The
+> engine-specific text is now corrected throughout.
+>
+> What several chapters still call `fhir-mysql serve` is really
+> **`fhir-loco`** — a separate crate (Loco.rs, Axum, Tokio, Hyper) that mounts
+> a FHIR REST API over a store. `fhir-mysql` itself is a **library**: no binary,
+> no `serve`, no HTTP surface
+> ([`C0.17`](../../../spec/databases/00-conformance.md),
+> [`C0.18`](../../../spec/databases/00-conformance.md); audit **F-56**).
+>
+> Read any endpoint, status code or `serve` command below as `fhir-loco`'s
+> behaviour, not this crate's. The
+> [conformance matrix](../../../spec/databases/conformance-matrix.md) is the
+> status document to trust.
+
+fhir-mysql stores [FHIR](https://hl7.org/fhir/) resources in MySQL 8.4 as
 **real relational tables** — typed columns, child tables, primary and
-foreign keys — not JSON or JSONB blobs, and serves them back through the
-standard FHIR RESTful API.
+foreign keys — not JSON blobs.
+
+It is a **library**. It does not serve HTTP: there is no `serve` command and no
+REST API in this workspace (`C0.17`).
 
 Two claims define the project, and both are enforced by tests:
 
 1. **Losslessness.** Any valid FHIR resource that goes in comes back
    semantically identical — array order, decimal precision, partial dates,
    extensions, and all. The entire official example corpus for R3, R4, and
-   R5 (7,399 resources) round-trips through live PostgreSQL, and ten
-   thousand generated property-test cases besides.
+   R5 (7,399 resources) round-trips through the shred/reconstruct engine,
+   and ten thousand generated property-test cases besides.
 2. **Relational honesty.** Live data lives in typed columns you can query,
-   join, index, and constrain with ordinary SQL. The only JSONB in the
+   join, index, and constrain with ordinary SQL. The only JSON in the
    system holds write-once history snapshots and anonymous contained
    resources — never data the schema claims to model.
 

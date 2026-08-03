@@ -18,7 +18,7 @@ at the root:
 
 Normative behaviour is the monorepo core plus this port's annex:
 
-- **[`../spec/index.md`](../spec/index.md)** — sections 0–16, shared.
+- **[`../spec/index.md`](../spec/databases/index.md)** — sections 0–16, shared.
 - **[`spec/index.md`](spec/index.md)** — this port's index and departures.
 - Annex: 14-mysql-dialect.md
 
@@ -59,9 +59,9 @@ database guarantee, so the live suite is the gate that means something.
 
 ## Status
 
-- [`../spec/conformance-matrix.md`](../spec/conformance-matrix.md) — what this
+- [`../spec/conformance-matrix.md`](../spec/databases/conformance-matrix.md) — what this
   port actually satisfies, requirement by requirement.
-- [`../spec/audit.md`](../spec/audit.md) — open findings.
+- [`../spec/audit.md`](../spec/databases/audit.md) — open findings.
 - [`tasks.md`](tasks.md) — the work breakdown.
 - [`plan.md`](plan.md) — design decisions and their reasons.
 

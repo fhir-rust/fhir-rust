@@ -1,6 +1,6 @@
 [package]
 name = "fhir-oracle-map"
-description = "Relational map model and generic shred/reconstruct engine for fhir-oracle"
+description = "Relational map and shred/reconstruct engine for fhir-oracle - SCAFFOLD: the DDL emitter still emits MySQL, not Oracle"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -9,9 +9,23 @@ rust-version.workspace = true
 keywords.workspace = true
 categories.workspace = true
 
+[features]
+# Which FHIR versions' maps are compiled in (F-33). Each is 0.5-1.2 MB in the
+# binary and most callers want one, so they are opt-in — the same shape the
+# model family uses for its release crates. `r5` is on by default.
+#
+# These gate compilation, not download: a .crate archive is static, so all
+# three maps ship with it regardless.
+default = ["r5"]
+r3 = []
+r4 = []
+r5 = []
+
 [dependencies]
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
 flate2.workspace = true
 unicode-normalization.workspace = true
+# U4: the checksum adjunct is computed here, never by a SQL function.
+sha2.workspace = true

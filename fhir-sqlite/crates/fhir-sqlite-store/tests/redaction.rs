@@ -29,7 +29,7 @@ const MARKER: &str = "Zzyzxbergenstein";
 
 fn relmap() -> Option<Arc<RelMap>> {
     let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../assets/fhir-sqlite-relmap-r5.json.gz");
+        .join("../fhir-sqlite-map/assets/fhir-sqlite-relmap-r5.json.gz");
     let bytes = std::fs::read(path).ok()?;
     RelMap::from_gz_bytes(&bytes).ok().map(Arc::new)
 }

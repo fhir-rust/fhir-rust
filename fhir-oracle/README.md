@@ -4,35 +4,53 @@ The intent: store [FHIR](https://hl7.org/fhir/) resources in Oracle Database as
 **real relational tables** — typed columns, child tables, foreign keys, and
 check constraints — not JSON blobs.
 
-> ## ⚠ Status: Scaffold. Nothing in this port is Oracle yet.
+> ## ⚠ Status: Scaffold. The schema is real and has been executed; no test runs it, and there is no runtime.
 >
 > This is the earliest of the six ports, and the README says so plainly because
 > until 2026-07-31 it did the opposite.
 >
-> **What works:** the FHIR-specification generator and the shred/reconstruct
-> engine. Both are shared, engine-independent Rust and are as correct here as in
-> any other port — resources round-trip losslessly **in memory**.
+> **What works:** the FHIR-specification generator, the shred/reconstruct engine
+> — both shared, engine-independent Rust, as correct here as in any other port —
+> and, since 2026-08-03, **the DDL emitter**.
 >
-> **What is not Oracle:**
+> The full R5 schema installs on Oracle:
 >
-> - **`ddl.rs` is still the MySQL emitter.** It produces `TEXT`, `TINYINT(1)`,
->   `DATETIME(6)`, `LONGTEXT`, and `COLLATE utf8mb4_0900_bin` — none of which
->   exist in Oracle — and its comments still discuss MySQL's 2038 `TIMESTAMP`
->   range. Its eleven MySQL-asserting tests are `#[ignore]`d so that a green run
->   cannot be mistaken for Oracle conformance. Tracked as
->   [`audit.md`](../spec/audit.md) **F-08**.
-> - **There is no store**, and no driver in the workspace.
-> - **There are no map tests** — `crates/fhir-oracle-map/tests/` does not exist.
+> | | |
+> | --- | --- |
+> | statements applied | 9,636 |
+> | tables / indexes | 7,358 / 9,479 |
+> | triggers / checks / foreign keys | 158 / 21,540 / 7,039 |
+> | **invalid objects** | **0** |
+> | unindexable search targets | **0** of 1,947 |
+>
+> Verified against Oracle AI Database 26ai Free (23.26.2.0.0), in one pass
+> (**F-08** closed).
+>
+> **What is still missing:**
+>
+> - **There is no store and no driver.** Nothing has been *written* through this
+>   schema by the port — only by hand, to prove the append-only guards fire. That
+>   gap is why no round-trip claim appears on this page.
+> - **No test runs the DDL.** The install above was done by hand with `sqlplus`.
+>   `C0.9` counts only tests that run, so the level stays **Scaffold** until a
+>   live test exists (**F-51**).
+> - **The eleven MySQL-asserting tests in `ddl.rs` are still `#[ignore]`d** and
+>   still need replacing (`M14.25`).
 > - **There is no local database script and no live CI gate.** Both existed and
->   both provisioned **MySQL**, so a green run proved nothing; they have been
->   removed rather than repointed, because there is nothing yet to point them at
->   (**F-06**).
+>   both provisioned **MySQL**, so a green run proved nothing; they were removed
+>   rather than repointed (**F-06**). Nothing in this repository runs in CI at
+>   all — see **F-49**.
+>
+> **Before you install it:** the three version namespaces are three Oracle
+> **users** (`M14.5`), and this port does **not** create them (`M14.28`).
+> Provision `r3`, `r4` and `r5` with quotas first; a deployment that cannot
+> create users cannot install this port.
 >
 > **What was wrong until 2026-07-31:** this README claimed 7,399 FHIR example
 > resources round-tripped through live Oracle and that `fhir-oracle serve`
 > mounted a REST API. Neither was ever true — the text was the
 > `fhir-postgresql` README with the engine name substituted (**F-01**). The
-> [conformance matrix](../spec/conformance-matrix.md) is the status document to
+> [conformance matrix](../spec/databases/conformance-matrix.md) is the status document to
 > trust.
 
 ## What you can do with it today
@@ -44,8 +62,7 @@ use std::sync::Arc;
 use fhir_oracle_map::model::RelMap;
 use fhir_oracle_map::shred;
 
-let bytes = std::fs::read("assets/fhir-oracle-relmap-r5.json.gz")?;
-let map = Arc::new(RelMap::from_gz_bytes(&bytes)?);
+let map = Arc::new(RelMap::bundled("r5")?);   // compiled in (feature `r5`)
 let rows = shred(map.resources.get("Patient").unwrap(), &patient)?;
 ```
 
@@ -93,9 +110,9 @@ The work is `ddl.rs` and a store. That is a real body of work, and it is bounded
 ## Documentation
 
 - [`spec/index.md`](spec/index.md) — this port's spec index; the normative core
-  is shared at [`../spec/`](../spec/index.md).
+  is shared at [`../spec/`](../spec/databases/index.md).
 - [`spec/14-oracle-dialect.md`](spec/14-oracle-dialect.md) — the decision list.
-- [`../spec/conformance-matrix.md`](../spec/conformance-matrix.md) — what this
+- [`../spec/conformance-matrix.md`](../spec/databases/conformance-matrix.md) — what this
   port actually satisfies.
 - [`../doc/tutorial-06-porting.md`](../doc/tutorial-06-porting.md) — the porting
   guide, written partly from this port's mistakes.

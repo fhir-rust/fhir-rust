@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+**Breaking — TLS to the database now verifies by default.** `SslPolicy`'s
+default moved from `Prefer` to `Require`, so a connection with no `PGSSLMODE`
+set validates the server certificate and hostname instead of accepting whatever
+the server offers. `O10.7` requires a verifying default and this connection
+carries PHI; `Prefer` matched libpq, which is a compatibility decision made for
+a general-purpose client.
+
+Marked breaking because it is, in principle — but nothing can currently break:
+the database crates have never been published, and that is precisely why this
+was done now rather than after a first release, when the same edit would cost a
+migration. Set `PGSSLMODE=prefer` to restore the old behaviour, and
+`PGSSLROOTCERT` if the server uses a private CA.
+
+Guarded by `tests/ssl_default.rs`, which needs no database. Audit **F-17**.
+
 ## 0.4.0 — tamper evidence that survives the database (2026-07-27)
 
 **Breaking:** `ChainBreak` gained an `algorithm` field, so a break is

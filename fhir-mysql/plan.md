@@ -1,7 +1,18 @@
 # fhir-mysql plan
 
+> **This plan is the ancestor project's, adapted.** It was written for
+> `fhir-postgresql` and copied to every port; the engine-specific text below has
+> been corrected, but read it as a record of *why* decisions were made, not as a
+> statement of what this port has done. The
+> [conformance matrix](../spec/databases/conformance-matrix.md) is the status
+> document, and `tasks.md` is the work breakdown (audit **F-61**).
+>
+> Two things it says that are true of no port: there is no CLI, and the REST
+> server is a separate crate, [`fhir-loco`](../fhir-loco/) (`C0.17`, `C0.18`).
+
 Ground-up rewrite of fhir-mysql: fully normalized relational storage of FHIR
-R3/R4/R5 in PostgreSQL 18, with a FHIR REST server and CLI. The prior
+R3/R4/R5 in MySQL 8.4. The REST server is a separate crate — `fhir-loco` — and
+there is no CLI (`C0.17`, `C0.18`). The prior
 fhirbase-style implementation (jsonb bodies) remains in git history and is a
 reference, not a base. Normative behaviour: [`spec/index.md`](spec/index.md).
 Work breakdown: [`tasks.md`](tasks.md).
@@ -11,10 +22,10 @@ Work breakdown: [`tasks.md`](tasks.md).
 - **D1 — Fully normalized schema.** One base table per resource type; child
   tables for every repeating/nested element; no JSONB for live data.
   Chosen by the owner over hybrid-JSONB and views. Consequence: thousands of
-  generated tables per version; PostgreSQL handles this, humans don't — so
+  generated tables per version; a database handles this, humans don't — so
   everything is generated (D3) and documented by generated indexes.
 - **D2 — All resource types, three versions.** R5 5.0.0 (default), R4 4.0.1,
-  R3 3.0.2, each complete, each in its own PostgreSQL schema (`r5`/`r4`/`r3`).
+  R3 3.0.2, each complete, each in its own MySQL database (`r5`/`r4`/`r3`).
   Chosen by the owner. Consequence: the generator and generic engine must be
   version-agnostic; only the spec packages differ.
 - **D3 — Metadata-driven engine, not mass codegen.** The generator emits DDL
@@ -29,9 +40,10 @@ Work breakdown: [`tasks.md`](tasks.md).
   R3/R4/R5 serde types + spec parser. The generator reuses its
   spec-package parsing where practical rather than re-implementing
   StructureDefinition traversal.
-- **D5 — tokio-postgres + deadpool, not sqlx.** SQL here is generated and
+- **D5 — mysql_async, not sqlx.** SQL here is generated and
   dynamic; sqlx's compile-time checking can't see it, so its cost buys
-  nothing. tokio-postgres gives pipelining and binary-format parameters.
+  nothing. (The original reasoning was tokio-postgres's pipelining and
+  binary-format parameters; this port's driver is mysql_async.)
 - **D6 — axum for HTTP.** Boring, maintained, tower middleware for
   timeouts/limits/tracing.
 - **D7 — History is JSONB.** `<resource>_history` stores full-resource
@@ -48,7 +60,7 @@ Work breakdown: [`tasks.md`](tasks.md).
   can't (trailing zeros beyond scale), the shredder records the lexical form
   in the primitive-extension channel — round-trip fidelity is the invariant
   (R4.2) and property tests are the enforcement.
-- **D9 — Identifier length is a generator problem.** 63-byte PostgreSQL
+- **D9 — Identifier length is a generator problem.** A 63-byte
   limit vs paths like `MedicinalProductDefinition.name.usage`; deterministic
   abbreviation + hash-suffix on collision, with a generated path→name index
   (G2.4). No hand-maintained rename table.
@@ -68,10 +80,11 @@ Work breakdown: [`tasks.md`](tasks.md).
   *record* who acted.
 - **D14 — Workspace layout.** One cargo workspace:
   `fhir-mysql-map` (relational map types + generic shred/reconstruct engine),
-  `fhir-mysql-gen` (spec → DDL + map), `fhir-mysql-store` (PostgreSQL layer:
-  init/load/search/history), `fhir-mysql-server` (axum), `fhir-mysql` (CLI binary
-  tying it together). Generated artifacts live in `assets/` and are embedded
-  in the binary.
+  `fhir-mysql-gen` (spec → DDL + map), `fhir-mysql-store` (MySQL 8.4 layer:
+  init/load/search/history). **There is no `fhir-mysql-server` and no
+  `fhir-mysql` CLI binary** — this decision was the ancestor project's, and the
+  REST surface became a separate crate, `fhir-loco` (`C0.17`, `C0.18`).
+  Generated artifacts live in `assets/` and are embedded in the crate.
 - **D15 — Attribution is core, even though authentication is not.** D13
   keeps identity *verification* outside; it does not excuse anonymous
   history. fhir-mysql accepts a principal from a trusted proxy (PR12.1–PR12.3)
@@ -101,13 +114,13 @@ Work breakdown: [`tasks.md`](tasks.md).
 - **D20 — Encrypt the database link by default.** rustls, `sslmode`
   honored, and a startup refusal when a non-loopback bind meets an
   unencrypted database connection (O10.7). PHI in flight between the server
-  and PostgreSQL is exactly as sensitive as PHI in flight to the client.
+  and the database is exactly as sensitive as PHI in flight to the client.
 
 ## Risks
 
 - **R1 — Schema scale.** ~3,000+ tables per version; `init` time, catalog
   bloat, and dump/restore ergonomics need measurement early (task T4 spike).
-  Mitigation: per-version PostgreSQL schemas, generated DDL applied in one
+  Mitigation: per-version MySQL database, generated DDL applied in one
   transaction, benchmarks from milestone 1.
 - **R2 — Reconstruction performance.** Reading one resource touches many
   tables. Mitigation: single round-trip per read using a generated
@@ -131,7 +144,10 @@ Work breakdown: [`tasks.md`](tasks.md).
   measured before/after in `doc/benchmarks.md`, and `sync` mode reserved for
   deployments that ask for it. Accept a real cost here; the alternative is
   not shipping into a hospital.
-- **R7 — `unaccent` is an extension, not core PostgreSQL.** P6.6 depends on
+- **R7 — the fold is pure Rust, not a database extension.** This risk was
+  PostgreSQL's `unaccent`; it does not apply here, and is retained because the
+  decision it drove — fold in Rust — is why P6.6 works identically on all six
+  engines. P6.6 depends on
   it, and managed providers vary in whether an unprivileged role may create
   it. Mitigation: `init` probes for it and fails with a clear instruction
   rather than degrading silently; a fallback pure-SQL folding function
@@ -157,9 +173,11 @@ Work breakdown: [`tasks.md`](tasks.md).
   transactional writes; ETag concurrency; `fhir_mysql_meta` and idempotent init.
 - **M3 — Search.** Search-parameter compiler, indexes, result parameters,
   paging; generated support matrix; search test suite.
-- **M4 — REST server.** axum server: CRUD, vread/history, search,
-  capability statement, batch/transaction, OperationOutcome errors, limits;
-  integration suite for §7.
+- **M4 — REST server.** *Not this port's milestone.* It became
+  [`fhir-loco`](../fhir-loco/) — Loco.rs, Axum — serving CRUD, vread/history,
+  search and a CapabilityStatement over a store. Retained here because the
+  decision to keep HTTP out of the port is a real design decision and this is
+  where it is recorded.
 - **M5 — R4 and R3.** Run the same generator + engine over 4.0.1 and 3.0.2
   spec packages; version-specific quirks fixed; full example-corpus
   round-trip per version.

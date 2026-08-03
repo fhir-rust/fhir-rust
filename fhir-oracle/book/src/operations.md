@@ -67,6 +67,12 @@ interrupted, rerunning `--upgrade` continues where it stopped.
 
 ## Backup
 
-A fhir-oracle store is plain PostgreSQL: `pg_dump`, physical replication, and
-point-in-time recovery all apply unchanged, and any consistent snapshot
-is a valid store.
+A fhir-oracle store would be plain Oracle: RMAN backups, Data Guard for a
+standby, and flashback or RMAN point-in-time recovery. None of that is
+`pg_dump` or PostgreSQL PITR, which this chapter claimed for every port until
+2026-08-03 (audit **F-56**).
+
+Two Oracle-specific notes. A version namespace here is a **user** (`M14.5`), so
+a backup scope is a user's objects rather than a schema inside a database. And
+this port has **no store** — only a DDL emitter — so none of this has been
+exercised.

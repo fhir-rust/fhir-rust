@@ -103,7 +103,17 @@ mysql|mariadb)
       'mariadb --protocol=TCP -h 127.0.0.1 -P 3306 -u root -e "select 1" >/dev/null 2>&1 \
        || mysql --protocol=TCP -h 127.0.0.1 -P 3306 -u root -e "select 1" >/dev/null 2>&1'
   }
-  dsn_line() { echo "export ${ENV_VAR}=mysql://root@127.0.0.1:${PORT}"; }
+  # The container's certificate is auto-generated and self-signed, so the
+  # verifying default (`O10.7`, F-54) correctly refuses it. A loopback dev
+  # container is the one place a plaintext link is defensible, so this opts out
+  # **explicitly** — the default stays verifying, and nobody reading a green
+  # local suite should think it exercised a verified connection.
+  dsn_line() {
+    cat <<EOF
+export ${ENV_VAR}=mysql://root@127.0.0.1:${PORT}
+export FHIR_MARIADB_SSL_MODE=DISABLED   # loopback dev container only; see O10.7 / F-54
+EOF
+  }
   client_cmd() {
     ct exec -it "$NAME" sh -c 'mariadb -u root 2>/dev/null || mysql -u root'
   }
@@ -137,6 +147,16 @@ SPEC_ENV="${ENV_VAR%_TEST_*}_SPEC_DIR"
 CORPUS_ENV="${ENV_VAR%_TEST_*}_CORPUS_DIR"
 CORPUS_DIR="$REPO/target/test-corpus"
 
+# Locate the FHIR specification packages.
+#
+# The monorepo path comes first (F-55). The two that follow it are the ancestor
+# project's layout and one developer's home directory: neither exists here, so
+# before this fix `spec_exports` emitted nothing, the corpus environment
+# variables were never set, and following the documented workflow — `db.sh up`
+# then `db.sh test` — produced a live suite whose corpus tests could not run.
+#
+# That is F-39's defect in the shell script. F-39 and F-42 fixed the candidate
+# lists inside the Rust tests and did not look here.
 find_spec() {
   # An explicit override always wins.
   local from_env="${!SPEC_ENV:-}"
@@ -145,6 +165,7 @@ find_spec() {
     return 0
   fi
   for c in \
+    "$REPO/../fhir/doc/fhir-specifications" \
     "$REPO/../fhir-rust-crate/doc/fhir-specifications" \
     "$HOME/git/joelparkerhenderson/fhir-rust-crate/doc/fhir-specifications"
   do
@@ -263,7 +284,20 @@ status() {
 run_tests() {
   up >/dev/null
   echo "running the live suite against $IMAGE"
-  [ -d "$CORPUS_DIR" ] || corpus >/dev/null 2>&1 || true
+  # Rebuild if the directory is missing **or** its links no longer resolve.
+  # Checking only for the directory is what let F-55 persist: the links pointed
+  # into a checkout that had been removed, so the directory existed, nothing
+  # rebuilt it, and the corpus tests failed with "no examples ran".
+  corpus_ok() {
+    [ -d "$CORPUS_DIR" ] || return 1
+    local any=0
+    for l in "$CORPUS_DIR"/*; do
+      [ -e "$l" ] || return 1
+      any=1
+    done
+    [ "$any" = 1 ]
+  }
+  corpus_ok || corpus >/dev/null 2>&1 || true
   eval "$(dsn_line)"
   eval "$(spec_exports)"
   cargo test --workspace "$@"

@@ -1,5 +1,22 @@
 # Changelog
 
+> ## ⚠ This changelog is inherited, and most of it did not happen here
+>
+> It is `fhir-postgresql`'s history with the crate name substituted. This port
+> has **no store and no driver** ([`C0.8`](../spec/databases/00-conformance.md)),
+> so every entry below about a connector, TLS to the database, a live corpus
+> round-trip, `jsonb`, advisory locks, or a `fhir-mssql init --upgrade` describes
+> work that was **not done in this port**. Audit **F-62**.
+>
+> A changelog is the strongest claim a project makes — it says a thing shipped —
+> and these say a security fix shipped that this port never had. They are kept
+> rather than deleted because deleting them would destroy the record of where
+> the shared code came from, and because the shared half (the generator, the
+> shred/reconstruct engine, the fold) genuinely does change with these releases.
+>
+> **What is true of this port** is at the top of the file under *Unreleased*,
+> and in the [conformance matrix](../spec/databases/conformance-matrix.md).
+
 ## 0.4.0 — tamper evidence that survives the database (2026-07-27)
 
 **Breaking:** `ChainBreak` gained an `algorithm` field, so a break is
@@ -10,7 +27,9 @@ columns; existing rows keep verifying, with the new chains reported as
 beginning where their first digest appears.
 
 
-**Changed — hash chains are computed by fhir-mssql, not by PostgreSQL.** The
+**Changed — hash chains are computed in Rust, not by the database.** True of
+this port in the sense that matters: `canon.rs` is shared and identical in all
+six (`X15.1`). Nothing here has ever *written* a chain, having no store. The
 digests were computed in SQL. They are unkeyed over a published pre-image,
 so a database that computes them holds everything needed to forge them — and,
 decisively, a MAC can only be introduced where the database is not. A key
@@ -104,9 +123,13 @@ Match and write now share one transaction guarded by a
 `pg_advisory_xact_lock` on a hash of the criteria (A7.10). Conditional
 delete likewise.
 
-**Fixed — PHI crossed to PostgreSQL in the clear.** The connector was
-hard-coded `NoTls`, so `sslmode=require` could not be honored. Connections
-now go through rustls, honoring `sslmode` and `PGSSLROOTCERT` (O10.7), and
+**Fixed — PHI crossed to PostgreSQL in the clear.** *Not in this port:
+`fhir-mssql` has no connector to fix, and never had one. This entry is
+`fhir-postgresql`'s, and it is the clearest example of why the banner above
+exists — it announces a **security fix that did not ship here**.* The original
+read: the connector was hard-coded `NoTls`, so `sslmode=require` could not be
+honored; connections now go through rustls, honoring `sslmode` and
+`PGSSLROOTCERT` (O10.7), and
 `serve` refuses a non-loopback bind over an unencrypted database link
 without `--allow-insecure-db`. fhir-mssql's `require` validates the server
 certificate where libpq's does not — a deliberate deviation, in the safe

@@ -8,7 +8,56 @@
 # Any unpatched advisory fails the build. When one has no fix yet, add it
 # here with a dated note rather than lowering the bar globally.
 yanked = "deny"
-ignore = []
+ignore = [
+    # RUSTSEC-2025-0134 — rustls-pemfile is unmaintained (repository archived
+    # August 2025). Not a vulnerability; an unmaintained-crate advisory.
+    #
+    # Reached only as a DEV-dependency, and only here:
+    #   rustls-pemfile 1.0.4
+    #     <- rustls-native-certs 0.6.3
+    #        <- tiberius 0.12.3
+    #           <- (dev) fhir-mssql-map
+    #
+    # Verified absent from the normal dependency tree (`cargo tree -e normal`),
+    # so it does not reach anyone who depends on a published fhir-mssql crate.
+    # tiberius is used by the DDL execution test and by nothing that ships.
+    #
+    # No upgrade exists: 0.12.3 is the newest 0.12.x, it pins
+    # rustls-native-certs 0.6, and RUSTSEC says of rustls-pemfile itself
+    # "No safe upgrade is available". Removing it means replacing the SQL
+    # Server driver, which is a decision for when this port gains a store.
+    #
+    # Recorded 2026-08-02. Re-check when tiberius releases, or when this port
+    # gets a store and the driver choice is revisited (F-06, M14.23).
+    "RUSTSEC-2025-0134",
+
+    # RUSTSEC-2026-0098, -0099, -0104 — three rustls-webpki 0.101.7 defects in
+    # X.509 name-constraint handling and CRL parsing (the last a reachable
+    # panic). Same dev-only chain, one layer deeper:
+    #
+    #   rustls-webpki 0.101.7
+    #     <- rustls 0.21.12
+    #        <- tokio-rustls 0.24.1
+    #           <- tiberius 0.12.3
+    #              <- (dev) fhir-mssql-map
+    #
+    # No upgrade path. The fixes are in rustls-webpki >= 0.103.12, which needs
+    # rustls 0.23; rustls 0.21.12 pins `^0.101`, and tiberius 0.12.3 is the
+    # newest release of the only pure-Rust TDS driver. `cargo update -p
+    # rustls-webpki` changes nothing — verified.
+    #
+    # Scope: these are TLS *certificate validation* defects, and the only code
+    # here that opens a TLS connection is the DDL execution test against a
+    # local SQL Server container. Nothing that ships is affected; verified
+    # absent from `cargo tree -e normal`.
+    #
+    # Clearing them properly means revisiting `M14.24`'s driver-and-TLS
+    # decision, which belongs with the store work rather than with an
+    # exception list. Recorded 2026-08-02; see M14.34.
+    "RUSTSEC-2026-0098",
+    "RUSTSEC-2026-0099",
+    "RUSTSEC-2026-0104",
+]
 
 [licenses]
 # Permissive licences only. Anything copyleft in a linked dependency would

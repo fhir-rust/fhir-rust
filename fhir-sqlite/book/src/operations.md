@@ -67,6 +67,14 @@ interrupted, rerunning `--upgrade` continues where it stopped.
 
 ## Backup
 
-A fhir-sqlite store is plain PostgreSQL: `pg_dump`, physical replication, and
-point-in-time recovery all apply unchanged, and any consistent snapshot
-is a valid store.
+A fhir-sqlite store is a **file**. Back it up by copying it — with the database
+closed, or through SQLite's online backup API or `VACUUM INTO`, both of which
+produce a consistent snapshot while writers continue. There is no `pg_dump`, no
+physical replication, and no write-ahead-log point-in-time recovery: those are
+PostgreSQL features, and this chapter claimed them for every port until
+2026-08-03 (audit **F-56**).
+
+The PHI is therefore at rest in a single file, and what protects it is
+filesystem permissions and disk encryption. That is the deployment's
+responsibility, and it is the `O10.7` obligation that replaces transport
+encryption for an embedded engine.

@@ -4,8 +4,13 @@
 # Kept out of the workspace so a normal `cargo build` does not need the
 # nightly-only libfuzzer-sys. Run with:
 #
-#     cargo +nightly fuzz run search_sql -- -max_total_time=60
+#     cargo +nightly fuzz run shred -- -max_total_time=60
 #
+# There is no `search_sql` target here, unlike the four ports that have a store.
+# It was a copy of fhir-postgresql's and called `<crate>::search`, a module this
+# port does not have — so it had never compiled. A fuzz target that cannot build
+# claims coverage it does not provide (T11.9), which is worse than its absence.
+# It returns with the store.
 [package]
 name = "fhir-mssql-fuzz"
 version = "0.0.0"
@@ -20,13 +25,6 @@ libfuzzer-sys = "0.4"
 serde_json = "1"
 fhir-mssql-map = { path = "../crates/fhir-mssql-map" }
 fhir-mssql-store = { path = "../crates/fhir-mssql-store" }
-
-[[bin]]
-name = "search_sql"
-path = "fuzz_targets/search_sql.rs"
-test = false
-doc = false
-bench = false
 
 [[bin]]
 name = "shred"

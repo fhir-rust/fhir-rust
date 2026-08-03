@@ -4,7 +4,7 @@
 (`X15.9`). It MUST NOT be cited as evidence for a conformance level.
 
 This annex records where the Oracle port departs from the
-[monorepo core](../../spec/index.md). Requirements are numbered `M14.x` and use
+[monorepo core](../../spec/databases/index.md). Requirements are numbered `M14.x` and use
 RFC 2119 keywords.
 
 > **This file was rewritten.** It previously contained the `fhir-mysql` annex
@@ -12,7 +12,7 @@ RFC 2119 keywords.
 > "MySQL 8.0 or later, InnoDB, `utf8mb4`", carrying a section headed
 > "Relationship to fhir-mariadb", and containing the word "Oracle" only in the
 > three substituted crate names
-> ([`audit.md`](../../spec/audit.md) **F-16**).
+> ([`audit.md`](../../spec/databases/audit.md) **F-16**).
 >
 > **Requirement numbering restarts here.** The `M14.x` ids in the previous file
 > were MySQL's requirements wearing this port's name. `C0.5` makes ids
@@ -32,14 +32,22 @@ RFC 2119 keywords.
 > page — and the previous file's confident MySQL answers were considerably worse
 > than an honest blank.
 >
-> - **`ddl.rs` is the MySQL emitter** (**F-08**). It emits `TEXT`,
->   `TINYINT(1)`, `DATETIME(6)`, `LONGTEXT`, and `COLLATE utf8mb4_0900_bin`,
->   none of which exist in Oracle, and its comments still discuss MySQL's 2038
->   `TIMESTAMP` range. Its eleven MySQL-asserting tests are `#[ignore]`d with
->   that reason attached, so a green suite cannot be mistaken for Oracle
->   conformance.
-> - **There is no store**, and no driver in the workspace.
+> - **`ddl.rs` is an Oracle emitter, and has been executed** (**F-08** closed,
+>   2026-08-03). The full R5 schema — 158 resources, 9,636 statements — installs
+>   on Oracle AI Database 26ai Free with 0 invalid objects and 0 unindexable
+>   search targets. Its eleven `#[ignore]`d MySQL-asserting tests have been
+>   replaced with Oracle ones (`M14.25` discharged); the crate has 47 tests and
+>   0 ignored.
+>
+>   Three defects were found by *running* it and could not have been found by
+>   reading: `ORA-02438` on an inline `Bool` CHECK (`M14.23e`), the append-only
+>   DELETE guard **failing open** on Oracle's empty-string-is-NULL rule
+>   (`M14.29a`), and 453 unindexable reference targets that turned out to be a
+>   shared-core defect (**F-50**).
+> - **There is no store**, and no driver in the workspace. Nothing has been
+>   written through the schema by this port.
 > - **There are no map tests** — `crates/fhir-oracle-map/tests/` does not exist.
+>   The unit tests in `ddl.rs` are what exists.
 >
 > The port's `ddl.rs` module header is honest about all of this and is the
 > source for most of what follows. Conformance level: **Scaffold** (`C0.8`).
@@ -63,7 +71,7 @@ RFC 2119 keywords.
   one, which is precisely the collision `G2.4` exists to make impossible.
 
   The port had inherited the constant without inheriting a reason
-  ([`audit.md`](../../spec/audit.md) **F-09**). Declaring 12.2 makes the
+  ([`audit.md`](../../spec/databases/audit.md) **F-09**). Declaring 12.2 makes the
   inherited budget sound.
 
 - **M14.3** `init` MUST verify the server version and refuse below the floor.
@@ -86,8 +94,18 @@ RFC 2119 keywords.
   | Three users, one per version | Three sets of grants; cross-version queries need explicit qualification; `init` needs `CREATE USER` privilege |
   | One user, name-prefixed tables | Spends prefix bytes from the 63-byte budget (`M14.2`) on every identifier, which is the budget that is already tightest here |
 
-  The prefix option interacts badly with `M14.2` and is likely wrong, but the
-  privilege requirement of the first is a real deployment constraint. Undecided.
+  **Decided: three users, one per version.** The prefix option spends bytes from
+  the identifier budget on *every* identifier, and `M14.2` already calls that
+  budget the tightest constraint this port has — 63 characters against a 128-byte
+  limit, chosen to stay safe at the 12.2 floor. Spending 3 of them on `r5_` to
+  avoid a `CREATE USER` grant trades a permanent, schema-wide cost for a
+  one-time deployment one.
+
+  The cost is accepted and MUST be documented rather than discovered: `init`
+  needs `CREATE USER` privilege, cross-version queries need explicit
+  qualification, and three sets of grants have to be managed. A deployment that
+  cannot grant `CREATE USER` cannot install this port, and that is a real
+  limitation to state in the README before anyone meets it at 2am.
 
 ## Type mapping — to decide
 
@@ -137,7 +155,7 @@ RFC 2119 keywords.
   A FHIR `string` has no length bound in the specification, so this cannot be
   resolved by declaring one.
 
-  **Settled.** [Unbounded string search](../../spec/unbounded-string-search-must-have-bounded-adjunct-and-checksum-adjunct.md) (`U1`–`U10`, `P6.9`) is now
+  **Settled.** [Unbounded string search](../../spec/databases/unbounded-string-search-must-have-bounded-adjunct-and-checksum-adjunct.md) (`U1`–`U10`, `P6.9`) is now
   normative: a text column this engine cannot index or compare as bound gets a
   **bounded adjunct** (`<col>_idx`) and a **checksum adjunct** (`<col>_h`) in
   the generated map. Both, not either — a bounded adjunct cannot answer equality
@@ -252,6 +270,228 @@ RFC 2119 keywords.
 
 ## Testing
 
+- **M14.23a** **Measured, 2026-08-02: the image pulls, and the instance dies.**
+  `M14.23` recorded that an arm64 image exists and pulls. It is now cached
+  locally (`docker.io/gvenzl/oracle-free`, 2.34 GB) and was actually started, so
+  the remaining question — whether it *runs* here — has an answer rather than an
+  assumption.
+
+  It does not, at the memory available:
+
+  ```text
+  CONTAINER: WARNING: The container has less than 2 GB memory available to run
+  Oracle Database Free.
+  ORA-03113: end-of-file on communication channel
+  ```
+
+  Exit code 41. The container gets far enough to start the listener — "Listening
+  Endpoints Summary … The command completed successfully" — and then the
+  instance itself dies. The host is a `podman machine` with **1.9 GiB** total,
+  which the OS shares with the database.
+
+  That is a useful failure to have observed rather than predicted, because it
+  distinguishes two things the earlier note could not: the image is not the
+  problem, and the architecture is not the problem. **Memory is**, and it is a
+  host setting rather than anything in this repository.
+
+  **Superseded within the hour: an Oracle has now run.** Raising the host VM to
+  6 GiB was the whole fix. The database reaches `DATABASE IS READY TO USE!` and
+  answers SQL:
+
+  ```text
+  Oracle AI Database 26ai Free Release 23.26.2.0.0
+  ```
+
+- **M14.23b** **Four assumptions this annex rested on are now measured, not
+  inferred.** Every one was previously taken from documentation.
+
+  | Claim | Where it was asserted | Measured on 26ai Free |
+  | --- | --- | --- |
+  | `VARCHAR2` maxes at 4000 bytes unless extended types are on | `M14.9` | **confirmed** — `max_string_size = STANDARD`, and `varchar2(4000 char)` creates |
+  | Identifiers are 128 bytes on 12.2+ | `M14.9`, `ddl.rs` header | **confirmed** — a 128-byte name creates; 129 gives `ORA-00972: ... exceeds the maximum length of 128 bytes`. `MAX_IDENT = 63` is therefore safe and conservative |
+  | A `CLOB` cannot be `=` compared | the [unbounded string search](../../spec/databases/unbounded-string-search-must-have-bounded-adjunct-and-checksum-adjunct.md) premise table | **confirmed** — `ORA-22848: cannot use CLOB type as comparison key` |
+  | A `CLOB` cannot be indexed | same | **confirmed** — `ORA-02327: cannot create index on expression with data type LOB` |
+
+  The last two matter beyond this port: they are the premise of `U1`–`U10`, the
+  reason the checksum adjunct exists at all, and the sharpest cell in that
+  section's engine table. That premise is no longer a citation.
+
+- **M14.23c** **`BOOLEAN` exists on 26ai — which confirms `M14.4`'s decision
+  rather than reopening it.**
+
+  Measured: `create table t (b boolean)` succeeds and
+  `user_tab_columns.data_type` reads `BOOLEAN`.
+
+  *An earlier revision of this requirement read that finding backwards.* It said
+  the port "must now decide its engine floor", and attributed that job to
+  `M14.5`. Both were wrong, and the annex already said so: **`M14.2` declares
+  the floor as Oracle 12.2**, `M14.5` is about namespaces, and **`M14.4`
+  explicitly considered requiring 23ai for a native `BOOLEAN` and rejected it**
+  — 23ai buys "nothing else this port needs".
+
+  A measurement on 26ai cannot change what a 12.2 floor permits. `BOOLEAN`
+  arrived in 23ai, so a schema targeting 12.2 must not emit it however new the
+  server in front of you happens to be. The finding confirms `M14.6`'s
+  `NUMBER(1)` + `CHECK (c IN (0,1))` is *necessary*, not that it is avoidable.
+
+  That substitute is itself now verified rather than assumed: `NUMBER(1) CHECK
+  (c IN (0,1))` accepts `0` and `1` and rejects `2` with `ORA-02290: check
+  constraint violated`. `M14.6`'s `Bool` row has been executed.
+
+  Until an Oracle has run **this port's own DDL**, it MUST NOT claim any level
+  above Scaffold, however Oracle-shaped that DDL looks (`C0.9`: a level is
+  justified by tests that ran). A started engine is a prerequisite, not the
+  evidence.
+
+- **M14.23d** **`M14.6`'s type table is now executed, and one row of it is
+  misleading as written.**
+
+  All nine bindings create on Oracle 26ai, in one table, alongside the `U1`
+  adjuncts and `ords`:
+
+  | `ColTy` | Emitted | Oracle reports |
+  | --- | --- | --- |
+  | `Bool` | `NUMBER(1) CHECK (c IN (0,1))` | `NUMBER` — accepts 0/1, rejects 2 with `ORA-02290` |
+  | `Int` / `BigInt` | `NUMBER(10)` / `NUMBER(19)` | `NUMBER` |
+  | `Numeric` | `VARCHAR2(64 CHAR)` | `VARCHAR2(256)` |
+  | `Text` | `VARCHAR2(4000 CHAR)` | `VARCHAR2(4000)` — **see below** |
+  | `TextC` / `<col>_idx` | `VARCHAR2(450 CHAR)` | `VARCHAR2(1800)` |
+  | `Date` | `DATE` | `DATE` |
+  | `Timestamptz` | `TIMESTAMP(6)` | `TIMESTAMP(6)` |
+  | `Jsonb` | `CLOB` | `CLOB` |
+  | `<col>_h` | `RAW(32)` | `RAW(32)` |
+
+  Note the second column against the third: `VARCHAR2(n CHAR)` allocates
+  **n × 4 bytes** under `AL32UTF8`, which is why 64 becomes 256 and 450 becomes
+  1800.
+
+  **`VARCHAR2(4000 CHAR)` does not hold 4000 characters. It holds 4000 bytes.**
+  `NLS_CHARACTERSET` is `AL32UTF8` and the `STANDARD` ceiling is a *byte*
+  ceiling, so the declaration is silently capped: as few as **1000** characters
+  for 4-byte codepoints. Verified — a genuine 3000-character value built in
+  PL/SQL is refused:
+
+  ```text
+  ORA-12899: value too large for column "…"."A" (actual: 6000, maximum: 4000)
+  ```
+
+  `M14.9` states the byte ceiling correctly, but `M14.6`'s intended binding
+  `VARCHAR2(4000 CHAR)` reads as though 4000 FHIR characters fit. They do not.
+  The emitter MUST reckon in bytes: the safe character bound for arbitrary
+  Unicode is **1000**, and everything above it is `CLOB` — which makes the
+  `U1`–`U10` adjuncts load-bearing for far more columns than a 4000-character
+  reading would suggest.
+
+  *Method note, because it nearly produced the opposite finding.* Inserting
+  `rpad(unistr('\00e9'), 3000, …)` appeared to store 2000 characters silently,
+  which reads as data loss and would violate `R4.2`. It is not: `rpad` returns a
+  SQL `VARCHAR2`, itself capped at 4000 bytes, so the truncation happened in the
+  expression and never reached the column. Building the value in PL/SQL — where
+  `VARCHAR2` reaches 32767 — showed the column rejecting it properly. The column
+  is well-behaved; the probe was not.
+
+- **M14.23e** **`M14.8`'s CHECK cannot live where `M14.6` implies it does.**
+
+  `M14.8` says `Bool` binds to `NUMBER(1)` with a `CHECK` constraint, and
+  `M14.6`'s table writes that as one cell — which reads as though `col_sql` can
+  return it. It cannot. `col_sql` is handed a `ColTy` and nothing else, and a
+  `CHECK` must name the column it constrains:
+
+  ```text
+  ORA-02438: Column check constraint cannot reference other columns
+  ```
+
+  Both correct placements were verified — a table-level
+  `CONSTRAINT … CHECK (deceased IN (0,1))` and a column-level
+  `CHECK (deceased IN (0,1))` naming its own column — and both reject `2` with
+  `ORA-02290` while accepting `0` and `1`.
+
+  So the constraint belongs to `create_table`, the only emitter that knows the
+  column name. `col_sql` returns the bare type.
+
+  **Until `create_table` emits it, a `Bool` column on this port is an
+  unconstrained `NUMBER(1)` and this port MUST NOT claim `M14.8`.** An
+  unconstrained `NUMBER(1)` accepts `7`, and a boolean column that accepts `7`
+  is worse than one that is documented as absent.
+
+  This is what executing DDL buys over reading it: ten of the eleven bindings
+  were right, and the one that was wrong was wrong in a way no amount of
+  re-reading the annex would have surfaced.
+
+- **M14.23f** **The fixed-shape columns have no type decision, and the obvious
+  one does not work.** `M14.6`'s table maps `ColTy` values. The `Ext`, `Deep`,
+  and system tables also carry columns that are *not* `ColTy`-driven — `path`,
+  `leaf`, `url`, `v_text`, `v_kind`, `ords`, `key_hash` — and the annex never
+  says what they bind to on Oracle.
+
+  Translating the MySQL `TEXT` for them naively gives `CLOB`, and the table
+  creates. Then search stops working:
+
+  ```text
+  select count(*) from pext where path = 'Patient.name';
+  ORA-22848: cannot use CLOB type as comparison key
+  ```
+
+  `path` is the column extension search filters on, so a `CLOB` binding makes
+  the extension tables writable and unsearchable — the failure mode `M14.9`
+  describes, arriving through a column `M14.9` does not cover.
+
+  Each needs deciding on its own evidence, and they do not all go the same way:
+
+  | Column | Bounded in practice? | Likely binding |
+  |---|---|---|
+  | `path` | yes — a FHIR element path | `VARCHAR2`, so it can be compared and indexed |
+  | `v_kind` | yes — one character | `VARCHAR2(1 CHAR)`, never `CHAR` (`M3.6b`: no PAD SPACE) |
+  | `ords` | yes — the text image (`M14.13`) | `VARCHAR2`, still undecided against `RAW` |
+  | `key_hash` | yes — 32 bytes | `RAW(32)` |
+  | `url`, `leaf`, `v_text` | **no** | `CLOB` plus `U1` adjuncts wherever search touches them |
+
+  The last row is the one that matters: it means the adjunct rules are
+  load-bearing for the extension tables too, not only for `ColTy::Text`.
+
+  **Answered by the core, 2026-08-02.** `U1a` restates the trigger as *(a search
+  reaches this column, this dialect cannot index or compare it as bound)* rather
+  than as a property of the FHIR or SQL type — which is exactly why these
+  columns were missed. `U11` requires the generator to walk every
+  search-reachable column, naming the extension and deep tables specifically.
+  `U12` says a fixed-shape column that is **bounded in practice** — `path`,
+  `v_kind` — SHOULD be bound to an indexable type instead of given adjuncts,
+  which is the cheaper answer here. `U13` forbids a bounded adjunct over opaque
+  bytes.
+
+  So this port's bindings follow: `path` and `v_kind` to `VARCHAR2` under `U12`;
+  `url`, `leaf` and `v_text` to `CLOB` with adjuncts under `U11`. What remains
+  open is `M14.13` — `ords` as `VARCHAR2` or `RAW` — and the generator work
+  `U11` now requires, which is shared-core and lands in all six ports at once.
+
+- **M14.23e** **`M14.8`'s CHECK cannot live where `M14.6` implies it does.**
+
+  `M14.8` says `Bool` binds to `NUMBER(1)` with a `CHECK` constraint, and
+  `M14.6`'s table writes that as one cell — which reads as though `col_sql` can
+  return it. It cannot. `col_sql` is handed a `ColTy` and nothing else, and a
+  `CHECK` must name the column it constrains:
+
+  ```text
+  ORA-02438: Column check constraint cannot reference other columns
+  ```
+
+  Both correct placements were verified — a table-level
+  `CONSTRAINT … CHECK (deceased IN (0,1))` and a column-level
+  `CHECK (deceased IN (0,1))` naming its own column — and both reject `2` with
+  `ORA-02290` while accepting `0` and `1`.
+
+  So the constraint belongs to `create_table`, the only emitter that knows the
+  column name. `col_sql` returns the bare type.
+
+  **Until `create_table` emits it, a `Bool` column on this port is an
+  unconstrained `NUMBER(1)` and this port MUST NOT claim `M14.8`.** An
+  unconstrained `NUMBER(1)` accepts `7`, and a boolean column that accepts `7`
+  is worse than one that is documented as absent.
+
+  This is what executing DDL buys over reading it: ten of the eleven bindings
+  were right, and the one that was wrong was wrong in a way no amount of
+  re-reading the annex would have surfaced.
+
 - **M14.24** This port MUST NOT provision a substitute engine in CI
   (`O10.12`, `C0.10`). Until this revision it provisioned `mysql:8.4` and
   invoked `--test mysql_ddl`, a target that does not exist in this package —
@@ -263,6 +503,103 @@ RFC 2119 keywords.
   tests. A pipeline that starts *some* database for a port that cannot talk to
   one is theatre, and a removed gate is at least honestly absent.
 
+- **M14.26** **`U10` record: which columns get adjuncts, and what the bound
+  is.** Every column a `string` search parameter targets, and only those, via
+  `add_adjunct_columns` gated on `ddl::TEXT_ADJUNCTS`, which is `true` here.
+  The bound *n* is **450 characters**, matching `col_sql`'s `VARCHAR2(450
+  CHAR)` for `ColTy::TextIdx` and `shred.rs`'s `ADJUNCT_BOUND`. Declared in
+  `CHAR` rather than byte semantics so the bound means characters on any
+  `NLS_LENGTH_SEMANTICS` setting.
+
+  The checksum adjunct is **`RAW(32)`** — SHA-256's raw bytes, per `U4a`. It
+  is not hex text; an earlier revision of this annex said it was, and the SQL
+  Server annex records the reversal at `M14.33`.
+
+  `RAW` rather than `BLOB` matters here: a `BLOB` would reintroduce exactly the
+  problem the checksum exists to solve, since Oracle will not `=` compare a LOB.
+  `RAW(32)` compares and indexes normally, so the equality probe `U6` describes
+  is an ordinary index seek, and only the confirming comparison against the
+  source `CLOB` needs `DBMS_LOB.COMPARE`.
+
+  This port needs both adjuncts more than its sibling does. `NVARCHAR(MAX)` on
+  SQL Server at least answers `=`, so only the index is missing there; a `CLOB`
+  answers no comparison at all, so without `<col>_h` an equality search here
+  **fails** rather than scans. `U6`'s confirming comparison must then use
+  `DBMS_LOB.COMPARE`, which is the one place the confirmation is not a plain
+  `=`.
+
+- **M14.27** ~~The adjunct columns are the only Oracle-correct types in
+  `ddl.rs`.~~ **Superseded 2026-08-02**: the whole emitter is now Oracle, and
+  **F-08** is closed. Retained because ids are permanent (`C0.5`) and because
+  the reasoning it recorded — write the ported parts correctly rather than leave
+  a placeholder that looks finished — is what made the rest of the port a
+  substitution rather than a rewrite.
+
+- **M14.28** `ddl_in` MUST NOT emit `CREATE USER`. `M14.5` binds a version
+  namespace to an Oracle user, but provisioning those three accounts is a
+  deployment act, not a schema detail, and before 18c a `CREATE USER` must
+  carry a password — which would then appear in generated DDL, in logs, and in
+  `V$SQL`. `NO AUTHENTICATION` would avoid that and is above this port's 12.2
+  floor (`M14.2`).
+
+  The three users are therefore a **documented prerequisite**. Every statement
+  qualifies its object with the schema name and assumes the account exists with
+  a quota. A deployment that cannot create them cannot install this port, and
+  the README MUST say so before anyone meets it at 2am.
+
+  - **M14.28a** `fhir_oracle_meta.key` is `VARCHAR2(191 CHAR)`. 191 is a MySQL
+    number — it is what fits a `utf8mb4` index there — and has no Oracle
+    meaning. It stands anyway, because changing it would put the two ports'
+    metadata tables out of step for no benefit.
+
+- **M14.29** The erasure declaration that permits a history `DELETE` (`M3.18`)
+  travels in `CLIENT_INFO`, read by the trigger as
+  `SYS_CONTEXT('USERENV', 'CLIENT_INFO')` and set by
+  `DBMS_APPLICATION_INFO.SET_CLIENT_INFO`. This amends `M3.18`'s assumption of
+  a session variable, which Oracle does not have.
+
+  An application context is the better design and is rejected on deployability:
+  it needs `CREATE ANY CONTEXT`, and a port that cannot install without a DBA is
+  a port that gets installed as `SYSTEM`.
+
+  The cost MUST be stated wherever this is used: `CLIENT_INFO` is a
+  general-purpose field that monitoring tools and connection pools also write. A
+  store MUST set it immediately before the delete and clear it immediately
+  after, within the same transaction, and MUST NOT rely on a pool to have
+  cleared it. This is a weaker guarantee than the MySQL original's.
+
+  - **M14.29a** The comparison MUST use a non-empty sentinel:
+    `NVL(SYS_CONTEXT(…), 'unset') != 'fhir_oracle_erasure=on'`. Oracle treats
+    the empty string as NULL, so the direct translation of MySQL's
+    `COALESCE(@var, '')` yields `NULL != 'x'` → NULL, the `ELSIF` never fires,
+    and **the guard fails open**. This was written, installed, and observed
+    letting an ordinary `DELETE` through with no error. Any change to this
+    trigger MUST be re-verified by executing a forbidden `DELETE`, not by
+    reading it.
+
+- **M14.30** The `rid` lookup index on `Ext`/`Deep` MUST be a separate
+  `CREATE INDEX`. Oracle has no inline index clause inside `CREATE TABLE`, where
+  MySQL uses `KEY`. `create_table` therefore returns a table and nothing else,
+  and `ddl_in` emits the index.
+
+- **M14.31** Objects that must survive re-application — `schema_wide_objects`
+  and the metadata table — MUST be wrapped in a PL/SQL block that swallows
+  **only** `ORA-00955` and `ORA-01408`. `IF NOT EXISTS` arrived in 23ai, above
+  the floor. An `EXCEPTION WHEN OTHERS THEN NULL` MUST NOT be used: it converts
+  a genuine syntax error into a silent success, which is the exact failure this
+  annex exists to prevent. Verified both ways — re-running is silent, and an
+  invalid datatype still raises `ORA-00902`.
+
+- **M14.32** Where an index would name a column Oracle cannot index, the
+  emitter MUST substitute the `U1` adjunct — the bounded `<col>_idx` where one
+  exists, otherwise the digest `<col>_h`, which serves equality exactly as
+  `U2a` intends — and MUST emit **no index at all** when neither exists, rather
+  than a partial key that would answer a different question.
+
+  Every such omission MUST be enumerable: `search_index_gaps` returns them, so
+  the limit is countable rather than inferred from an absent index. It is what
+  exposed **F-50**, and it currently returns **0** for R5.
+
 - **M14.25** The eleven `#[ignore]`d MySQL-asserting tests in `ddl.rs` MUST stay
   ignored and MUST stay tracked in `tasks.md` (`T11.14`). They are the record of
   what has to be replaced.
@@ -270,4 +607,4 @@ RFC 2119 keywords.
 ---
 
 Part of the [fhir-oracle specification](index.md), which is part of the
-[fhir-databases specification](../../spec/index.md).
+[fhir-databases specification](../../spec/databases/index.md).

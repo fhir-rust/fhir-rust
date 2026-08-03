@@ -5,6 +5,45 @@ use std::fmt::Write as _;
 
 use crate::model::{ColTy, RelMap, ResourceMap, Table, TableKind};
 
+/// Does this dialect need the unbounded-string adjuncts (`U1`, `U9`)?
+///
+/// `text` is indexable and comparable directly, so U9 forbids the adjuncts.
+///
+/// The generator reads this to decide whether to put `<col>_idx` and `<col>_h`
+/// in the map at all. `gen` is byte-identical across all six ports (`X15.1`);
+/// this constant is in `ddl.rs`, which is the one file a dialect may own.
+pub const TEXT_ADJUNCTS: bool = false;
+
+/// Can this dialect **not** index or compare a column of this type as bound?
+///
+/// The second half of `U1a`'s trigger. The first — that a search reaches the
+/// column — is the generator's to know; this is the dialect's, and only the two
+/// together justify an adjunct.
+///
+/// This engine indexes and compares every bound type it emits, so `U1a`'s trigger never fires here.
+///
+/// Getting this wrong is not free in either direction. Return `true` too widely
+/// and every boolean a token search touches grows a derived column nothing
+/// reads; too narrowly and a search silently fails on the engine.
+///
+/// Every variant is listed rather than wildcarded, so adding a `ColTy` is a
+/// compile error here and forces the decision instead of defaulting it.
+pub fn needs_adjunct(ty: ColTy) -> bool {
+    match ty {
+        ColTy::Bool => false,
+        ColTy::Int => false,
+        ColTy::BigInt => false,
+        ColTy::Numeric => false,
+        ColTy::Text => false,
+        ColTy::TextC => false,
+        ColTy::TextIdx => false,
+        ColTy::Digest => false,
+        ColTy::Date => false,
+        ColTy::Timestamptz => false,
+        ColTy::Jsonb => false,
+    }
+}
+
 pub fn col_sql(ty: ColTy) -> &'static str {
     match ty {
         ColTy::Bool => "boolean",
@@ -13,6 +52,12 @@ pub fn col_sql(ty: ColTy) -> &'static str {
         ColTy::Numeric => "numeric",
         ColTy::Text => "text",
         ColTy::TextC => "text COLLATE \"C\"",
+        // U9: this port does not materialize adjuncts — `TEXT_ADJUNCTS` is
+        // false, so a map generated here never carries these columns. The arms
+        // exist because `col_sql` must be total; the types are what would be
+        // correct if it ever did.
+        ColTy::TextIdx => "text COLLATE \"C\"",
+        ColTy::Digest => "bytea",
         ColTy::Date => "date",
         ColTy::Timestamptz => "timestamptz",
         ColTy::Jsonb => "jsonb",
@@ -284,8 +329,12 @@ pub fn create_table(schema: &str, rm: &ResourceMap, t: &Table) -> String {
                  \x20 \"v_kind\" char(1) NOT NULL,\n\
                  \x20 \"v_text\" text,\n\
                  \x20 \"v_num\" numeric,\n\
-                 \x20 \"v_bool\" boolean,\n\
-                 \x20 PRIMARY KEY (\"rid\", \"path\", \"ords\", \"modifier\", \"ext_ord\", \"leaf\")"
+                 \x20 \"v_bool\" boolean",
+            );
+            push_adjunct_cols(&mut sql, t);
+            let _ = write!(
+                sql,
+                ",\n  PRIMARY KEY (\"rid\", \"path\", \"ords\", \"modifier\", \"ext_ord\", \"leaf\")"
             );
         }
         TableKind::Deep => {
@@ -298,8 +347,12 @@ pub fn create_table(schema: &str, rm: &ResourceMap, t: &Table) -> String {
                  \x20 \"v_kind\" char(1) NOT NULL,\n\
                  \x20 \"v_text\" text,\n\
                  \x20 \"v_num\" numeric,\n\
-                 \x20 \"v_bool\" boolean,\n\
-                 \x20 PRIMARY KEY (\"rid\", \"path\", \"ords\", \"leaf\")"
+                 \x20 \"v_bool\" boolean",
+            );
+            push_adjunct_cols(&mut sql, t);
+            let _ = write!(
+                sql,
+                ",\n  PRIMARY KEY (\"rid\", \"path\", \"ords\", \"leaf\")"
             );
         }
         TableKind::Contained => {
@@ -339,6 +392,28 @@ pub fn create_table(schema: &str, rm: &ResourceMap, t: &Table) -> String {
     }
     sql.push_str("\n)");
     sql
+}
+
+/// Emit the `U1` adjuncts a fixed-shape table carries.
+///
+/// `Ext` and `Deep` hardcode their data columns, so `push_data_cols` never sees
+/// them, and the adjunct columns the generator attached to `url`, `leaf` and
+/// `v_text` would never reach the schema — leaving the map describing columns
+/// the database does not have (**F-46**).
+///
+/// This writes nothing on a dialect that indexes its unbounded text type,
+/// because `add_adjunct_columns` attached nothing there (`U9`). It must be
+/// called *before* the trailing key and constraint clauses: SQLite requires
+/// every column definition to precede them.
+fn push_adjunct_cols(sql: &mut String, t: &Table) {
+    for a in &t.adjunct_cols {
+        if let Some(n) = &a.bounded {
+            let _ = write!(sql, ",\n  \"{n}\" {}", col_sql(ColTy::TextIdx));
+        }
+        if let Some(n) = &a.digest {
+            let _ = write!(sql, ",\n  \"{n}\" {}", col_sql(ColTy::Digest));
+        }
+    }
 }
 
 fn push_data_cols(sql: &mut String, t: &Table) {

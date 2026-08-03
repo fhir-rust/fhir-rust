@@ -22,6 +22,15 @@ pub enum SqlVal {
     /// date sort image.
     Date(String),
     Jsonb(String),
+    /// Raw bytes. Today this is only the unbounded-string checksum adjunct
+    /// (`U4a`), which is SHA-256's 32 bytes stored binary rather than as hex.
+    ///
+    /// Adding a value type obliges every store to bind it, and that is where
+    /// **F-20** was found: booleans, integers and dates were dropped on one
+    /// engine and panicked on two others because each store bound them
+    /// separately and nothing tested the binding. `U4a` requires a driver
+    /// round-trip test wherever this column is materialized, for that reason.
+    Bytes(Vec<u8>),
 }
 
 #[derive(Debug, Clone)]
@@ -87,6 +96,8 @@ pub fn shred(rm: &ResourceMap, v: &Value) -> Result<ShredOut, ShredError> {
     };
     sh.walk_obj(rm.root, obj, 0, &[], "", true)?;
     fill_norm_cols(rm, &mut sh.rows);
+    // U3: derived, written here, never read back by reconstruct.
+    fill_adjunct_cols(rm, &mut sh.rows);
     Ok(ShredOut {
         id: sh.id,
         rows: sh.rows,
@@ -115,6 +126,61 @@ fn fill_norm_cols(rm: &ResourceMap, rows: &mut [Row]) {
         row.cols.extend(add);
     }
 }
+
+/// Fill each table's unbounded-string adjuncts (`U1`, `U3`) from the values
+/// just written.
+///
+/// Empty on the four ports whose `ddl::TEXT_ADJUNCTS` is false, because their
+/// maps carry no `adjunct_cols` at all (`U9`) — the loop costs one `is_empty`
+/// per row there.
+///
+/// Both columns are written together (`U2`), and only where the source column
+/// was actually set: a row that never wrote the source gets neither adjunct,
+/// exactly as `fill_norm_cols` leaves the folded column NULL rather than an
+/// empty string that would match a prefix search for "".
+///
+/// `U3` makes these derived: they are not part of the resource, so they must
+/// not affect `R4.2` round-trip fidelity and must not enter `M3.16`'s
+/// hash-chain pre-image. Both hold by construction here — `reconstruct` walks
+/// the map's elements and never sees a derived column, and the chain
+/// pre-image is built from canonical JSON of the resource, not from rows.
+fn fill_adjunct_cols(rm: &ResourceMap, rows: &mut [Row]) {
+    for row in rows {
+        let adjuncts = &rm.tables[row.table as usize].adjunct_cols;
+        if adjuncts.is_empty() {
+            continue;
+        }
+        let mut add: Vec<(String, SqlVal)> = Vec::new();
+        for a in adjuncts {
+            let Some((_, SqlVal::Text(v))) = row.cols.iter().find(|(c, _)| c == &a.source) else {
+                continue;
+            };
+            // U2b: fill what the map says exists, never a fixed pair. A column
+            // searched only for equality has no bounded adjunct to fill, and
+            // writing one would create a column no query ever reads.
+            if let Some(idx) = &a.bounded {
+                // U5: the folded form, truncated by characters. ADJUNCT_BOUND
+                // matches what `ddl::col_sql` declares.
+                let folded = crate::fold::bounded(v, ADJUNCT_BOUND);
+                add.push((idx.clone(), SqlVal::Text(folded)));
+            }
+            if let Some(dig) = &a.digest {
+                // U4/U4a: SHA-256 over the whole value, computed in Rust,
+                // carried as its 32 raw bytes rather than as hex text.
+                let d = crate::fold::digest(v).to_vec();
+                add.push((dig.clone(), SqlVal::Bytes(d)));
+            }
+        }
+        row.cols.extend(add);
+    }
+}
+
+/// Characters kept in the bounded adjunct (`U1`, `U10`).
+///
+/// Must equal the width `ddl::col_sql` gives `ColTy::TextIdx`. A shredder that
+/// wrote more than the column holds would be truncated by the engine — silently
+/// on some — and the two ports that materialize adjuncts both declare 450.
+const ADJUNCT_BOUND: usize = 450;
 
 struct Sh<'a> {
     rm: &'a ResourceMap,

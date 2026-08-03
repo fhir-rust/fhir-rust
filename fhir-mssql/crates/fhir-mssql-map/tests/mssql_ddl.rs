@@ -53,7 +53,7 @@ macro_rules! skip_or_fail {
 
 fn relmap(version: &str) -> Option<Arc<RelMap>> {
     let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../assets")
+        .join("assets")
         .join(format!("fhir-mssql-relmap-{version}.json.gz"));
     let bytes = std::fs::read(path).ok()?;
     RelMap::from_gz_bytes(&bytes).ok().map(Arc::new)
@@ -94,15 +94,50 @@ async fn generated_ddl_installs_on_sql_server() {
 
     // Start clean. Dropping a schema means dropping what is in it first, which
     // T-SQL will not do for you.
-    let _ = client
-        .simple_query(format!(
-            "DECLARE @sql NVARCHAR(MAX) = N'';
+    //
+    // **Foreign keys must go first.** A base table cannot be dropped while a
+    // child table's FK still references it, so a flat `DROP TABLE` batch aborts
+    // at the first such table and silently leaves the rest. `sys.tables` has no
+    // guaranteed order, so whether that happened varied run to run: this test
+    // failed roughly two runs in three with "There is already an object named
+    // 'observation'" — reported against statement 8 of 131, eight statements
+    // away from the cleanup that actually failed.
+    //
+    // A flaky live gate is worse than a failing one, because the habit it
+    // teaches is to re-run it.
+    let cleanup_sql = format!(
+        "DECLARE @sql NVARCHAR(MAX) = N'';
+             SELECT @sql = @sql + N'ALTER TABLE [{schema}].['
+                 + OBJECT_NAME(parent_object_id) + N'] DROP CONSTRAINT ['
+                 + name + N'];'
+               FROM sys.foreign_keys WHERE schema_id = SCHEMA_ID('{schema}');
+             EXEC sp_executesql @sql;
+             SET @sql = N'';
              SELECT @sql = @sql + N'DROP TABLE [{schema}].[' + name + N'];'
                FROM sys.tables WHERE schema_id = SCHEMA_ID('{schema}');
              EXEC sp_executesql @sql;
              IF SCHEMA_ID('{schema}') IS NOT NULL EXEC('DROP SCHEMA [{schema}]');"
-        ))
-        .await;
+    );
+    if let Err(e) = client.simple_query(&cleanup_sql).await {
+        panic!("could not clear schema [{schema}] before installing: {e}");
+    }
+
+    // And prove it worked, rather than discovering it downstream. This is the
+    // assertion whose absence turned a cleanup bug into a misattributed DDL
+    // failure.
+    let left: i32 = client
+        .query(
+            "SELECT COUNT(*) FROM sys.tables WHERE schema_id = SCHEMA_ID(@P1)",
+            &[&schema],
+        )
+        .await
+        .expect("count leftover tables")
+        .into_row()
+        .await
+        .expect("a row")
+        .and_then(|r| r.get(0))
+        .unwrap_or(0);
+    assert_eq!(left, 0, "cleanup left {left} table(s) in [{schema}]");
 
     let statements = fhir_mssql_map::ddl::ddl(&map);
     assert!(

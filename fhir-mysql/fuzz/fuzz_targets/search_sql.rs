@@ -57,16 +57,16 @@ fuzz_target!(|data: &[u8]| {
     };
 
     // Sort keys are attacker-controlled too — `?_sort=whatever`.
-    let sort: Vec<fhir_mysql_store::search::SortKey> = params
+    let sort: Vec<fhir_mysql_store::mysql_search::SortKey> = params
         .iter()
         .take(2)
-        .map(|(k, _)| fhir_mysql_store::search::SortKey {
+        .map(|(k, _)| fhir_mysql_store::mysql_search::SortKey {
             code: k.clone(),
             descending: k.starts_with('-'),
         })
         .collect();
 
-    let Ok(query) = fhir_mysql_store::search::build_search_sql(
+    let Ok(query) = fhir_mysql_store::mysql_search::build_search_sql(
         map,
         rm,
         &params,

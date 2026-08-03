@@ -34,7 +34,7 @@ fn dsn() -> Option<String> {
 
 fn relmap() -> Option<RelMap> {
     let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../assets/fhir-mysql-relmap-r5.json.gz");
+        .join("../fhir-mysql-map/assets/fhir-mysql-relmap-r5.json.gz");
     RelMap::from_gz_bytes(&std::fs::read(path).ok()?).ok()
 }
 

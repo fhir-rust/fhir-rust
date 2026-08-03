@@ -1,5 +1,17 @@
 # Changelog
 
+> ## ⚠ Entries before 0.4.0 are inherited
+>
+> This changelog began as `fhir-postgresql`'s. Entries that name PostgreSQL,
+> `tokio-postgres`, `NoTls`, `PGSSLMODE`/`PGSSLROOTCERT`, `jsonb`, or advisory
+> locks describe **that** port's history; this port's driver is `rusqlite` and its
+> equivalents differ or do not exist. Audit **F-62**, `W16.12`.
+>
+> They are kept rather than rewritten because the shared half — the generator,
+> the shred/reconstruct engine, the fold — genuinely does change with these
+> releases, and because a changelog is a historical record. What is specific to
+> this port is stated where it differs.
+
 ## 0.4.0 — tamper evidence that survives the database (2026-07-27)
 
 **Breaking:** `ChainBreak` gained an `algorithm` field, so a break is

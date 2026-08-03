@@ -67,6 +67,10 @@ interrupted, rerunning `--upgrade` continues where it stopped.
 
 ## Backup
 
-A fhir-mssql store is plain PostgreSQL: `pg_dump`, physical replication, and
-point-in-time recovery all apply unchanged, and any consistent snapshot
-is a valid store.
+A fhir-mssql store would be plain SQL Server: native `BACKUP DATABASE`, log
+shipping, availability groups, and point-in-time restore from a log chain. None
+of that is `pg_dump` or PostgreSQL PITR, which this chapter claimed for every
+port until 2026-08-03 (audit **F-56**).
+
+Written conditionally because this port has **no store** — only a DDL emitter
+— so none of it has been exercised.

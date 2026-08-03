@@ -2,9 +2,10 @@
 
 fhir-sqlite supports R5 (5.0.0, the default), R4 (4.0.1), and R3 (3.0.2). Each
 version is generated from its own specification package into its own map
-asset and installs into its own PostgreSQL schema — `r5`, `r4`, `r3` —
-so one database can host any subset side by side, and `fhir-sqlite serve`
-mounts every installed version in one process.
+asset and installs into its own attached database file — `r5`, `r4`, `r3` — because in
+SQLite a schema is a file rather than a namespace inside a server,
+so the three can coexist side by side. There is no `serve` and no process
+that mounts them: this is a library (`C0.17`).
 
 There is no cross-version translation: a resource loads into the version
 schema you point at (`--fhir-version`), and the engine rejects elements

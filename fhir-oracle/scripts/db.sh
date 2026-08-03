@@ -21,9 +21,13 @@ set -euo pipefail
 
 # This script started `mysql:8.4` until 2026-07-31, so a local "live" run
 # exercised MySQL for an Oracle port and a green result meant nothing (spec
-# O10.12, C0.10; audit F-06). There is nothing to replace it with yet: `ddl.rs`
-# is still the MySQL emitter (audit F-08), there is no store, no driver, and no
-# map test directory. `unsupported` makes the gap loud instead of wrong.
+# O10.12, C0.10; audit F-06).
+#
+# `ddl.rs` is now a real Oracle emitter and its output has been installed on
+# 26ai (F-08 closed). What is still missing is a *driver*: there is no store, no
+# map test directory, and nothing in the workspace that can open a connection,
+# so a container here would have no test to run against it. `unsupported` makes
+# that gap loud instead of wrong. Tracked as F-51.
 #
 # See spec/14-oracle-dialect.md for what has to be decided before this script
 # can start anything — including M14.23, whether an Oracle Database Free image
@@ -133,8 +137,9 @@ unsupported)
 error: fhir-oracle has no local database yet, and this script will not start
        one for a port that cannot talk to it.
 
-  * ddl.rs is still the MySQL emitter and does not produce Oracle DDL (F-08)
-  * there is no store and no driver in the workspace
+  * ddl.rs does now emit Oracle DDL, and it installs on 26ai (F-08 closed)
+  * but there is no store and no driver, so nothing here could use a container
+    (F-51 — the driver decision is what gates this)
   * crates/fhir-oracle-map/tests/ does not exist
 
 Starting some other engine here is what this script did until 2026-07-31, and
@@ -166,6 +171,16 @@ SPEC_ENV="${ENV_VAR%_TEST_*}_SPEC_DIR"
 CORPUS_ENV="${ENV_VAR%_TEST_*}_CORPUS_DIR"
 CORPUS_DIR="$REPO/target/test-corpus"
 
+# Locate the FHIR specification packages.
+#
+# The monorepo path comes first (F-55). The two that follow it are the ancestor
+# project's layout and one developer's home directory: neither exists here, so
+# before this fix `spec_exports` emitted nothing, the corpus environment
+# variables were never set, and following the documented workflow — `db.sh up`
+# then `db.sh test` — produced a live suite whose corpus tests could not run.
+#
+# That is F-39's defect in the shell script. F-39 and F-42 fixed the candidate
+# lists inside the Rust tests and did not look here.
 find_spec() {
   # An explicit override always wins.
   local from_env="${!SPEC_ENV:-}"
@@ -174,6 +189,7 @@ find_spec() {
     return 0
   fi
   for c in \
+    "$REPO/../fhir/doc/fhir-specifications" \
     "$REPO/../fhir-rust-crate/doc/fhir-specifications" \
     "$HOME/git/joelparkerhenderson/fhir-rust-crate/doc/fhir-specifications"
   do
@@ -292,7 +308,20 @@ status() {
 run_tests() {
   up >/dev/null
   echo "running the live suite against $IMAGE"
-  [ -d "$CORPUS_DIR" ] || corpus >/dev/null 2>&1 || true
+  # Rebuild if the directory is missing **or** its links no longer resolve.
+  # Checking only for the directory is what let F-55 persist: the links pointed
+  # into a checkout that had been removed, so the directory existed, nothing
+  # rebuilt it, and the corpus tests failed with "no examples ran".
+  corpus_ok() {
+    [ -d "$CORPUS_DIR" ] || return 1
+    local any=0
+    for l in "$CORPUS_DIR"/*; do
+      [ -e "$l" ] || return 1
+      any=1
+    done
+    [ "$any" = 1 ]
+  }
+  corpus_ok || corpus >/dev/null 2>&1 || true
   eval "$(dsn_line)"
   eval "$(spec_exports)"
   cargo test --workspace "$@"

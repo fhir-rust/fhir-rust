@@ -221,9 +221,22 @@ async fn metadata(Path(version): Path<String>) -> AxumResponse {
         .resources
         .keys()
         .map(|t| {
+            // Every interaction this router actually serves. `A7.12` is
+            // usually read as "do not declare what you cannot do", and the
+            // reverse was true here: the routes have carried `POST`, `PUT` and
+            // `DELETE` since they were written, while this list advertised
+            // three read-only interactions. A client doing conformance-driven
+            // discovery would have concluded the server was read-only.
             serde_json::json!({
                 "type": t,
-                "interaction": [{ "code": "read" }, { "code": "vread" }, { "code": "search-type" }],
+                "interaction": [
+                    { "code": "read" },
+                    { "code": "vread" },
+                    { "code": "search-type" },
+                    { "code": "create" },
+                    { "code": "update" },
+                    { "code": "delete" },
+                ],
             })
         })
         .collect();
@@ -235,7 +248,9 @@ async fn metadata(Path(version): Path<String>) -> AxumResponse {
         "kind": "instance",
         "fhirVersion": store.map().fhir_version,
         "format": ["application/fhir+json"],
-        "software": { "name": "fhir-store", "version": env!("CARGO_PKG_VERSION") },
+        // `fhir-loco`, not `fhir-store`: the split (F-45) gave the old name to
+        // the engine-agnostic persistence core, and this is the HTTP surface.
+        "software": { "name": "fhir-loco", "version": env!("CARGO_PKG_VERSION") },
         "rest": [{ "mode": "server", "resource": types }],
     });
     fhir_json(StatusCode::OK, &body, None)

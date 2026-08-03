@@ -355,6 +355,12 @@ fn to_recon(rm: &ResourceMap, out: &fhir_sqlite_map::ShredOut) -> ReconIn {
                 SqlVal::Int(n) => n.to_string(),
                 SqlVal::Num(s) | SqlVal::Text(s) | SqlVal::Ts(s) | SqlVal::Date(s) => s.clone(),
                 SqlVal::Jsonb(s) => s.clone(),
+                // U3: adjuncts are derived and the reconstructor must never
+                // read them. Skipping here is not a convenience — it is the
+                // assertion: if a Bytes column ever reached reconstruction,
+                // round-trip would be deciding on a value the resource never
+                // contained.
+                SqlVal::Bytes(_) => continue,
             };
             cols.insert(name.clone(), text);
         }
@@ -410,7 +416,7 @@ fn property_roundtrip_random_resources() {
         .unwrap_or_else(|_| {
             std::path::PathBuf::from(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../../../fhir-rust-crate/doc/fhir-specifications"
+                "/../../../fhir/doc/fhir-specifications"
             ))
         });
     let defs = spec.join("r5").join("fhir-definitions-json");

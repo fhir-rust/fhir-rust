@@ -1,6 +1,7 @@
 //! fhir-mysql-gen: generates the fhir-mysql relational map from the official FHIR
 //! specification packages (profiles-resources.json, profiles-types.json).
 
+pub mod assets;
 pub mod build;
 pub mod names;
 pub mod search;
@@ -26,5 +27,7 @@ pub fn generate(definitions_dir: &Path, schema: &str) -> Result<RelMap, GenError
     let mut map = build::build_map(&spec, schema)?;
     search::compile_search(&mut map, definitions_dir)?;
     search::add_norm_columns(&mut map);
+    // U1/U9: after the fold columns, and only where the dialect needs them.
+    search::add_adjunct_columns(&mut map);
     Ok(map)
 }

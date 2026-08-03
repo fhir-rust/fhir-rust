@@ -1,6 +1,6 @@
 [package]
 name = "fhir-oracle-gen"
-description = "Generates the fhir-oracle relational map from FHIR specification packages"
+description = "Generates the fhir-oracle relational map from FHIR specification packages - SCAFFOLD: the DDL it emits is MySQL, not Oracle"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -15,3 +15,6 @@ serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
 sha2.workspace = true
+# F-41: the checker decompresses a committed asset to compare map content,
+# because the gzip container depends on flate2 feature unification.
+flate2.workspace = true

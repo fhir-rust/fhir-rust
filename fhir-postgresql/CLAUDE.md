@@ -15,6 +15,6 @@ Three things to know before editing anything here:
    recompute a chain. That was a **format change**: a database written before it
    needs a reload, not a migration. One defect stays open: `PGSSLMODE` defaults
    to unverified (**F-17**, `M14.27`).
-3. Normative behaviour is [`../spec/`](../spec/index.md), not this directory.
-   Check [`../spec/audit.md`](../spec/audit.md) before reporting a defect — it
+3. Normative behaviour is [`../spec/`](../spec/databases/index.md), not this directory.
+   Check [`../spec/audit.md`](../spec/databases/audit.md) before reporting a defect — it
    may already be tracked.

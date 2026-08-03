@@ -150,6 +150,38 @@ pub struct Table {
     /// path and the query path share one definition of string equality.
     #[serde(default)]
     pub norm_cols: Vec<(String, String)>,
+    /// Search adjuncts for columns this dialect cannot index or compare as
+    /// bound (`U1`, `U1a`). Present only where `ddl::TEXT_ADJUNCTS` is set, per
+    /// `U9`, so the engines that need neither pay for neither.
+    #[serde(default)]
+    pub adjunct_cols: Vec<Adjuncts>,
+}
+
+/// Which adjuncts a column has, and under what names.
+///
+/// `U2b` requires the map to record **which** exist rather than assume a pair.
+/// `U2` reads as though both always do, and for a `string` target both do —
+/// prefix and `:exact` are both performed. `U2a` qualifies that: a column a
+/// search only ever compares for equality has no use for a bounded adjunct, and
+/// `U13` forbids one outright over opaque bytes, where it would enable ordering
+/// by the first *n* bytes of an encoded payload rather than any FHIR search.
+///
+/// A query builder MUST consult these rather than assume: emitting a predicate
+/// against an adjunct that was never generated fails only for the search shapes
+/// nobody exercised, which is the worst way to find out.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Adjuncts {
+    /// The column these are derived from.
+    pub source: String,
+    /// `<col>_idx` — bounded, folded, binary collation. Serves prefix, range
+    /// and ordering. `None` when the search never performs those.
+    #[serde(default)]
+    pub bounded: Option<String>,
+    /// `<col>_h` — SHA-256 of the whole value (`U4a`). Serves equality,
+    /// `:exact` and token match. `None` when the search never compares for
+    /// equality.
+    #[serde(default)]
+    pub digest: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -173,6 +205,19 @@ pub enum ColTy {
     /// btree range scan rather than a pattern match the planner has to
     /// recognise. Never reconstructed into a resource.
     TextC,
+    /// Derived **bounded** adjunct for an unbounded text column (`U1`), in the
+    /// folded form (`U5`) and a binary collation, so a prefix or range search
+    /// can use an index on an engine that cannot index the source type. The
+    /// bound *n* is the dialect's to choose and record (`U10`); the map only
+    /// says the adjunct exists. Never reconstructed into a resource (`U3`).
+    TextIdx,
+    /// Derived **checksum** adjunct for an unbounded text column (`U1`): a
+    /// fixed-width digest of the *whole* value, computed in Rust over the
+    /// canonical bytes (`U4`), never by a SQL function. Serves equality where
+    /// the source type cannot be compared. A match on this column is an access
+    /// path, never an answer — `U6` requires confirming against the source.
+    /// Never reconstructed into a resource (`U3`).
+    Digest,
     /// Derived sort column for a FHIR date.
     Date,
     /// Derived sort column for a FHIR dateTime/instant.
@@ -296,6 +341,79 @@ impl Prim {
     }
 }
 
+/// Errors from [`RelMap::bundled`].
+#[derive(Debug)]
+pub enum BundledError {
+    /// The version is real, but this crate was built without its feature.
+    NotCompiled(&'static str),
+    /// Not a FHIR version this port ships a map for.
+    UnknownVersion(String),
+    /// The embedded bytes did not decode — a build-time corruption, not a
+    /// caller error.
+    Decode(std::io::Error),
+}
+
+impl std::fmt::Display for BundledError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::NotCompiled(v) => write!(
+                f,
+                "the {v} map is not compiled in; enable the \"{v}\" feature of this crate"
+            ),
+            Self::UnknownVersion(v) => write!(f, "no bundled map for FHIR version {v:?}"),
+            Self::Decode(e) => write!(f, "bundled map failed to decode: {e}"),
+        }
+    }
+}
+impl std::error::Error for BundledError {}
+
+// One pair per version rather than `#[cfg]` inside a single body: with every
+// version disabled, a shared `let bytes = match { ... }` is dead and the
+// compiler rightly warns about it. This shape compiles clean at every
+// combination of the three features, including none.
+
+#[cfg(feature = "r3")]
+fn bundled_r3() -> Result<RelMap, BundledError> {
+    // Bound to a const so the line width does not depend on the crate name:
+    // `fhir-postgresql` is four characters longer than `fhir-sqlite`, which was
+    // enough to make rustfmt wrap this call differently there and break X15.1's
+    // byte-identity for a purely cosmetic reason.
+    const GZ: &[u8] = include_bytes!("../assets/fhir-sqlite-relmap-r3.json.gz");
+    RelMap::from_gz_bytes(GZ).map_err(BundledError::Decode)
+}
+#[cfg(not(feature = "r3"))]
+fn bundled_r3() -> Result<RelMap, BundledError> {
+    Err(BundledError::NotCompiled("r3"))
+}
+
+#[cfg(feature = "r4")]
+fn bundled_r4() -> Result<RelMap, BundledError> {
+    // Bound to a const so the line width does not depend on the crate name:
+    // `fhir-postgresql` is four characters longer than `fhir-sqlite`, which was
+    // enough to make rustfmt wrap this call differently there and break X15.1's
+    // byte-identity for a purely cosmetic reason.
+    const GZ: &[u8] = include_bytes!("../assets/fhir-sqlite-relmap-r4.json.gz");
+    RelMap::from_gz_bytes(GZ).map_err(BundledError::Decode)
+}
+#[cfg(not(feature = "r4"))]
+fn bundled_r4() -> Result<RelMap, BundledError> {
+    Err(BundledError::NotCompiled("r4"))
+}
+
+#[cfg(feature = "r5")]
+fn bundled_r5() -> Result<RelMap, BundledError> {
+    // Bound to a const so the line width does not depend on the crate name:
+    // `fhir-postgresql` is four characters longer than `fhir-sqlite`, which was
+    // enough to make rustfmt wrap this call differently there and break X15.1's
+    // byte-identity for a purely cosmetic reason.
+    const GZ: &[u8] = include_bytes!("../assets/fhir-sqlite-relmap-r5.json.gz");
+    RelMap::from_gz_bytes(GZ).map_err(BundledError::Decode)
+}
+#[cfg(not(feature = "r5"))]
+fn bundled_r5() -> Result<RelMap, BundledError> {
+    Err(BundledError::NotCompiled("r5"))
+}
+
 impl RelMap {
     pub fn to_gz_bytes(&self) -> Result<Vec<u8>, serde_json::Error> {
         use flate2::{Compression, write::GzEncoder};
@@ -304,6 +422,48 @@ impl RelMap {
         let mut enc = GzEncoder::new(Vec::new(), Compression::default());
         enc.write_all(&json).expect("gz write");
         Ok(enc.finish().expect("gz finish"))
+    }
+
+    /// The bundled relational map for one FHIR version, compiled into the binary.
+    ///
+    /// The maps are generated artifacts committed under this crate's `assets/`
+    /// (`G2.1`) and embedded with `include_bytes!`, so a consumer who runs
+    /// `cargo add` gets a working engine rather than one with nothing to walk
+    /// (**F-33**). Before this there was no constructor except
+    /// [`RelMap::from_gz_bytes`] over a file the package did not contain.
+    ///
+    /// **Per-version features**, matching the shape the model family already
+    /// uses for its release crates: `r3`, `r4`, `r5`, with `r5` on by default.
+    ///
+    /// A caveat worth stating plainly: the features gate **compilation**, not
+    /// the download. A `.crate` archive is static, so all three maps travel
+    /// with it (~2.5 MB) however few you enable. Making the download opt-in
+    /// too would take separate data crates, which is a different trade.
+    ///
+    /// # Errors
+    /// [`BundledError::NotCompiled`] when the version's feature is off,
+    /// [`BundledError::UnknownVersion`] for anything this port does not ship,
+    /// and [`BundledError::Decode`] if the embedded bytes are corrupt.
+    pub fn bundled(version: &str) -> Result<Self, BundledError> {
+        match version {
+            "r3" => bundled_r3(),
+            "r4" => bundled_r4(),
+            "r5" => bundled_r5(),
+            other => Err(BundledError::UnknownVersion(other.to_string())),
+        }
+    }
+
+    /// Which versions this build actually carries.
+    #[must_use]
+    pub fn bundled_versions() -> &'static [&'static str] {
+        &[
+            #[cfg(feature = "r3")]
+            "r3",
+            #[cfg(feature = "r4")]
+            "r4",
+            #[cfg(feature = "r5")]
+            "r5",
+        ]
     }
 
     pub fn from_gz_bytes(bytes: &[u8]) -> Result<Self, std::io::Error> {

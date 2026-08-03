@@ -28,7 +28,7 @@ fn spec_defs() -> Option<std::path::PathBuf> {
         .unwrap_or_else(|_| {
             std::path::PathBuf::from(concat!(
                 env!("CARGO_MANIFEST_DIR"),
-                "/../../../fhir-rust-crate/doc/fhir-specifications"
+                "/../../../fhir/doc/fhir-specifications"
             ))
         });
     let defs = root.join("r5").join("fhir-definitions-json");

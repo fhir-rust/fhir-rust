@@ -1,6 +1,6 @@
 [package]
 name = "fhir-mssql-gen"
-description = "Generates the fhir-mssql relational map from FHIR specification packages"
+description = "Generates the fhir-mssql relational map from FHIR specification packages - SCAFFOLD: no store exists to consume it"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -15,3 +15,6 @@ serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
 sha2.workspace = true
+# F-41: the checker decompresses a committed asset to compare map content,
+# because the gzip container depends on flate2 feature unification.
+flate2.workspace = true

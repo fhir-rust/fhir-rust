@@ -132,9 +132,35 @@ impl MariaDbStore {
     /// default database: every statement qualifies its tables, so leaving the
     /// connection unbound means a mistyped qualification fails loudly instead of
     /// silently hitting whatever database happened to be current.
+    /// TLS comes from `FHIR_MARIADB_SSL_MODE` and defaults to verifying
+    /// (`O10.7`, **F-54**). Use [`connect_with`](Self::connect_with) to pass a
+    /// mode explicitly.
+    ///
+    /// # Errors
+    /// If the DSN is malformed, if `FHIR_MARIADB_SSL_MODE` is not a mode this
+    /// port implements, or if the server cannot be reached.
     pub async fn connect(url: &str, map: Arc<RelMap>) -> Result<Self, StoreError> {
+        Self::connect_with(url, map, crate::ssl::SslMode::from_env()?).await
+    }
+
+    /// Connect with an explicit TLS mode.
+    ///
+    /// # Errors
+    /// If the DSN is malformed or the server cannot be reached. A server that
+    /// does not offer TLS fails here under any mode but `Disabled` — which is
+    /// the point: `O10.7` would rather this refuse to start than carry PHI in
+    /// the clear.
+    pub async fn connect_with(
+        url: &str,
+        map: Arc<RelMap>,
+        ssl: crate::ssl::SslMode,
+    ) -> Result<Self, StoreError> {
         let opts = Opts::from_url(url).map_err(|e| StoreError::Db(format!("bad DSN: {e}")))?;
-        let pool = Pool::new(opts);
+        let builder = ssl.apply(
+            mysql_async::OptsBuilder::from_opts(opts),
+            crate::ssl::root_ca_from_env().as_deref(),
+        );
+        let pool = Pool::new(builder);
         // Fail here rather than at first use: a store that constructs
         // successfully and then cannot talk to anything is a worse diagnostic
         // than a connection error at startup.
@@ -818,6 +844,10 @@ fn sqlval(v: &fhir_mariadb_map::shred::SqlVal) -> mysql_async::Value {
         // Numeric, date, timestamp, and JSON all cross as text: the columns are
         // TEXT (M14.14) and the lexical form is what M3.6 requires to survive.
         S::Num(s) | S::Text(s) | S::Ts(s) | S::Date(s) | S::Jsonb(s) => V::Bytes(s.clone().into()),
+        // U4a: the checksum adjunct is already bytes. It shares the driver's
+        // Bytes representation with text above, but reaches a BINARY(32)
+        // column rather than a TEXT one, so no charset conversion applies.
+        S::Bytes(b) => V::Bytes(b.clone()),
     }
 }
 
@@ -1687,17 +1717,17 @@ impl MariaDbStore {
                     let bad = !crate::chain::digests_equal(stored, want);
                     let unlinked = stored_link.as_deref() != prior.as_deref();
                     if bad || unlinked {
-                        breaks.push(crate::ChainBreak {
-                            rtype: rm.name.clone(),
-                            id: id.clone(),
+                        breaks.push(crate::ChainBreak::new(
+                            rm.name.clone(),
+                            id.clone(),
                             version_id,
                             algorithm,
-                            detail: match (bad, unlinked) {
-                                (true, true) => "row hash and link both differ".into(),
-                                (true, false) => "row contents differ from their hash".into(),
-                                _ => "link to the previous version differs".into(),
+                            match (bad, unlinked) {
+                                (true, true) => "row hash and link both differ",
+                                (true, false) => "row contents differ from their hash",
+                                _ => "link to the previous version differs",
                             },
-                        });
+                        ));
                     }
                 }
 
@@ -1752,13 +1782,13 @@ fn check_mac(
     };
 
     match verdict {
-        MacCheck::Mismatch => breaks.push(crate::ChainBreak {
-            rtype: rtype.to_string(),
-            id: id.to_string(),
+        MacCheck::Mismatch => breaks.push(crate::ChainBreak::new(
+            rtype,
+            id,
             version_id,
-            algorithm: "hmac-sha256",
-            detail: "keyed tag does not match".into(),
-        }),
+            "hmac-sha256",
+            "keyed tag does not match",
+        )),
         MacCheck::Ok | MacCheck::Absent => {}
         MacCheck::Unverifiable { key_id } => tracing::warn!(
             %rtype, %id, version_id, %key_id,

@@ -36,7 +36,11 @@ ordering and search. References split into `…_ref_type` / `…_ref_id`
 (joinable) with `…_ref_url` for absolute, urn, and fragment forms.
 Choice elements (`value[x]`) become one column set per allowed type; the
 open ~54-type choices are force-split into their own tables to respect
-PostgreSQL's column limit.
+the column limit of every supported engine.
+The threshold is **150 columns**, set once in the shared generator
+(`SPLIT_WIDTH`) and identical in all six ports — which is why one generated map
+serves them all. It is not derived from this engine's limit specifically; it
+sits well below every supported engine's, which is the property that matters.
 
 ## Extensions without JSONB
 

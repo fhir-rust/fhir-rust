@@ -1,31 +1,45 @@
 # Getting started
 
-You need PostgreSQL 18 and Rust.
+You need Oracle Database 12.2 or later and Rust.
 
-```sh
-cargo install --path crates/fhir-oracle
-export PGHOST=localhost PGUSER=you PGDATABASE=clinic
+**There is no `fhir-oracle` binary.** The commands this chapter used to show —
+`fhir-oracle init`, `load`, `serve` — do not exist in any port (`C0.17`,
+`C0.18`); they were `fhir-postgresql`'s book text, and it does not have them
+either. This is a library you call:
 
-fhir-oracle init --fhir-version r5      # install the generated schema (~6 s)
-fhir-oracle load export/*.ndjson        # load NDJSON / Bundles / single files
-fhir-oracle serve                       # FHIR REST API on 127.0.0.1:8080
+```rust,ignore
+use std::sync::Arc;
+use fhir_oracle_map::model::RelMap;
+
+// The generated relational map ships with the crate.
+let map: Arc<RelMap> = Arc::new(RelMap::bundled("r5")?);
+
+// Install the schema, then write and read resources through the store API.
+// See the crate documentation for the exact signatures — they differ by
+// engine, which is the one place these ports deliberately diverge.
 ```
 
-`load` detects format by content, not filename: NDJSON, a Bundle, or a
-single resource, gzipped or plain. Failures are reported per resource with
-file and line; the exit code is nonzero if anything failed. Add
-`--validate` (in builds with the `validate` feature) to also check every
-resource against the typed FHIR model.
+The [port README](https://github.com/fhir-rust/fhir-rust) carries a compiled,
+current example; this chapter does not, because an example that is not compiled
+is how the previous version of this page came to describe a binary that was
+never built (audit **F-56**).
 
-Useful commands while exploring:
+## What is actually here
 
-```sh
-fhir-oracle transform patient.json      # show exactly which rows a resource becomes
-fhir-oracle search Patient family=Smith birthdate=ge1970
-fhir-oracle get Patient example         # reconstruct one resource
-fhir-oracle export Patient > patients.ndjson
-```
+Three crates, no binary:
 
-Connection settings come from the standard `PG*` environment variables or
-`--dsn`. Each FHIR version installs into its own PostgreSQL schema (`r5`,
-`r4`, `r3`) inside whatever database you point at.
+| Crate | What it does |
+| --- | --- |
+| `fhir-oracle-gen` | compiles the FHIR specification packages into a relational map and the DDL |
+| `fhir-oracle-map` | the map types, shred, reconstruct, fold, and this engine's `ddl.rs` |
+| `fhir-oracle-store` | the driver and the operations — see the port README for its level |
+
+Each FHIR version is its own Oracle **user** (`r5`, `r4`, `r3`), because Oracle
+conflates user and schema (`M14.5`). This port does **not** create them; they
+are a deployment prerequisite (`M14.28`).
+
+The chapters that follow describe the storage model, the search compiler and
+the trust boundary. Those are accurate in substance; where they name
+PostgreSQL, or a `serve` command, or an HTTP status code, read the banner in
+the [Introduction](introduction.md) — that text has not been corrected yet
+(audit **F-56**).

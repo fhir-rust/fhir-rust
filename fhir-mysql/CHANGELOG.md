@@ -1,5 +1,39 @@
 # Changelog
 
+> ## ⚠ Entries before 0.4.0 are inherited
+>
+> This changelog began as `fhir-postgresql`'s. Entries that name PostgreSQL,
+> `tokio-postgres`, `NoTls`, `PGSSLMODE`/`PGSSLROOTCERT`, `jsonb`, or advisory
+> locks describe **that** port's history; this port's driver is `mysql_async` and its
+> equivalents differ or do not exist. Audit **F-62**, `W16.12`.
+>
+> They are kept rather than rewritten because the shared half — the generator,
+> the shred/reconstruct engine, the fold — genuinely does change with these
+> releases, and because a changelog is a historical record. What is specific to
+> this port is stated where it differs.
+
+## Unreleased
+
+**Security — the database connection can now use TLS, and verifies by
+default.** This port previously set no TLS options at all and was built with
+`mysql_async`'s `minimal` feature, which excludes TLS entirely: every
+connection was plaintext and nothing could change that. Both ports are
+Store-level, so real patient data crossed that link (`O10.7`, audit **F-54**).
+
+`FHIR_MYSQL_SSL_MODE` takes MySQL's own `--ssl-mode` values —
+`DISABLED`, `REQUIRED`, `VERIFY_CA`, `VERIFY_IDENTITY` — and defaults to
+`VERIFY_IDENTITY`. `FHIR_MYSQL_SSL_CA` names a root certificate for a
+private CA. `Store::connect_with` takes a mode explicitly.
+
+Note that MySQL's own `REQUIRED` encrypts without validating anything, so it
+is not the default here. `PREFERRED` is rejected with an explanation rather
+than approximated: the driver either requires TLS or does not use it, and
+silently choosing either one would be wrong.
+
+**This will break local development against a stock container**, whose
+certificate is self-signed — that is the change working. `scripts/db.sh` now
+prints `FHIR_MYSQL_SSL_MODE=DISABLED` next to the DSN for that case.
+
 ## 0.4.0 — tamper evidence that survives the database (2026-07-27)
 
 **Breaking:** `ChainBreak` gained an `algorithm` field, so a break is

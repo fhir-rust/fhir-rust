@@ -1,5 +1,17 @@
 # Introduction
 
+> ## ⚠ Read this first
+>
+> Where this book describes a `fhir-postgresql serve` command, endpoints or HTTP
+> status codes, it means **`fhir-loco`** — a separate crate (Loco.rs, Axum,
+> Tokio, Hyper) that mounts a FHIR REST API over a store.
+>
+> `fhir-postgresql` itself is a **library**: no binary, no `serve`, no HTTP
+> surface ([`C0.17`](../../../spec/databases/00-conformance.md),
+> [`C0.18`](../../../spec/databases/00-conformance.md); audit **F-56**). The
+> [conformance matrix](../../../spec/databases/conformance-matrix.md) is the
+> status document to trust.
+
 fhir-postgresql stores [FHIR](https://hl7.org/fhir/) resources in PostgreSQL 18 as
 **real relational tables** — typed columns, child tables, primary and
 foreign keys — not JSON or JSONB blobs, and serves them back through the

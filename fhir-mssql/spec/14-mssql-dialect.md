@@ -4,7 +4,7 @@
 NOT be cited as evidence for a conformance level until it is.
 
 This annex records where the SQL Server port departs from the
-[monorepo core](../../spec/index.md), and — as importantly — where it does not.
+[monorepo core](../../spec/databases/index.md), and — as importantly — where it does not.
 Requirements are numbered `M14.x` and use RFC 2119 keywords.
 
 Target: **Microsoft SQL Server 2016 or later** (see `M14.3`), one database, one
@@ -14,7 +14,7 @@ schema per FHIR version.
 > with three lines changed — titled "14. MySQL dialect", declaring the target as
 > "MySQL 8.0 or later, InnoDB, `utf8mb4`", carrying a section headed
 > "Relationship to fhir-mariadb", and mentioning SQL Server nowhere
-> ([`audit.md`](../../spec/audit.md) **F-16**).
+> ([`audit.md`](../../spec/databases/audit.md) **F-16**).
 >
 > That mattered more than the analogous problem in code, because this port's
 > `ddl.rs` is genuine, deliberate T-SQL: the specification contradicted its own
@@ -158,11 +158,12 @@ schema per FHIR version.
   derived column rather than silently drop the index. This port currently does
   neither, which is why this is a departure and not a note.
 
-  **Settled.** [Unbounded string search](../../spec/unbounded-string-search-must-have-bounded-adjunct-and-checksum-adjunct.md) (`U1`–`U10`, `P6.9`) is now
+  **Settled.** [Unbounded string search](../../spec/databases/unbounded-string-search-must-have-bounded-adjunct-and-checksum-adjunct.md) (`U1`–`U10`, `P6.9`) is now
   normative and supersedes the persisted-computed-column sketch this
   requirement used to carry. A text column this engine cannot index gets a
-  **bounded adjunct** (`<col>_idx`, `NVARCHAR(450)`) *and* a **checksum
-  adjunct** (`<col>_h`, `BINARY(32)`) in the generated map.
+  **bounded adjunct** (`<col>_idx`, `NVARCHAR(450) COLLATE
+  Latin1_General_100_BIN2`) *and* a **checksum adjunct** (`<col>_h`, `CHAR(64)
+  COLLATE Latin1_General_100_BIN2`) in the generated map.
 
   Why both, when `NVARCHAR(MAX)` already answers `=` here and only the *index*
   is missing: a bounded prefix cannot answer equality, so an index on it must be
@@ -174,6 +175,33 @@ schema per FHIR version.
 
   It belongs in the **generated map**, not in `ddl.rs` (`X15.1`: shared across
   all six ports). Until it lands, this port MUST NOT claim `P6.4a`.
+
+- **M14.32** **`U10` record: which columns get adjuncts, and what the bound
+  is.** Every column a `string` search parameter targets, and only those — the
+  generator adds the pair in `add_adjunct_columns`, gated on
+  `ddl::TEXT_ADJUNCTS`, which is `true` here. The bound *n* is **450
+  characters**, matching what `col_sql` declares for `ColTy::TextIdx` and what
+  `shred.rs` truncates to in `ADJUNCT_BOUND`. 450 is SQL Server's limit for a
+  non-clustered index key at 900 bytes over a 2-byte character type.
+
+- **M14.33** **The checksum column is `BINARY(32)`** — SHA-256's raw bytes, as
+  `U4a` now requires normatively.
+
+  This requirement previously recorded the opposite: `CHAR(64)` holding
+  lowercase hex, chosen to avoid adding a `SqlVal::Bytes` variant that every
+  store crate would have to bind, since per-port binding of a new value type is
+  where **F-20** was found. The owner decided for binary, `U4a` was written to
+  say so, and the variant was added.
+
+  The `F-20` risk is therefore live rather than avoided, and `U4a` converts it
+  into an obligation: this port MUST have a test that round-trips a digest
+  through its driver and fails if the binding is wrong. It has no store yet, so
+  that test arrives with one — and until it does, the binding here is unproven,
+  which is a reason this port stays at Scaffold and not a detail.
+
+  `col_sql` emits `BINARY(32)`; `bytea` on PostgreSQL, `BLOB` on SQLite,
+  `BINARY(32)` on MySQL and MariaDB, `RAW(32)` on Oracle. All five are the same
+  32 bytes.
 
   SQL Server has no prefix-length index syntax at all, so the prefix arithmetic
   the MySQL port needed does not apply here; the question is only which columns
@@ -249,6 +277,27 @@ schema per FHIR version.
   the host — with `rustls`, because SQL Server negotiates TLS during login even
   for an otherwise plaintext connection (`O10.7`).
 
+- **M14.34** **That choice currently carries four unfixable advisories.**
+  `tiberius 0.12.3` — the newest release — pins `rustls 0.21`, which pins
+  `rustls-webpki ^0.101`. That chain has three vulnerabilities
+  (RUSTSEC-2026-0098, -0099, -0104: name-constraint handling for URI and
+  wildcard names, and a reachable panic parsing certificate revocation lists)
+  plus one unmaintained crate (RUSTSEC-2025-0134, `rustls-pemfile`). The fixes
+  live in `rustls-webpki >= 0.103.12`, which requires `rustls 0.23`, which no
+  tiberius release supports.
+
+  They are ignored in `deny.toml` with that reasoning rather than silently, and
+  the scope is narrow: `tiberius` is a **dev-dependency** of
+  `fhir-mssql-map` — verified absent from `cargo tree -e normal` — so nothing a
+  consumer of a published crate builds contains it. The only code here that
+  opens a TLS connection is the DDL execution test against a local container.
+
+  This MUST be revisited when the port gains a store, because at that point the
+  driver stops being a test dependency and starts being how clinical data
+  crosses a network. The options are a newer tiberius if one appears, tiberius
+  with `native-tls` instead of `rustls`, or a different driver. Until then this
+  port MUST NOT claim `O10.7`.
+
 ## What this port has not decided
 
 Stated explicitly, because `X15.6` treats silence as a defect rather than as
@@ -297,4 +346,4 @@ Stated explicitly, because `X15.6` treats silence as a defect rather than as
 ---
 
 Part of the [fhir-mssql specification](index.md), which is part of the
-[fhir-databases specification](../../spec/index.md).
+[fhir-databases specification](../../spec/databases/index.md).

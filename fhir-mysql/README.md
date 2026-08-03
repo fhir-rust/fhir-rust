@@ -34,9 +34,9 @@ with its own generated schema in its own database (`r5`, `r4`, `r3`).
 > no `expected_version` anywhere in the crate — and no `transact_audited`,
 > conditional create/delete, `init --upgrade`, `emit_checkpoint`,
 > `chain_witness`, or `resign_history`. Read the
-> [conformance matrix](../spec/conformance-matrix.md) before deploying.
+> [conformance matrix](../spec/databases/conformance-matrix.md) before deploying.
 >
-> Normative behaviour: the shared [core spec](../spec/index.md) plus this port's
+> Normative behaviour: the shared [core spec](../spec/databases/index.md) plus this port's
 > [dialect annex](spec/14-mysql-dialect.md).
 
 ## Why relational
@@ -73,8 +73,7 @@ use fhir_mysql_store::{Audit, mysql::MySqlStore};
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // The relational map ships as a committed asset — no FHIR packages needed.
-    let bytes = std::fs::read("assets/fhir-mysql-relmap-r5.json.gz")?;
-    let map = Arc::new(RelMap::from_gz_bytes(&bytes)?);
+        let map = Arc::new(RelMap::bundled("r5")?);   // compiled in (feature `r5`)
 
     let store = MySqlStore::connect("mysql://root@127.0.0.1:3306", map).await?;
     store.init("r5-baseline").await?;
@@ -178,9 +177,9 @@ what is guaranteed here and what you must provide.
 - **[The book](book/src/SUMMARY.md)** — getting started, storage model,
   querying, search, operations, architecture.
 - [`spec/index.md`](spec/index.md) — this port's spec index and departures; the
-  normative core is shared at [`../spec/`](../spec/index.md).
+  normative core is shared at [`../spec/`](../spec/databases/index.md).
 - [`../doc/`](../doc/index.md) — monorepo tutorials and examples.
-- [`../spec/conformance-matrix.md`](../spec/conformance-matrix.md) — what this
+- [`../spec/conformance-matrix.md`](../spec/databases/conformance-matrix.md) — what this
   port actually satisfies.
 - [`plan.md`](plan.md) · [`tasks.md`](tasks.md) · [`CHANGELOG.md`](CHANGELOG.md)
 - [`doc/benchmarks.md`](doc/benchmarks.md) · [`doc/ci.md`](doc/ci.md)

@@ -14,6 +14,6 @@ Three things to know before editing anything here:
    note `M14.32` — SQLite has no `ADD COLUMN IF NOT EXISTS`, so the audit
    envelope is diffed, never reconciled as PostgreSQL does.
    The suite needs no server: run it. It found F-20 to F-23.
-3. Normative behaviour is [`../spec/`](../spec/index.md), not this directory.
-   Check [`../spec/audit.md`](../spec/audit.md) before reporting a defect — it
+3. Normative behaviour is [`../spec/`](../spec/databases/index.md), not this directory.
+   Check [`../spec/audit.md`](../spec/databases/audit.md) before reporting a defect — it
    may already be tracked.

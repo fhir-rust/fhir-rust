@@ -222,6 +222,7 @@ name = "fhir-mssql-gen"
 version = "0.4.0"
 dependencies = [
  "fhir-mssql-map",
+ "flate2",
  "serde",
  "serde_json",
  "sha2",
@@ -235,6 +236,7 @@ dependencies = [
  "flate2",
  "serde",
  "serde_json",
+ "sha2",
  "thiserror 2.0.19",
  "tiberius",
  "tokio",
@@ -248,6 +250,7 @@ version = "0.4.0"
 dependencies = [
  "fhir-mssql-gen",
  "fhir-mssql-map",
+ "fhir-store",
  "getrandom 0.3.4",
  "hmac",
  "serde_json",
@@ -258,6 +261,21 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "zeroize",
+]
+
+[[package]]
+name = "fhir-store"
+version = "0.1.0"
+dependencies = [
+ "getrandom 0.3.4",
+ "hmac",
+ "serde",
+ "serde_json",
+ "sha2",
+ "sha3",
+ "subtle",
+ "thiserror 2.0.19",
  "zeroize",
 ]
 
@@ -909,13 +927,13 @@ dependencies = [
 
 [[package]]
 name = "tokio-macros"
-version = "2.7.1"
+version = "2.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6328af13490e73a9b4694030fafd93f8c8c6a9dede33e821c3fc63eddf8042ba"
+checksum = "78773a2a397f451582ce068015985c33193cf6dea8b74d2a639fe457b2f07b0e"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.119",
+ "syn 3.0.3",
 ]
 
 [[package]]

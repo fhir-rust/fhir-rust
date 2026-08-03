@@ -114,6 +114,57 @@ fn next_char(c: char) -> Option<char> {
     char::from_u32(n)
 }
 
+/// The checksum adjunct for an unbounded text column (`U1`, `U4`).
+///
+/// SHA-256 of the value's UTF-8 bytes, lowercase hex. Serves equality on an
+/// engine that cannot `=` compare the source type.
+///
+/// **Computed in Rust, never by a SQL function** (`U4`). This is `L1`'s
+/// argument in a second place: two implementations of "the same string" — one
+/// in SQL, one here — have to agree for every codepoint in Unicode, or the
+/// system quietly loses matches. One implementation cannot disagree with
+/// itself.
+///
+/// Returned as the **32 raw bytes**, not hexadecimal text (`U4a`). Hex would
+/// double the width of a column that exists to be indexed and compared, and
+/// would invite the comparison to be written against a rendering rather than a
+/// value — two encoders disagreeing on case give two texts for one digest,
+/// which is `L1`'s failure in a new place.
+///
+/// The cost `U4a` accepts: this obliges every store to bind a byte-valued
+/// parameter, and per-port binding of a new value type is where **F-20** was
+/// found. `U4a` therefore requires a driver round-trip test wherever the column
+/// is materialized.
+///
+/// The digest is **not** folded: it answers exact equality (`:exact`, token
+/// match), where `fold` would erase the case and accents the caller asked to
+/// keep. The bounded adjunct is the folded one (`U5`).
+#[must_use]
+pub fn digest(s: &str) -> [u8; 32] {
+    use sha2::{Digest, Sha256};
+    let mut h = Sha256::new();
+    h.update(s.as_bytes());
+    h.finalize().into()
+}
+
+/// The bounded adjunct for an unbounded text column (`U1`, `U5`).
+///
+/// The folded form, truncated to `n` characters — **characters, not bytes**, so
+/// the bound means the same thing on every engine and cannot split a UTF-8
+/// sequence.
+///
+/// `U5` requires the folded form so that a prefix search over the adjunct is
+/// insensitive to case and accents exactly as one over `_norm` is. An adjunct
+/// that folded differently from its source would be a third definition of
+/// string identity, and two is already the number `L1` warns about.
+///
+/// Truncation is why `U7` exists: this column narrows, and the comparison
+/// against the source column decides.
+#[must_use]
+pub fn bounded(s: &str, n: usize) -> String {
+    fold(s).chars().take(n).collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -230,5 +281,88 @@ mod tests {
         for s in ["mu", "mum", "mv", "n", "mula".trim_end_matches("mula")] {
             assert!(!in_range(s) || s.starts_with(prefix), "{s:?} leaked in");
         }
+    }
+}
+
+#[cfg(test)]
+mod adjunct_tests {
+    use super::*;
+
+    // U4: the digest is fixed-width, and it is over the *whole* value — two
+    // strings agreeing in their first 450 characters must still differ.
+    #[test]
+    fn digest_is_fixed_width_and_covers_the_whole_value() {
+        let a = "x".repeat(450) + "a";
+        let b = "x".repeat(450) + "b";
+        assert_eq!(digest(&a).len(), 32);
+        assert_eq!(digest(&b).len(), 32);
+        assert_ne!(
+            digest(&a),
+            digest(&b),
+            "U2: a digest that ignored the tail would make equality wrong"
+        );
+        assert!(digest("").len() == 32, "empty string still digests");
+    }
+
+    // U4: computed over the same bytes everywhere. A known vector pins it, so
+    // a change of hash function is a deliberate migration and not a silent one.
+    // U4a: SHA-256, and 32 raw bytes rather than hex. A known vector pins
+    // both the algorithm and the encoding, so changing either is a deliberate
+    // migration rather than a silent one.
+    #[test]
+    fn digest_is_sha256_raw_bytes() {
+        let d = digest("abc");
+        assert_eq!(d.len(), 32, "U4a: 32 bytes, not 64 hex characters");
+        assert_eq!(
+            d,
+            [
+                0xba, 0x78, 0x16, 0xbf, 0x8f, 0x01, 0xcf, 0xea, 0x41, 0x41, 0x40, 0xde, 0x5d, 0xae,
+                0x22, 0x23, 0xb0, 0x03, 0x61, 0xa3, 0x96, 0x17, 0x7a, 0x9c, 0xb4, 0x10, 0xff, 0x61,
+                0xf2, 0x00, 0x15, 0xad
+            ]
+        );
+    }
+
+    // U5: the bounded adjunct is the folded form, so a prefix search over it
+    // is case- and accent-insensitive exactly as one over `_norm` is.
+    #[test]
+    fn bounded_is_folded() {
+        assert_eq!(bounded("\u{c6}r\u{f8}", 450), fold("\u{c6}r\u{f8}"));
+        assert_eq!(bounded("AERO", 450), bounded("aero", 450));
+    }
+
+    // U1: the bound counts characters, not bytes. Truncating UTF-8 by bytes
+    // would split a sequence and produce an invalid string.
+    #[test]
+    fn bounded_truncates_by_characters_not_bytes() {
+        // Deliberately a character the fold leaves multi-byte. An accented
+        // Latin letter is the wrong probe: the fold decomposes and strips the
+        // mark, leaving one ASCII byte per character, so byte-truncation and
+        // character-truncation agree and the test cannot fail. Mutation
+        // verification (T11.10) caught exactly that — this assertion passed
+        // against a `bounded` that sliced by bytes until the probe changed.
+        let s = "\u{5b57}".repeat(500); // CJK, 3 bytes each, unchanged by the fold
+        let b = bounded(&s, 450);
+        assert_eq!(
+            b.chars().count(),
+            450,
+            "U1: the bound counts characters; slicing 450 *bytes* would keep 150"
+        );
+        assert!(b.is_char_boundary(b.len()));
+    }
+
+    // U2: the two adjuncts are not substitutes. Values sharing a 450-character
+    // prefix collide in the bounded column and must not in the digest — this
+    // is the case where a port emitting only `_idx` returns the wrong row.
+    #[test]
+    fn bounded_collides_where_digest_must_not() {
+        let a = "y".repeat(450) + "1";
+        let b = "y".repeat(450) + "2";
+        assert_eq!(bounded(&a, 450), bounded(&b, 450), "they share the prefix");
+        assert_ne!(
+            digest(&a),
+            digest(&b),
+            "U2: the digest still separates them"
+        );
     }
 }

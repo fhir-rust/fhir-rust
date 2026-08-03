@@ -14,7 +14,7 @@ use std::process::{Command, Stdio};
 
 fn relmap_path(version: &str) -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../assets")
+        .join("assets")
         .join(format!("fhir-sqlite-relmap-{version}.json.gz"))
 }
 

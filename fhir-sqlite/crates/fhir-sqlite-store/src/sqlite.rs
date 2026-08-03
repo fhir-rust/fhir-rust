@@ -1624,6 +1624,9 @@ fn sqlval(v: &fhir_sqlite_map::shred::SqlVal) -> rusqlite::types::Value {
         // affinities are TEXT (M14.10) and the lexical form is what M3.6
         // requires to survive round-trip.
         S::Num(s) | S::Text(s) | S::Ts(s) | S::Date(s) | S::Jsonb(s) => V::Text(s.clone()),
+        // U4a: the checksum adjunct crosses as a BLOB, not as text. SQLite
+        // compares BLOBs bytewise, which is what an equality probe needs.
+        S::Bytes(b) => V::Blob(b.clone()),
     }
 }
 
@@ -2041,17 +2044,17 @@ impl SqliteStore {
                         let bad = !crate::chain::digests_equal(stored, want);
                         let unlinked = stored_link.as_deref() != prior.as_deref();
                         if bad || unlinked {
-                            breaks.push(crate::ChainBreak {
-                                rtype: rm.name.clone(),
-                                id: id.clone(),
+                            breaks.push(crate::ChainBreak::new(
+                                rm.name.clone(),
+                                id.clone(),
                                 version_id,
                                 algorithm,
-                                detail: match (bad, unlinked) {
-                                    (true, true) => "row hash and link both differ".into(),
-                                    (true, false) => "row contents differ from their hash".into(),
-                                    _ => "link to the previous version differs".into(),
+                                match (bad, unlinked) {
+                                    (true, true) => "row hash and link both differ",
+                                    (true, false) => "row contents differ from their hash",
+                                    _ => "link to the previous version differs",
                                 },
-                            });
+                            ));
                         }
                     }
 
@@ -2127,13 +2130,13 @@ fn check_mac(
     };
 
     match verdict {
-        MacCheck::Mismatch => breaks.push(crate::ChainBreak {
-            rtype: rtype.to_string(),
-            id: id.to_string(),
+        MacCheck::Mismatch => breaks.push(crate::ChainBreak::new(
+            rtype,
+            id,
             version_id,
-            algorithm: "hmac-sha256",
-            detail: "keyed tag does not match".into(),
-        }),
+            "hmac-sha256",
+            "keyed tag does not match",
+        )),
         MacCheck::Ok | MacCheck::Absent => {}
         MacCheck::Unverifiable { key_id } => tracing::warn!(
             %rtype, %id, version_id, %key_id,

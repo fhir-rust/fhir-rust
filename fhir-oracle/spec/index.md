@@ -5,7 +5,7 @@
 Normative behaviour for this port is the monorepo core, plus this port's
 departures — of which most are, honestly, still open questions.
 
-- **The core** — [`../../spec/index.md`](../../spec/index.md). Sections 0–16,
+- **The core** — [`../../spec/index.md`](../../spec/databases/index.md). Sections 0–16,
   engine-neutral, shared by all six ports. Requirement ids (`M3.16b`, `PR12.6`,
   `T11.12`) mean the same thing here as anywhere.
 - **This port's departures** — [`14-oracle-dialect.md`](14-oracle-dialect.md),
@@ -31,7 +31,7 @@ Contributor guidance: [`../../AGENTS.md`](../../AGENTS.md).
 > `COLLATE utf8mb4_0900_bin` — none of which exist in Oracle — and its comments
 > still discuss MySQL's 2038 `TIMESTAMP` range. Its eleven MySQL-asserting tests
 > are `#[ignore]`d so a green run cannot be mistaken for Oracle conformance,
-> which is the right call. Tracked as [`audit.md`](../../spec/audit.md)
+> which is the right call. Tracked as [`audit.md`](../../spec/databases/audit.md)
 > **F-08**.
 >
 > **There is no store.** `crates/fhir-oracle-store/src/` holds `lib.rs` and
@@ -70,8 +70,11 @@ searches *not work at all*.
 
 ## Open findings against this port
 
-- **F-08 (High)** — `ddl.rs` is verbatim MySQL and cannot produce an Oracle
-  schema. Open; this is the port's main body of work.
+- **F-08 (High)** — ~~`ddl.rs` is verbatim MySQL and cannot produce an Oracle
+  schema.~~ **Closed 2026-08-03.** The emitter is Oracle and the full R5 schema
+  (9,636 statements) installed on 26ai with 0 invalid objects. See `M14.28`–
+  `M14.32` for the departures it required, and `M14.29a` for the guard that
+  failed open.
 - **F-06 (High)** — CI and `scripts/db.sh` provisioned **MySQL 8.4** and invoked
   `--test mysql_ddl`, a target that does not exist here. **Fixed:** the
   live-database gate has been **removed** rather than repointed — there is
@@ -84,27 +87,27 @@ searches *not work at all*.
 - **F-01 (High)** — the README claimed corpus results and a `serve` command in a
   port with no store. **Fixed.**
 - **F-02**, **F-03** — crate description and stale driver comment. **Fixed.**
-- **F-11** — shared; see the [register](../../spec/audit.md).
+- **F-11** — shared; see the [register](../../spec/databases/audit.md).
 
 ## Contents of the core
 
 | | Section | Prefix |
 | --- | --- | --- |
-| 0 | [Conformance](../../spec/00-conformance.md) | `C0.x` |
-| 1 | [Scope](../../spec/01-scope.md) | `S1.x` |
-| 2 | [Schema generation](../../spec/02-schema-generation.md) | `G2.x` |
-| 3 | [Storage model](../../spec/03-storage-model.md) | `M3.x` |
-| 4 | [Shredding and reconstruction](../../spec/04-shredding-and-reconstruction.md) | `R4.x` |
-| 5 | [Versioning and history](../../spec/05-versioning-and-history.md) | `H5.x` |
-| 6 | [Search](../../spec/06-search.md) | `P6.x` |
-| 9 | [Validation](../../spec/09-validation.md) | `V9.x` |
-| 10 | [Operations](../../spec/10-operations.md) | `O10.x` |
-| 11 | [Conformance testing](../../spec/11-conformance-testing.md) | `T11.x` |
-| 12 | [Trust, principal, and audit](../../spec/12-trust-principal-and-audit.md) | `PR12.x` |
-| 13 | [Compliance mapping](../../spec/13-compliance-mapping.md) | — |
+| 0 | [Conformance](../../spec/databases/00-conformance.md) | `C0.x` |
+| 1 | [Scope](../../spec/databases/01-scope.md) | `S1.x` |
+| 2 | [Schema generation](../../spec/databases/02-schema-generation.md) | `G2.x` |
+| 3 | [Storage model](../../spec/databases/03-storage-model.md) | `M3.x` |
+| 4 | [Shredding and reconstruction](../../spec/databases/04-shredding-and-reconstruction.md) | `R4.x` |
+| 5 | [Versioning and history](../../spec/databases/05-versioning-and-history.md) | `H5.x` |
+| 6 | [Search](../../spec/databases/06-search.md) | `P6.x` |
+| 9 | [Validation](../../spec/databases/09-validation.md) | `V9.x` |
+| 10 | [Operations](../../spec/databases/10-operations.md) | `O10.x` |
+| 11 | [Conformance testing](../../spec/databases/11-conformance-testing.md) | `T11.x` |
+| 12 | [Trust, principal, and audit](../../spec/databases/12-trust-principal-and-audit.md) | `PR12.x` |
+| 13 | [Compliance mapping](../../spec/databases/13-compliance-mapping.md) | — |
 | **14** | [**Oracle dialect**](14-oracle-dialect.md) | `M14.x` |
-| 15 | [Portability and dialects](../../spec/15-portability-and-dialects.md) | `X15.x` |
-| 16 | [Repository and release](../../spec/16-repository-and-release.md) | `W16.x` |
-| — | [Locale and accent folding](../../spec/locale-accent-folding.md) | `Lx` |
+| 15 | [Portability and dialects](../../spec/databases/15-portability-and-dialects.md) | `X15.x` |
+| 16 | [Repository and release](../../spec/databases/16-repository-and-release.md) | `W16.x` |
+| — | [Locale and accent folding](../../spec/databases/locale-accent-folding.md) | `Lx` |
 
 Sections 7 and 8 are retired (`C0.15`).

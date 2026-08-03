@@ -118,7 +118,7 @@ fn run(sql: &str) -> Result<String, String> {
 
 fn relmap(version: &str) -> Option<fhir_mariadb_map::model::RelMap> {
     let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../assets")
+        .join("assets")
         .join(format!("fhir-mariadb-relmap-{version}.json.gz"));
     let bytes = std::fs::read(path).ok()?;
     fhir_mariadb_map::model::RelMap::from_gz_bytes(&bytes).ok()

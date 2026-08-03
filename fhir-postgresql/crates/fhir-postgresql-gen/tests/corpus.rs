@@ -28,6 +28,14 @@ fn corpus_root() -> Option<PathBuf> {
             .ok()
             .map(PathBuf::from),
         Some(workspace_root().join("corpus")),
+        // This monorepo: the model family ships the definitions and the full
+        // example corpus under `<ver>/`. Without this candidate the test
+        // skipped here as well — 7,400 examples that never ran, the same class
+        // of defect as F-39.
+        Some(PathBuf::from(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../../fhir/doc/fhir-specifications"
+        ))),
     ];
     candidates.into_iter().flatten().find(|p| p.exists())
 }
@@ -52,6 +60,14 @@ fn spec_root() -> Option<PathBuf> {
             .ok()
             .map(PathBuf::from),
         Some(workspace_root().join("spec-cache")),
+        // This monorepo: the model family ships the definitions and the full
+        // example corpus under `<ver>/`. Without this candidate the test
+        // skipped here as well — 7,400 examples that never ran, the same class
+        // of defect as F-39.
+        Some(PathBuf::from(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../../fhir/doc/fhir-specifications"
+        ))),
     ];
     candidates.into_iter().flatten().find(|p| p.exists())
 }
@@ -66,6 +82,12 @@ fn to_recon(rm: &fhir_postgresql_map::ResourceMap, out: &fhir_postgresql_map::Sh
                 SqlVal::Int(n) => n.to_string(),
                 SqlVal::Num(s) | SqlVal::Text(s) | SqlVal::Ts(s) | SqlVal::Date(s) => s.clone(),
                 SqlVal::Jsonb(s) => s.clone(),
+                // U3: adjuncts are derived and the reconstructor must never
+                // read them. Skipping here is not a convenience — it is the
+                // assertion: if a Bytes column ever reached reconstruction,
+                // round-trip would be deciding on a value the resource never
+                // contained.
+                SqlVal::Bytes(_) => continue,
             };
             cols.insert(name.clone(), text);
         }
@@ -123,7 +145,18 @@ fn roundtrip_full_corpus() {
     let mut all_failures: Vec<String> = Vec::new();
     let mut total = 0usize;
     for (cdir, sdir, schema) in [("stu3", "r3", "r3"), ("r4", "r4", "r4"), ("r5", "r5", "r5")] {
-        let ex = corpus.join(cdir);
+        // Two layouts. A fetched corpus uses `stu3/`, `r4/`, `r5/` holding raw
+        // JSON; this monorepo nests them as `<ver>/fhir-examples-json`. The
+        // nested form is checked FIRST because the outer names collide: in the
+        // monorepo `<corpus>/r4` exists as the *version* directory, holds no
+        // JSON, and would otherwise yield "0 examples, 0 failures" — a pass
+        // that tested nothing.
+        let nested = corpus.join(sdir).join("fhir-examples-json");
+        let ex = if nested.exists() {
+            nested
+        } else {
+            corpus.join(cdir)
+        };
         let defs = spec.join(sdir).join("fhir-definitions-json");
         if !ex.exists() || !defs.exists() {
             continue;

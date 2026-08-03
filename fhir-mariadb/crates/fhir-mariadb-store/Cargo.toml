@@ -9,7 +9,18 @@ rust-version.workspace = true
 keywords.workspace = true
 categories.workspace = true
 
+[features]
+# Forwarded to the map crate, which is where the bundled maps live (F-33).
+# A store is useless without a map, so the same version choice applies here.
+default = ["r5"]
+r3 = ["fhir-mariadb-map/r3"]
+r4 = ["fhir-mariadb-map/r4"]
+r5 = ["fhir-mariadb-map/r5"]
+
 [dependencies]
+# The engine-agnostic half: the audit chain and the value types every port
+# returns. One crate rather than six copies (F-45).
+fhir-store = { path = "../../../fhir-store", version = "0.1.0" }
 fhir-mariadb-map.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true

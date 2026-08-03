@@ -82,6 +82,7 @@ impl<'s> ResourceBuilder<'s> {
         let base_name = self.table_reg.claim(&snake(&rname));
         self.tables.push(Table {
             norm_cols: Vec::new(),
+            adjunct_cols: Vec::new(),
             name: base_name.clone(),
             kind: TableKind::Base,
             path: rname.clone(),
@@ -104,14 +105,20 @@ impl<'s> ResourceBuilder<'s> {
             ("_history", TableKind::History),
         ] {
             let name = self.table_reg.claim(&format!("{base_name}{suffix}"));
+            let cols = fixed_shape_cols(kind);
+            let mut reg = Registry::default();
+            for c in &cols {
+                let _ = reg.claim(&c.name);
+            }
             self.tables.push(Table {
                 norm_cols: Vec::new(),
+                adjunct_cols: Vec::new(),
                 name,
                 kind,
                 path: String::new(),
-                cols: Vec::new(),
+                cols,
             });
-            self.col_regs.push(Registry::default());
+            self.col_regs.push(reg);
         }
 
         for t in &self.tables {
@@ -142,6 +149,7 @@ impl<'s> ResourceBuilder<'s> {
         let name = self.table_reg.claim(&format!("{parent}_{col_base}"));
         self.tables.push(Table {
             norm_cols: Vec::new(),
+            adjunct_cols: Vec::new(),
             name,
             kind: TableKind::Elem,
             path: res_path.to_string(),
@@ -699,5 +707,44 @@ impl<'s> ResourceBuilder<'s> {
         }
         let w = self.width_of_type(ty, stack);
         if w > SPLIT_WIDTH { 0 } else { w }
+    }
+}
+
+/// The fixed-shape columns that an adjunct can attach to.
+///
+/// `Ext` and `Deep` tables are described nowhere in the map — their shape lives
+/// in each port's `ddl.rs::create_table` — so nothing that walks the map can
+/// reach them, and `U11` could not be satisfied for them (**F-46**).
+///
+/// This is deliberately **not** the whole table. It lists only the columns a
+/// search reaches that are unbounded, and it types them exactly as
+/// `create_table` already emits them (`Text`). That keeps every entry in the
+/// map *true*, which the first attempt at this did not: describing `path` as
+/// `TextC` while the DDL emitted `NVARCHAR(MAX)` produced a map that read as
+/// authoritative and was wrong.
+///
+/// The omitted columns — `path`, `v_kind`, `modifier`, `ext_ord`, `v_num`,
+/// `v_bool` — need no adjunct. `path` and `v_kind` are bounded in practice, so
+/// `U12` says to bind them to an indexable type rather than adjunct them; that
+/// changes the physical schema of all six ports and is open as **F-47**. A
+/// partial description is a gap a reader can see. A wrong one is not.
+fn fixed_shape_cols(kind: TableKind) -> Vec<Column> {
+    let c = |name: &str| Column {
+        name: name.to_string(),
+        ty: ColTy::Text,
+        path: String::new(),
+    };
+    match kind {
+        // `url` is the extension's defining URL, `leaf` the element name, and
+        // `v_text` the extension's own string value. All three are unbounded
+        // and all three are searched.
+        TableKind::Ext => vec![c("url"), c("leaf"), c("v_text")],
+        // Deep tables have no `url`: a type-recursion spill has no defining
+        // URL, only a path and a value.
+        TableKind::Deep => vec![c("leaf"), c("v_text")],
+        // `resource` is a whole JSON document and no search reaches it; the
+        // history table is addressed by id and version, never by content.
+        TableKind::Contained | TableKind::History => Vec::new(),
+        TableKind::Base | TableKind::Elem => Vec::new(),
     }
 }
