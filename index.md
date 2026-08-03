@@ -150,7 +150,7 @@ the shared-core gate did not watch it (**F-45**).
 | --- | --- |
 | [README](fhir-loco/README.md) | endpoints, running it, what belongs where |
 | [tasks](fhir-loco/tasks.md) | its work breakdown |
-| Specification | **none yet** — recorded as a gap in [`spec/index.md`](spec/index.md#gaps) |
+| Specification | [`fhir-loco/spec/index.md`](fhir-loco/spec/index.md) — 4 sections, ids `SV1.x`–`SV4.x` |
 
 ## Reading order, if you have an hour
 

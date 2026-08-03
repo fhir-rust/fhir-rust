@@ -7,11 +7,25 @@ The HTTP half of this repository's FHIR persistence. The engine-agnostic
 storage half is [`fhir-store`](https://crates.io/crates/fhir-store); the SQL
 engines are the six `fhir-<engine>` ports.
 
-This project is the HTTP surface for the FHIR database libraries in the sibling
-repositories. Those libraries — `fhir-sqlite`, `fhir-mysql`, `fhir-mariadb`, and
-`fhir-postgresql` — are deliberately embeddable and carry no server of their own,
-so that a program wanting FHIR storage does not also acquire a web framework.
-The split is the point: storage guarantees live in the library, HTTP lives here.
+This project is the HTTP surface for the FHIR database libraries in the same
+monorepo — not sibling repositories, which is what this line said until
+2026-08-03; all four families live in `fhir-rust/fhir-rust` (**F-11**). Those
+libraries — `fhir-sqlite`, `fhir-mysql`, `fhir-mariadb`, `fhir-postgresql`, and
+the two scaffolds — are deliberately embeddable and carry no server of their own
+(`C0.17`, `C0.18`), so that a program wanting FHIR storage does not also acquire
+a web framework. The split is the point: storage guarantees live in the library,
+HTTP lives here.
+
+**Specification: [`spec/index.md`](spec/index.md)**, ids `SV1.x`–`SV4.x`, added
+2026-08-03. Every externally visible promise below is a numbered requirement
+there — `410` versus `404` is `SV2.4`, `If-Match` is `SV2.5`, the
+CapabilityStatement is `SV2.8`–`SV2.11`, PASETO is `SV3.2`–`SV3.6`.
+
+What this crate does **not** do is recorded at its own id rather than in a list
+that drifts: no conditional create (`SV2.14`), no `$export` (`SV2.15`), no
+concurrency limit or admin plane (`SV4.2`, `SV4.3`), and **no requirement
+anywhere yet states an obligation for this listener's own TLS** (`SV3.11`) —
+put a TLS-terminating proxy in front.
 
 ## What belongs where
 

@@ -37,9 +37,13 @@ port — and the honest status per row is:
 | ONC/HTI Bulk Data (~~`M8`~~) | **not met.** No `$export` |
 
 The strikes stay, because a retired id is retired however live the behaviour it
-describes, and because `fhir-loco` is governed by no specification at all. That
-is the decision this waits on — see [`audit.md`](audit.md) **F-04** and
-**F-58**.
+describes. Since 2026-08-03 each is **restated** in
+[`fhir-loco/spec/`](../../fhir-loco/spec/index.md) under an `SV` id — `A7.8` as
+`SV3.11`, `A7.12` as `SV2.8`–`SV2.11`, `M8` as `SV2.15` — so these three rows
+now map to requirements that can be cited and audited rather than to struck
+identifiers. `C0.16` carries the full correspondence.
+
+What each row still needs to be *satisfied* is unchanged and stated above.
 
 ## Deliberate gaps
 

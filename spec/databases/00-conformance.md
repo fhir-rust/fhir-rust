@@ -109,9 +109,19 @@ conform, and how the text is changed.
   writes.
 
   They are **not** un-retired here: `spec/databases/` governs the ports, and
-  §7 does not describe them. Moving them to a specification that governs
-  `fhir-loco` — or giving `fhir-loco` one that adopts them — is the open
-  decision in [`audit.md`](audit.md) **F-04** and **F-58**.
+  §7 does not describe them. As of 2026-08-03 `fhir-loco` has its own
+  specification, and each is **restated** there under an `SV` id:
+
+  | Struck id | Restated as |
+  | --- | --- |
+  | `A7.8` | [`SV3.11`](../../fhir-loco/spec/03-trust-and-attribution.md) |
+  | `A7.10` | [`SV2.14`](../../fhir-loco/spec/02-endpoints.md) |
+  | `A7.11` | [`SV2.7`](../../fhir-loco/spec/02-endpoints.md) |
+  | `A7.12` | [`SV2.8`–`SV2.11`](../../fhir-loco/spec/02-endpoints.md) |
+  | `M8` | [`SV2.15`](../../fhir-loco/spec/02-endpoints.md) |
+
+  Restated rather than moved, because `C0.5` makes ids permanent and renumbering
+  across families is how the `R4` collision happened.
   | §7 | `T11.2` | "every REST interaction in §7" |
 
   A reader MUST treat a requirement citing one of these as **partially

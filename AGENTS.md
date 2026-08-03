@@ -18,7 +18,7 @@ conformance model.
 | Model | [`fhir/`](fhir/) | [`fhir/spec/`](fhir/spec/index.md), ids `R1.x`–`R14.x` | [`fhir/AGENTS.md`](fhir/AGENTS.md) |
 | Persistence core | [`fhir-store/`](fhir-store/) | [`spec/databases/`](spec/databases/index.md) — `M3.16`, `PR12.x` | **this file** |
 | Databases | `fhir-<engine>/` ×6 | [`spec/databases/`](spec/databases/index.md) | **this file** |
-| HTTP surface | [`fhir-loco/`](fhir-loco/) | none yet — a recorded [gap](spec/index.md#gaps) | — |
+| HTTP surface | [`fhir-loco/`](fhir-loco/) | [`fhir-loco/spec/`](fhir-loco/spec/index.md), ids `SV1.x`–`SV4.x` | **this file** | |
 
 They stack downward only: the model knows nothing about databases, the
 persistence core links no driver, the ports carry no HTTP or CLI, and the server

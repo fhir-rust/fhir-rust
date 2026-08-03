@@ -97,7 +97,7 @@ and **F-27**'s central question).
 | [F-01](#f-01) | **High** | READMEs assert the reference port's measured results in five ports that never obtained them | **fixed** |
 | [F-02](#f-02) | Medium | All six store crates describe themselves as "PostgreSQL storage layer" | **fixed** |
 | [F-03](#f-03) | Low | Stale driver comments in `fhir-oracle` and `fhir-mssql` workspaces | **fixed** |
-| [F-04](#f-04) | Medium | §11 and §13 cite retired §7/§8 requirements; three compliance rows rest on them | open — **same decision as F-58**: §7/§8 describe `fhir-loco`, which has no spec |
+| [F-04](#f-04) | Medium | §11 and §13 cite retired §7/§8 requirements; three compliance rows rest on them | **closed** 2026-08-03 — restated as `SV` ids in `fhir-loco/spec/`; the strikes stay |
 | [F-05](#f-05) | Medium | §10 and §12 specified a service no crate implemented — `fhir-loco` is that service | **closed** 2026-08-03; the gap it leaves is F-58 |
 | [F-06](#f-06) | **High** | `fhir-mssql` and `fhir-oracle` live gates never ran their own engine | **fixed** |
 | [F-07](#f-07) | **High** | `fhir-postgresql` derives its chain pre-image from `jsonb`; chains are not portable | **fixed**, verified live |
@@ -151,7 +151,7 @@ and **F-27**'s central question).
 | [F-55](#f-55) | **High** | `scripts/db.sh` resolved the FHIR packages through the ancestor project's path and one developer's home directory in all six ports, so the live corpus suite could never find its inputs | **fixed** 2026-08-03 — 1,200 live round-trips now green on PostgreSQL 18 |
 | [F-56](#f-56) | **High** | Every port's `book/` describes PostgreSQL and a REST server — F-01 in the long-form documentation, incl. telling a SQLite operator to back up with `pg_dump` | **fixed** 2026-08-03 — engine substitution corrected throughout; REST text now attributed to `fhir-loco` in all six banners |
 | [F-57](#f-57) | Medium | `fhir-loco`'s CapabilityStatement declared a read-only server while the router served `POST`/`PUT`/`DELETE`, and named its software `fhir-store` | **fixed** 2026-08-03 — mutation-verified agreement test added |
-| [F-58](#f-58) | Medium | `fhir-loco` is the service §10/§12 specify but has no spec of its own; concurrency/in-flight limits and an admin plane remain unmet | open — the spec-governance half is an owner decision |
+| [F-58](#f-58) | Medium | `fhir-loco` is the service §10/§12 specify; five obligations remain unmet, incl. no stated requirement for the listener's own TLS | open — spec question **closed** (`fhir-loco/spec/`); the five gaps are `SV2.14`, `SV2.15`, `SV3.11`, `SV4.2`, `SV4.3` |
 | [F-59](#f-59) | **High** | `fhir-loco/config/production.yaml` was an empty file, so `LOCO_ENV=production` refused to boot — the only environment it exists to run in | **fixed** 2026-08-03 — real config, 3 mutation-verified tests |
 | [F-60](#f-60) | Medium | No example in `doc/` or `README.md` is compiled by anything; one calls a `fhir-postgresql`-only API from a SQLite tutorial | **fixed** 2026-08-03 — `scripts/check-doc-examples.sh` added; it found six real defects incl. an unparseable block, all 24 now compile |
 | [F-61](#f-61) | Medium | All six `plan.md` describe PostgreSQL, a CLI, and a `-server` crate; three of the five crates they list have never existed | **fixed** 2026-08-03 — all six corrected, banners added |
@@ -298,14 +298,22 @@ So one of the five is implemented, one is partly, and three are not. That is a
 far more useful statement than "unsatisfied as written", and it is only
 available now that the service has a name.
 
-**It is the same decision as F-58**, not a second one: either §7/§8's
-requirements and §10/§12's `[service]` requirements move to a specification that
-governs `fhir-loco`, or `fhir-loco` gets one that adopts them by reference.
-Restoring §7 into `spec/databases/` would be wrong — that specification governs
-the ports, and §7 does not describe them.
+**It was the same decision as F-58**, and the owner made it on 2026-08-03:
+`fhir-loco` has its own specification, at
+[`fhir-loco/spec/`](../../fhir-loco/spec/index.md), ids `SV1.x`–`SV4.x`.
 
-The strikes stay until that is settled: an id in a retired section is still
-retired, however live the behaviour it describes.
+**The struck ids stay struck, and are restated rather than moved.** `A7.11`
+becomes `SV2.7`, `A7.12` becomes `SV2.8`–`SV2.11`, `A7.10` becomes `SV2.14`,
+`M8` becomes `SV2.15`, and `A7.8` becomes `SV3.11` — each citing the original.
+Moving them would renumber across families, which `C0.5` forbids and which is
+exactly how the `R4` collision happened. A reader tracing `A7.12` finds it in
+`C0.16`, and `C0.16` now points at `fhir-loco/spec/`.
+
+`C0.16`'s register and §13's compliance rows are updated accordingly. The three
+regulated rows — HIPAA §164.312(e), ONC FHIR conformance, ONC Bulk Data — now
+name a crate that can be audited rather than a service layer said not to exist.
+
+**Closed.**
 
 ## F-05
 
@@ -3430,16 +3438,33 @@ connection. If it is ever pointed at `fhir-postgresql`, `fhir-mysql` or
 `O10.7`, and no requirement currently states it — a gap in §10 rather than in
 this crate.
 
-**The governance problem underneath.** `fhir-loco` has **no specification at
-all** — `spec/index.md` records it as a gap. So these requirements bind it by
-implication: they live in `spec/databases/`, which governs the ports, and the
-service they describe is now a different crate in a different family. Either §10
-and §12's `[service]` requirements move somewhere that governs `fhir-loco`, or
-`fhir-loco` gets a spec that adopts them by reference. That is a structural
-decision, not a defect to patch, and it is the owner's.
+### Resolved 2026-08-03: `fhir-loco/spec/`
 
-Until it is made, the `[service]` markers should be read as "binds `fhir-loco`",
-and that is now what **F-05** says.
+The owner settled the governance half: `fhir-loco` has its own specification,
+ids `SV1.x`–`SV4.x`, four sections. The `[service]` markers in §10 and §12 stay
+and now mean "binds `fhir-loco`, restated as an `SV` id" — they are **restated,
+not moved**, because `C0.5` makes ids permanent and moving them across families
+is how the `R4` collision happened.
+
+**The gaps are now recorded at their own ids**, which is the point of having a
+specification rather than a finding:
+
+| Gap | Id |
+| --- | --- |
+| no concurrency or in-flight limit (Loco 1.0.1 exposes neither) | `SV4.2` |
+| no admin plane, no `/metrics` | `SV4.3` |
+| conditional create unreachable — the store implements it | `SV2.14` |
+| no `$export` | `SV2.15` |
+| **no requirement anywhere states an obligation for the listener's own TLS** | `SV3.11` |
+
+That last one is worth keeping in view: it is not that `fhir-loco` fails a
+requirement, it is that the requirement does not exist. `O10.7` governs the
+database link. A deployment exposing this port directly carries PHI in the clear
+and nothing in this repository tells it so; `SV4.4`'s loopback default is the
+only mitigation, and a weak one.
+
+**This finding stays open** for that reason — the spec question is answered, the
+five gaps are not.
 
 
 ## F-59

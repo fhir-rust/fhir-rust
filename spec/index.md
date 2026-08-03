@@ -23,7 +23,7 @@ conformance model.
 | **Model** | [`fhir/`](../fhir/) | [`fhir/spec/index.md`](../fhir/spec/index.md) — 14 sections | `R1.x`–`R14.x` | specified, versioned `3.0.0` |
 | **Persistence core** | [`fhir-store/`](../fhir-store/) | governed by [`spec/databases/`](databases/index.md) — `M3.16`, `PR12.x` | shares the database ids | specified |
 | **Databases** | [`fhir-postgresql/`](../fhir-postgresql/) and five sibling ports | [`spec/databases/index.md`](databases/index.md) — sections 0–16 | see table below | specified, pre-release |
-| **HTTP surface** | [`fhir-loco/`](../fhir-loco/) | **none** — but bound in practice by §10/§12's `[service]` requirements (**F-58**) | — | **unspecified** — see [Gaps](#gaps) |
+| **HTTP surface** | [`fhir-loco/`](../fhir-loco/) | [`fhir-loco/spec/index.md`](../fhir-loco/spec/index.md) — 4 sections | `SV1.x`–`SV4.x` | specified 2026-08-03 |
 
 They compose in one direction only:
 
@@ -94,6 +94,24 @@ libraries. The numbering keeps the gap rather than renumbering, so `V9.2` still
 means what it meant. Section **13** is a compliance mapping table and defines no
 requirements of its own.
 
+### HTTP surface — `fhir-loco/spec/`
+
+| Prefix | Section | Subject |
+| --- | --- | --- |
+| `SV1` | [1](../fhir-loco/spec/01-scope-and-conformance.md) | what the crate is, three conformance levels, honesty |
+| `SV2` | [2](../fhir-loco/spec/02-endpoints.md) | routes, status codes, `OperationOutcome`, CapabilityStatement |
+| `SV3` | [3](../fhir-loco/spec/03-trust-and-attribution.md) | PASETO, the principal, what the store is told |
+| `SV4` | [4](../fhir-loco/spec/04-operations.md) | limits, configuration, binding, logging |
+
+`SV` collides with neither other family, deliberately — see the `R4` note below
+for what a shared prefix costs once ids are permanent.
+
+It **restates** rather than moves the requirements that already described this
+crate: §7 and §8's retired ids (`A7.8`, `A7.10`–`A7.12`, `M8`, registered in
+`C0.16`) and §10/§12's `[service]`-marked ones. Moving them would renumber
+across families, which `C0.5` forbids and which is how the `R4` collision
+happened.
+
 ### Model — `fhir/spec/`
 
 Numbered `R<section>.<n>` throughout, one prefix per section: `R2` primitive
@@ -146,28 +164,27 @@ in this repository all three have been wrong.
 Recorded here so that "no specification" is a stated fact rather than an
 oversight a reader has to infer:
 
-- **`fhir-loco/` has no specification.** It is a Loco/Axum HTTP surface over
-  `fhir-sqlite`, and it makes externally visible promises — status-code
-  semantics (`410 Gone` for a deleted resource versus `404 Not Found` for one
-  that never existed), `If-Match` handling, `_count`/`_offset`/`_total`, and
-  which FHIR versions it advertises in its CapabilityStatement. None of that is
-  written down normatively, so none of it can be cited, tested against a
-  number, or shown to have regressed. Sections 7 and 8 of the database spec
-  were retired because HTTP and CLI are out of scope *for the ports*; that
-  retirement is not a specification for the crate where they are in scope.
+- ~~**`fhir-loco/` has no specification.**~~ **Closed 2026-08-03.** It now has
+  one: [`fhir-loco/spec/`](../fhir-loco/spec/index.md), ids `SV1.x`–`SV4.x`.
+  Every promise this gap listed — `410` versus `404`, `If-Match`,
+  `_count`/`_offset`/`_total`, the CapabilityStatement — is now a numbered
+  requirement that can be cited and shown to have regressed.
 
-  **This became sharper on 2026-08-03.** The owner confirmed `fhir-loco` is
-  *the* REST server this repository has — which closed **F-05**, whose premise
-  was that §10 and §12 specify a service nothing implements. Those requirements
-  now have an implementer, and they are marked `[service]` in a specification
-  that governs the **ports**. So `fhir-loco` is bound by requirements written
-  for a different family, by implication rather than by statement.
+  Sections 7 and 8 of the database spec stay retired: HTTP and CLI are out of
+  scope *for the ports*, which was always the right reading. The new
+  specification restates their obligations under `SV` ids rather than moving
+  them, because `C0.5` makes ids permanent.
 
-  Two ways out, and it is a structural decision rather than a defect: move the
-  `[service]` requirements to a specification that governs `fhir-loco`, or give
-  `fhir-loco` a specification that adopts them by reference. Tracked as
-  **F-58**, which also records the three it does not currently meet — no body
-  limit, no `/metrics`, no admin plane.
+  **Resolved the same day.** The owner chose the second of the two ways out:
+  `fhir-loco` has its own specification, and it restates the `[service]`
+  obligations under `SV` ids while citing the originals. The `[service]` markers
+  in §10 and §12 stay and now mean "binds `fhir-loco`, restated as `SV4.x`".
+
+  What it does **not** meet is recorded at the `SV` id rather than in a list
+  that drifts: `SV4.2` (no concurrency or in-flight limit — Loco 1.0.1 exposes
+  neither), `SV4.3` (no admin plane, no `/metrics`), `SV2.14` (no conditional
+  create), `SV2.15` (no `$export`), and `SV3.11` (no requirement anywhere states
+  an obligation for the listener's own TLS).
 - **All six dialect annexes are still marked *proposed*** (`X15.9`), so none may
   be cited as evidence for a conformance level.
 
