@@ -2,7 +2,7 @@
   "name": "fhir",
   "version": "1.1.0",
   "description": "A Rust implementation of the HL7 FHIR data model, plus a spec-driven code generator that produces it from the official FHIR specification JSON. Three releases are modelled, R5 (5.0.0), R4 (4.0.1) and R3 (3.0.2, also called STU3), as separate module trees and separate cargo features. Every resource and datatype is a serde-serializable Rust type that round-trips to and from canonical FHIR JSON.",
-  "repository": "https://github.com/joelparkerhenderson/fhir-rust-crate/",
+  "repository": "https://github.com/fhir-rust/fhir-rust/",
   "import_as": "fhir",
   "modules": {
     "r5": "FHIR Release 5 (5.0.0) API root (feature `r5`, on by default).",

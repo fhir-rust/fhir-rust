@@ -4,11 +4,13 @@ description = "FHIR Release 6 (6.0.0-ballot3) data model, generated from a DRAFT
 version = "3.0.0"
 edition = "2024"
 rust-version = "1.88"
-license = "MIT"
-repository = "https://github.com/fhir-rust-crate/fhir-rust-crate"
+license = "MIT OR Apache-2.0 OR BSD-3-Clause OR GPL-2.0-only OR GPL-3.0-only"
+repository = "https://github.com/fhir-rust/fhir-rust/"
 keywords = ["fhir", "hl7", "healthcare", "medical", "r6"]
 categories = ["data-structures", "encoding"]
-include = ["/src/**", "/README.md"]
+include = ["/src/**", "/README.md",
+    "/LICENSE.md",
+]
 
 [features]
 # Forwarded to fhir-core rather than redefined, so the feature sets cannot
@@ -18,9 +20,9 @@ xml = ["fhir-core/xml"]
 
 [dependencies]
 fhir-core = { path = "../fhir-core", version = "3.0.0" }
-fhir-derive-macros = { path = "../fhir-derive-macros", version = "1.1.0" }
-serde = { version = "~1.0.228", features = ["derive"] }
-serde_json = { version = "~1.0.150", features = ["arbitrary_precision"] }
+fhir-derive-macros = { path = "../fhir-derive-macros", version = "1.2.0" }
+serde = { version = "~1.0.229", features = ["derive"] }
+serde_json = { version = "~1.0.151", features = ["arbitrary_precision"] }
 serde_with = { version = "3.21" }
 vec1 = { version = "1.12", features = ["serde"] }
 convert_case = { version = "0.11" } # Used by the work-in-progress `parse` helpers.

@@ -81,5 +81,5 @@ match serde_json::from_value(json).unwrap() {
 
 - [Model mapping](model-mapping.md) — how FHIR maps to Rust types.
 - [Validation](validation.md) — check resources against the spec.
-- The runnable [`examples/`](https://github.com/joelparkerhenderson/fhir-rust-crate/tree/main/examples)
+- The runnable [`examples/`](https://github.com/fhir-rust/fhir-rust/tree/main/examples)
   directory.

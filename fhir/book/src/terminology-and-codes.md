@@ -41,7 +41,7 @@ assert_eq!(unknown.code(), "robot");
 
 A `Coded::Unknown` value is, by definition, outside its required value set, so
 [validation](validation.md) reports it. See
-[`spec/05-code-systems.md`](https://github.com/joelparkerhenderson/fhir-rust-crate/blob/main/spec/05-code-systems.md)
+[`spec/05-code-systems.md`](https://github.com/fhir-rust/fhir-rust/blob/main/spec/05-code-systems.md)
 for the design rationale (why a wrapper rather than an `Other` variant on every
 enum).
 

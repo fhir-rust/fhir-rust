@@ -251,5 +251,5 @@ example resource, and it is why nothing in the model silently drops a field.
   define.
 - [FHIR releases](fhir-releases.md) — doing all of the above in R4, or in both.
 - The runnable programs in
-  [`examples/`](https://github.com/joelparkerhenderson/fhir-rust-crate/tree/main/examples),
+  [`examples/`](https://github.com/fhir-rust/fhir-rust/tree/main/examples),
   each of which expands on one step above.

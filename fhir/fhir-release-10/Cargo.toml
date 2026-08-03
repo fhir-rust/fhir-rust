@@ -1,14 +1,16 @@
 [package]
 name = "fhir-release-10"
 description = "Reserved for a future FHIR Release 10 data model. No such specification exists yet; this crate contains no model."
-version = "0.0.0"
+version = "0.0.1"
 edition = "2024"
 rust-version = "1.88"
-license = "MIT"
-repository = "https://github.com/fhir-rust-crate/fhir-rust-crate"
+license = "MIT OR Apache-2.0 OR BSD-3-Clause OR GPL-2.0-only OR GPL-3.0-only"
+repository = "https://github.com/fhir-rust/fhir-rust/"
 keywords = ["fhir", "hl7", "healthcare", "medical", "placeholder"]
 categories = ["data-structures"]
-include = ["/src/**", "/README.md"]
+include = ["/src/**", "/README.md",
+    "/LICENSE.md",
+]
 
 [dependencies]
 

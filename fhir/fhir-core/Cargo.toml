@@ -4,11 +4,13 @@ description = "Release-independent core for the FHIR crates: decimal, validation
 version = "3.0.0"
 edition = "2024"
 rust-version = "1.88"
-license = "MIT"
-repository = "https://github.com/fhir-rust-crate/fhir-rust-crate"
+license = "MIT OR Apache-2.0 OR BSD-3-Clause OR GPL-2.0-only OR GPL-3.0-only"
+repository = "https://github.com/fhir-rust/fhir-rust/"
 keywords = ["fhir", "hl7", "healthcare", "medical", "interoperability"]
 categories = ["data-structures", "encoding"]
-include = ["/src/**", "/README.md"]
+include = ["/src/**", "/README.md",
+    "/LICENSE.md",
+]
 
 [features]
 # Mirrors of the parent crate's features, forwarded rather than redefined, so
@@ -18,11 +20,11 @@ xml = ["dep:quick-xml"]
 precise-decimal = []
 
 [dependencies]
-serde = { version = "~1.0.228", features = ["derive"] }
+serde = { version = "~1.0.229", features = ["derive"] }
 # Not optional, for the same reason as in the parent crate: FHIR treats
 # decimal precision as clinical data, and without `arbitrary_precision`
 # `0.50` serializes back as `0.5`.
-serde_json = { version = "~1.0.150", features = ["arbitrary_precision"] }
+serde_json = { version = "~1.0.151", features = ["arbitrary_precision"] }
 vec1 = { version = "1.12", features = ["serde"] }
 convert_case = { version = "0.11" }
 reqwest = { version = "0.12", features = ["json"], optional = true }

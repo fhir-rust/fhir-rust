@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-title: FHIR :Fast Healthcare Interoperability Resources
+title: FHIR: Fast Healthcare Interoperability Resources
 message: >-
   If you use this work and you want to cite it,
   then you can use the metadata from this file.
@@ -12,9 +12,9 @@ authors:
     orcid: 'https://orcid.org/0009-0000-4681-282X'
 identifiers:
   - type: url
-    value: 'https://github.com/joelparkerhenderson/fhir/'
+    value: 'https://github.com/fhir-rust/fhir-rust/'
     description: . This project provides HL7® FHIR® standard implementations as a Rust crate. HL7, FHIR and the FHIR [FLAME DESIGN] are the registered trademarks of Health Level Seven International and their use does not constitute endorsement by HL7.
-repository-code: 'https://github.com/assertables/assertables-rust-crate/'
+repository-code: 'https://github.com/fhir-rust/fhir-rust/'
 abstract: >-
   . This project provides HL7® FHIR® standard implementations as a Rust crate. HL7, FHIR and the FHIR [FLAME DESIGN] are the registered trademarks of Health Level Seven International and their use does not constitute endorsement by HL7.
 license: See license file

@@ -84,7 +84,7 @@ binding's value set is `valueSetReference`/`valueSetUri` in R3 and a canonical
 those are is decided structurally.
 
 The living specifications in
-[`spec/`](https://github.com/joelparkerhenderson/fhir-rust-crate/tree/main/spec)
+[`spec/`](https://github.com/fhir-rust/fhir-rust/tree/main/spec)
 are the source of truth; behaviour is defined there first, then implemented. See
-[`AGENTS.md`](https://github.com/joelparkerhenderson/fhir-rust-crate/blob/main/AGENTS.md)
+[`AGENTS.md`](https://github.com/fhir-rust/fhir-rust/blob/main/AGENTS.md)
 for the full contributor workflow.

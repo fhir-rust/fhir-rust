@@ -820,9 +820,9 @@ Initial release: the complete FHIR R5 (5.0.0) data model in idiomatic,
 - Runnable examples: `build_patient`, `validate_resource`, `read_bundle`,
   `code_systems`.
 
-[Unreleased]: https://github.com/joelparkerhenderson/fhir-rust-crate/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/joelparkerhenderson/fhir-rust-crate/compare/v0.4.0...v1.0.0
-[0.4.0]: https://github.com/joelparkerhenderson/fhir-rust-crate/compare/v0.3.0...v0.4.0
-[0.3.0]: https://github.com/joelparkerhenderson/fhir-rust-crate/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/joelparkerhenderson/fhir-rust-crate/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/joelparkerhenderson/fhir-rust-crate/releases/tag/v0.1.0
+[Unreleased]: https://github.com/fhir-rust/fhir-rust/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/fhir-rust/fhir-rust/compare/v0.4.0...v1.0.0
+[0.4.0]: https://github.com/fhir-rust/fhir-rust/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/fhir-rust/fhir-rust/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/fhir-rust/fhir-rust/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/fhir-rust/fhir-rust/releases/tag/v0.1.0

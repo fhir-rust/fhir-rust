@@ -7,7 +7,7 @@
 //! ```
 //!
 //! This is the code from the book's
-//! [Tutorial](https://github.com/joelparkerhenderson/fhir-rust-crate/blob/main/book/src/tutorial.md)
+//! [Tutorial](https://github.com/fhir-rust/fhir-rust/blob/main/book/src/tutorial.md)
 //! chapter, kept here so that it is compiled and executed by the test suite
 //! rather than merely written down. If you change one, change the other.
 

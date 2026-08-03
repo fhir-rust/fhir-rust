@@ -7,4 +7,4 @@ src = "src"
 
 [output.html]
 default-theme = "rust"
-git-repository-url = "https://github.com/joelparkerhenderson/fhir-rust-crate"
+git-repository-url = "https://github.com/fhir-rust/fhir-rust/"

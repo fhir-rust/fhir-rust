@@ -58,8 +58,12 @@ releases differ in scale, each spec states the figure for each:
 | Choice elements | 281 | 261 | 186 | 133 | 87 |
 | Invariant keys | 360 | 314 | 240 | 187 | 147 |
 
-R6 is a ballot draft, is `publish = false`, and sits outside the semver promise
-until it is final. Invariant keys are the distinct `constraint.key` values in
+R6 is a ballot draft: its feature is **off by default** and it sits outside the
+crate's semver promise until it is final. It *is* published, and must be —
+`R12.14a` gives the reason: the facade declares an optional dependency on every
+release it can expose, Cargo requires a version on every non-dev dependency at
+publish time, so an unpublished release crate would make `fhir` itself
+unpublishable. Invariant keys are the distinct `constraint.key` values in
 the `snapshot` element lists of a release's `profiles-resources` and
 `profiles-types` definitions, as produced by
 [`bin/invariant-counts`](../bin/invariant-counts); spec 10 gives the occurrence

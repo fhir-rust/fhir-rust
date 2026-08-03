@@ -3,10 +3,10 @@ name = "fhir"
 version = "3.0.0"
 edition = "2024"
 authors = ["Joel Parker Henderson <joel@joelparkerhenderson.com>"]
-homepage = "https://github.com/fhir-rust/fhir/"
+homepage = "https://github.com/fhir-rust/fhir-rust/"
 description = "Fast Healthcare Interoperability Resources (FHIR) data model for Rust: the complete FHIR R5, R4, and R3 resources, datatypes, and code systems as serde-serializable types, plus a spec-driven code generator."
 readme = "README.md"
-repository = "https://github.com/fhir-rust/fhir/"
+repository = "https://github.com/fhir-rust/fhir-rust/"
 license = "MIT OR Apache-2.0 OR BSD-3-Clause OR GPL-2.0-only OR GPL-3.0-only"
 keywords = ["medical", "healthcare", "hospital", "patient", "health"]
 categories = ["api-bindings", "data-structures", "science"]
@@ -165,14 +165,14 @@ fhir-release-3 = { path = "fhir-release-3", version = "3.0.0", optional = true }
 fhir-release-4 = { path = "fhir-release-4", version = "3.0.0", optional = true } # The FHIR R4 model (feature `r4`).
 fhir-release-5 = { path = "fhir-release-5", version = "3.0.0", optional = true } # The FHIR R5 model (feature `r5`).
 fhir-release-6 = { path = "fhir-release-6", version = "3.0.0", optional = true } # The FHIR R6 draft model (feature `r6`), off by default.
-fhir-derive-macros = { path = "fhir-derive-macros", version = "1.1.0" } # Procedural macros for this crate (e.g. #[derive(Validate)]).
-serde = { version = "~1.0.228", features = ["derive"] } # A serialization/deserialization framework.
+fhir-derive-macros = { path = "fhir-derive-macros", version = "1.2.0" } # Procedural macros for this crate (e.g. #[derive(Validate)]).
+serde = { version = "~1.0.229", features = ["derive"] } # A serialization/deserialization framework.
 # `arbitrary_precision` is not optional: FHIR treats decimal precision as
 # clinical data (spec R2.2), and without it `0.50` serializes back as `0.5`.
 # Cargo features are additive, so making it a hard dependency feature is what
 # turns precision from a default into a guarantee. It is global to the built
 # binary — see `crate::decimal` for the trade.
-serde_json = { version = "~1.0.150", features = ["arbitrary_precision"] } # Serde serialization/deserialization of JSON data.
+serde_json = { version = "~1.0.151", features = ["arbitrary_precision"] } # Serde serialization/deserialization of JSON data.
 serde_with = { version = "3.21" } # Serde annotation helpers for serde "with" and "serde_as"
 indoc = { version = "2.0" } # Indented string literal procedural macro.
 convert_case = { version = "0.11" } # Convert text case, such as from camel case to snake case.

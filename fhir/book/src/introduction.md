@@ -42,7 +42,7 @@ Every line of the tutorial is also a runnable program
 Examples throughout use R5 paths. Every one of them works for R4 by changing
 `r5` to `r4`.
 For the full API, run `cargo doc --open`; for the normative rules, see the
-[`spec/`](https://github.com/joelparkerhenderson/fhir-rust-crate/tree/main/spec)
+[`spec/`](https://github.com/fhir-rust/fhir-rust/tree/main/spec)
 directory in the repository.
 
 > FHIR® is a registered trademark of Health Level Seven International. This crate

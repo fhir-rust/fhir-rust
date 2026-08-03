@@ -3,7 +3,7 @@
 The model round-trips to and from canonical FHIR JSON. This crate is checked
 against the **official FHIR R5 example set** (~2800 files); 99.9% round-trip
 exactly, and the remainder are documented in
-[`tasks-roundtrip-failures.md`](https://github.com/joelparkerhenderson/fhir-rust-crate/blob/main/tasks-roundtrip-failures.md).
+[`tasks-roundtrip-failures.md`](https://github.com/fhir-rust/fhir-rust/blob/main/tasks-roundtrip-failures.md).
 
 ## The basics
 
@@ -59,7 +59,7 @@ assert!(v.get("_birthDate").is_some());
 
 Repeating primitives use `Vec<Option<Element>>`, aligned position-by-
 position with the value array (JSON `null` where an entry has no extension). See
-[`spec/09-primitive-extensions.md`](https://github.com/joelparkerhenderson/fhir-rust-crate/blob/main/spec/09-primitive-extensions.md).
+[`spec/09-primitive-extensions.md`](https://github.com/fhir-rust/fhir-rust/blob/main/spec/09-primitive-extensions.md).
 
 ## Summary serialization
 

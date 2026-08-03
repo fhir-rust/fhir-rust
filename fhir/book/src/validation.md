@@ -31,7 +31,7 @@ assert_eq!(issues[0].path, "implicit_rules.uri");
 - **Invariants.** A structurally-checkable subset: `ext-1` (an extension has a
   value XOR nested extensions), and `dom-2`/`dom-4` (rules on contained
   resources). Coverage of all 314 constraint keys is tracked in
-  [`spec/10-invariants-coverage.md`](https://github.com/joelparkerhenderson/fhir-rust-crate/blob/main/spec/10-invariants-coverage.md).
+  [`spec/10-invariants-coverage.md`](https://github.com/fhir-rust/fhir-rust/blob/main/spec/10-invariants-coverage.md).
 
 ## Bridging to `OperationOutcome`
 

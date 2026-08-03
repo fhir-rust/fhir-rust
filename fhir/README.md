@@ -1,6 +1,6 @@
 # FHIR for Rust
 
-[![CI](https://github.com/joelparkerhenderson/fhir-rust-crate/actions/workflows/ci.yml/badge.svg)](https://github.com/joelparkerhenderson/fhir-rust-crate/actions/workflows/ci.yml)
+[![CI](https://github.com/fhir-rust/fhir-rust/actions/workflows/ci.yml/badge.svg)](https://github.com/fhir-rust/fhir-rust/actions/workflows/ci.yml)
 
 A Rust implementation of the **HL7 FHIR®** data model, plus a code generator
 that produces it from the official FHIR specification JSON files. Three releases
