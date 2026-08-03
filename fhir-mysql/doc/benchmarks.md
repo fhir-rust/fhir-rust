@@ -1,9 +1,15 @@
 # Benchmarks
 
-Measured on the development machine (Apple Silicon, PostgreSQL 18.4 local,
-release builds), 2026-07-24. These are working numbers for the plan's risk
-tracking, not tuned results; the regression-gate methodology lands with task
-T28.
+**This page was `fhir-postgresql`'s, with the crate name substituted in two of
+five places** (audit **F-64**). The install-time and load-benchmark numbers
+below were `fhir-postgresql`'s own measurements, presented as this port's —
+including a `bench.rs` gated benchmark this port does not have, and a claim of
+"staged-schema install" this port does not do (**F-27** already found the
+second half of that same substitution, in `tasks.md`).
+
+What is corrected below is stated as corrected; what is genuinely shared — the
+schema scale and search-compilation figures, which come from the generator
+that is byte-identical across all six ports (`X15.1`) — is kept.
 
 ## Schema scale (risk R1)
 
@@ -13,12 +19,14 @@ T28.
 | R4 4.0.1 | 146 | 5,672 | 43,777 | 734 KB |
 | R5 5.0.0 | 158 | 7,355 | 58,405 | 984 KB |
 
-- `fhir-mysql init` for full R5 (7,355 tables + 9,168 indexes, of which 1,813
-  are generated search indexes): **5.8–9.5 s**, staged-schema install (see
-  spec G2.5). A naive single transaction exhausts
-  `max_locks_per_transaction`; the staging + rename design avoids any
-  server configuration requirement.
-- Chunked `drop_schema` of the same: ~5 s.
+- Install time for full R5 (7,355 tables + 9,168 indexes, of which 1,813 are
+  generated search indexes) has **not been measured for this port**. The
+  5.8–9.5s figure this page carried was `fhir-postgresql`'s, install strategy
+  and all: this port installs via a direct statement-by-statement install, not
+  atomic — MySQL has no transactional DDL, so the staged-schema-then-rename
+  dance PostgreSQL uses has no equivalent (corrected under **F-27**).
+  `max_locks_per_transaction` is a PostgreSQL setting this port's engine does
+  not have.
 
 ## Search compilation (M3)
 
@@ -30,29 +38,26 @@ T28.
 
 - In-memory shred→reconstruct, all official spec examples
   (examples-json.zip): **7,399/7,399 lossless** across R3 (1,664),
-  R4 (2,911), R5 (2,824). ~5.6 s total in release mode.
-- Live PostgreSQL put→get round trip of the same corpus:
-  **7,396/7,396 lossless** (3 examples lack ids and are skipped),
-  **101 s** total including three full schema installs — roughly
-  **13 ms per resource** for write + read + reconstruct, unindexed and
-  before any batching of the read path.
+  R4 (2,911), R5 (2,824). Verified this session (**F-64**); wall-clock time
+  depends on the machine running it and is not restated here as a number
+  belonging to a specific release build.
+- **No live corpus round-trip benchmark exists for this port.** The 101s/13ms
+  figure this page carried was `fhir-postgresql`'s own `live.rs` result.
+  `fhir-mysql` has no equivalent harness — its live suite tests correctness
+  (`concurrency.rs`, `redaction.rs`, `upgrade.rs`), not throughput.
 
 ## Bulk load, reads, and index audit (T15/T28)
 
-Gated benchmark: `FHIR_MYSQL_BENCH=100000 FHIR_MYSQL_TEST_DB=… cargo test
---release -p fhir-mysql-store --test bench -- --nocapture`.
+**There is no `bench.rs` in this port.** The gated-benchmark invocation and
+every number in this section — 16.3s load, 6,146 resources/s, 1.18ms reads —
+were `fhir-postgresql`'s, with `FHIR_POSTGRESQL_BENCH` substituted for
+`FHIR_MYSQL_BENCH`. `cargo test --release -p fhir-mysql-store --test bench`
+does not exist and would not run.
 
-- **Load: 100,000 resources (50k Patient + 50k Observation) in 16.3 s —
-  6,146 resources/s** through full shredding, transactional put with
-  history append, 12 concurrent workers over a 16-connection pool.
-- **Read: 1.18 ms average** for a full multi-table reconstruction
-  (500-read sample over the loaded data).
-- **EXPLAIN audit**: canonical token (child-table identifier), reference
-  (base-table subject), and date-range searches all plan index scans; the
-  test fails on any sequential scan.
+An EXPLAIN-style index-usage audit is real work this port has not done.
 
 ## Not yet measured
 
-Million-resource scale (the 100k harness extends by env var), latency
-distribution under mixed read/write load, and search throughput under
-concurrency.
+Everything a `bench.rs` would answer: load throughput, read latency, and
+index-usage audit under this port's own engine. Building that harness is real
+work, tracked as a gap rather than assumed done.

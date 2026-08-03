@@ -157,6 +157,7 @@ and **F-27**'s central question).
 | [F-61](#f-61) | Medium | All six `plan.md` describe PostgreSQL, a CLI, and a `-server` crate; three of the five crates they list have never existed | **fixed** 2026-08-03 — all six corrected, banners added |
 | [F-62](#f-62) | **High** | Every port's `CHANGELOG.md` is `fhir-postgresql`'s; the two scaffolds announce a TLS security fix for a connector they do not have | **partly fixed** 2026-08-03 — banners + the security entry annotated in place; per-port history is an owner decision |
 | [F-63](#f-63) | Medium | Status text in `doc/faq.md`, `doc/choosing-an-engine.md` and `AGENTS/release.md` had decayed — incl. "is this a FHIR server? No" and a fixed finding cited as blocking | **fixed** 2026-08-03 |
+| [F-64](#f-64) | **High** | Every non-PostgreSQL `doc/benchmarks.md` presented `fhir-postgresql`'s measured numbers as its own, incl. a live round trip and bulk-load benchmark for the two ports with no store at all | **fixed** 2026-08-03 — corrected in all five; real harness for sqlite/mysql/mariadb is a recorded gap |
 
 ## What remains, and why
 
@@ -3749,6 +3750,82 @@ thing to build. What is realistic, and what **F-55** already established, is
 that a status claim should carry the date it was measured — three conformance
 matrix rows now do. Extending that convention to prose is a habit rather than a
 script.
+
+
+## F-64
+
+**Every non-PostgreSQL port's `doc/benchmarks.md` presented `fhir-postgresql`'s
+measured numbers as its own — load throughput, read latency, and a gated
+benchmark test that does not exist.** Severity: **High**. Violates `W16.10`
+directly: "Measured numbers MUST name what measured them and when. A
+throughput figure inherited by substitution is not a measurement of the port
+that now carries it." `T11.5`'s regression gate is also unmet in five ports,
+since none has the `bench.rs` it would compare against. *Found checking whether
+`doc/benchmarks.md` existed after **F-61** (`plan.md`) referenced it from all
+six ports.*
+
+`W16.10` is worth pausing on: it names this exact failure and was already in
+the specification. `AGENTS/testing.md` even quotes it verbatim. The requirement
+being written down did not stop it from happening, because nothing checked
+`doc/benchmarks.md` against it — the same gap **F-60** found in the doc
+examples one document over.
+
+All five non-PostgreSQL files were `fhir-postgresql`'s, with the crate name
+substituted in exactly **two of five** places — the same partial-substitution
+signature as every other file in this family of findings (F-01, F-27, F-53,
+F-56, F-61, F-62). The other three were untouched:
+
+```
+- `fhir-mssql init` for full R5 (7,355 tables + 9,168 indexes...): 5.8-9.5 s,
+  staged-schema install (see spec G2.5)...
+- Live PostgreSQL put→get round trip of the same corpus: 7,396/7,396 lossless...
+  101 s total... roughly 13 ms per resource...
+Gated benchmark: `FHIR_MSSQL_BENCH=100000 FHIR_MSSQL_TEST_DB=… cargo test
+--release -p fhir-mssql-store --test bench -- --nocapture`.
+- Load: 100,000 resources... in 16.3 s — 6,146 resources/s...
+- Read: 1.18 ms average...
+```
+
+**`fhir-mssql` has no store and no driver.** Neither does `fhir-oracle`. Both
+files claimed a live put/get round trip, a 16.3s bulk load at 6,146
+resources/s, and a 1.18ms average read — specific, decimal-precision numbers,
+for an operation that has never once been performed in either port.
+
+**`fhir-sqlite`, `fhir-mysql` and `fhir-mariadb` do have stores**, and the
+numbers were still not theirs. Two defects, verified rather than assumed:
+
+1. `bench.rs` — the file the "Gated benchmark" line invokes — exists in
+   **`fhir-postgresql` only**. The other five's invocation,
+   `FHIR_<PORT>_BENCH=100000 … --test bench`, would fail with "no test target
+   named `bench`".
+2. "staged-schema install" contradicts **F-27**, which already established that
+   none of the three actually stages a schema — each applies statements
+   directly, and the phrase survived in this file because F-27's correction
+   was scoped to `tasks.md` and never re-checked here.
+
+**Fixed by correcting, not deleting.** What is genuinely shared — the schema
+scale table and the search-compilation percentage, both derived from the
+generator that is byte-identical across all six ports (`X15.1`) — is kept.
+Everything about install timing, live round-trip, and bulk load is now stated
+as **not measured for this port**, with the borrowed number named as
+`fhir-postgresql`'s rather than silently deleted, so a future reader does not
+wonder whether the section was always empty.
+
+`fhir-oracle`'s file additionally gained real numbers it didn't have before:
+the **actual** F-08 install result — 9,636 statements, 7,358 tables, 0 invalid
+objects — replacing the fictional one.
+
+**Not fixed: no benchmark harness was built.** Measuring real load/read/index
+numbers for `fhir-sqlite`, `fhir-mysql` and `fhir-mariadb` is real engineering
+work — a `bench.rs` per port — and is recorded as a gap rather than attempted
+here, for the same reason **F-60** didn't build a doc-compile CI job in the
+same pass it fixed the examples: doing it properly is a separate piece of work
+from stopping the bleeding.
+
+---
+
+Part of the [fhir-databases specification](index.md).
+
 
 ---
 
