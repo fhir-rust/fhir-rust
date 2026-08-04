@@ -208,6 +208,7 @@ spec_exports() {
     echo "export $SPEC_ENV=$spec"
     [ -d "$CORPUS_DIR" ] && echo "export $CORPUS_ENV=$CORPUS_DIR"
   fi
+  return 0
 }
 
 # ---------------------------------------------------------------------- actions
