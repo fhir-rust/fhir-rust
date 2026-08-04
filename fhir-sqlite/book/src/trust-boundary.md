@@ -1,245 +1,134 @@
 # The trust boundary
 
-fhir-sqlite is a component, not a system. It cannot make a deployment compliant,
-and it must not be the reason a deployment cannot be. This chapter states, in
-one place, what fhir-sqlite guarantees and what the deployment around it has to
-provide — because a boundary nobody can point at is not a boundary (spec
-PR12.8).
+fhir-sqlite is a library, not a system. It cannot make a deployment
+compliant, and it must not be the reason a deployment cannot be. This chapter
+states, in one place, what `fhir-sqlite` actually guarantees — checked
+against `crates/fhir-sqlite-store/src/sqlite.rs` and its tests, not against
+what a server built on it might advertise — and what the code around it has
+to provide (spec `PR12.8`).
 
-## What fhir-sqlite guarantees
+This chapter previously described a `fhir-sqlite serve` process: bind
+addresses, a trusted-proxy header scheme, `/metrics`, an `--audit-mode` flag.
+None of that exists in this crate (`C0.17`, `C0.18`). If you are building a
+server over this library, that surface belongs to it — see
+[`fhir-loco`](../../../fhir-loco/) — not to `fhir-sqlite`.
 
-| Property | How | Spec |
+## What `fhir-sqlite` guarantees, unconditionally
+
+These happen inside `put`, `delete`, and `purge` themselves, in the same
+`BEGIN IMMEDIATE` transaction as the data change. You cannot call them
+without getting this.
+
+| Property | Mechanism | Spec |
 | --- | --- | --- |
-| Writes are transactional and versioned | one transaction per write, monotonic `version_id`, append-only history | R4.4, H5.1 |
-| Reads see one consistent snapshot | every multi-statement read runs `REPEATABLE READ READ ONLY` | R4.5 |
-| Conditional interactions are atomic | criteria-hash advisory lock, match and write in one transaction | A7.10 |
-| Optimistic concurrency | `ETag` / `If-Match`, 412 on mismatch, honored inside bundles too | D11, A7.9 |
-| Every change records who made it | audit envelope written by the same statement as the change | M3.15 |
-| Every read is recorded | disclosure row in `fhir_sqlite_access_log` | PR12.5 |
-| History cannot be quietly rewritten | per-resource SHA-256 chain plus a database trigger refusing UPDATE/DELETE | M3.16, M3.17 |
-| PHI is encrypted in transit to the database | rustls, `sslmode` honored, refusal to serve non-loopback over a plaintext link | O10.7 |
-| Responses are not cached | `Cache-Control: no-store` and friends on every response | A7.8 |
-| Emitted URLs are not attacker-controlled | configured `--base-url`; forwarded headers only under `--trust-proxy` | A7.7 |
-| Nothing is silently dropped | unknown elements rejected; `_include` truncation warns in the bundle | D12, P6.7 |
-| Diagnostics do not leak stored data | client-safe errors are a separate type from internal ones | A7.11 |
+| Writes are transactional and versioned | one `BEGIN IMMEDIATE` per write; `version_id` comes from the history tip, not the base row, so it is correct even for a resource that was deleted and recreated | `H5.4`, `R4.4` |
+| History is append-only | `BEFORE UPDATE`/`BEFORE DELETE` triggers on every `*_history` table `RAISE(ABORT, …)` unless a one-row erasure-flag table exists for the duration of the transaction (`M14.22`) | `M3.17` |
+| Every change records who made it | the same `INSERT` that appends the history row carries `actor`, `actor_source`, `client`, `request_id`, `reason` from the `Audit` you passed | `M3.15` |
+| History cannot be quietly rewritten | a two-family hash chain per resource, SHA-256 **and** SHA3-256, each linking to the previous row's digest; `verify_audit()` recomputes both and reports a `ChainBreak` naming the resource, version, and which algorithm disagreed | `M3.16`, `M3.16a` |
+| A multi-statement read sees one snapshot | `get` opens a **deferred** (read-only) transaction before its first `SELECT`, pinning a WAL snapshot for the whole reconstruction. This was not theoretical: before it existed, a reader on a second connection observed one resource's `patient_name` from version 8 next to its `patient_telecom` from version 12 — a torn read, found and fixed as audit **F-21** | `R4.5` |
+| Optimistic concurrency | `put_audited(resource, expected_version, audit)` checks the stored version first and returns `StoreError::Conflict { expected, found }` on a mismatch, rather than writing over it — the caller decides how that becomes an HTTP 412, since this library does not speak HTTP | `D11` |
+| Conditional writes cannot race each other | `conditional_create_audited`/`conditional_delete_audited` hold an in-process lock across their search-then-write, and SQLite's single-writer lock (`BEGIN IMMEDIATE`) extends that guarantee across processes too | `A7.10` |
+| Erasure leaves a verifiable hole, not a gap | `purge` deletes the base row and every history row for one resource, then inserts a single `'X'`-op tombstone whose `prev_hash` records the chain tip that was erased — proof something was there and was deliberately removed, distinct from a resource that never existed | `M3.18` |
 
-## What the deployment must provide
+## What `fhir-sqlite` provides but does not do for you
 
-fhir-sqlite does **not** do these, and a deployment that skips them is not safe to
-put patient data in:
+These are real, tested capabilities — but calling them is **your**
+responsibility, not something `get`/`search`/`put` triggers on your behalf.
+Getting this distinction wrong is the easiest way to end up with a boundary
+that looks stronger than it is.
 
-| Obligation | Why it is not here |
-| --- | --- |
-| **Authentication** | Identity belongs to the perimeter (plan D13). fhir-sqlite accepts a principal asserted by a trusted proxy and records it; it verifies nothing. |
-| **Authorization** | There is no scope check, no compartment restriction, no `meta.security` label enforcement, and no consent evaluation. Any caller who reaches the API can read and write anything in it. |
-| **TLS to clients** | Terminate at the perimeter, or use the in-process `tls` feature. |
-| **Rate limiting per identity** | fhir-sqlite bounds concurrency and request cost, not per-user quotas. |
-| **Network isolation** | The API, `/metrics`, and the database link should not share a network with untrusted clients. |
-| **Backup and retention** | Your engine's own tooling — a file copy, or SQLite's online backup API / `VACUUM INTO`. fhir-sqlite guarantees a consistent snapshot is a valid store; it does not schedule anything. |
-| **Key management and at-rest encryption** | Filesystem, volume, or cloud-provider encryption. fhir-sqlite stores no secrets and manages no keys. |
+- **Disclosure logging is opt-in per call.** `log_access(&AccessRecord)`
+  writes one row to `fhir_sqlite_access_log`, and `log_access_batch` writes
+  several — but **`get` and `search` do not call it themselves.** A `Patient`
+  read through `store.get(...)` alone leaves no disclosure row. If your
+  application (or the server layer in front of this library) needs "every
+  read is recorded" to be true, it must call `log_access` itself, on every
+  read path, including reads that found nothing — `outcome: "not-found"` is
+  still a disclosure attempt worth recording, and the test suite records it
+  that way.
+- **Keyed (HMAC) chain tags are opt-in per store.** Unkeyed, the SHA-256/SHA3-256
+  chain stops *careless* modification — anyone who can write SQL can also
+  recompute an unkeyed digest for what they wrote. A keyed chain stops
+  *forgery*: producing a valid tag needs a key that is never written to the
+  database. Load one and attach it before opening writes:
 
-## What neither provides yet
+  ```rust,ignore
+  use fhir_sqlite_store::chain::KeyRing;
 
-Stated rather than implied, so nobody discovers it during an audit:
+  // Reads FHIR_SQLITE_CHAIN_KEY (hex) / FHIR_SQLITE_CHAIN_KEY_ID, and
+  // FHIR_SQLITE_CHAIN_KEYS_RETIRED (id=hex,id=hex,…) for keys that still
+  // verify but no longer sign.
+  let keys = KeyRing::from_env()?;
+  let store = SqliteStore::open("clinic.sqlite", map).await?
+      .with_chain_keys(keys);
+  ```
 
-- **Terminology validation.** Required-binding `CHECK` constraints only. No
-  value-set expansion, no SNOMED/LOINC/ICD membership checks.
-- **Profile conformance.** Base-specification structure only — not US Core,
-  IPS, or any implementation guide.
-- **FHIRPath invariants.** The `fhir` crate enforces three of 314.
-- **Referential integrity across resources.** FHIR permits dangling
-  references and so does fhir-sqlite (M3.10).
+  Rotation is additive: each tag records which key id signed it
+  (`k1:9f86d0…`), so retiring a signing key does not invalidate rows it
+  already signed, as long as that key id is still listed as retired. Drop it
+  entirely and those rows become **unverifiable**, which `verify_audit`
+  reports as exactly that — not as tampering. This is confirmed by
+  `rows_signed_with_an_unheld_key_are_not_called_tampering` in the test
+  suite: a verifier holding the wrong key must say "I cannot check this,"
+  never "this was altered."
 
-## Configuring the boundary
+- **Chain verification is on demand, not continuous.** `verify_audit()`
+  recomputes every resource's chain when you call it; nothing runs it on a
+  schedule. `emit_checkpoint(reason)` calls `verify_audit` and logs one
+  `tracing` line on the `audit_checkpoint` target — `INFO … chain checkpoint:
+  verified` when clean, `ERROR` with a break count or an error otherwise. It
+  is a log line, not a table row, and deliberately so: a checkpoint's value
+  comes from living somewhere the database itself cannot rewrite. Nothing in
+  this crate calls `emit_checkpoint` on an interval; if you want that, your
+  application schedules it.
 
-A deployment that means it:
+## What each layer of the chain actually stops
 
-```sh
-export PGSSLMODE=require PGSSLROOTCERT=/etc/ssl/pg-ca.pem
-fhir-sqlite serve \
-  --bind 0.0.0.0:8080 \
-  --base-url https://fhir.example.org \
-  --trust-proxy --allowed-host fhir.example.org \
-  --principal-header X-Fhir-Sqlite-Principal \
-  --reason-header X-Fhir-Sqlite-Purpose \
-  --require-principal
-```
-
-Each flag is load-bearing:
-
-- Without `--base-url`, paging links are built from the address fhir-sqlite bound,
-  which behind a proxy is wrong. With it, no request header can change them.
-- `--trust-proxy` is what makes `--principal-header` mean anything. Without
-  it the header is *ignored*, not honored — otherwise any client could name
-  itself anyone. Only set it when a proxy you control is the only route in.
-- `--require-principal` turns an unattributable request into a 401. Without
-  it, writes are recorded as `unauthenticated`, which is honest but not
-  useful.
-
-## Choosing an audit mode
-
-`--audit-mode` decides how a disclosure record reaches the log, and the
-choice is a real trade rather than a tuning knob:
-
-| Mode | What it costs | What it risks |
-| --- | --- | --- |
-| `sync` (default) | A round trip on every read. | Nothing: the record commits before the response is sent. |
-| `async` | An in-memory enqueue. | Records still queued when the process is killed are lost. Graceful shutdown drains them; `SIGKILL` does not. |
-| `off` | Nothing. | Everything this section is about. Requires `--allow-unaudited`. |
-
-`sync` is the default because the failure it prevents cannot be repaired
-afterwards. A disclosure with no record is indistinguishable, later, from a
-disclosure that never happened, and no amount of investigation recovers the
-difference.
-
-In **every** mode, a disclosure that cannot be recorded is refused rather
-than served: a saturated queue answers 503. Four counters per version make
-the difference visible on `/metrics`:
-
-- `refused` — reads turned away to keep the log honest. Non-zero means the
-  system is working as designed under strain.
-- `lost` — records the writer could not commit *after* the data was served.
-  **Non-zero is an incident**: disclosures happened that the log does not
-  show.
-
-Alert on `lost` above zero. Alert on sustained `refused` as a capacity
-signal.
-
-## Verifying the audit trail
-
-The hash chain is checked on demand, not on every read:
-
-```sh
-fhir-sqlite verify-audit --fhir-version r5
-```
-
-It recomputes every resource's chain and exits nonzero on the first break,
-naming the resource and version. Rows written before the audit columns
-existed carry no hash; they are reported as the point a chain begins, not as
-tampering.
-
-### What each layer proves
-
-Three layers, and they stop different things. Conflating them is how a
-deployment ends up believing it has protection it does not.
+Conflating these is how a deployment ends up believing it has protection it
+does not.
 
 | Layer | Stops | Does not stop |
 | --- | --- | --- |
-| SHA-256 + SHA3-256 digests | Careless or unaware modification: a migration, a stray `UPDATE`, a row restored from the wrong backup. Two design families, so one line of cryptanalysis cannot take both. | An attacker who knows the pre-image format — it is public, and the digests are unkeyed, so they can recompute them. |
-| `HMAC-SHA-256` tag | Forgery. Producing a valid tag needs a key held in the application process and never written to the database, so SQL write access is not enough. | A row being **deleted**. |
-| Chain witness, recorded off-box | Truncation and wholesale deletion. | — |
+| SHA-256 + SHA3-256 digests (unkeyed) | Careless or unaware modification: a migration, a stray `UPDATE`, a row restored from the wrong backup. Two unrelated design families (Merkle–Damgård vs. sponge), so one cryptanalytic advance cannot take both. | An attacker with SQL write access who knows the pre-image format — it is public and the digests are unkeyed, so they can recompute a matching one. |
+| `HMAC-SHA-256` tag (opt-in, see above) | Forgery: producing a valid tag needs the key, which is never written to the database. | A row being **deleted** outright — a tag proves nothing about a row that is simply gone. |
+| An external witness | Truncation and wholesale deletion — a chain missing its last version verifies perfectly, because nothing left behind refers to what was removed. | **Nothing here does this yet.** There is no `chain_witness` function in this port (`M3.16c`: sqlite emits a checkpoint but has no dedicated witness digest), and no `resign_history` (`M3.16d`). Both are `—` in the [conformance matrix](../../../spec/databases/conformance-matrix.md). `emit_checkpoint`'s log line is the closest thing available today, and it only helps if it ships somewhere the database cannot reach. |
 
-That second row is the one worth dwelling on. Without a key, a hash chain
-proves only that nothing changed *by accident*: anyone who can write the rows
-can also write matching digests. Set `FHIR_SQLITE_CHAIN_KEY` and that stops being
-true.
+## What this library does not do at all
 
-```sh
-# 32 bytes minimum. A placeholder like "changeme" would produce tags an
-# attacker could reproduce by guessing.
-export FHIR_SQLITE_CHAIN_KEY=$(openssl rand -hex 32)
-export FHIR_SQLITE_CHAIN_KEY_ID=k1
-```
+- **Authentication and authorization.** There is no perimeter concept inside
+  a library — no header parsing, no proxy trust, no scope check. `Audit`
+  simply records whatever actor string you construct it with:
+  `Audit::unattributed()` (recorded as `"unauthenticated"`, deliberately, so
+  "we do not know who did this" is itself visible rather than blank),
+  `Audit::cli()` (`"cli:$USER"`), or `Audit::principal(actor, source)` for an
+  identity your own code has already verified. Verifying that identity is
+  entirely your application's job.
+- **Transport encryption.** There is no connection to encrypt — a store is a
+  file path (`O10.7` does not apply; see [Operations](operations.md) for what
+  replaces it: file permissions and, if you need it, disk or SQLCipher
+  encryption).
+- **Rate limiting, request shedding, or any request-shaped concept at all.**
+  This crate has no notion of a request. `write_gate` serializes conditional
+  writes; it is not a throttle.
+- **Terminology validation.** Required-binding `CHECK` constraints only — no
+  value-set expansion, no SNOMED/LOINC/ICD membership checks.
+- **Profile conformance.** Base-specification structure only, not US Core,
+  IPS, or any implementation guide.
+- **Referential integrity across resources.** FHIR permits a dangling
+  reference and so does this store (`M3.10`) — `subject_ref_id` is not a
+  foreign key to another resource type's table.
 
-The key must not be readable by the database role. A key stored where the
-attacker already has write access protects nothing.
+## Two limits on erasure, stated plainly
 
-**Rotation is additive.** Each tag records the key that signed it
-(`k1:9f86d0…`), so turning a key over does not invalidate history:
-
-```sh
-export FHIR_SQLITE_CHAIN_KEY=$(openssl rand -hex 32)   # the new signing key
-export FHIR_SQLITE_CHAIN_KEY_ID=k2
-export FHIR_SQLITE_CHAIN_KEYS_RETIRED="k1=<previous hex>"   # still verifies
-```
-
-Drop a retired key and rows signed with it become *unverifiable*, which
-`verify-audit` reports as exactly that — not as tampering. A missing tag, a
-tag naming a key you do not hold, and a malformed tag are each reported as
-what they are. Only a mismatch is a finding. Reporting a key-distribution
-problem as a forgery would burn an incident response.
-
-### The witness
-
-The tag stops a row being rewritten. It says nothing about a row that is
-simply gone: a chain missing its last version verifies perfectly, because
-nothing left behind refers to what was removed.
-
-```sh
-fhir-sqlite chain-witness --fhir-version r5   # e.g. k1:3f2a…  or  1042:9c81…
-```
-
-Record it somewhere the database cannot reach — another host, a ticket, a log
-you do not administer — and compare periodically. It is deterministic over
-unchanged history, so a difference means a chain gained a version, lost one,
-or had its head altered.
-
-**If you already ship logs, you already have somewhere to put it.** Every
-checkpoint is emitted as an INFO line on its own `audit_checkpoint` target:
-at startup, after any erasure, and every `--checkpoint-interval-mins`
-(default 60; `0` disables the interval, keeping the startup and erasure
-ones).
-
-```
-INFO audit_checkpoint: chain checkpoint schema=r5 keyed=true
-     reason=startup witness=k1:3f2a8c…
-```
-
-The dedicated target is the point. Route and retain `audit_checkpoint` on its
-own schedule without keeping every other line — and because a checkpoint is
-only counts and digests, with **no PHI**, it can be kept far longer than
-ordinary application logs and stored where patient data must not go.
-
-One caveat that decides whether any of this is worth anything: a checkpoint
-is a witness only if it lands where the database cannot reach. Logs shipped
-off-host qualify. Logs written to a table in this same database, or to a disk
-the same compromised account can rewrite, do not. fhir-sqlite cannot enforce that
-and does not claim to — the guarantee belongs to your log path.
-
-## Erasure versus append-only history
-
-GDPR Article 17 says a record must be removable. Everything above says history
-must not be. These genuinely conflict, and fhir-sqlite resolves it in one direction,
-explicitly:
-
-```sh
-fhir-sqlite purge Patient 1234 --reason "art-17 request #4471" --allow-erasure
-```
-
-The resource and every historical version are deleted, and a **tombstone**
-takes their place recording who erased it, when, why, and the `row_hash` the
-chain ended on. So an erased record leaves a *verifiable hole* — an auditor
-can still see that a chain existed and was deliberately terminated by a named
-person — rather than a gap indistinguishable from a resource that never
-existed.
-
-`verify-audit` treats a tombstone as a recorded erasure, not a break. That
-distinction matters more than it looks: a tamper-evidence report that cries
-wolf on every lawful erasure is one an operator learns to ignore, at which
-point it detects nothing.
-
-Two limits to state before anyone relies on this:
-
-- **The database is not the estate.** Backups, replicas, WAL archives, and any
-  downstream system that consumed the resource still hold it until they age
-  out. Promising erasure means having a plan for all of them; `purge` is one
-  step in that plan, not the plan.
-- **The guard is against accident, not against the application.** The
-  append-only trigger permits `DELETE` inside a transaction that sets
-  `fhir_sqlite.erasure`, which is how `purge` works — so application-level SQL
-  execution could do the same. The trigger stops ordinary code, migrations,
-  and stray statements from touching history at all; the tombstone and the
-  access log are what make a deliberate erasure accountable.
-
-## Grants
-
-The append-only trigger is enforcement the application cannot bypass. Belt and
-braces, restrict the application role too:
-
-```sql
-REVOKE UPDATE, DELETE ON ALL TABLES IN SCHEMA r5 FROM fhir_sqlite_app;
-GRANT SELECT, INSERT ON r5.patient_history TO fhir_sqlite_app;  -- and each _history
-```
-
-With both in place, rewriting history requires a superuser deliberately
-disabling a trigger — an act that is itself visible in the server log.
+- **The database is not the estate.** Backups, replicas, and anything
+  downstream that already consumed a resource still hold it until they age
+  out on their own schedule. `purge` is one step in an erasure plan, not the
+  plan.
+- **The append-only trigger guards against accident and ordinary code, not
+  against a deliberate attacker with direct database access.** `purge`'s
+  escape hatch is a one-row table the trigger checks for; any SQL running
+  with the same privileges as this library could insert that row and delete
+  history too. What makes a *legitimate* erasure accountable is not the
+  trigger — it is that `purge` always leaves the tombstone and always runs
+  under an `Audit`, so a deliberate bypass leaves no matching tombstone and
+  is the anomaly `verify_audit` and a routine review would surface.

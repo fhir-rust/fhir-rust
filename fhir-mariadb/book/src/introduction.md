@@ -52,7 +52,22 @@ searches, joins, and audits — exactly what normalized storage is good at.
 
 ## Status
 
-Functional end to end and pre-release. See `tasks.md` in the repository
-for the milestone ledger and `doc/benchmarks.md` for measured numbers
-(6,146 resources/s bulk load; 1.18 ms average reconstruction reads;
-index-verified searches at 100k resources).
+**Store** level (`C0.8`): the generator, shred/reconstruct, the MariaDB 11.4
+store, search, history, and the audit chain all work, and a live MariaDB 11.4
+gate runs them in CI — 102 tests, green (measured 2026-08-03; see the
+[conformance matrix](../../../spec/databases/conformance-matrix.md)).
+
+Two things this port does **not** have: optimistic concurrency (no
+`put_audited`, no `expected_version` anywhere in the crate) and
+`transact_audited` or conditional create/delete. `upgrade` and `backfill_norm`
+do exist, closing this port's share of **F-15**.
+
+`doc/benchmarks.md` states plainly what is and is not measured for this
+engine specifically: schema scale (7,355 tables for R5) and search-parameter
+compilation (**92.4%** of R5 resolve, `P6.1`, corrected under audit **F-38**
+from an earlier 94.8%) come from the generator, which is
+byte-identical across all six ports, so those figures apply here too. Install
+timing, bulk-load throughput, and per-read latency numbers do **not** exist
+for `fhir-mariadb` — this book used to state PostgreSQL's own measurements as
+this port's (audit **F-64**), and that page now says so explicitly rather than
+repeating the substitution here.

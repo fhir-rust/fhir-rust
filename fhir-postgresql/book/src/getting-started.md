@@ -1,31 +1,117 @@
 # Getting started
 
-You need PostgreSQL 18 and Rust.
+`fhir-postgresql` is a library, not a binary. There is no `cargo install`, no
+`fhir-postgresql init` shell command, and no `serve` — see the banner on the
+[introduction](introduction.md). Everything below is Rust, called from your
+own `main.rs` or service.
 
-```sh
-cargo install --path crates/fhir-postgresql
-export PGHOST=localhost PGUSER=you PGDATABASE=clinic
+You need PostgreSQL 18 and Rust 1.90+.
 
-fhir-postgresql init --fhir-version r5      # install the generated schema (~6 s)
-fhir-postgresql load export/*.ndjson        # load NDJSON / Bundles / single files
-fhir-postgresql serve                       # FHIR REST API on 127.0.0.1:8080
+## Add the dependencies
+
+```toml
+[dependencies]
+fhir-postgresql-map   = { path = "crates/fhir-postgresql-map" }
+fhir-postgresql-store = { path = "crates/fhir-postgresql-store" }
+tokio      = { version = "1", features = ["rt-multi-thread", "macros"] }
+serde_json = "1"
 ```
 
-`load` detects format by content, not filename: NDJSON, a Bundle, or a
-single resource, gzipped or plain. Failures are reported per resource with
-file and line; the exit code is nonzero if anything failed. Add
-`--validate` (in builds with the `validate` feature) to also check every
-resource against the typed FHIR model.
+(Outside this monorepo these would be version dependencies —
+`fhir-postgresql-map = "0.4"` — once published; see the port
+[`README.md`](../../README.md) for the current publishing status.)
 
-Useful commands while exploring:
+## Connect, install, write, read
 
-```sh
-fhir-postgresql transform patient.json      # show exactly which rows a resource becomes
-fhir-postgresql search Patient family=Smith birthdate=ge1970
-fhir-postgresql get Patient example         # reconstruct one resource
-fhir-postgresql export Patient > patients.ndjson
+This mirrors the program the port `README.md` verifies; it is not
+illustrative pseudocode — every call is a real, checked method on `Store`.
+
+```rust
+use std::sync::Arc;
+use fhir_postgresql_map::model::RelMap;
+use fhir_postgresql_store::{Store, pg_config};
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // The relational map ships as a committed, compiled-in asset — no FHIR
+    // specification packages needed at runtime (feature `r5`, on by default).
+    let map = Arc::new(RelMap::bundled("r5")?);
+
+    // Connection settings come from the standard PG* environment variables
+    // (PGHOST, PGUSER, PGDATABASE, PGPASSWORD, PGPORT, PGSSLMODE, ...), or
+    // pass an explicit DSN to `pg_config`. TLS verifies the server
+    // certificate and hostname by default (`PGSSLMODE=require`, `M14.27`);
+    // see the [dialect annex](../../spec/14-postgresql-dialect.md) before
+    // relaxing it.
+    let cfg = pg_config(Some("host=localhost user=you dbname=clinic"))?;
+    let store = Store::connect(cfg, map).await?;
+
+    // Applies the generated DDL — 7,355 tables for R5 — staged under a
+    // temporary schema and renamed into place in one statement (`M14.14`).
+    // The checksum names *this* install; re-running it with the same
+    // checksum is a no-op, and installing over a schema built from a
+    // different map is refused.
+    store.init("r5-baseline").await?;
+
+    let patient = serde_json::json!({
+        "resourceType": "Patient",
+        "id": "example",
+        "name": [{ "family": "Ærø", "given": ["Anna"] }],
+        "birthDate": "1974-12"          // a partial date, preserved verbatim
+    });
+
+    let outcome = store.put(&patient).await?;
+    println!("wrote version {}", outcome.version_id);
+
+    let got = store.get("Patient", "example").await?.unwrap();
+    assert_eq!(got.resource, patient);  // losslessly, including "1974-12"
+
+    // Accent- and case-insensitive by construction: "aero" finds "Ærø".
+    let hits = store.search("Patient", &[("name".into(), "aero".into())], 50, 0).await?;
+    println!("{hits:?}");
+    Ok(())
+}
 ```
 
-Connection settings come from the standard `PG*` environment variables or
-`--dsn`. Each FHIR version installs into its own PostgreSQL schema (`r5`,
-`r4`, `r3`) inside whatever database you point at.
+See [`crates/fhir-postgresql-store/src/lib.rs`](../../crates/fhir-postgresql-store/src/lib.rs)
+for the exact signatures of `connect`, `init`, `put`, `get`, and `search`.
+
+## Recording who did it
+
+`put` and `get` above carry no attribution: `put` internally calls the
+audited form with `Audit::unattributed()`, which records the actor as
+`"unauthenticated"` rather than leaving the column blank (`M3.15`). A caller
+that knows who is acting should say so:
+
+```rust
+use fhir_postgresql_store::Audit;
+
+let audit = Audit::principal("practitioner-42", "header:X-Fhir-Principal")
+    .with_reason(Some("treatment".to_string()));
+
+store.put_audited(&patient, None, &audit).await?;
+```
+
+`None` here means "no optimistic-concurrency check"; pass
+`Some(expected_version)` (or `Some(0)` for "must not already exist yet") to
+get a `StoreError::Conflict { expected, found }` instead of a silent
+overwrite when another writer got there first.
+
+## Reads are a database guarantee, not just a library one
+
+`store.get(...)` runs every multi-table read inside one
+`REPEATABLE READ READ ONLY` transaction (`R4.5`, `M14.15`), so a concurrent
+write between statements cannot produce a resource that never existed —
+base columns from one version, child rows from the next. That guarantee is
+only as real as the database enforcing it; `cargo test` with no server
+configured proves nothing about it — see [Operations](operations.md) and the
+port's `AGENTS.md` on why the live suite is the gate that matters.
+
+## Next
+
+- [The storage model](storage-model.md) — what `init` actually creates.
+- [Querying with SQL](querying.md) — the tables are yours; query them
+  directly alongside the `Store` API.
+- [Search](search.md) — what `store.search(...)` supports today.
+- [Operations](operations.md) — install, upgrade, backup, and the audit
+  chain, called from Rust.

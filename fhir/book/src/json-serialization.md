@@ -1,8 +1,12 @@
 # JSON serialization
 
 The model round-trips to and from canonical FHIR JSON. This crate is checked
-against the **official FHIR R5 example set** (~2800 files); 99.9% round-trip
-exactly, and the remainder are documented in
+against the **official FHIR R5 example set** (2824 files, the T28 corpus gate):
+**2823/2824 (99.96%)** round-trip exactly. The one exception —
+`questionnaireresponse-example-f201-lifelines.json`, which omits
+`QuestionnaireResponse.questionnaire` though R5's own metadata marks it `1..1`
+— is a non-conformant example, not a bug in the model; it and the R4/R3
+figures are documented in
 [`tasks-roundtrip-failures.md`](https://github.com/fhir-rust/fhir-rust/blob/main/tasks-roundtrip-failures.md).
 
 ## The basics

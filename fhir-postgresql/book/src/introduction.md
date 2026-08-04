@@ -12,22 +12,28 @@
 > [conformance matrix](../../../spec/databases/conformance-matrix.md) is the
 > status document to trust.
 
-fhir-postgresql stores [FHIR](https://hl7.org/fhir/) resources in PostgreSQL 18 as
-**real relational tables** — typed columns, child tables, primary and
-foreign keys — not JSON or JSONB blobs, and serves them back through the
-standard FHIR RESTful API.
+fhir-postgresql is a **Rust library** that stores [FHIR](https://hl7.org/fhir/)
+resources in PostgreSQL 18 as **real relational tables** — typed columns,
+child tables, primary and foreign keys — not JSON or JSONB blobs. It gives
+them back losslessly through an `async` API (`Store::put`, `::get`,
+`::search`, …); it does not speak HTTP. A FHIR RESTful API over this crate is
+a separate concern — see the banner above.
 
-Two claims define the project, and both are enforced by tests:
+Two claims define the project:
 
-1. **Losslessness.** Any valid FHIR resource that goes in comes back
-   semantically identical — array order, decimal precision, partial dates,
-   extensions, and all. The entire official example corpus for R3, R4, and
-   R5 (7,399 resources) round-trips through live PostgreSQL, and ten
-   thousand generated property-test cases besides.
+1. **Losslessness**, enforced by tests. Any valid FHIR resource that goes in
+   comes back semantically identical — array order, decimal precision,
+   partial dates, extensions, and all. The entire official example corpus for
+   R3, R4, and R5 (7,399 resources) round-trips in memory, and 7,396 of them
+   (three lack ids and are skipped) round-trip through live PostgreSQL 18 —
+   see [`doc/benchmarks.md`](../../doc/benchmarks.md) for how that was
+   measured.
 2. **Relational honesty.** Live data lives in typed columns you can query,
    join, index, and constrain with ordinary SQL. The only JSONB in the
    system holds write-once history snapshots and anonymous contained
-   resources — never data the schema claims to model.
+   resources — never data the schema claims to model (`M14.13` records the
+   one place this crate still binds `jsonb` against the core spec's
+   preference for `text`).
 
 The trade fhir-postgresql makes is generation over convention: the schema (7,355
 tables for R5) is generated from the FHIR specification itself, and a

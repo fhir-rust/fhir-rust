@@ -3,8 +3,12 @@
 [![CI](https://github.com/fhir-rust/fhir-rust/actions/workflows/ci.yml/badge.svg)](https://github.com/fhir-rust/fhir-rust/actions/workflows/ci.yml)
 
 A Rust implementation of the **HL7 FHIR®** data model, plus a code generator
-that produces it from the official FHIR specification JSON files. Three releases
-are modelled: **R5 (5.0.0)**, **R4 (4.0.1)**, and **R3 (3.0.2, STU3)**.
+that produces it from the official FHIR specification JSON files. Five
+releases are modelled: **R5 (5.0.0)**, **R4 (4.0.1)**, **R3 (3.0.2, STU3)**,
+**R2 (1.0.2, DSTU2)**, and **R6 (6.0.0-ballot3, unpublished-final, see
+below)**. Five more release numbers (`fhir-release-1`, `-7`–`-10`) are
+reserved crate names with no model in them — R1/DSTU1 predates a JSON
+representation this generator can consume, and R7–R10 do not exist yet.
 
 Fast Healthcare Interoperability Resources (FHIR, pronounced "fire") is the HL7
 standard for exchanging electronic health records. This crate lets you build,
@@ -19,11 +23,12 @@ parse, validate, and round-trip FHIR resources in idiomatic Rust with `serde`.
 
 ## Features
 
-Per release, under `fhir::r5`, `fhir::r4` and `fhir::r3`:
+Per release, under `fhir::r5`, `fhir::r4`, `fhir::r3`, `fhir::r2`, and
+`fhir::r6` (the last two behind their own feature flags, not on by default):
 
 - **Every resource** (Patient, Observation, Encounter, …) as a Rust struct,
-  round-tripping to and from canonical FHIR JSON via `serde` — 158 in R5,
-  146 in R4, 117 in R3.
+  round-tripping to and from canonical FHIR JSON via `serde` — counts per
+  release are in the table below.
 - **Every complex datatype** (Period, HumanName, CodeableConcept, …) and every
   **primitive newtype** (`Code`, `Id`, `DateTime`, …), serializing transparently.
 - **400+ code systems** as type-safe enums that serialize to their canonical
@@ -47,27 +52,31 @@ features: you compile only what you use. `r5` is on by default.
 ```toml
 [dependencies]
 # R5 only (the default)
-fhir = "2"
+fhir = "3"
 
 # R5 plus older releases
-# fhir = { version = "2", features = ["r4"] }
-# fhir = { version = "2", features = ["r3", "r4"] }
+# fhir = { version = "3", features = ["r4"] }
+# fhir = { version = "3", features = ["r2", "r3", "r4"] }
 
-# One older release on its own — R3, R4 and R5 never both compile unless asked
-# fhir = { version = "2", default-features = false, features = ["r4"] }
-# fhir = { version = "2", default-features = false, features = ["r3"] }
+# One older release on its own — no two releases compile unless you ask for both
+# fhir = { version = "3", default-features = false, features = ["r4"] }
+# fhir = { version = "3", default-features = false, features = ["r2"] }
+
+# The R6 ballot draft — outside the semver promise until R6 is final
+# fhir = { version = "3", default-features = false, features = ["r6"] }
 
 # Optional capabilities
-# fhir = { version = "2", features = ["xml", "client"] }
+# fhir = { version = "3", features = ["xml", "client"] }
 
 serde_json = "1" # or any other serde data format
 ```
 
 | Release | Module | Feature | Resources | Datatypes | Primitives | Code enums |
 | --- | --- | --- | ---: | ---: | ---: | ---: |
-| R5 (5.0.0) | `fhir::r5` | `r5` (default) | 158 | 50 | 21 | 442 |
-| R4 (4.0.1) | `fhir::r4` | `r4` | 146 | 43 | 20 | 486 |
+| R2 (1.0.2, DSTU2) | `fhir::r2` | `r2` | 94 | 28 | 18 | 265 |
 | R3 (3.0.2) | `fhir::r3` | `r3` | 117 | 36 | 18 | 386 |
+| R4 (4.0.1) | `fhir::r4` | `r4` | 146 | 43 | 20 | 486 |
+| R5 (5.0.0) | `fhir::r5` | `r5` (default) | 158 | 50 | 21 | 442 |
 | R6 (6.0.0-ballot3) | `fhir::r6` | `r6` | 161 | 51 | 21 | 459 |
 
 R6 is **in ballot, not final**. Its model is generated from a draft that can

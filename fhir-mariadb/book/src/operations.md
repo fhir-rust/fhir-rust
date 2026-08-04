@@ -1,73 +1,94 @@
 # Operations
 
-## Deployment posture
+fhir-mariadb is a **library**. There is no server process to deploy, no port
+to bind, no health endpoint, and no CLI (`C0.17`, `C0.18`) — an earlier
+version of this chapter described `fhir-mariadb serve`, `/health`,
+`/metrics`, and a table of `--flag` options that belong to none of the six
+database ports (audit **F-56**). If a deployment wants an HTTP surface, that
+is [`fhir-loco`](../../../fhir-loco/), a separate crate; everything below is
+what `MariaDbStore` itself does, called from your own process.
 
-fhir-mariadb handles PHI. The server binds loopback by default and implements
-**no authentication** by design — the deployment perimeter (reverse
-proxy, service mesh, or SMART-on-FHIR gateway) owns identity and
-authorization. TLS terminates either at that perimeter or in-process via
-the `tls` build feature (`--tls-cert`/`--tls-key`, rustls).
+## Install
 
-## Health, metrics, logs
+```rust,ignore
+let store = MariaDbStore::connect(dsn, map).await?;
+let applied = store.init("r5-baseline").await?; // number of DDL statements applied
+```
 
-- `/health` — liveness; `/ready` — database connectivity.
-- `/metrics` — Prometheus text: request totals, response classes, and
-  `fhir_mariadb_request_latency_seconds`, a histogram over the default 1ms–10s
-  buckets. It is a histogram rather than a running total because a mean
-  cannot distinguish "every request took 40ms" from "99% took 5ms and 1%
-  took 4 seconds"; `histogram_quantile` answers p99 from these buckets.
-- Every request gets an `X-Request-Id` (propagated when supplied) and one
-  tracing line with method, path, and status. Resource content is never
-  logged.
+`init` applies the generated DDL directly against the target database and
+then records the map checksum, the FHIR version, and the map asset itself
+(gzipped, hex-coded) in `fhir_mariadb_meta`. **This is not atomic.** MariaDB's
+DDL commits implicitly, so the staged-schema-then-rename dance the
+PostgreSQL original uses has no MariaDB equivalent (`M14.22`) — this chapter
+used to claim one anyway. If a statement fails partway through, `init`
+returns an error naming how many statements had already been applied and
+that they remain; there is no rollback. An install that already matches the
+recorded checksum is a no-op.
 
-## Timeouts and load shedding
+## Upgrade
 
-Server-side `statement_timeout` defaults to 30 s
-(`FHIR_MARIADB_STATEMENT_TIMEOUT_MS`); pool waits are bounded at 2 s, and
-exhaustion answers **503 + Retry-After** instead of queueing unboundedly.
-`fhir-mariadb serve` shuts down gracefully on SIGINT/SIGTERM, draining any queued
-disclosure records before it exits.
+```rust,ignore
+let report = store.upgrade("r5-current-checksum", /* allow_destructive */ false).await?;
+```
 
-Every edge ceiling is a flag, because the right value depends on the
-deployment:
+`upgrade` diffs the installed map (read back from `fhir_mariadb_meta`)
+against the map the store was constructed with: new tables, columns, and
+indexes apply automatically; destructive changes (dropped tables or columns)
+are refused unless `allow_destructive` is `true`; column type changes always
+refuse outright and require a manual migration (`O10.4a`, `L12`). An install
+that predates `M14.33` — recorded before the map asset itself was stored —
+is refused with a message distinguishing it from "not installed": the
+remedy is a reload via `init`, not an upgrade.
 
-| Flag | Default | Bounds |
-| --- | --- | --- |
-| `--request-timeout` | 60 s | Wall clock for one request |
-| `--max-concurrent` | 256 | Requests in flight before shedding |
-| `--max-body-mb` | 32 | Request body size |
-| `--max-count` | 1000 | `_count`, whatever the client asks |
-| `--max-included` | 1000 | `_include`/`_revinclude` expansion; truncation is reported in the bundle |
-| `--pool-size` | 16 | Database connections. Overrides `FHIR_MARIADB_POOL_SIZE` |
+Two consequences of `M14.22` apply here too, and are this port's own, not
+shared with the other five:
 
-`--max-concurrent` sits deliberately above the pool size, so pool exhaustion
-stays the usual back-pressure signal and the concurrency limit is the
-backstop behind it.
+- **No transaction covers the upgrade.** A failure partway through leaves a
+  schema that is neither the old shape nor the new one, and the error
+  reports the count of statements already applied so an operator knows what
+  state it is in (`M14.35`).
+- **The reconcile step is not naively idempotent.** MariaDB has no
+  `CREATE INDEX IF NOT EXISTS` as this port emits it, so re-running the
+  access-log index list wholesale fails with `Duplicate key name` on a
+  second pass (audit **F-28**). `upgrade` filters that list — and the
+  history audit-envelope columns — against `information_schema` first, and
+  does so **after** the additive statements run, not before, because a table
+  the upgrade just created already carries the new columns (`M14.36`).
 
-## Install and upgrade
+`upgrade` also **backfills** any newly folded search column before it
+returns, and the report's `folded` count says how many distinct values it
+processed. This is not optional tidying: non-`:exact` string search compares
+the folded column, so an upgrade that left it `NULL` on existing rows would
+silently return fewer results, with no error at all (`M14.37`). The backfill
+selects only rows still `NULL`, in bounded batches, so it is resumable if
+interrupted — call `upgrade` again and it continues where it stopped.
 
-`fhir-mariadb init` installs under a staging schema in chunked transactions and
-renames it into place atomically — no `max_locks_per_transaction` tuning
-required. It records the map checksum and the map itself; re-running is a
-no-op, and a mismatched artifact is refused.
+## Drop
 
-`fhir-mariadb init --upgrade` diffs the installed map against the current
-assets: new tables, columns, and indexes apply automatically; anything
-destructive (dropped tables or columns) is refused without
-`--allow-destructive`; column type changes always demand a manual
-migration. `fhir-mariadb drop --yes` removes a version schema in lock-safe
-chunks.
+```rust,ignore
+store.drop_schema().await?;
+```
 
-An upgrade that adds folded search columns also **backfills** them before
-it returns, and reports how many values it folded. This is not optional
-tidying: string search compares the folded column, so an upgrade that left
-it NULL would answer searches with fewer results and no error at all. The
-backfill folds distinct values in batches and is resumable — if it is
-interrupted, rerunning `--upgrade` continues where it stopped.
+Drops the database (`DROP DATABASE`, MariaDB's rendering of a "schema" —
+`M14.21`) and everything in it. There is no confirmation flag; the caller's
+own code is the confirmation.
+
+## Backfill on its own
+
+```rust,ignore
+let folded = store.backfill_norm().await?;
+```
+
+Runs the same folded-column backfill `upgrade` runs internally, without
+touching DDL — useful after a fold-rule change (`L13`, `L14`) that added no
+new column. Closes this port's share of audit **F-15**.
 
 ## Backup
 
 A fhir-mariadb store is plain MariaDB: `mariadb-dump` for a logical dump,
-binary-log replication, and any consistent snapshot is a valid store.
-Point-in-time recovery is binlog replay — not PostgreSQL's WAL-based PITR,
-which this chapter described for every port until 2026-08-03 (audit **F-56**).
+binary-log replication, and any consistent filesystem or volume snapshot
+taken while the server is quiesced is a valid backup. Point-in-time recovery
+is binlog replay — not PostgreSQL's WAL-based PITR, which this chapter
+described for every port until 2026-08-03 (audit **F-56**). Nothing in this
+crate schedules a backup; that is the deployment's job (see the
+[trust boundary](trust-boundary.md)).

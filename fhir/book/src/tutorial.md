@@ -129,7 +129,12 @@ let observation = Observation::builder()
         ..Default::default()
     })
     .value(ObservationValue::Quantity(Box::new(Quantity {
-        value: Some(Decimal(serde_json::Number::from_f64(72.5).unwrap())),
+        // Decimals are written as the lexeme they mean: "72.5" claims three
+        // significant figures and comes back out as "72.5", not as whatever
+        // an f64 round trip would make of it. `Decimal`'s inner field is
+        // private for exactly this reason — the lexical form must go through
+        // `Decimal::new`, never be assembled from an `f64`.
+        value: Some(Decimal::new("72.5").expect("a FHIR decimal")),
         unit: Some(FhirString("kg".to_string())),
         system: Some(Uri("http://unitsofmeasure.org".to_string())),
         code: Some(fhir::r5::types::Code("kg".to_string())),

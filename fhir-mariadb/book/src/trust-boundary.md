@@ -1,42 +1,66 @@
 # The trust boundary
 
-fhir-mariadb is a component, not a system. It cannot make a deployment compliant,
-and it must not be the reason a deployment cannot be. This chapter states, in
-one place, what fhir-mariadb guarantees and what the deployment around it has to
-provide — because a boundary nobody can point at is not a boundary (spec
-PR12.8).
+fhir-mariadb is a **library**, not a system, and not a server. Earlier
+versions of this chapter described HTTP status codes, request headers, and a
+`fhir-mariadb serve` command — none of which exist in this crate (`C0.17`,
+`C0.18`; audit **F-56**). If a deployment wants an HTTP surface with
+authentication, authorization, and a proxy-facing perimeter, that is
+[`fhir-loco`](../../../fhir-loco/), a separate crate. This chapter states, in
+one place, what calling `fhir-mariadb-store` directly actually guarantees —
+verified against `crates/fhir-mariadb-store/src/mariadb.rs` — and what any
+caller (`fhir-loco` or your own code) still has to provide, because a
+boundary nobody can point at is not a boundary (spec `PR12.8`).
 
 ## What fhir-mariadb guarantees
 
 | Property | How | Spec |
 | --- | --- | --- |
-| Writes are transactional and versioned | one transaction per write, monotonic `version_id`, append-only history | R4.4, H5.1 |
-| Reads see one consistent snapshot | every multi-statement read runs `REPEATABLE READ READ ONLY` | R4.5 |
-| Conditional interactions are atomic | criteria-hash advisory lock, match and write in one transaction | A7.10 |
-| Optimistic concurrency | `ETag` / `If-Match`, 412 on mismatch, honored inside bundles too | D11, A7.9 |
-| Every change records who made it | audit envelope written by the same statement as the change | M3.15 |
-| Every read is recorded | disclosure row in `fhir_mariadb_access_log` | PR12.5 |
-| History cannot be quietly rewritten | per-resource SHA-256 chain plus a database trigger refusing UPDATE/DELETE | M3.16, M3.17 |
-| PHI is encrypted in transit to the database | rustls, `sslmode` honored, refusal to serve non-loopback over a plaintext link | O10.7 |
-| Responses are not cached | `Cache-Control: no-store` and friends on every response | A7.8 |
-| Emitted URLs are not attacker-controlled | configured `--base-url`; forwarded headers only under `--trust-proxy` | A7.7 |
-| Nothing is silently dropped | unknown elements rejected; `_include` truncation warns in the bundle | D12, P6.7 |
-| Diagnostics do not leak stored data | client-safe errors are a separate type from internal ones | A7.11 |
+| Writes are transactional and versioned | `put`/`delete` run in one `mysql_async` transaction; `version_id` increments off the history tip | `R4.4`, `H5.1` |
+| Concurrent writers to one resource serialize | `SELECT … FOR UPDATE` on the base row before the tip is read, so N writers queue instead of racing (closed audit **F-24**: 1 of 8 succeeded before this) | `H5.4` |
+| Reads see one consistent snapshot | `get` runs its multi-table reconstruction inside one `REPEATABLE READ` transaction (closed audit **F-21**: reads used to tear across statements) | `R4.5` |
+| Every change records who made it | the same statement that writes history writes `actor`, `actor_source`, `client`, `request_id`, `reason` alongside it | `M3.15` |
+| Every read *can* be recorded | `log_access`/`log_access_batch` insert an `AccessRecord` into `fhir_mariadb_access_log` — see the caveat below | `PR12.5` |
+| History cannot be rewritten by ordinary SQL | `BEFORE UPDATE`/`BEFORE DELETE` triggers (`SIGNAL SQLSTATE '45000'`) refuse any statement that does not first set the erasure escape | `M3.16`, `M3.17` |
+| History is tamper-evident under two independent digest families | every history row carries `row_hash` (SHA-256) and `row_hash_sha3` (SHA3-256), chained to the previous row; `verify_audit` recomputes and reports the first break | `M3.16` |
+| PHI is encrypted in transit to the database by default | `mysql_async` connects with `FHIR_MARIADB_SSL_MODE=VERIFY_IDENTITY` unless overridden; `PREFERRED` is refused rather than silently downgraded (closed audit **F-54**) | `O10.7` |
+| Erasure leaves a verifiable hole, not a silent gap | `purge` deletes the resource and its history, then writes one tombstone row (`op = 'X'`) recording who, when, why, and the hash the chain ended on | `M3.18` |
 
-## What the deployment must provide
+Two of those rows need the caveat spelled out, not left implicit:
 
-fhir-mariadb does **not** do these, and a deployment that skips them is not safe to
-put patient data in:
+**Disclosure logging is opt-in, not automatic.** `get`, `search`, and
+`history` do not call `log_access` themselves — nothing in this crate wires
+a read to a log entry. A caller that wants `PR12.5` satisfied must call
+`log_access`/`log_access_batch` itself, on every read path it cares about.
+Silence here is a caller bug, not a library one, but it is easy to have
+without noticing.
+
+**Nothing in this crate reads a MariaDB-specific chain-key environment
+variable.** Keying the chain (turning the bare SHA-256/SHA3-256 hashes into
+HMAC tags no one without the key can forge) is done by building a
+`fhir_store::chain::KeyRing` and passing it to
+`MariaDbStore::with_chain_keys`. `KeyRing::from_env()` exists and works, but
+it is defined once in the shared `fhir-store` crate and reads
+`FHIR_SQLITE_CHAIN_KEY` / `FHIR_SQLITE_CHAIN_KEY_ID` literally, regardless of
+which port calls it — there is no `FHIR_MARIADB_CHAIN_KEY`. Setting a
+variable by that name has no effect and fails silently by doing nothing; if
+you want env-based keying for this port, either set the `SQLITE`-named
+variables anyway (they are read the same way by every port) or build the
+`KeyRing` explicitly with `KeyRing::new`/`KeyRing::from_files` and skip
+`from_env` entirely.
+
+## What the deployment (or your calling code) must provide
+
+fhir-mariadb does **not** do these, and a caller that skips them is not safe
+to put patient data behind:
 
 | Obligation | Why it is not here |
 | --- | --- |
-| **Authentication** | Identity belongs to the perimeter (plan D13). fhir-mariadb accepts a principal asserted by a trusted proxy and records it; it verifies nothing. |
-| **Authorization** | There is no scope check, no compartment restriction, no `meta.security` label enforcement, and no consent evaluation. Any caller who reaches the API can read and write anything in it. |
-| **TLS to clients** | Terminate at the perimeter, or use the in-process `tls` feature. |
-| **Rate limiting per identity** | fhir-mariadb bounds concurrency and request cost, not per-user quotas. |
-| **Network isolation** | The API, `/metrics`, and the database link should not share a network with untrusted clients. |
-| **Backup and retention** | Your engine's own tooling — `mariadb-dump`, binary-log replication, binlog replay for PITR. fhir-mariadb guarantees a consistent snapshot is a valid store; it does not schedule anything. |
-| **Key management and at-rest encryption** | Filesystem, volume, or cloud-provider encryption. fhir-mariadb stores no secrets and manages no keys. |
+| **Authentication and authorization** | There is no principal, no scope check, no `meta.security` enforcement, and no consent evaluation anywhere in this crate. `Audit::actor` is whatever the caller passes in — `Audit::unattributed()` if nothing is known — and the store trusts it completely. |
+| **Optimistic concurrency, `ETag`/`If-Match`, conditional create/delete** | None of it exists. `StoreError::Conflict` and the `CondCreate`/`CondDelete`/`TxOp`/`TxOutcome` types are re-exported from `fhir-store` for API compatibility with ports that do implement them, but nothing in `fhir-mariadb-store` constructs or returns them. A concurrent `put` to the same id is serialized by the `FOR UPDATE` lock above, not rejected — the second writer wins, silently, in write order. |
+| **Multi-operation transactions across resources** | `put`/`delete`/`purge` are each one resource, one transaction. There is no `transact`/`transact_audited` here. |
+| **A tamper-evidence checkpoint or external witness** | `verify_audit` exists and is complete; there is no `emit_checkpoint`, `chain_witness`, or `resign_history` in this crate. If you need an off-box witness of the chain head, you have to build it yourself from `verify_audit`'s output. |
+| **TLS to your own callers** | `FHIR_MARIADB_SSL_MODE`/`FHIR_MARIADB_SSL_CA` secure the link to MariaDB. They say nothing about how your process is reached. |
+| **Rate limiting, network isolation, backup scheduling, key management, at-rest encryption** | All deployment-perimeter concerns; see [Operations](operations.md) for what this crate does about backups (nothing beyond "a snapshot of plain MariaDB is a valid store") and what it does not. |
 
 ## What neither provides yet
 
@@ -48,198 +72,93 @@ Stated rather than implied, so nobody discovers it during an audit:
   IPS, or any implementation guide.
 - **FHIRPath invariants.** The `fhir` crate enforces three of 314.
 - **Referential integrity across resources.** FHIR permits dangling
-  references and so does fhir-mariadb (M3.10).
+  references and so does fhir-mariadb (`M3.10`).
 
-## Configuring the boundary
+## Configuring TLS to the database
 
-A deployment that means it:
+The vocabulary is MariaDB's, not libpq's — this port used to read `PGSSLMODE`
+because the text was copied from `fhir-postgresql`, and a deployment that set
+that variable believing it took effect would get a silent plaintext link,
+which is exactly the failure `O10.7` exists to prevent (audit **F-54**).
 
 ```sh
-export PGSSLMODE=require PGSSLROOTCERT=/etc/ssl/pg-ca.pem
-fhir-mariadb serve \
-  --bind 0.0.0.0:8080 \
-  --base-url https://fhir.example.org \
-  --trust-proxy --allowed-host fhir.example.org \
-  --principal-header X-Fhir-Mariadb-Principal \
-  --reason-header X-Fhir-Mariadb-Purpose \
-  --require-principal
+export FHIR_MARIADB_SSL_MODE=VERIFY_IDENTITY   # the default; shown for clarity
+export FHIR_MARIADB_SSL_CA=/etc/ssl/mariadb-ca.pem
 ```
 
-Each flag is load-bearing:
-
-- Without `--base-url`, paging links are built from the address fhir-mariadb bound,
-  which behind a proxy is wrong. With it, no request header can change them.
-- `--trust-proxy` is what makes `--principal-header` mean anything. Without
-  it the header is *ignored*, not honored — otherwise any client could name
-  itself anyone. Only set it when a proxy you control is the only route in.
-- `--require-principal` turns an unattributable request into a 401. Without
-  it, writes are recorded as `unauthenticated`, which is honest but not
-  useful.
-
-## Choosing an audit mode
-
-`--audit-mode` decides how a disclosure record reaches the log, and the
-choice is a real trade rather than a tuning knob:
-
-| Mode | What it costs | What it risks |
-| --- | --- | --- |
-| `sync` (default) | A round trip on every read. | Nothing: the record commits before the response is sent. |
-| `async` | An in-memory enqueue. | Records still queued when the process is killed are lost. Graceful shutdown drains them; `SIGKILL` does not. |
-| `off` | Nothing. | Everything this section is about. Requires `--allow-unaudited`. |
-
-`sync` is the default because the failure it prevents cannot be repaired
-afterwards. A disclosure with no record is indistinguishable, later, from a
-disclosure that never happened, and no amount of investigation recovers the
-difference.
-
-In **every** mode, a disclosure that cannot be recorded is refused rather
-than served: a saturated queue answers 503. Four counters per version make
-the difference visible on `/metrics`:
-
-- `refused` — reads turned away to keep the log honest. Non-zero means the
-  system is working as designed under strain.
-- `lost` — records the writer could not commit *after* the data was served.
-  **Non-zero is an incident**: disclosures happened that the log does not
-  show.
-
-Alert on `lost` above zero. Alert on sustained `refused` as a capacity
-signal.
+`FHIR_MARIADB_SSL_MODE` takes MariaDB's own four values: `DISABLED`,
+`REQUIRED` (encrypts, validates nothing — weaker than it sounds), `VERIFY_CA`,
+and `VERIFY_IDENTITY` (the default). `PREFERRED` is a fifth value MariaDB's
+own client accepts and this port's driver, `mysql_async`, cannot express —
+`SslOpts` makes TLS mandatory or nothing, with no third state — so `PREFERRED`
+is a startup error naming the two modes that do exist, rather than a silent
+choice of one.
 
 ## Verifying the audit trail
 
-The hash chain is checked on demand, not on every read:
-
-```sh
-fhir-mariadb verify-audit --fhir-version r5
+```rust,ignore
+let breaks = store.verify_audit().await?;
 ```
 
-It recomputes every resource's chain and exits nonzero on the first break,
-naming the resource and version. Rows written before the audit columns
-existed carry no hash; they are reported as the point a chain begins, not as
-tampering.
+Recomputes every resource's SHA-256 and SHA3-256 chains from the stored
+history rows and returns every `ChainBreak` found — empty means "nothing in
+history has been altered since it was written". A row predating the chain
+columns has no stored hash and is skipped rather than reported: calling that
+tampering would train an operator to ignore real breaks. There is no CLI
+command for this; it is a method a caller invokes.
 
-### What each layer proves
+### What each layer actually proves here
 
-Three layers, and they stop different things. Conflating them is how a
-deployment ends up believing it has protection it does not.
-
-| Layer | Stops | Does not stop |
-| --- | --- | --- |
-| SHA-256 + SHA3-256 digests | Careless or unaware modification: a migration, a stray `UPDATE`, a row restored from the wrong backup. Two design families, so one line of cryptanalysis cannot take both. | An attacker who knows the pre-image format — it is public, and the digests are unkeyed, so they can recompute them. |
-| `HMAC-SHA-256` tag | Forgery. Producing a valid tag needs a key held in the application process and never written to the database, so SQL write access is not enough. | A row being **deleted**. |
-| Chain witness, recorded off-box | Truncation and wholesale deletion. | — |
-
-That second row is the one worth dwelling on. Without a key, a hash chain
-proves only that nothing changed *by accident*: anyone who can write the rows
-can also write matching digests. Set `FHIR_MARIADB_CHAIN_KEY` and that stops being
-true.
-
-```sh
-# 32 bytes minimum. A placeholder like "changeme" would produce tags an
-# attacker could reproduce by guessing.
-export FHIR_MARIADB_CHAIN_KEY=$(openssl rand -hex 32)
-export FHIR_MARIADB_CHAIN_KEY_ID=k1
-```
-
-The key must not be readable by the database role. A key stored where the
-attacker already has write access protects nothing.
-
-**Rotation is additive.** Each tag records the key that signed it
-(`k1:9f86d0…`), so turning a key over does not invalidate history:
-
-```sh
-export FHIR_MARIADB_CHAIN_KEY=$(openssl rand -hex 32)   # the new signing key
-export FHIR_MARIADB_CHAIN_KEY_ID=k2
-export FHIR_MARIADB_CHAIN_KEYS_RETIRED="k1=<previous hex>"   # still verifies
-```
-
-Drop a retired key and rows signed with it become *unverifiable*, which
-`verify-audit` reports as exactly that — not as tampering. A missing tag, a
-tag naming a key you do not hold, and a malformed tag are each reported as
-what they are. Only a mismatch is a finding. Reporting a key-distribution
-problem as a forgery would burn an incident response.
-
-### The witness
-
-The tag stops a row being rewritten. It says nothing about a row that is
-simply gone: a chain missing its last version verifies perfectly, because
-nothing left behind refers to what was removed.
-
-```sh
-fhir-mariadb chain-witness --fhir-version r5   # e.g. k1:3f2a…  or  1042:9c81…
-```
-
-Record it somewhere the database cannot reach — another host, a ticket, a log
-you do not administer — and compare periodically. It is deterministic over
-unchanged history, so a difference means a chain gained a version, lost one,
-or had its head altered.
-
-**If you already ship logs, you already have somewhere to put it.** Every
-checkpoint is emitted as an INFO line on its own `audit_checkpoint` target:
-at startup, after any erasure, and every `--checkpoint-interval-mins`
-(default 60; `0` disables the interval, keeping the startup and erasure
-ones).
-
-```
-INFO audit_checkpoint: chain checkpoint schema=r5 keyed=true
-     reason=startup witness=k1:3f2a8c…
-```
-
-The dedicated target is the point. Route and retain `audit_checkpoint` on its
-own schedule without keeping every other line — and because a checkpoint is
-only counts and digests, with **no PHI**, it can be kept far longer than
-ordinary application logs and stored where patient data must not go.
-
-One caveat that decides whether any of this is worth anything: a checkpoint
-is a witness only if it lands where the database cannot reach. Logs shipped
-off-host qualify. Logs written to a table in this same database, or to a disk
-the same compromised account can rewrite, do not. fhir-mariadb cannot enforce that
-and does not claim to — the guarantee belongs to your log path.
+| Layer | Stops | Does not stop | Status in this crate |
+| --- | --- | --- | --- |
+| SHA-256 + SHA3-256 digests | Careless or unaware modification — a migration, a stray `UPDATE` that got past the trigger, a row restored from the wrong backup. Two design families, so one line of cryptanalysis cannot take both. | An attacker who knows the pre-image format, which is public and unkeyed. | Always on; every history row carries both. |
+| HMAC tag (`row_mac`) | Forgery, if the caller wired a signing key in. Producing a valid tag needs a key held only in the calling process, never written to the database. | A row being deleted outright. | Off by default. Requires `with_chain_keys(KeyRing::new(...))` or an equivalent explicit call — see the caveat above about `from_env`'s variable names. |
+| `fhir_mariadb_countersign` table | Nothing yet. | — | The table exists, and `verify_audit` reads it as a fallback when a row's own `row_mac` is absent or signed by an unheld key — but **nothing in this crate inserts into it**. It is dead weight until a caller starts writing counter-signatures somewhere the primary history table's own compromise would not also compromise. Do not rely on it. |
+| Off-box witness (checkpoint, external log) | Truncation and wholesale deletion, if you build it. | — | Not provided. `verify_audit`'s report is the only primitive; recording and comparing it externally is on you. |
 
 ## Erasure versus append-only history
 
-GDPR Article 17 says a record must be removable. Everything above says history
-must not be. These genuinely conflict, and fhir-mariadb resolves it in one direction,
-explicitly:
+GDPR Article 17 says a record must be removable. Everything above says
+history must not be. fhir-mariadb resolves this in one direction, explicitly:
 
-```sh
-fhir-mariadb purge Patient 1234 --reason "art-17 request #4471" --allow-erasure
+```rust,ignore
+let report = store.purge("Patient", "1234", &Audit::principal("ops:jane", "cli")
+    .with_reason(Some("art-17 request #4471".into()))).await?;
+// report.existed, report.versions_erased
 ```
 
-The resource and every historical version are deleted, and a **tombstone**
-takes their place recording who erased it, when, why, and the `row_hash` the
-chain ended on. So an erased record leaves a *verifiable hole* — an auditor
-can still see that a chain existed and was deliberately terminated by a named
-person — rather than a gap indistinguishable from a resource that never
-existed.
+The resource and every historical version are deleted, and one tombstone
+row (`op = 'X'`, no `resource`) takes their place, chained from the tip that
+was erased. `verify_audit` reports a tombstone as a recorded erasure, not a
+break — a report that cried wolf on every lawful erasure is one an operator
+learns to ignore.
 
-`verify-audit` treats a tombstone as a recorded erasure, not a break. That
-distinction matters more than it looks: a tamper-evidence report that cries
-wolf on every lawful erasure is one an operator learns to ignore, at which
-point it detects nothing.
+Mechanically: `purge` sets a **session** variable, `@fhir_mariadb_erasure =
+'on'`, on the one pooled connection it holds for the whole operation, then
+deletes and clears the variable before the connection returns to the pool.
+The trigger's escape hatch checks exactly that variable
+(`ddl::append_only_triggers`), so a connection that never sets it cannot
+delete a history row no matter what SQL it runs — but application code that
+*does* set it, deliberately or by a bug that reuses this pattern, can. The
+guard is a defence against accident and against ordinary code paths, not
+against a determined attacker with equivalent access to this crate's own
+internals.
 
 Two limits to state before anyone relies on this:
 
-- **The database is not the estate.** Backups, replicas, WAL archives, and any
+- **The database is not the estate.** Backups, replicas, binlogs, and any
   downstream system that consumed the resource still hold it until they age
-  out. Promising erasure means having a plan for all of them; `purge` is one
-  step in that plan, not the plan.
-- **The guard is against accident, not against the application.** The
-  append-only trigger permits `DELETE` inside a transaction that sets
-  `fhir_mariadb.erasure`, which is how `purge` works — so application-level SQL
-  execution could do the same. The trigger stops ordinary code, migrations,
-  and stray statements from touching history at all; the tombstone and the
-  access log are what make a deliberate erasure accountable.
+  out. `purge` is one step in an erasure plan, not the whole plan.
+- **`REVOKE` is a second line, not the first.** The trigger stops ordinary
+  code, migrations, and stray statements from touching history at all,
+  independent of grants:
 
-## Grants
+  ```sql
+  REVOKE UPDATE, DELETE ON r5.* FROM 'fhir_mariadb_app'@'%';
+  GRANT SELECT, INSERT ON r5.patient_history TO 'fhir_mariadb_app'@'%';
+  -- and each other `_history` table
+  ```
 
-The append-only trigger is enforcement the application cannot bypass. Belt and
-braces, restrict the application role too:
-
-```sql
-REVOKE UPDATE, DELETE ON ALL TABLES IN SCHEMA r5 FROM fhir_mariadb_app;
-GRANT SELECT, INSERT ON r5.patient_history TO fhir_mariadb_app;  -- and each _history
-```
-
-With both in place, rewriting history requires a superuser deliberately
-disabling a trigger — an act that is itself visible in the server log.
+  With both in place, rewriting history requires a superuser deliberately
+  disabling a trigger — an act that is itself visible in the server's own
+  log, independent of anything this crate records.

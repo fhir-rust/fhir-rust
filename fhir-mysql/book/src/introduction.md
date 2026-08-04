@@ -42,17 +42,31 @@ single generic engine shreds and reconstructs every resource type by
 walking the generated map. Nothing about a specific resource is
 hand-written.
 
-## Why not JSONB?
+## Why not JSON storage?
 
-JSONB storage makes writing FHIR trivial and everything downstream harder:
-queries become path-spelunking, the planner sees no per-column statistics,
-value typing is enforced nowhere, and analytical SQL reads like an
-apology. For a clinical system the important operations are reads,
-searches, joins, and audits — exactly what normalized storage is good at.
+MySQL has a native `JSON` type, and it is deliberately not used for live
+data (it is used nowhere in the schema except as an *unused* option — see
+[storage model](storage-model.md)). JSON-column storage makes writing FHIR
+trivial and everything downstream harder: queries become path-spelunking,
+the planner sees no per-column statistics, value typing is enforced nowhere,
+and analytical SQL reads like an apology. For a clinical system the important
+operations are reads, searches, joins, and audits — exactly what normalized
+storage is good at. `JSON` is also specifically unsafe for the one place this
+project used to consider it: it re-normalizes on write, so the bytes read
+back would not be the bytes a hash-chain signed (`M14.0g`, `M14.19`).
 
 ## Status
 
-Functional end to end and pre-release. See `tasks.md` in the repository
-for the milestone ledger and `doc/benchmarks.md` for measured numbers
-(6,146 resources/s bulk load; 1.18 ms average reconstruction reads;
-index-verified searches at 100k resources).
+**Store** level (`C0.8`): the generator, the shred/reconstruct engine, the
+MySQL 8.4 store, search, history, and the audit chain all work, and a live
+MySQL 8.4 gate exercises 102 tests in CI, including a TLS suite — see the
+[conformance matrix](../../../spec/databases/conformance-matrix.md) for what
+that claim does and does not cover, and `doc/benchmarks.md` for what has
+actually been measured on this engine versus what that page still owes
+(**F-64**): install throughput and bulk-load numbers have not been measured
+here — the previous version of this page carried `fhir-postgresql`'s own
+figures with the crate name substituted, including a `bench.rs` harness this
+port does not have. What *is* measured: schema scale (7,355 tables for R5),
+search-parameter compilation (94.8% of R5's SearchParameters, corrected to
+92.4% pending a regenerated asset — see [Search](search.md)), and full-corpus
+round-trip (7,399/7,399 official examples, lossless, at the map layer).

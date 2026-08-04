@@ -1,7 +1,9 @@
 # The storage model
 
-The full normative rules are in `spec/03-storage-model.md`; this chapter is the
-tour.
+The full normative rules are in
+[`spec/databases/03-storage-model.md`](../../../spec/databases/03-storage-model.md);
+this port's departures and bindings are in the
+[dialect annex](../../spec/14-postgresql-dialect.md). This chapter is the tour.
 
 ## Base tables and child tables
 
@@ -26,6 +28,58 @@ into the same table (QuestionnaireResponse's `item.item` and
 `item.answer.item`), the second pushes negated ordinals so paths can never
 collide.
 
+This is what `init` (`store.init(...)`, [Getting started](getting-started.md))
+actually emits for `r5.patient` and its `name` child table — generated
+directly from `fhir-postgresql-map::ddl::create_table` against the bundled R5
+map, not hand-typed:
+
+```sql
+CREATE TABLE "r5"."patient" (
+  "id" text PRIMARY KEY,
+  "version_id" bigint NOT NULL,
+  "last_updated" timestamptz NOT NULL,
+  "meta_version_id" text,
+  "meta_last_updated" text,
+  "meta_last_updated_sort" timestamptz,
+  "active" boolean,
+  "gender" text,
+  "birth_date" text,
+  "birth_date_sort" date,
+  "deceased_boolean" boolean,
+  "deceased_date_time" text,
+  "deceased_date_time_sort" timestamptz,
+  "marital_status_text" text,
+  "managing_organization_ref_type" text,
+  "managing_organization_ref_id" text,
+  "managing_organization_ref_url" text
+  -- … one column per scalar and flattened non-repeating element
+);
+
+CREATE TABLE "r5"."patient_name" (
+  "rid" text NOT NULL REFERENCES "r5"."patient" ("id") ON DELETE CASCADE,
+  "ords" smallint[] NOT NULL,
+  "use" text,
+  "text" text,
+  "family" text,
+  "period_start" text,
+  "period_start_sort" timestamptz,
+  "period_end" text,
+  "period_end_sort" timestamptz,
+  "family_norm" text COLLATE "C",
+  "text_norm" text COLLATE "C",
+  PRIMARY KEY ("rid", "ords")
+);
+```
+
+Two things worth noticing that generated SQL, rather than prose, makes
+plain: **there are no `CHECK` constraints and no PostgreSQL `enum` types**
+anywhere in `ddl.rs` — `gender` is `text`, not `patient_gender_enum`.
+Required-binding value sets are not enforced by the schema (see the
+[trust boundary](trust-boundary.md)). And `family_norm`/`text_norm` are the
+materialized, case- and accent-folded companion columns search actually
+compares (`M14.20`) — every non-`:exact` string search reads these, never
+`family`/`text` with a runtime `lower()`.
+
 ## Types
 
 Booleans, integers, and decimals map to `boolean`, `integer`/`bigint`,
@@ -34,9 +88,13 @@ stored **verbatim as text** — `"2026-07"` is a legal FHIR date no native
 type can hold — with a derived `*_sort` column (`date`/`timestamptz`) for
 ordering and search. References split into `…_ref_type` / `…_ref_id`
 (joinable) with `…_ref_url` for absolute, urn, and fragment forms.
-Choice elements (`value[x]`) become one column set per allowed type; the
-open ~54-type choices are force-split into their own tables to respect
-PostgreSQL's column limit.
+Choice elements (`value[x]`) become one column set per allowed type; a wide
+choice (`Extension.value[x]`, `~54` allowed types) is force-split into its
+own child table once its columns would push the parent past `SPLIT_WIDTH`
+(150 columns, `M14.2`) — a conservative shared budget the six ports agree on,
+not PostgreSQL's own 1,600-column ceiling, which this budget stays far below
+on purpose so the same generated schema stays legal on the narrower engines
+too.
 
 ## Extensions without JSONB
 

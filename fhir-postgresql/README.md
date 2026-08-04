@@ -53,9 +53,13 @@ JSONB storage makes writing FHIR easy and querying it painful. Normalized
 storage inverts that trade, and for a production clinical system the trade is
 right:
 
-- **Integrity the database enforces** — enum columns backed by FHIR value
-  sets, `CHECK` constraints on choice elements, typed dates and decimals,
-  reference columns that can be joined and (optionally) constrained.
+- **Integrity the database enforces** — typed dates and decimals, reference
+  columns that can be joined and (optionally) constrained. Not (yet)
+  enforced at the schema level: no `CREATE TYPE` enums backed by FHIR value
+  sets, no `CHECK` constraints on choice elements — `gender`, `status`, and
+  every other bound code is plain `text`, validated only in application
+  code (`ddl.rs`'s `col_sql` emits no such constraint; corrected here after
+  it was found to overclaim during a documentation-accuracy pass, 2026-08-04).
 - **SQL that reads like the domain** — `SELECT family FROM r5.patient_name`,
   no `->>'…'` path spelunking, and the query planner sees real column
   statistics.

@@ -48,10 +48,16 @@ use fhir::r5::types::Quantity;
 
 let mut obs = Observation::default();
 obs.value = Some(ObservationValue::Quantity(Box::new(Quantity {
-    value: Some(fhir::r5::types::Decimal(serde_json::Number::from(98))),
+    value: Some(fhir::r5::types::Decimal::new("98").expect("a FHIR decimal")),
     ..Default::default()
 })));
 ```
+
+`Decimal`'s inner value is private on purpose: the type stores the *lexical*
+form (`"98"`, not the `f64` `98.0`), so the only way in is `Decimal::new`,
+which validates the FHIR `decimal` grammar first. See
+[JSON serialization](json-serialization.md) and `fhir-core/src/decimal.rs`
+(spec R2.2) for why.
 
 See [JSON serialization](json-serialization.md) for the wire format.
 

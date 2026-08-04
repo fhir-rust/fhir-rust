@@ -26,12 +26,25 @@ SELECT rid FROM r5.patient_ext
 
 Tips:
 
-- `ords = '{1}'` addresses the first instance of a repeating element;
-  `ords[1] = 1` matches any descendant of the first instance.
-- Temporal comparisons belong on the `*_sort` columns; the lexical column
-  preserves what the client sent.
-- `fhir-mariadb transform <file>` prints the exact rows any resource produces —
-  the fastest way to learn a table layout. The generated map assets also
-  carry a FHIR-path annotation for every table and column.
-- Write queries against one version schema at a time; `r4` and `r5` name
-  tables identically where the specs agree.
+- `ords = '{1}'` addresses the first instance of a repeating element exactly,
+  and survives unchanged from the PostgreSQL idiom this book started from.
+  **`ords[1] = 1` does not** — MariaDB has no array type, `ords` is a
+  `VARBINARY(255)` column holding the literal image (`{1,2}`, `{}`,
+  `{-1,3}`), and there is no subscript operator over it. The nearest
+  equivalent for "any descendant of the first instance" is a prefix match on
+  that stored image: `ords LIKE '{1,%'`. This is the one user-visible
+  regression from the PostgreSQL storage model, and it is deliberate — see
+  `M14.13` in the [dialect annex](../../spec/14-mariadb-dialect.md).
+- Temporal and decimal comparisons belong on the derived `*_sort` columns
+  (`DATE`/`DATETIME(6)`/`DOUBLE`); the lexical `TEXT` column preserves what
+  the client sent, verbatim, and is what a reconstruction reads.
+- There is no `fhir-mariadb transform` or any other CLI command — this
+  library ships no binary (`C0.17`). To learn a table layout, read the
+  generated map asset directly (`fhir-mariadb-map/assets/*.json.gz`, decoded
+  with `RelMap::from_gz_bytes`): every table and column carries a FHIR-path
+  annotation.
+- Write queries against one FHIR-version database at a time; `r4` and `r5`
+  name tables identically where the specs agree. MariaDB has no schema
+  concept separate from a database, so `r5.patient` is `database.table`, not
+  `schema.table` (`M14.21`) — the qualified-name shape reads the same either
+  way.

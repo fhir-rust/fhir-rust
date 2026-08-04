@@ -37,8 +37,11 @@ Three crates, no binary:
 Each FHIR version installs into its own MariaDB database (`r5`, `r4`, `r3`);
 MariaDB has no separate schema concept, so a database *is* the namespace.
 
-The chapters that follow describe the storage model, the search compiler and
-the trust boundary. Those are accurate in substance; where they name
-PostgreSQL, or a `serve` command, or an HTTP status code, read the banner in
-the [Introduction](introduction.md) — that text has not been corrected yet
-(audit **F-56**).
+The chapters that follow describe the storage model, the search compiler, and
+the trust boundary, rewritten against this port's own dialect annex
+(`spec/14-mariadb-dialect.md`) and source rather than substituted from
+`fhir-postgresql`'s text. If anything below still names PostgreSQL, a `serve`
+command, or an HTTP status code as this crate's own behaviour, that is a
+regression from this pass, not an acknowledged gap — the
+[conformance matrix](../../../spec/databases/conformance-matrix.md) is the
+document to check against.

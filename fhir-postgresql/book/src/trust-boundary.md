@@ -1,124 +1,88 @@
 # The trust boundary
 
-fhir-postgresql is a component, not a system. It cannot make a deployment compliant,
-and it must not be the reason a deployment cannot be. This chapter states, in
-one place, what fhir-postgresql guarantees and what the deployment around it has to
-provide — because a boundary nobody can point at is not a boundary (spec
-PR12.8).
+fhir-postgresql is a library, not a system, and a narrower one than earlier
+versions of this chapter suggested: it is a `Store` you call from Rust, not a
+server with endpoints, headers, or flags. It cannot make a deployment
+compliant, and it must not be the reason a deployment cannot be. This
+chapter states, in one place, what calling `Store` genuinely guarantees, what
+is offered as a mechanism the caller must actually invoke, and what the
+surrounding application has to provide entirely on its own (spec `PR12.8`).
 
-## What fhir-postgresql guarantees
+## What `Store` guarantees unconditionally
+
+These hold on every call, with no setup beyond `Store::connect` — verified
+either live (the store's own test suite: `concurrency.rs`, `audit.rs`,
+`redaction.rs`) or by reading the code path directly.
 
 | Property | How | Spec |
 | --- | --- | --- |
-| Writes are transactional and versioned | one transaction per write, monotonic `version_id`, append-only history | R4.4, H5.1 |
-| Reads see one consistent snapshot | every multi-statement read runs `REPEATABLE READ READ ONLY` | R4.5 |
-| Conditional interactions are atomic | criteria-hash advisory lock, match and write in one transaction | A7.10 |
-| Optimistic concurrency | `ETag` / `If-Match`, 412 on mismatch, honored inside bundles too | D11, A7.9 |
-| Every change records who made it | audit envelope written by the same statement as the change | M3.15 |
-| Every read is recorded | disclosure row in `fhir_postgresql_access_log` | PR12.5 |
-| History cannot be quietly rewritten | per-resource SHA-256 chain plus a database trigger refusing UPDATE/DELETE | M3.16, M3.17 |
-| PHI is encrypted in transit to the database | rustls, `sslmode` honored, refusal to serve non-loopback over a plaintext link | O10.7 |
-| Responses are not cached | `Cache-Control: no-store` and friends on every response | A7.8 |
-| Emitted URLs are not attacker-controlled | configured `--base-url`; forwarded headers only under `--trust-proxy` | A7.7 |
-| Nothing is silently dropped | unknown elements rejected; `_include` truncation warns in the bundle | D12, P6.7 |
-| Diagnostics do not leak stored data | client-safe errors are a separate type from internal ones | A7.11 |
+| Writes are transactional and versioned | one transaction per write, monotonic `version_id`, append-only history (`M14.16`) | R4.4, H5.1 |
+| Reads see one consistent snapshot | every multi-table read runs in one `REPEATABLE READ READ ONLY` transaction (`M14.15`) | R4.5 |
+| Conditional interactions are race-free | criteria hashed into a `pg_advisory_xact_lock`, match and write share one transaction (`conditional_create`/`conditional_delete`) | A7.10 |
+| Optimistic concurrency is enforced, including inside a transaction Bundle | `expected_version` checked against the locked row; mismatch is `StoreError::Conflict`, not a silent overwrite; `transact_audited` applies the same check per op | D11, A7.9 |
+| Every write records who made it | `put`/`delete` without an explicit `Audit` still write one, as `actor = "unauthenticated"` — the column is never blank | M3.15 |
+| History cannot be quietly rewritten | per-resource SHA-256 **and** SHA-3-256 chain, plus a database trigger refusing `UPDATE`/`DELETE` on `*_history` outside a declared erasure | M3.16, M3.17 |
+| PHI is encrypted in transit to the database, by default | `PGSSLMODE` defaults to `require` — verifies certificate and hostname (`M14.27`, **F-17**) | O10.7 |
+| Client-safe errors are a distinct Rust type from internal diagnostics | `StoreError::Unsupported`/`Conflict` name what the caller sent; `StoreError::Pg`/`Other` may name schema or stored values and are meant for logs, not for echoing back | A7.11 |
+| Unrecognized input is rejected, not silently dropped | `shred` returns `ShredError::At{path, msg}` naming the offending element path rather than ignoring it | D12 |
 
-## What the deployment must provide
+## What `Store` offers but does not do for you
 
-fhir-postgresql does **not** do these, and a deployment that skips them is not safe to
-put patient data in:
+These need the caller to actually call them. Nothing above implies they
+happen automatically, and assuming otherwise is the gap this section exists
+to close.
+
+- **Disclosure logging (`PR12.5`) is opt-in, not automatic.** `get`,
+  `search`, `history`, and `vread` do **not** call `log_access` internally —
+  grep `crates/fhir-postgresql-store/src/lib.rs` and `log_access` appears
+  exactly once, at its own definition. A caller that wants "every read is
+  recorded" has to call `store.log_access(&AccessRecord { .. })` (or
+  `log_access_batch`) itself, after every read it wants attested. An earlier
+  version of this chapter listed disclosure logging as something `Store`
+  guarantees; it does not — it makes the guarantee cheap to build, not free.
+- **The hash chain is unkeyed unless you key it**, and the *correct*
+  environment variable to do so, even on this engine, is
+  `FHIR_SQLITE_CHAIN_KEY` — see [Operations](operations.md#keying-the-chain)
+  for why, and for `with_chain_keys` as the more robust route. Unkeyed, the
+  chain still detects careless modification; it does not stop a forger who
+  has SQL write access and knows the public pre-image format.
+- **Erasure (`purge`) is a call you make, not a policy the library enforces
+  for you.** See [Operations](operations.md#erasure) for what it does and
+  its two hard limits (the database is not the estate; the append-only guard
+  stops accidents, not a determined application).
+- **Checkpoints are not automatic on a schedule.** `emit_checkpoint(reason)`
+  is a call your code makes (`purge` calls it once, for you, after an
+  erasure); there is no background timer in this crate.
+
+## What the deployment must provide entirely on its own
+
+Nothing here does these, and an application built on `Store` that skips them
+is not safe to put patient data behind:
 
 | Obligation | Why it is not here |
 | --- | --- |
-| **Authentication** | Identity belongs to the perimeter (plan D13). fhir-postgresql accepts a principal asserted by a trusted proxy and records it; it verifies nothing. |
-| **Authorization** | There is no scope check, no compartment restriction, no `meta.security` label enforcement, and no consent evaluation. Any caller who reaches the API can read and write anything in it. |
-| **TLS to clients** | Terminate at the perimeter, or use the in-process `tls` feature. |
-| **Rate limiting per identity** | fhir-postgresql bounds concurrency and request cost, not per-user quotas. |
-| **Network isolation** | The API, `/metrics`, and the database link should not share a network with untrusted clients. |
-| **Backup and retention** | Plain PostgreSQL (`pg_dump`, PITR). fhir-postgresql guarantees a consistent snapshot is a valid store; it does not schedule anything. |
-| **Key management and at-rest encryption** | Filesystem, volume, or cloud-provider encryption. fhir-postgresql stores no secrets and manages no keys. |
+| **Authentication** | `Audit::principal(actor, source)` records an identity; it never establishes one. `Store` trusts whatever the caller passes. |
+| **Authorization** | There is no scope check, no compartment restriction, no `meta.security` enforcement, and no consent evaluation anywhere in this crate. Any caller with a `Store` value can read and write anything the schema holds. |
+| **A network surface at all** | This crate opens a `tokio-postgres` connection to PostgreSQL; it does not listen on a socket. TLS *to clients*, rate limiting per identity, and request-size limits belong to whatever sits in front — `fhir-loco` or your own service. |
+| **Wiring disclosure logging to every read** | The mechanism exists (`log_access`); calling it on every `get`/`search`/`history`/`vread` is the caller's job, as above. |
+| **Backup scheduling and retention policy** | Plain PostgreSQL (`pg_dump`, PITR) applies unchanged (`M14.28`); nothing here schedules anything. |
+| **Key management and at-rest encryption** | Filesystem, volume, or cloud-provider encryption, and wherever you keep the chain-signing key file. `Store` stores no secrets itself. |
 
-## What neither provides yet
+## What neither this crate nor `fhir` provides yet
 
 Stated rather than implied, so nobody discovers it during an audit:
 
-- **Terminology validation.** Required-binding `CHECK` constraints only. No
-  value-set expansion, no SNOMED/LOINC/ICD membership checks.
+- **Terminology validation.** No `CHECK` constraint, enum type, or anything
+  else in `ddl.rs` enforces a required value-set binding — `gender` is a
+  plain `text` column, not a constrained one. No SNOMED/LOINC/ICD membership
+  checks exist anywhere in this port.
 - **Profile conformance.** Base-specification structure only — not US Core,
   IPS, or any implementation guide.
-- **FHIRPath invariants.** The `fhir` crate enforces three of 314.
 - **Referential integrity across resources.** FHIR permits dangling
-  references and so does fhir-postgresql (M3.10).
+  references and so does this schema (`M3.10`) — child tables carry no
+  foreign key to the resource they reference, only to their own parent row.
 
-## Configuring the boundary
-
-A deployment that means it:
-
-```sh
-export PGSSLMODE=require PGSSLROOTCERT=/etc/ssl/pg-ca.pem
-fhir-postgresql serve \
-  --bind 0.0.0.0:8080 \
-  --base-url https://fhir.example.org \
-  --trust-proxy --allowed-host fhir.example.org \
-  --principal-header X-Fhir-Postgresql-Principal \
-  --reason-header X-Fhir-Postgresql-Purpose \
-  --require-principal
-```
-
-Each flag is load-bearing:
-
-- Without `--base-url`, paging links are built from the address fhir-postgresql bound,
-  which behind a proxy is wrong. With it, no request header can change them.
-- `--trust-proxy` is what makes `--principal-header` mean anything. Without
-  it the header is *ignored*, not honored — otherwise any client could name
-  itself anyone. Only set it when a proxy you control is the only route in.
-- `--require-principal` turns an unattributable request into a 401. Without
-  it, writes are recorded as `unauthenticated`, which is honest but not
-  useful.
-
-## Choosing an audit mode
-
-`--audit-mode` decides how a disclosure record reaches the log, and the
-choice is a real trade rather than a tuning knob:
-
-| Mode | What it costs | What it risks |
-| --- | --- | --- |
-| `sync` (default) | A round trip on every read. | Nothing: the record commits before the response is sent. |
-| `async` | An in-memory enqueue. | Records still queued when the process is killed are lost. Graceful shutdown drains them; `SIGKILL` does not. |
-| `off` | Nothing. | Everything this section is about. Requires `--allow-unaudited`. |
-
-`sync` is the default because the failure it prevents cannot be repaired
-afterwards. A disclosure with no record is indistinguishable, later, from a
-disclosure that never happened, and no amount of investigation recovers the
-difference.
-
-In **every** mode, a disclosure that cannot be recorded is refused rather
-than served: a saturated queue answers 503. Four counters per version make
-the difference visible on `/metrics`:
-
-- `refused` — reads turned away to keep the log honest. Non-zero means the
-  system is working as designed under strain.
-- `lost` — records the writer could not commit *after* the data was served.
-  **Non-zero is an incident**: disclosures happened that the log does not
-  show.
-
-Alert on `lost` above zero. Alert on sustained `refused` as a capacity
-signal.
-
-## Verifying the audit trail
-
-The hash chain is checked on demand, not on every read:
-
-```sh
-fhir-postgresql verify-audit --fhir-version r5
-```
-
-It recomputes every resource's chain and exits nonzero on the first break,
-naming the resource and version. Rows written before the audit columns
-existed carry no hash; they are reported as the point a chain begins, not as
-tampering.
-
-### What each layer proves
+## What each layer of the hash chain proves
 
 Three layers, and they stop different things. Conflating them is how a
 deployment ends up believing it has protection it does not.
@@ -126,120 +90,37 @@ deployment ends up believing it has protection it does not.
 | Layer | Stops | Does not stop |
 | --- | --- | --- |
 | SHA-256 + SHA3-256 digests | Careless or unaware modification: a migration, a stray `UPDATE`, a row restored from the wrong backup. Two design families, so one line of cryptanalysis cannot take both. | An attacker who knows the pre-image format — it is public, and the digests are unkeyed, so they can recompute them. |
-| `HMAC-SHA-256` tag | Forgery. Producing a valid tag needs a key held in the application process and never written to the database, so SQL write access is not enough. | A row being **deleted**. |
-| Chain witness, recorded off-box | Truncation and wholesale deletion. | — |
+| `HMAC-SHA-256` tag (needs a configured key — see above) | Forgery. Producing a valid tag needs a key held outside the database, never written to it, so SQL write access alone is not enough. | A row being **deleted** wholesale. |
+| Chain witness, recorded off-box (`chain_witness`) | Truncation and wholesale deletion. | Anything, if the witness is stored somewhere the same attacker can also reach. |
 
-That second row is the one worth dwelling on. Without a key, a hash chain
-proves only that nothing changed *by accident*: anyone who can write the rows
-can also write matching digests. Set `FHIR_POSTGRESQL_CHAIN_KEY` and that stops being
-true.
+Without a key, a hash chain proves only that nothing changed *by accident*:
+anyone who can write the rows can also write matching digests. The witness
+closes a different gap than the tag does — a chain missing its last version
+still verifies perfectly on its own, because nothing left behind refers to
+what was removed, which is exactly why a value recorded outside the database
+matters. See [Operations](operations.md#the-hash-chain-verifying-witnessing-keying-re-signing)
+for the calls themselves.
 
-```sh
-# 32 bytes minimum. A placeholder like "changeme" would produce tags an
-# attacker could reproduce by guessing.
-export FHIR_POSTGRESQL_CHAIN_KEY=$(openssl rand -hex 32)
-export FHIR_POSTGRESQL_CHAIN_KEY_ID=k1
-```
+Rotation is additive by design: each tag records the key id that signed it,
+so retiring a key does not invalidate history signed under it — until that
+key is actually dropped from the `KeyRing`, at which point those rows become
+*unverifiable*, which `verify_audit` reports as exactly that, not as
+tampering. Reporting a key-distribution gap as a forgery would burn an
+incident response on nothing.
 
-The key must not be readable by the database role. A key stored where the
-attacker already has write access protects nothing.
+## Grants, as a defense-in-depth measure
 
-**Rotation is additive.** Each tag records the key that signed it
-(`k1:9f86d0…`), so turning a key over does not invalidate history:
-
-```sh
-export FHIR_POSTGRESQL_CHAIN_KEY=$(openssl rand -hex 32)   # the new signing key
-export FHIR_POSTGRESQL_CHAIN_KEY_ID=k2
-export FHIR_POSTGRESQL_CHAIN_KEYS_RETIRED="k1=<previous hex>"   # still verifies
-```
-
-Drop a retired key and rows signed with it become *unverifiable*, which
-`verify-audit` reports as exactly that — not as tampering. A missing tag, a
-tag naming a key you do not hold, and a malformed tag are each reported as
-what they are. Only a mismatch is a finding. Reporting a key-distribution
-problem as a forgery would burn an incident response.
-
-### The witness
-
-The tag stops a row being rewritten. It says nothing about a row that is
-simply gone: a chain missing its last version verifies perfectly, because
-nothing left behind refers to what was removed.
-
-```sh
-fhir-postgresql chain-witness --fhir-version r5   # e.g. k1:3f2a…  or  1042:9c81…
-```
-
-Record it somewhere the database cannot reach — another host, a ticket, a log
-you do not administer — and compare periodically. It is deterministic over
-unchanged history, so a difference means a chain gained a version, lost one,
-or had its head altered.
-
-**If you already ship logs, you already have somewhere to put it.** Every
-checkpoint is emitted as an INFO line on its own `audit_checkpoint` target:
-at startup, after any erasure, and every `--checkpoint-interval-mins`
-(default 60; `0` disables the interval, keeping the startup and erasure
-ones).
-
-```
-INFO audit_checkpoint: chain checkpoint schema=r5 keyed=true
-     reason=startup witness=k1:3f2a8c…
-```
-
-The dedicated target is the point. Route and retain `audit_checkpoint` on its
-own schedule without keeping every other line — and because a checkpoint is
-only counts and digests, with **no PHI**, it can be kept far longer than
-ordinary application logs and stored where patient data must not go.
-
-One caveat that decides whether any of this is worth anything: a checkpoint
-is a witness only if it lands where the database cannot reach. Logs shipped
-off-host qualify. Logs written to a table in this same database, or to a disk
-the same compromised account can rewrite, do not. fhir-postgresql cannot enforce that
-and does not claim to — the guarantee belongs to your log path.
-
-## Erasure versus append-only history
-
-GDPR Article 17 says a record must be removable. Everything above says history
-must not be. These genuinely conflict, and fhir-postgresql resolves it in one direction,
-explicitly:
-
-```sh
-fhir-postgresql purge Patient 1234 --reason "art-17 request #4471" --allow-erasure
-```
-
-The resource and every historical version are deleted, and a **tombstone**
-takes their place recording who erased it, when, why, and the `row_hash` the
-chain ended on. So an erased record leaves a *verifiable hole* — an auditor
-can still see that a chain existed and was deliberately terminated by a named
-person — rather than a gap indistinguishable from a resource that never
-existed.
-
-`verify-audit` treats a tombstone as a recorded erasure, not a break. That
-distinction matters more than it looks: a tamper-evidence report that cries
-wolf on every lawful erasure is one an operator learns to ignore, at which
-point it detects nothing.
-
-Two limits to state before anyone relies on this:
-
-- **The database is not the estate.** Backups, replicas, WAL archives, and any
-  downstream system that consumed the resource still hold it until they age
-  out. Promising erasure means having a plan for all of them; `purge` is one
-  step in that plan, not the plan.
-- **The guard is against accident, not against the application.** The
-  append-only trigger permits `DELETE` inside a transaction that sets
-  `fhir_postgresql.erasure`, which is how `purge` works — so application-level SQL
-  execution could do the same. The trigger stops ordinary code, migrations,
-  and stray statements from touching history at all; the tombstone and the
-  access log are what make a deliberate erasure accountable.
-
-## Grants
-
-The append-only trigger is enforcement the application cannot bypass. Belt and
-braces, restrict the application role too:
+The append-only trigger is enforcement the calling code cannot bypass without
+setting the erasure session variable or disabling the trigger outright —
+both are DBA-visible acts. Restricting the connecting role's own SQL grants
+is a second, independent layer, at the deployment's discretion — this crate
+does not create or manage database roles itself:
 
 ```sql
-REVOKE UPDATE, DELETE ON ALL TABLES IN SCHEMA r5 FROM fhir_postgresql_app;
-GRANT SELECT, INSERT ON r5.patient_history TO fhir_postgresql_app;  -- and each _history
+REVOKE UPDATE, DELETE ON ALL TABLES IN SCHEMA r5 FROM your_app_role;
+GRANT SELECT, INSERT ON r5.patient_history TO your_app_role;  -- and each *_history table
 ```
 
-With both in place, rewriting history requires a superuser deliberately
-disabling a trigger — an act that is itself visible in the server log.
+With both in place, rewriting history needs a role with `ALTER TABLE`
+privilege deliberately disabling a trigger — an act that is itself visible in
+the server log, not merely a bug in application code.

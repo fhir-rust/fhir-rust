@@ -1,40 +1,45 @@
 # Code generator internals
 
-The model under `src/<release>/{types,resources,codes.rs}` is **generated** from
-that release's official FHIR specification JSON in
+Each release lives in its own crate, `fhir-release-2` … `fhir-release-6`. The
+model under `fhir-release-<n>/src/{types,resources,codes.rs}` is **generated**
+from that release's official FHIR specification JSON in
 `doc/fhir-specifications/<release>/`. This chapter sketches how, for
 contributors.
 
 ## The pipeline
 
-The generator lives under `src/codegen/` and is driven by the thin binary in
-`src/main.rs`:
+The generator lives under `src/codegen/` (in the `fhir` facade crate) and is
+driven by the thin binary in `src/main.rs`:
 
 ```sh
-cargo run -- r3                    # rewrite src/r3 from the R3 definitions
-cargo run -- r4                    # rewrite src/r4 from the R4 definitions
+cargo run -- r2                    # rewrite fhir-release-2/src from the R2 (DSTU2) definitions
+cargo run -- r3                    # rewrite fhir-release-3/src from the R3 definitions
+cargo run -- r4                    # rewrite fhir-release-4/src from the R4 definitions
+cargo run -- r6                    # rewrite fhir-release-6/src from the R6 ballot definitions
 cargo run -- r5 --out tmp/out/r5   # emit R5 elsewhere, to compare
 ```
 
 It deserializes the `StructureDefinition` bundles with serde structs mirroring
-the FHIR JSON — one set for both releases, since their bundles have the same
+the FHIR JSON — one set for every release, since their bundles have the same
 structure — then plans each type and renders it, applying the uniform
 conventions (`rename_all = "camelCase"`, `skip_serializing_none`, the
 cardinality mapping).
 
-`src/r3` and `src/r4` are entirely generated and safe to rewrite. `src/r5` is not: it carries
-hand-written prose on top of generated shapes, so `cargo run -- r5` refuses to
-write there without an explicit `--out`. Everything that varies by release is
-reachable from `codegen::Version`.
+`fhir-release-2/src`, `fhir-release-3/src`, `fhir-release-4/src`, and
+`fhir-release-6/src` are entirely generated and safe to rewrite.
+`fhir-release-5/src` is not: it carries hand-written prose on top of generated
+shapes, so `cargo run -- r5` refuses to write there without an explicit
+`--out`. Everything that varies by release is reachable from
+`codegen::Version`.
 
 ## The metadata table
 
 `src/codegen/meta_gen.rs` extracts a compile-time table (`fhir::r5::meta`,
-`fhir::r4::meta`) of per-element facts — cardinality, coded-value bindings,
-`value[x]` type lists, reference target profiles, and summary membership —
-keyed by FHIR path. This
-table is the foundation the later layers build on: choice enums, coded fields,
-validation, and summary serialization all consult it.
+`fhir::r4::meta`, and so on per release) of per-element facts — cardinality,
+coded-value bindings, `value[x]` type lists, reference target profiles, and
+summary membership — keyed by FHIR path. This table is the foundation the
+later layers build on: choice enums, coded fields, validation, and summary
+serialization all consult it.
 
 ## Splicing generators (R5 only)
 
@@ -49,8 +54,8 @@ ignored test and the metadata table:
 - `choice_gen.rs` — the `value[x]` choice enums (`#[derive(FhirChoice)]`).
 - `coded_gen.rs` — `required`-binding fields retyped to `Coded<Enum>`.
 
-R3 and R4 need none of this: one `cargo run -- <release>` emits the finished
-shape directly.
+R2, R3, R4, and R6 need none of this: one `cargo run -- <release>` emits the
+finished shape directly.
 
 ## The green gate
 
@@ -58,19 +63,25 @@ Before any change is considered done, all of these must pass:
 
 ```sh
 cargo build --all-targets
-cargo test          # unit + integration
-cargo test --doc    # doctests
+cargo test                                    # unit tests + doctests (root package)
 cargo clippy --all-targets -- -D warnings
 RUSTDOCFLAGS="-D warnings" cargo doc --no-deps
 ```
 
-Only `r5` is on by default, so those commands do not exercise R3 or R4. If you
-touched the generator, the derive macros, the crate-root modules, or a generated
-tree, run the gate with those releases enabled too:
+Only `r5` is on by default, so those commands do not exercise the other
+releases. Each release crate also carries its own several-hundred doctests,
+which run only when that crate is named directly:
 
 ```sh
-cargo test --features "r3 r4 xml client"
-cargo clippy --all-targets --features "r3 r4 xml client" -- -D warnings
+for r in 2 3 4 6; do cargo test -p fhir-release-$r --doc; done
+```
+
+If you touched the generator, the derive macros, `fhir-core`, or a generated
+tree, run the gate with the other releases enabled too:
+
+```sh
+cargo test --features "r2 r3 r4 r6 xml client"
+cargo clippy --all-targets --features "r2 r3 r4 r6 xml client" -- -D warnings
 ```
 
 ## Reading a release the specification spells differently

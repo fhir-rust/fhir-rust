@@ -4,12 +4,12 @@
 
 ```toml
 [dependencies]
-fhir = "1"
+fhir = "3"
 serde_json = "1" # or any other serde data format
 ```
 
-That gives you FHIR R5. For R4 or R3, or several releases at once, see
-[FHIR releases](fhir-releases.md).
+That gives you FHIR R5. For R4, R3, or the other modelled releases (R2, R6),
+or several releases at once, see [FHIR releases](fhir-releases.md).
 
 The crate is imported as `fhir`. A `fhir::prelude` re-exports the most-used
 items (`fhir::r4::prelude` and `fhir::r3::prelude` are its counterparts):

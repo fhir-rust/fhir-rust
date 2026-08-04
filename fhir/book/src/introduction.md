@@ -2,9 +2,12 @@
 
 `fhir` is a Rust implementation of the **HL7 FHIR®** data model, together with a
 spec-driven code generator that produces it from the official FHIR
-specification JSON. Three releases are modelled: **R5 (5.0.0)** under
-`fhir::r5`, **R4 (4.0.1)** under `fhir::r4`, and **R3 (3.0.2, STU3)** under
-`fhir::r3`.
+specification JSON. Five releases are modelled, each a complete, independent
+crate: **R2 (1.0.2, DSTU2)**, **R3 (3.0.2, STU3)**, **R4 (4.0.1)**, **R5
+(5.0.0)**, and **R6 (6.0.0-ballot3)** — R6 is an unpublished ballot draft, off
+by default and outside the crate's semver promise. This guide uses **R5**
+(`fhir::r5`, the default feature) throughout; R4 and R3 work identically by
+changing one path segment — see [FHIR releases](fhir-releases.md).
 
 Fast Healthcare Interoperability Resources (FHIR, pronounced "fire") is the HL7
 standard for exchanging electronic health records. This crate lets you **build,
@@ -19,8 +22,9 @@ For each release:
   146 in R4, 117 in R3.
 - **Every complex datatype** and **primitive newtype**, serializing
   transparently to its JSON form.
-- **400+ code systems** as type-safe enums; `required`-binding fields are typed
-  as those enums via [`Coded`](terminology-and-codes.md).
+- **Code systems as type-safe enums** — 265 in R2, 386 in R3, 486 in R4, 442 in
+  R5, 459 in R6; `required`-binding fields are typed as those enums via
+  [`Coded`](terminology-and-codes.md).
 - **`value[x]` choice elements as enums** — exactly one type at compile time.
 - **Recursive validation** (`Validate`): primitive formats, cardinality,
   required-binding membership, and a subset of FHIR invariants.
@@ -33,8 +37,8 @@ Each chapter is task-oriented and standalone. Start with
 [Getting started](getting-started.md), then work through the
 [Tutorial](tutorial.md), which carries one small record through every stage —
 construct, validate, serialize, bundle, summarize, read back. After that, read
-[FHIR releases](fhir-releases.md) if you need R4 or both releases at once, and
-dip into whichever topic you need.
+[FHIR releases](fhir-releases.md) if you need a release other than R5, or
+several at once, and dip into whichever topic you need.
 
 Every line of the tutorial is also a runnable program
 (`cargo run --example tutorial`), so it cannot drift from the crate.
