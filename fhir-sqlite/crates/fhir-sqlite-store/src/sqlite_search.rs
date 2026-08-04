@@ -261,7 +261,8 @@ fn param_predicate(
     let mut ors: Vec<String> = Vec::new();
     for v in value.split(',') {
         for t in &def.targets {
-            let pred = target_pred(def, t, v, modifier, binds)?;
+            let cols = &rm.tables[t.table as usize].cols;
+            let pred = target_pred(def, t, v, modifier, cols, binds)?;
             let tname = &rm.tables[t.table as usize].name;
             if t.table == 0 {
                 ors.push(pred.replace("«c»", alias));
@@ -277,6 +278,26 @@ fn param_predicate(
     Ok(format!("({})", ors.join(" OR ")))
 }
 
+/// Is this column declared `ColTy::Bool`? A bare boolean token
+/// (`active=true`) must bind `"1"`/`"0"`, not the literal words
+/// `"true"`/`"false"` — SQLite's affinity rule only promotes a bound TEXT
+/// value to NUMERIC when it *looks like* a number, so `active = ?` bound to
+/// `"true"` compares the TEXT value `'true'` against the column's INTEGER
+/// storage class and never matches, silently returning zero rows. Found
+/// live: `active=true`, FHIR's own boolean-token spelling, matched nothing.
+fn col_is_bool(cols: &[fhir_sqlite_map::model::Column], name: &str) -> bool {
+    cols.iter()
+        .any(|c| c.name == name && matches!(c.ty, fhir_sqlite_map::model::ColTy::Bool))
+}
+
+fn bool_token_as_bind(v: &str) -> &str {
+    match v {
+        "true" => "1",
+        "false" => "0",
+        other => other,
+    }
+}
+
 /// One predicate for one target and one value. Column references use the
 /// placeholder «c» for the table alias.
 fn target_pred(
@@ -284,6 +305,7 @@ fn target_pred(
     t: &fhir_sqlite_map::model::SearchTarget,
     value: &str,
     modifier: Option<&str>,
+    cols: &[fhir_sqlite_map::model::Column],
     binds: &mut Vec<String>,
 ) -> Result<String, StoreError> {
     let b = |binds: &mut Vec<String>, v: &str| {
@@ -347,8 +369,12 @@ fn target_pred(
         }
         TargetKind::Token { system, code } => {
             let code_c = format!("«c».\"{code}\"");
+            let code_is_bool = col_is_bool(cols, code);
             match value.split_once('|') {
-                None => Ok(format!("{code_c} = {}", b(binds, value))),
+                None => {
+                    let v = if code_is_bool { bool_token_as_bind(value) } else { value };
+                    Ok(format!("{code_c} = {}", b(binds, v)))
+                }
                 Some((sys, cv)) => {
                     let Some(sys_col) = system else {
                         // Bare-code element cannot match a system-qualified

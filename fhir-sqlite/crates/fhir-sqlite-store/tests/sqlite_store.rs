@@ -824,6 +824,43 @@ async fn search_by_token_and_by_id() {
     let _ = std::fs::remove_dir_all(&dir);
 }
 
+/// `active=true` — FHIR's own boolean-token spelling — must find a
+/// `Patient.active` that is `true`. `active` binds as SQLite `INTEGER`
+/// (`ColTy::Bool`), and a bound TEXT parameter only gets SQLite's NUMERIC
+/// affinity conversion when it *looks like* a number: `"1"` does, `"true"`
+/// does not. Binding the literal word compared the TEXT value `'true'`
+/// against the INTEGER `1` and never matched, silently returning zero
+/// rows — found live, not by reading the code, while verifying this port's
+/// book against real behavior.
+#[tokio::test]
+async fn boolean_token_search_finds_a_true_value() {
+    let Some((dir, store)) = fresh("search-bool-token", "r5").await else {
+        return;
+    };
+    let audit = fhir_sqlite_store::Audit::default();
+    let patient = serde_json::json!({
+        "resourceType": "Patient",
+        "id": "example",
+        "active": true
+    });
+    store.put(&patient, &audit).await.expect("put");
+
+    let p = |k: &str, v: &str| vec![(k.to_string(), v.to_string())];
+    let r = store
+        .search_full("Patient", &p("active", "true"), 10, 0, &[], false)
+        .await
+        .expect("search");
+    assert_eq!(r.ids, vec!["example"], "active=true must match a true value");
+
+    let r = store
+        .search_full("Patient", &p("active", "false"), 10, 0, &[], false)
+        .await
+        .expect("search");
+    assert!(r.ids.is_empty(), "active=false must not match a true value");
+
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
 #[tokio::test]
 async fn numeric_search_compares_arithmetically_not_lexicographically() {
     // The case that makes this worth a test: values are stored as their exact
