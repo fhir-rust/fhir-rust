@@ -88,8 +88,15 @@ that finishes in 0.00s did not run.
 | `FHIR_MARIADB_SPEC_DIR` | FHIR definitions directory. |
 | `FHIR_MARIADB_CORPUS_DIR` | Example corpus directory. |
 | `FHIR_MARIADB_TEST_CORPUS_LIMIT` | Examples per version (default 400; use 10–25 for a fast loop). |
-| `FHIR_MARIADB_CHAIN_KEY` | Hex key enabling the keyed-MAC audit tests. |
 | `FHIR_MARIADB_BENCH` | Set to a row count to enable the benchmark test. |
+
+There is no `FHIR_MARIADB_CHAIN_KEY` — an earlier revision of this table
+claimed one "enabling the keyed-MAC audit tests", which was never true: this
+port's store never reads a chain key from the environment at all (only
+`fhir-postgresql` does, via `chain::KeyRing::from_env`). The keyed-MAC
+coverage this crate has (`mariadb_store.rs` builds a `KeyRing` directly with
+a fixed test key via `ChainKey::from_hex`/`with_chain_keys`) runs
+unconditionally, not gated by any variable. See `audit.md` **F-70**.
 
 ## Why the readiness probe uses TCP
 

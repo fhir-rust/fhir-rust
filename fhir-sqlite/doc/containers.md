@@ -91,8 +91,15 @@ that finishes in 0.00s did not run.
 | `FHIR_SQLITE_SPEC_DIR` | FHIR definitions directory. |
 | `FHIR_SQLITE_CORPUS_DIR` | Example corpus directory. |
 | `FHIR_SQLITE_TEST_CORPUS_LIMIT` | Examples per version (default 400; use 10–25 for a fast loop). |
-| `FHIR_SQLITE_CHAIN_KEY` | Hex key enabling the keyed-MAC audit tests. |
 | `FHIR_SQLITE_BENCH` | Set to a row count to enable the benchmark test. |
+
+There is no `FHIR_SQLITE_CHAIN_KEY` **read by this crate's own tests** —
+despite sharing its name with the one variable `chain::KeyRing::from_env`
+actually reads (see `audit.md` **F-70**), `SqliteStore` is never opened via
+`from_env` here. The keyed-MAC coverage this crate has (`sqlite_store.rs`
+builds a `KeyRing` directly with a fixed test key via
+`ChainKey::from_hex`/`with_chain_keys`) runs unconditionally, not gated by
+any variable.
 
 ## Why the readiness probe uses TCP
 

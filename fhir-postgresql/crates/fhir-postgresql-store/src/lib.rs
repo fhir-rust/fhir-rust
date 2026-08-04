@@ -527,7 +527,7 @@ impl Store {
             .runtime(deadpool_postgres::Runtime::Tokio1)
             .build()
             .map_err(|e| StoreError::Pool(e.to_string()))?;
-        let keys = crate::chain::KeyRing::from_env().map_err(StoreError::Other)?;
+        let keys = crate::chain::KeyRing::from_env("FHIR_POSTGRESQL").map_err(StoreError::Other)?;
         Ok(Store { pool, map, keys })
     }
 

@@ -29,7 +29,7 @@
 //!
 //! # Keyed mode (the actual fix)
 //!
-//! With `FHIR_SQLITE_CHAIN_KEY` set, each link is an HMAC rather than a bare hash:
+//! With `<prefix>_CHAIN_KEY` set (see [`ChainKey::from_env`]), each link is an HMAC rather than a bare hash:
 //! `HMAC-SHA-256` and `HMAC-SHA3-256`, both FIPS-approved constructions
 //! (198-1 over 180-4 and 202). The key lives in this process — from the
 //! environment, or a file the database role cannot read — and is **never**
@@ -182,18 +182,26 @@ impl ChainKey {
         Self::from_hex(id, &hex)
     }
 
-    /// Read from `FHIR_SQLITE_CHAIN_KEY` (hex) and `FHIR_SQLITE_CHAIN_KEY_ID`.
+    /// Read from `<prefix>_CHAIN_KEY` (hex) and `<prefix>_CHAIN_KEY_ID`.
+    ///
+    /// `prefix` is the caller's own port name, e.g. `"FHIR_POSTGRESQL"` —
+    /// this function is shared, engine-independent code (`X15.1`), so it
+    /// cannot know which port it is linked into and must be told. It used to
+    /// hardcode `FHIR_SQLITE_CHAIN_KEY` regardless of caller, which meant
+    /// every other port's own documented variable name
+    /// (`FHIR_POSTGRESQL_CHAIN_KEY` and so on) silently did nothing — found
+    /// and fixed as `audit.md` **F-70**.
     ///
     /// Absent means unkeyed, which is a supported but weaker mode: callers
     /// are expected to say so at startup rather than let it pass silently.
     ///
     /// # Errors
     /// If the key is present but unusable.
-    pub fn from_env() -> Result<Option<Self>, String> {
-        let Ok(hex) = std::env::var("FHIR_SQLITE_CHAIN_KEY") else {
+    pub fn from_env(prefix: &str) -> Result<Option<Self>, String> {
+        let Ok(hex) = std::env::var(format!("{prefix}_CHAIN_KEY")) else {
             return Ok(None);
         };
-        let id = std::env::var("FHIR_SQLITE_CHAIN_KEY_ID").unwrap_or_else(|_| "k1".to_string());
+        let id = std::env::var(format!("{prefix}_CHAIN_KEY_ID")).unwrap_or_else(|_| "k1".to_string());
         Self::from_hex(&id, &hex).map(Some)
     }
 
@@ -333,20 +341,23 @@ impl KeyRing {
 
     /// Load from the environment.
     ///
-    /// `FHIR_SQLITE_CHAIN_KEY` (hex) with optional `FHIR_SQLITE_CHAIN_KEY_ID` is the
-    /// signing key. `FHIR_SQLITE_CHAIN_KEYS_RETIRED` holds `id=hex` pairs,
-    /// comma-separated, which verify but never sign.
+    /// `prefix` is the caller's own port name, e.g. `"FHIR_POSTGRESQL"` —
+    /// see [`ChainKey::from_env`] for why this must be passed rather than
+    /// assumed. `<prefix>_CHAIN_KEY` (hex) with optional
+    /// `<prefix>_CHAIN_KEY_ID` is the signing key.
+    /// `<prefix>_CHAIN_KEYS_RETIRED` holds `id=hex` pairs, comma-separated,
+    /// which verify but never sign.
     ///
     /// Weaker than [`Self::from_files`]: see [`ChainKey::from_file`].
     ///
     /// # Errors
     /// If any key is present but unusable.
-    pub fn from_env() -> Result<Self, String> {
+    pub fn from_env(prefix: &str) -> Result<Self, String> {
         let mut keys = Vec::new();
-        if let Some(k) = ChainKey::from_env()? {
+        if let Some(k) = ChainKey::from_env(prefix)? {
             keys.push(k);
         }
-        if let Ok(retired) = std::env::var("FHIR_SQLITE_CHAIN_KEYS_RETIRED") {
+        if let Ok(retired) = std::env::var(format!("{prefix}_CHAIN_KEYS_RETIRED")) {
             for entry in retired.split(',').map(str::trim).filter(|e| !e.is_empty()) {
                 let (id, hex) = entry
                     .split_once('=')
