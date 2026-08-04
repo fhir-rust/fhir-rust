@@ -41,6 +41,11 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal", "syn
 # an otherwise plaintext connection.
 tiberius = { version = "0.12", default-features = false, features = ["rustls", "tds73", "chrono"] }
 tokio-util = { version = "0.7", features = ["compat"] }
+# tiberius ships no connection pool of its own (unlike mysql_async's Pool or
+# tokio-postgres's deadpool). bb8 is driver-agnostic -- the store implements a
+# ~30-line ManageConnection rather than pulling in a tiberius-specific pooling
+# crate, none of which is mature enough to depend on for a PHI-handling store.
+bb8 = "0.8"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 

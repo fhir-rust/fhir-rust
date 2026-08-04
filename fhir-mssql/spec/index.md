@@ -1,6 +1,6 @@
 # fhir-mssql specification
 
-**Engine:** Microsoft SQL Server · **Conformance level:** Scaffold (`C0.8`)
+**Engine:** Microsoft SQL Server · **Conformance level:** Store (`C0.8`)
 
 Normative behaviour for this port is the monorepo core, plus this port's
 departures.
@@ -42,8 +42,10 @@ Summarized from the annex; the annex governs.
 | Append-only (`M3.17`) | `CREATE OR ALTER TRIGGER … INSTEAD OF`, `THROW 50000`; no `DROP` window (`M14.19`) |
 | Erasure (`M3.18`) | `SESSION_CONTEXT` — T-SQL's nearest equivalent to `SET LOCAL` (`M14.21`) |
 | Paging / placeholders | `OFFSET … FETCH`, `@P1`, no `NULLS LAST` (`M14.22`) |
-| Transport (`O10.7`) | `tiberius` + rustls (`M14.24`) |
-| Undecided | snapshot isolation, write serialization, install atomicity (`M14.25`–`M14.27`) |
+| Transport (`O10.7`) | `tiberius` + rustls (`M14.24`); verification mechanism confirmed live (`tests/ssl_live.rs`), but the driver's TLS dependency chain carries 4 unpatched CVEs now confirmed reaching the shipping store crate — `native-tls` tried as an escape, fails the handshake on this host (`M14.34`, **F-67**). Not claimed |
+| Snapshot isolation (`M14.25`) | **decided and verified**: `SET TRANSACTION ISOLATION LEVEL SNAPSHOT` in `get`, backed by `ALLOW_SNAPSHOT_ISOLATION` on a dedicated `fhir_mssql` database — `READ_COMMITTED_SNAPSHOT` alone was tried first and live-confirmed *not* to fix it |
+| Write serialization (`M14.26`) | **decided and verified**: `WITH (UPDLOCK, ROWLOCK)`, 8 of 8 racing writers got distinct consecutive versions live |
+| Undecided | install atomicity at scale (`M14.27`) |
 
 ## Open findings against this port
 
@@ -60,6 +62,21 @@ Summarized from the annex; the annex governs.
 - **F-16 (High)** — the annex described MySQL. **Fixed**, as above.
 - **F-02**, **F-03** — crate description and stale driver comment. **Fixed.**
 - **F-11** — shared; see the [register](../../spec/databases/audit.md).
+- **F-65** — this port gained a real store; five defects found and fixed live
+  (a cross-column collation conflict, an unchecked keyed audit tag, `connect`
+  reporting success against an unreachable server, a doubled erasure count,
+  and the `R4.5` torn read — see `M14.25` above, **fixed** in a follow-up pass
+  after the first attempt, `READ_COMMITTED_SNAPSHOT` alone, was tried live and
+  found insufficient). See the [register](../../spec/databases/audit.md)
+  **F-65**.
+- **F-67 (High)** — `deny.toml` ignored 4 TLS advisories on the reasoning that
+  `tiberius` was only a dev-dependency; that stopped being true the moment
+  **F-65** gave this port a store, unnoticed for two days. Corrected, not
+  fixed: no working alternative exists (`native-tls` fails the handshake on
+  this host), so this is now a standing residual risk pending an owner
+  decision. The same investigation confirmed `O10.7`'s trust/no-trust
+  mechanism genuinely works (`tests/ssl_live.rs`). See `M14.34` and the
+  [register](../../spec/databases/audit.md) **F-67**.
 
 ## Contents of the core
 

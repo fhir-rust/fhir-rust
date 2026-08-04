@@ -70,12 +70,12 @@ reading the clean port to notice that the fiction was older and shared.
 Of the six that remain, one is documentation — F-27, six files of it — and the
 rest are not: an Oracle DDL emitter and four owner decisions.
 
-**F-15 is closed everywhere it can be**, and so is **F-07**. SQLite, MySQL and
-MariaDB all have `upgrade` and `backfill_norm`, the last two verified against
-live engines; `fhir-mssql` and `fhir-oracle` have no store to hang one on, so
-theirs arrive with the store work. Closing F-07 also emptied the shared-core
-gate's exemption list — **65 files identical across all six ports, nothing
-excused**.
+**F-15 is closed everywhere it can be**, and so is **F-07**. SQLite, MySQL,
+MariaDB, and now MSSQL all have `upgrade` and `backfill_norm`, each verified
+against a live engine; `fhir-oracle` has a store (**F-68**) but no `upgrade`
+built on it yet, so that arrives with the next pass on that port. Closing F-07
+also emptied the shared-core gate's exemption list — **65 files identical
+across all six ports, nothing excused**.
 
 What is left is `fhir-oracle`'s DDL emitter, which is that port's whole
 remaining job and needs an Oracle to verify against (**F-08**), and four
@@ -108,7 +108,7 @@ and **F-27**'s central question).
 | [F-12](#f-12) | Medium | `spec/index.md` referenced `AGENTS.md` in every port; no such file existed | **fixed** |
 | [F-13](#f-13) | Medium | Sections 1–13 were duplicated across six ports | **fixed** |
 | [F-14](#f-14) | Low | `fhir-postgresql` had no dialect annex while the other five did | **fixed** |
-| [F-15](#f-15) | Low | `_norm` backfill is unavailable on four ports after a fold change | **fixed** in sqlite, mysql, mariadb (live); mssql/oracle await a store |
+| [F-15](#f-15) | Low | `_norm` backfill is unavailable on four ports after a fold change | **fixed** in sqlite, mysql, mariadb, mssql (all live); oracle has a store now but no `upgrade` built on it yet |
 | [F-16](#f-16) | **High** | The MSSQL and Oracle dialect annexes were the MySQL annex, unedited | **fixed** |
 | [F-17](#f-17) | Medium | `fhir-postgresql` TLS defaulted to unverified, violating `O10.7` | **fixed** 2026-08-03 — default is `Require`; the "breaking" premise was false, the crates are unpublished |
 | [F-18](#f-18) | Low | `fhir-postgresql` carried a SQL folding function nothing calls (never emitted — wording corrected) | **fixed** |
@@ -813,7 +813,8 @@ Oracle have no `upgrade` at all, so for them the migration is a full reload.
 Deploying the corrected fold against an existing database without backfilling
 leaves searches matching neither the old spelling nor the new — silently.
 
-**Disposition: fixed in `fhir-sqlite`; open for the other four.**
+**Disposition: fixed in `fhir-sqlite`, `fhir-mysql`, `fhir-mariadb`, and
+`fhir-mssql`; open for `fhir-oracle`.**
 
 `fhir-sqlite` now has `upgrade` and `backfill_norm`, and `init` records the map
 asset that makes a diff possible at all (`M14.30`). Three things are SQLite's
@@ -870,9 +871,39 @@ forward, not retroactively. That is inherent: the information needed to diff was
 never written down, and inferring the old map from the installed schema would be
 guessing at exactly the point where guessing wrong corrupts data.
 
-What remains is `fhir-mssql` and `fhir-oracle`, and neither has a store to hang
-an upgrade on. Theirs arrive with the store work — and for Oracle, with **F-08**
-first. There is no separate upgrade task to schedule for them.
+**`fhir-mssql` now has it too**, verified against live `azure-sql-edge`. Nine
+tests in `crates/fhir-mssql-store/tests/upgrade.rs`, the same suite shape as
+the other three ports' plus one this port's destructive-DDL story earns:
+`destructive_changes_succeed_with_the_flag`, confirming a permitted drop
+actually happens and sticks — not merely that a drop without the flag is
+refused, which the other ports' suites stop at.
+
+Two things surfaced running it live are this port's own, not choices, and are
+now normative (`spec/14-mssql-dialect.md`):
+
+| | |
+|---|---|
+| `M14.35` | **The upgrade is one transaction.** Unlike MySQL/MariaDB, T-SQL DDL participates in a transaction like any other statement, so the whole additive-plus-destructive apply runs inside `BEGIN TRANSACTION`/`COMMIT TRANSACTION`, `ROLLBACK` on the first failure. A partial upgrade — which `fhir-mysql-store`'s own doc comment records as unpreventable on that engine — is prevented here, not merely reported. `backfill_norm` runs afterward, outside the transaction, in its own bounded batches. |
+| `M14.36` | **Destructive table drops must be ordered children before their base table.** Every non-`Base` table carries `FOREIGN KEY (rid) REFERENCES base(id)`, and SQL Server refuses `DROP TABLE` on a table something still references — error 3726 — regardless of `ON DELETE CASCADE`, which governs `DELETE`, not `DROP TABLE`. Found live: `destructive_changes_succeed_with_the_flag` failed on its first run with `Could not drop object 'basic' because it is referenced by a FOREIGN KEY constraint`, because the destructive diff dropped tables in `HashMap` iteration order. Fixed by partitioning drops into non-`Base` and `Base` buckets and emitting the former first. |
+
+`init` also needed a plumbing fix first: it had recorded only a bare
+`checksum` key, never the map asset itself, so there was nothing for `upgrade`
+to diff against on any schema installed before this pass. `init` now stores
+`map_asset`/`fhir_version` alongside `checksum`, the same three keys
+sqlite/mysql/mariadb record (under their own key names — this port keeps
+`checksum` rather than adopting their `map_checksum`, since nothing here read
+that name and there was no reason to rename it). As with SQLite, a database
+installed *before* this revision has no `map_asset` and `upgrade` refuses it by
+name (`an_install_without_a_stored_map_asset_says_so`) — the finding is closed
+going forward, not retroactively.
+
+**Mutation-verified** (`T11.10`): skipping the backfill makes the seeded
+patient unfindable by their own name, the same class of check as the other
+three ports.
+
+What remains is `fhir-oracle`, which has a store (**F-68**) but no `upgrade`
+built on it yet. That arrives with the next pass on that port; there is no
+separate upgrade task to schedule for it beyond that.
 
 ## F-16
 

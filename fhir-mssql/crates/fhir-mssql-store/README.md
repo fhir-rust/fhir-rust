@@ -1,31 +1,49 @@
 # fhir-mssql-store
 
-A placeholder for the storage layer this port does not have yet.
+The storage layer for `fhir-mssql` — live-verified against `azure-sql-edge`.
 
 Part of **`fhir-mssql`**, which stores FHIR R3, R4 and R5 resources in SQL Server 2022 as real relational tables — typed columns, child tables, foreign keys, check constraints — and gives them back losslessly.
 
-> **This port has no store.** It emits T-SQL DDL and nothing else — no driver, no transactions, no search, no way to read or write a resource.
+> **This port has a store, and it is live-verified.** `connect`/`init`/`put`/
+> `get`/`delete`/`history`/`vread`/`verify_audit`/`purge`/`log_access`/
+> `search`/`search_full`/`search_page` — 24 tests, 0 ignored, green against
+> live `azure-sql-edge` (**F-65**). `R4.5` (torn reads under concurrent
+> writers) was confirmed violated live and then fixed the same day: `SET
+> TRANSACTION ISOLATION LEVEL SNAPSHOT`, backed by `ALLOW_SNAPSHOT_ISOLATION`
+> on a dedicated database — `READ_COMMITTED_SNAPSHOT` alone was tried first
+> and found insufficient. `O10.7`'s trust/no-trust mechanism is proven
+> correct live (`tests/ssl_live.rs`), but the TLS library underneath it
+> carries unpatched CVEs with no available fix — see **F-67**.
+>
+> **What is still missing:** `conditional_create_audited`, `put_audited`,
+> `transact_audited`, `upgrade`, `backfill_norm`.
 
 ## What is here
 
-`lib.rs` and `chain.rs`, and no implementation — 869 lines against the reference
-port's 3,959. Nothing can be read or written through this crate.
+`mssql.rs` (the store), `mssql_search.rs` (the search query builder),
+`pool.rs` (a hand-written `bb8::ManageConnection` for `tiberius`, which ships
+no pool of its own), plus `lib.rs` and the shared `chain.rs`.
 
-It exists so the port's crate layout matches its five siblings, and so the
-shared types a store will need (`Audit`, `AccessRecord`, `ChainBreak`, the key
-ring) have a home. When a store is written it goes here, and this README stops
-saying so.
+Live-verifying this store for the first time found and fixed five real
+defects — see `audit.md` **F-65** for the full account: a cross-column
+collation conflict that broke every chained reference search,
+`verify_audit` never checking the keyed tag it wrote, `connect` returning
+`Ok` for an unreachable server, `purge` double-counting erased versions, and
+the `R4.5` torn read above.
 
 ## Why it is published anyway
 
-Publishing a scaffold is a deliberate decision, and the risk is that the *name*
-implies a working FHIR store to someone who has not opened the code. The crate
-description says "scaffold: no store yet" for that reason, and so does this
-paragraph. Do not depend on it expecting storage.
+A conformance level is a claim about what has been verified, not about what
+the code contains. This crate now has live evidence behind nearly all of its
+surface. Read the module docs and the [dialect annex](../../spec/14-mssql-dialect.md)
+before depending on an operation this README does not name above.
 
 ## Tests
 
-64 tests, all of them about DDL emission.
+64 tests, all of them about DDL emission (`ddl.rs`, in the sibling `-map`
+crate). This crate's own live suite: 24 tests (13 `mssql_store.rs`, 2
+`concurrency.rs`, 2 `redaction.rs`, 6 `roundtrip_types.rs`, 1 `ssl_live.rs`),
+0 ignored, all against a real SQL Server.
 
 ## Trust boundary
 
@@ -56,8 +74,11 @@ reason one cannot be.
 ## Status, honestly
 
 A conformance level is a claim about what has been **verified for this port**,
-not about what its code contains. This crate is part of a port at
-**Scaffold** level: a T-SQL DDL emitter only; CI provisions SQL Server 2022 and fails rather than skips without it, so **Schema** level is reachable as soon as one green run exists to cite.
+not about what its code contains. This crate is part of a port at **Store**
+level (`C0.8`): a T-SQL DDL emitter and a store, both live-verified against
+`azure-sql-edge`. Not **Reference**: no `conditional_create_audited`,
+`put_audited`, `transact_audited`, `upgrade`, or `backfill_norm`, and `O10.7`
+is diagnosed but not satisfiable with the current TLS dependency (**F-67**).
 
 The conformance matrix is the document to trust — a README, a book chapter, and
 a `tasks.md` checkbox have all been wrong in this repository before.

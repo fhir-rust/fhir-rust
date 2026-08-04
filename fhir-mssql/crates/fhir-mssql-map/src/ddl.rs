@@ -79,8 +79,22 @@ pub fn col_sql(ty: ColTy) -> &'static str {
         // per-value lexical form — `DECIMAL(38,10)` returns 1.50 as
         // 1.5000000000. Range search is served by a derived sort column, not by
         // this one.
-        ColTy::Numeric => "NVARCHAR(MAX)",
-        ColTy::Text => "NVARCHAR(MAX)",
+        //
+        // `COLLATE Latin1_General_100_BIN2` on both `Numeric` and `Text`: an
+        // `NVARCHAR(MAX)` column with no `COLLATE` clause inherits the
+        // *database* default collation, and this port's reference columns
+        // (`*_ref_id`, `*_ref_type`, `*_ref_url` — `ColTy::Text`) are compared
+        // directly against `id`/`rid` (`ColTy::TextC`, always `BIN2`) in a
+        // chained-reference search join. Two columns with different explicit
+        // collations make SQL Server refuse the comparison outright —
+        // "Cannot resolve the collation conflict" (error 468) — found by
+        // running a chained reference search live; nothing before this
+        // exercised an `id`-to-`id` column comparison rather than an
+        // `id`-to-parameter one, so no earlier live run could have surfaced
+        // it. Matching collation everywhere sidesteps the whole class rather
+        // than special-casing the three reference columns.
+        ColTy::Numeric => "NVARCHAR(MAX) COLLATE Latin1_General_100_BIN2",
+        ColTy::Text => "NVARCHAR(MAX) COLLATE Latin1_General_100_BIN2",
         // A binary collation, and [BIN2] rather than the deprecated [BIN]:
         // SQL Server's default collation is case- and accent-insensitive, so a
         // column left at the default would silently acquire fuzzy equality —
@@ -104,7 +118,10 @@ pub fn col_sql(ty: ColTy) -> &'static str {
         // NVARCHAR(MAX), not the JSON type: the hash chain commits to bytes
         // canonicalised in Rust, and any column that re-normalises what it is
         // given would make the bytes read back differ from the bytes signed.
-        ColTy::Jsonb => "NVARCHAR(MAX)",
+        // BIN2 for the same reason as `Numeric`/`Text` above: consistent
+        // collation across every `NVARCHAR(MAX)` column avoids a 468 the
+        // instant one is ever compared against another.
+        ColTy::Jsonb => "NVARCHAR(MAX) COLLATE Latin1_General_100_BIN2",
     }
 }
 
@@ -630,7 +647,7 @@ mod tests {
     fn decimal_does_not_become_a_fixed_scale_number() {
         // M3.6: original textual precision must survive round-trip, which
         // DECIMAL(65,30) cannot do — it pads 1.50 to thirty decimal places.
-        assert_eq!(col_sql(ColTy::Numeric), "NVARCHAR(MAX)");
+        assert!(col_sql(ColTy::Numeric).starts_with("NVARCHAR(MAX)"));
         assert!(!col_sql(ColTy::Numeric).contains("DECIMAL"));
         assert!(!col_sql(ColTy::Numeric).contains("DOUBLE"));
     }
@@ -639,7 +656,22 @@ mod tests {
     fn json_is_stored_as_text_to_preserve_signed_bytes() {
         // A native JSON column re-normalizes on write, so the bytes read back
         // would not be the bytes the hash chain committed to.
-        assert_eq!(col_sql(ColTy::Jsonb), "NVARCHAR(MAX)");
+        assert!(col_sql(ColTy::Jsonb).starts_with("NVARCHAR(MAX)"));
+    }
+
+    #[test]
+    fn unbounded_text_columns_share_id_s_collation() {
+        // A reference column (`ColTy::Text`) is compared directly against
+        // `id`/`rid` (`ColTy::TextC`) in a chained-reference search join;
+        // mismatched explicit collations make SQL Server refuse the compare
+        // outright (error 468), found by running exactly that query live.
+        for ty in [ColTy::Text, ColTy::Numeric, ColTy::Jsonb] {
+            assert!(
+                col_sql(ty).contains("Latin1_General_100_BIN2"),
+                "{ty:?} maps to {}, missing id's collation",
+                col_sql(ty)
+            );
+        }
     }
 
     #[test]

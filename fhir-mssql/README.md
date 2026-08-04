@@ -4,26 +4,60 @@ Store [FHIR](https://hl7.org/fhir/) resources in Microsoft SQL Server as **real
 relational tables** — typed columns, child tables, foreign keys, and check
 constraints — not JSON blobs.
 
-> ## ⚠ Status: Scaffold. There is no store yet.
+> ## ⚠ Status: Store
 >
-> **What works:** the FHIR-specification generator, the shred/reconstruct
-> engine, and a **T-SQL DDL emitter** verified to install on a real server. That
-> emitter is genuine work — bracketed identifiers, `BIT`,
-> `NVARCHAR(450) COLLATE Latin1_General_100_BIN2`, `DATETIME2(6)`,
-> `INSTEAD OF` triggers, `sys.objects` idempotence guards — and running it
-> against an engine found four real bugs the shape-asserting unit tests could
-> not.
+> **What works:** a real `tiberius` store — `connect`, `init`, `put`, `get`,
+> `delete`, `history`, `vread`, `search`/`search_full`/`search_page`,
+> `verify_audit`, `purge`, `log_access`, `upgrade`, `backfill_norm` —
+> live-verified against a real server by 33 tests (`mssql_store.rs`,
+> `concurrency.rs`, `redaction.rs`, `roundtrip_types.rs`, `ssl_live.rs`,
+> `upgrade.rs`), **0 `#[ignore]`d**, plus the T-SQL DDL emitter that came
+> before it. You can write and read a resource with this crate today.
+> Five real defects surfaced by running the work live were found and fixed —
+> a cross-column collation conflict that broke every chained reference
+> search, a keyed audit tag that was written but never checked, a `connect`
+> that reported success against an unreachable server, a doubled erasure
+> count, and a torn read under concurrent writers (`R4.5`) — see
+> [`audit.md`](../spec/databases/audit.md) **F-65**.
 >
-> **What does not exist:** the store. `crates/fhir-mssql-store/src/` contains
-> `lib.rs` and no implementation — 48 lines that re-export the shared audit
-> chain (`fhir-store`, **F-45**) and define an error type — and there are no
-> store tests.
-> You cannot write or read a resource with this crate today.
+> The `R4.5` fix took two tries, worth knowing about because the first one is
+> the answer that reads right and isn't: `READ_COMMITTED_SNAPSHOT` alone was
+> enabled and, run against the live reproduction, still tore — it gives each
+> *statement* inside a transaction its own snapshot, not the whole
+> *transaction* one. `SET TRANSACTION ISOLATION LEVEL SNAPSHOT`, backed by
+> `ALLOW_SNAPSHOT_ISOLATION` on a dedicated database (`scripts/db.sh` now
+> provisions one — `master` refuses the option), is what actually stopped it.
+>
+> **`O10.7` is diagnosed, not satisfied.** `tests/ssl_live.rs` confirms live
+> that certificate verification is a real mechanism, not a no-op —
+> `TrustServerCertificate=false` reproducibly rejects `azure-sql-edge`'s
+> self-signed certificate. But that same investigation found the driver's TLS
+> dependency chain carries four unpatched advisories (three CVEs in
+> `rustls-webpki`, one unmaintained-crate warning) that now reach this
+> *shipping* store crate — `deny.toml` had been ignoring them on the
+> assumption they were dev-only, true when written and false since this port
+> gained a store two tasks later. `native-tls` was tried as an escape and
+> fails the TLS handshake outright on this host. See `M14.34` and
+> [`audit.md`](../spec/databases/audit.md) **F-67**.
+>
+> **What does not exist:** `conditional_create_audited`, `put_audited`
+> (optimistic concurrency), `transact_audited`. `upgrade` and `backfill_norm`
+> now exist (closes this port's share of **F-15**) — live-verified against
+> `azure-sql-edge` by 9 more tests (`tests/upgrade.rs`), 0 `#[ignore]`d,
+> bringing the store's live total to 33. Unlike `fhir-mysql`/`fhir-mariadb`,
+> `upgrade` is genuinely atomic: T-SQL DDL is transactional, so the whole
+> additive-plus-destructive apply runs inside one `BEGIN TRANSACTION` and
+> rolls back on the first failure rather than leaving a half-upgraded schema.
+> A live-only defect surfaced writing this: dropping a resource's tables in
+> arbitrary order failed with SQL Server error 3726 (`DROP TABLE` blocked by
+> a `FOREIGN KEY` still referencing it) — fixed by dropping child tables
+> before their base table (`M14.36`).
+> Verified against `azure-sql-edge` only, not full SQL Server (`M14.31`).
 >
 > **What was wrong until 2026-07-31**, worth knowing if you have read an older
 > copy of this file: it claimed 7,399 FHIR example resources round-tripped
 > through live SQL Server and that `fhir-mssql serve` mounted a REST API.
-> Neither was ever true here — the text was the `fhir-postgresql` README with
+> Neither was true at the time — the text was the `fhir-postgresql` README with
 > the engine name substituted. Tracked as [`audit.md`](../spec/databases/audit.md)
 > **F-01**. The [conformance matrix](../spec/databases/conformance-matrix.md) is the
 > status document to trust.
@@ -33,30 +67,30 @@ R3 (3.0.2)**, each in its own SQL Server schema.
 
 ## What you can do with it today
 
-Generate and inspect the schema, and round-trip resources **in memory** — the
-engine is shared with the other ports and is not dialect-specific:
+Store and retrieve a resource against a real server:
 
 ```rust
 use std::sync::Arc;
 use fhir_mssql_map::model::RelMap;
-use fhir_mssql_map::{ddl, shred};
+use fhir_mssql_store::mssql::MsSqlStore;
 
 let map = Arc::new(RelMap::bundled("r5")?);   // compiled in (feature `r5`)
+let dsn = "server=tcp:127.0.0.1,1433;user=sa;password=…;TrustServerCertificate=true";
+let store = MsSqlStore::connect(dsn, map).await?;
+store.init("my-checksum").await?;
 
-// The T-SQL this port emits.
-for stmt in ddl::ddl(&map) {
-    println!("{stmt};");
-}
-
-// Shredding and reconstruction work now, with no database involved.
-let rows = shred(map.resources.get("Patient").unwrap(), &patient)?;
+let put = store.put(&patient_json, &Audit::default()).await?;
+let back = store.get("Patient", &put.id).await?;
+let hits = store.search("Patient", &[("family".into(), "Aero".into())], 10, 0).await?;
 ```
 
-To exercise the DDL against a real server:
+To exercise the DDL, or the full live suite, against a real server:
 
 ```sh
 scripts/db.sh up      # SQL Server 2022 in a container
 scripts/db.sh test    # installs the generated schema, checks the triggers
+export FHIR_MSSQL_TEST_DSN='...'   # scripts/db.sh up prints this
+cargo test -p fhir-mssql-store -- --test-threads=1   # see mssql_store.rs's module doc
 scripts/db.sh down
 ```
 
@@ -102,16 +136,19 @@ than in the DDL. Recorded as a departure (`M14.16`), not hidden.
 
 ## What has to happen next
 
-In order, from [`tasks.md`](tasks.md) and the annex:
+In rough order, from the [conformance matrix](../spec/databases/conformance-matrix.md)
+and the annex:
 
-1. **A `tiberius` store.** The dependency is already in the workspace and proven
-   against the server by the DDL test.
-2. **A search builder** — `OFFSET n ROWS FETCH NEXT m ROWS ONLY` rather than
-   `LIMIT`, `@P1` placeholders, no `NULLS LAST`.
-3. **The unindexable-column decision**, above.
-4. **Snapshot isolation and write serialization**, both undecided (`M14.25`,
-   `M14.26`).
-5. **Verification against full SQL Server**, not only `azure-sql-edge`.
+1. **Decide `M14.34`'s residual risk** — the verification mechanism works;
+   the TLS library underneath it does not have a fix available today. Accept
+   the risk formally, fund a different driver, or state the transport story
+   is unresolved.
+2. **The unindexable-column decision**, above (`M14.16`).
+3. **Verification against full SQL Server**, not only `azure-sql-edge`
+   (`M14.31`).
+
+`upgrade` and `backfill_norm` are done — every Store-level port now has them
+(closes this port's share of **F-15**).
 
 ## Documentation
 
@@ -119,8 +156,9 @@ In order, from [`tasks.md`](tasks.md) and the annex:
   normative core is shared at [`../spec/`](../spec/databases/index.md).
 - [`../spec/conformance-matrix.md`](../spec/databases/conformance-matrix.md) — what this
   port actually satisfies, requirement by requirement.
-- [`../doc/`](../doc/index.md) — monorepo tutorials and examples. Use
-  `fhir-postgresql` or `fhir-sqlite` to follow them; this port has no store.
+- [`../doc/`](../doc/index.md) — monorepo tutorials and examples, written
+  against `fhir-postgresql`/`fhir-sqlite`; not yet re-checked against this
+  port's store.
 - **[The book](book/src/SUMMARY.md)** — inherited from the PostgreSQL original
   and **not yet rewritten for this engine**; read it with that in mind.
 - [`plan.md`](plan.md) · [`tasks.md`](tasks.md) · [`CHANGELOG.md`](CHANGELOG.md)

@@ -1,11 +1,25 @@
-//! fhir-mssql-store: the SQL Server layer — **not yet written**.
+//! fhir-mssql-store: the SQL Server layer. Applies generated DDL, writes
+//! shredded resources transactionally with history, and reads rows back for
+//! reconstruction.
 //!
-//! **There is no store here yet.** This crate is a placeholder: it re-exports
-//! the shared audit chain and defines the error type, and that is all. No
-//! driver, no connection, no operations — see `C0.8`, and the port README.
+//! Written 2026-08-04 against a live `azure-sql-edge` container (`mssql_ddl.rs`
+//! already proved the DDL installs; this proves the store built on it works).
+//! `conditional_create_audited` and the schema-upgrade path are not yet
+//! implemented — see the module docs on [`mssql`] for exactly what is and is
+//! not covered, and `C0.9`: the level claimed for this port is only what the
+//! live suite actually exercises.
+//!
+//! `tiberius` has no built-in connection pool or typed transaction API, unlike
+//! `mysql_async` or `tokio-postgres`. [`pool`] supplies the former with a
+//! from-scratch `bb8::ManageConnection`; transactions are plain
+//! `BEGIN`/`COMMIT`/`ROLLBACK TRANSACTION` statements, since T-SQL has no
+//! richer primitive to bind to.
 
 /// The tamper-evident audit chain, shared by every port (`M3.16`).
 pub use fhir_store::chain;
+pub mod mssql;
+pub mod mssql_search;
+pub mod pool;
 
 use thiserror::Error;
 
@@ -14,7 +28,7 @@ pub enum StoreError {
     #[error("pool: {0}")]
     Pool(String),
     /// A database failure, as the engine reported it.
-    #[error("mysql: {0}")]
+    #[error("mssql: {0}")]
     Db(String),
     #[error("shred: {0}")]
     Shred(#[from] fhir_mssql_map::ShredError),

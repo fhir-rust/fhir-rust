@@ -1,6 +1,6 @@
 # fhir-mssql — work breakdown
 
-**Conformance level: Scaffold (`C0.8`).** This file lists what has been done in
+**Conformance level: Store (`C0.8`).** This file lists what has been done in
 *this port* and what has not. Nothing here is inherited.
 
 ## Why this file was rewritten
@@ -32,20 +32,54 @@ not because this port did them.
   adjunct channel this port needs because it cannot index its unbounded text
   type (`TEXT_ADJUNCTS = true`).
 - [x] **DDL emitter.** T-SQL, and **executed**: the generated schema installs on SQL Server 2022 via `tests/mssql_ddl.rs` — 131 statements, 102 tables, 4 triggers. That test was flaky until **F-52**; it now passes 8 consecutive runs.
+- [x] **A store.** `crates/fhir-mssql-store/src/mssql.rs`: `connect`, `init`,
+  `put`, `get`, `delete`, `history`, `vread`, `verify_audit`, `purge`,
+  `log_access`. `tiberius`, pooled via a hand-written `bb8::ManageConnection`
+  (`pool.rs`, no mature tiberius-specific pool exists). Live-verified — this
+  is not a claim from reading the code (**F-65**).
+- [x] **A search builder.** `mssql_search.rs`: `@Pn` placeholders, bracketed
+  identifiers, `OFFSET … FETCH`, `FLOAT` not `DECIMAL` casts (`M14.8`), no
+  `NULLS LAST`. Wired to `search`/`search_full`/`search_page`.
+- [x] **Live test suite.** `tests/mssql_store.rs` (13), `concurrency.rs` (2),
+  `redaction.rs` (2), `roundtrip_types.rs` (6), `ssl_live.rs` (1),
+  `upgrade.rs` (9) — **33 of 33 green** against `azure-sql-edge`, 0
+  `#[ignore]`d. Run with `--test-threads=1` (concurrent DDL deadlocks the
+  container).
+- [x] **`R4.5` (snapshot reads).** `get` issues `SET TRANSACTION ISOLATION
+  LEVEL SNAPSHOT` before `BEGIN TRANSACTION`, backed by
+  `ALLOW_SNAPSHOT_ISOLATION` on a dedicated `fhir_mssql` database
+  (`scripts/db.sh`'s `post_ready`, since `master` refuses the option). Two
+  tries: `READ_COMMITTED_SNAPSHOT` alone was tried live first and did not
+  stop the torn read `tests/concurrency.rs` reproduces — it gives each
+  statement its own snapshot, not the whole transaction one. See `M14.25`
+  and **F-65**.
+- [x] **`init --upgrade` and `backfill_norm`.** Closes this port's share of
+  audit **F-15**. `MsSqlStore::upgrade`/`backfill_norm` diff the installed map
+  asset against the current one, apply the additive diff, reconcile the
+  schema-wide objects and audit-envelope columns the per-resource diff cannot
+  see, apply the destructive diff (refused without `allow_destructive`), and
+  backfill folded search columns in bounded resumable batches. Unlike
+  `fhir-mysql`/`fhir-mariadb`, the DDL apply is one transaction — T-SQL DDL is
+  transactional, so a failure rolls back rather than leaving a half-upgraded
+  schema (`M14.35`). Live-verified: `tests/upgrade.rs`, 9 tests. Found live:
+  destructive table drops must be ordered children-before-base or SQL Server
+  refuses `DROP TABLE` with error 3726 (`M14.36`).
 
 ## What does not exist
 
-Not "planned and unstarted" — **absent**. Each of these is why the port is
-Scaffold rather than Store.
+Not "planned and unstarted" — **absent**.
 
-- [ ] **A store.** `crates/fhir-mssql-store/src/lib.rs` is 48 lines: it
-  re-exports the shared audit chain and defines an error type. There is no
-  connection, no transaction, no operation.
-- [ ] **A database driver.** `tiberius` is a dependency of the *map* crate, for the DDL test only. The store crate depends on no driver.
-- [ ] **Any write through the schema by this port.** Every behaviour verified
-  so far was verified by hand or by DDL install alone.
-- [ ] **Map tests beyond DDL**, a live round-trip, history, search execution,
-  concurrency, redaction, audit, upgrade, or benchmarks.
+- [ ] **`conditional_create_audited`, `put_audited`, `transact_audited`.** No
+  optimistic concurrency, no conditional operations, no atomic Bundles.
+- [ ] **Verification against full SQL Server.** Only `azure-sql-edge`
+  (`M14.31`) — an arm64 subset of the product.
+- [ ] **`O10.7`.** The mechanism is confirmed live (`tests/ssl_live.rs`):
+  `TrustServerCertificate=false` reproducibly rejects `azure-sql-edge`'s
+  self-signed certificate. Not claimed anyway — the driver's TLS dependency
+  chain carries four unpatched advisories now confirmed reaching the
+  shipping store crate (**F-67**), and `native-tls` fails the handshake on
+  this host, so there is no available fix, only a decision to accept the
+  residual risk, replace the driver, or leave the transport story open.
 
 ## Not decided, not merely undone
 
@@ -58,11 +92,8 @@ here.
 
 ## Next, in order
 
-1. Decide the driver (see above); it gates everything below.
-2. A live test that installs the generated schema and **fails** rather than
-   skips when the DSN is set (`T11.12`, `T11.13`).
-3. `init` / `put` / `get` against a real server, then the corpus round-trip that
-   `C0.8` requires for **Store**.
+1. Settle `O10.7`'s verification half.
+2. Verification against full SQL Server, not only `azure-sql-edge`.
 
 The [conformance matrix](../spec/databases/conformance-matrix.md) is the status
 document to trust. This file is a plan; it is not evidence (`C0.9`).

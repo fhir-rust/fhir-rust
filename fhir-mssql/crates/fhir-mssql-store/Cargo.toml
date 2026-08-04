@@ -1,6 +1,6 @@
 [package]
 name = "fhir-mssql-store"
-description = "SQL Server storage layer for fhir-mssql (scaffold: no store yet)"
+description = "SQL Server storage layer for fhir-mssql"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -24,7 +24,15 @@ fhir-store = { path = "../../../fhir-store", version = "0.1.0" }
 fhir-mssql-map.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
-tokio.workspace = true
+tokio = { workspace = true, features = ["net"] }
+tiberius.workspace = true
+tokio-util.workspace = true
+bb8.workspace = true
+async-trait = "0.1"
+# Only for rendering the DATE/DATETIME2 sort columns tiberius returns as its
+# own `Date`/`DateTime2`, which `FromSql` converts to `chrono` types (tds73
+# feature) — not for anything this store decides on its own.
+chrono = { version = "0.4", default-features = false, features = ["std"] }
 tracing.workspace = true
 sha2.workspace = true
 sha3.workspace = true
@@ -36,6 +44,8 @@ getrandom.workspace = true
 [dev-dependencies]
 fhir-mssql-map.workspace = true
 fhir-mssql-gen.workspace = true
+tiberius.workspace = true
+tokio-util.workspace = true
 tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
 tracing.workspace = true
 tracing-subscriber.workspace = true

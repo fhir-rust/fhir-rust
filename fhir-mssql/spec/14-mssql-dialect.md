@@ -223,9 +223,11 @@ schema per FHIR version.
   syntax and SQL Server's parser rejects it outright.
 
   The emitter carried `ADD COLUMN` from the MySQL original until this revision
-  (**F-25**). No live run could have caught it: the DDL test installs a fresh
-  schema, where the audit envelope arrives through `CREATE TABLE`, so the
-  upgrade path has never been executed against a server.
+  (**F-25**). No live run could have caught it *at the time*: the DDL test
+  installs a fresh schema, where the audit envelope arrives through `CREATE
+  TABLE`, so the upgrade path went unexercised against a server until
+  `MsSqlStore::upgrade` was written and run live (**F-15**, below) — which is
+  what finally executed this statement shape for the first time.
 
 - **M14.33** Every column the upgrade path adds MUST be nullable **or** carry a
   `DEFAULT`. SQL Server refuses to add a `NOT NULL` column with no default to a
@@ -238,6 +240,38 @@ schema per FHIR version.
   rather than a departure (**F-26**). Rows predating the envelope then read as
   `unauthenticated` — the honest answer for a change recorded before there was
   anywhere to record a principal — instead of the upgrade failing.
+
+- **M14.35** **The store's `upgrade` MUST run its whole additive-plus-destructive
+  apply inside one `BEGIN TRANSACTION` / `COMMIT TRANSACTION`, `ROLLBACK
+  TRANSACTION` on the first failure.** T-SQL DDL participates in a transaction
+  like any other statement — unlike MySQL and MariaDB, whose DDL commits
+  implicitly, so `fhir-mysql-store`'s own doc comment records a failed upgrade
+  as unpreventable and merely reports how far it got. That regression does not
+  apply here: a failed `MsSqlStore::upgrade` leaves the schema exactly as it
+  was, never half-upgraded, and this MUST NOT be weakened into a
+  report-and-continue story the way MySQL's had to be.
+
+  `backfill_norm` runs **outside** this transaction, after it commits, in its
+  own bounded batches — it is a bulk data write over existing rows, not schema
+  DDL, and there is no reason to hold schema locks for however long a large
+  backfill takes.
+
+- **M14.36** **Table drops in the destructive diff MUST be ordered children
+  before their base table.** Every non-`Base` table carries `FOREIGN KEY (rid)
+  REFERENCES base(id)` (`create_table`, `M14.12`-adjacent), and SQL Server
+  refuses `DROP TABLE` on a table something else still references — error 3726
+  — regardless of `ON DELETE CASCADE`, which governs `DELETE`, not `DROP
+  TABLE`. A destructive diff that drops both a resource's base table and its
+  child tables in map-iteration order therefore fails unpredictably depending
+  on `HashMap` order.
+
+  Found live, not by reading the manual: the first version of
+  `MsSqlStore::diff_maps` dropped tables in whatever order a `HashMap` yielded
+  them, and `destructive_changes_succeed_with_the_flag` failed on its first run
+  against `azure-sql-edge` with `Could not drop object 'basic' because it is
+  referenced by a FOREIGN KEY constraint`. Fixed by partitioning the destructive
+  table-drop statements into non-`Base` and `Base` buckets and emitting the
+  former first.
 
 ## Append-only history
 
@@ -277,42 +311,121 @@ schema per FHIR version.
   the host — with `rustls`, because SQL Server negotiates TLS during login even
   for an otherwise plaintext connection (`O10.7`).
 
-- **M14.34** **That choice currently carries four unfixable advisories.**
-  `tiberius 0.12.3` — the newest release — pins `rustls 0.21`, which pins
-  `rustls-webpki ^0.101`. That chain has three vulnerabilities
-  (RUSTSEC-2026-0098, -0099, -0104: name-constraint handling for URI and
-  wildcard names, and a reachable panic parsing certificate revocation lists)
-  plus one unmaintained crate (RUSTSEC-2025-0134, `rustls-pemfile`). The fixes
-  live in `rustls-webpki >= 0.103.12`, which requires `rustls 0.23`, which no
-  tiberius release supports.
+- **M14.34** **That choice carries four unfixed advisories, and — unlike when
+  this requirement was first written — they now reach a shipping crate.**
+  `tiberius 0.12.3` — confirmed still the newest release, 2026-08-04 — pins
+  `rustls 0.21`, which pins `rustls-webpki ^0.101`. That chain has three
+  vulnerabilities (RUSTSEC-2026-0098, -0099, -0104: name-constraint handling
+  for URI and wildcard names, and a reachable panic parsing certificate
+  revocation lists) plus one unmaintained crate (RUSTSEC-2025-0134,
+  `rustls-pemfile`). The fixes live in `rustls-webpki >= 0.103.12`, which
+  requires `rustls 0.23`, which no tiberius release supports.
 
-  They are ignored in `deny.toml` with that reasoning rather than silently, and
-  the scope is narrow: `tiberius` is a **dev-dependency** of
-  `fhir-mssql-map` — verified absent from `cargo tree -e normal` — so nothing a
-  consumer of a published crate builds contains it. The only code here that
-  opens a TLS connection is the DDL execution test against a local container.
+  **What changed.** This requirement originally recorded these as reached
+  only through `tiberius` as a *dev*-dependency of the DDL test — narrow, and
+  correctly so at the time. `fhir-mssql-store` (`crates/fhir-mssql-store`,
+  a real, published crate) now depends on `tiberius` directly, confirmed by
+  running `cargo tree -p fhir-mssql-store -e normal`, and the four advisories
+  are in that tree. The `deny.toml` comments said "verified absent from
+  `cargo tree -e normal`" for two more weeks than that was true; nobody
+  re-ran the check when the store landed. Corrected 2026-08-04, and cited
+  here so the same drift does not repeat: **this port stores patient data
+  through code with unpatched TLS certificate-validation defects.**
 
-  This MUST be revisited when the port gains a store, because at that point the
-  driver stops being a test dependency and starts being how clinical data
-  crosses a network. The options are a newer tiberius if one appears, tiberius
-  with `native-tls` instead of `rustls`, or a different driver. Until then this
-  port MUST NOT claim `O10.7`.
+  **What was tried, 2026-08-04, and did not work.** `native-tls` — this
+  requirement's own suggested escape from `rustls` — was substituted for
+  `rustls` in both the workspace `Cargo.toml` and a standalone probe, and
+  fails the TLS handshake outright against this port's own test server, with
+  or without certificate trust: `Error forming TLS connection: connection
+  closed via error`, even under `TrustConfig::TrustAll`. `native-tls` on this
+  host resolves to Apple's Secure Transport (`security-framework`), which is
+  itself deprecated by Apple and evidently will not complete a handshake
+  against whatever `azure-sql-edge` presents (see `M14.24`'s sibling finding
+  on the certificate's own malformed X.509 version). This was reverted; the
+  driver is `rustls` again. `cargo tree` and `cargo deny check advisories`
+  confirm the four advisories genuinely disappear under `native-tls` — the
+  chain is gone, not merely hidden — so it remains the fix *if* the handshake
+  problem is solved separately (a different host, a different TLS backend
+  configuration, or Microsoft fixing the certificate `azure-sql-edge`
+  generates), just not one this pass could ship.
+
+  They stay ignored in `deny.toml`, with the corrected reasoning above rather
+  than the stale one, because there is no fix available today: no newer
+  tiberius, no working alternative TLS backend on this host, and the only
+  other pure-Rust TDS driver does not exist. This is now a standing residual
+  risk requiring an explicit owner decision — accept it formally, pursue a
+  different driver, or drop TLS as this port's transport story — not a
+  research question with an obvious next experiment.
+
+  **What this does *not* undermine: `tests/ssl_live.rs` genuinely confirms
+  the verification *mechanism* works** — `TrustServerCertificate=false`
+  measurably rejects `azure-sql-edge`'s self-signed certificate, reproducibly,
+  which `TrustServerCertificate=true` accepts. The two findings are
+  independent and both true: the code path that decides trust/no-trust is
+  exercised and behaves correctly, and the certificate-parsing code inside
+  that same dependency chain has three unpatched CVEs. `O10.7` requires both
+  a working mechanism *and* a trustworthy implementation of it; this port has
+  the first and not the second, so it MUST NOT claim `O10.7` satisfied,
+  though it is closer to satisfying it — and more precisely diagnosed — than
+  before this pass.
+
+## Snapshot isolation and write serialization — decided and verified
+
+- **M14.25** **Snapshot isolation (`R4.5`) is decided: `SNAPSHOT`, not
+  `READ_COMMITTED_SNAPSHOT`, and both the decision and the fix were reached by
+  running things, not by reading the manual.**
+
+  `fhir-mssql-store`'s `get` wraps its base-plus-child-table read in `BEGIN
+  TRANSACTION … ROLLBACK TRANSACTION`, which is not by itself the same claim
+  as snapshot isolation — under this engine's default `READ COMMITTED`, each
+  statement inside that transaction sees the latest committed data as of when
+  *it* runs, not one consistent instant for the whole transaction, unlike
+  PostgreSQL's or MySQL's default. `tests/concurrency.rs`'s
+  `reads_never_tear_under_concurrent_writes` reproduced exactly this live: a
+  reader observed `active` from one write interleaved with `name`/`telecom`
+  from another.
+
+  The first fix attempted was the simpler-sounding of the two candidates —
+  `READ_COMMITTED_SNAPSHOT` — enabled at the database level. Run live, it did
+  **not** stop the torn read: RCSI gives each *statement* its own snapshot,
+  not the *transaction* one shared snapshot across every statement in it,
+  which is the actual requirement. The fix that measurably works is `get`
+  issuing `SET TRANSACTION ISOLATION LEVEL SNAPSHOT` immediately before
+  `BEGIN TRANSACTION`, which requires `ALLOW_SNAPSHOT_ISOLATION` enabled at
+  the database level — confirmed by the same test passing five consecutive
+  runs after the change and none before it.
+
+  Getting either isolation option set at all first required a database this
+  port could run `ALTER DATABASE` against: every DSN used by this port used to
+  omit `database=` and land in `master`, where SQL Server refuses the option
+  outright (`Option 'READ_COMMITTED_SNAPSHOT' cannot be set in database
+  'master'.`). `scripts/db.sh`'s `post_ready` now creates a dedicated
+  `fhir_mssql` database and enables both `READ_COMMITTED_SNAPSHOT` (harmless,
+  and still worth having for ordinary reads elsewhere) and
+  `ALLOW_SNAPSHOT_ISOLATION` on it, once, before any pooled connection exists
+  — `ALTER DATABASE` for either option would otherwise have to wait out every
+  active transaction.
+
+  `SET TRANSACTION ISOLATION LEVEL` is session-scoped, not
+  transaction-scoped, so on this *pooled* connection `get` resets it back to
+  `READ COMMITTED` before the connection returns to the pool — the same leak
+  discipline `purge`'s `SESSION_CONTEXT` erasure flag already needed, for the
+  same reason: a later, unrelated caller must not silently inherit it.
+
+- **M14.26** **Write serialization (`H5.4`) is decided and live-verified:**
+  `SELECT … FROM base WITH (UPDLOCK, ROWLOCK) WHERE [id] = @P1` before reading
+  the chain tip in both `put` and `delete`, holding the lock until
+  commit/rollback so a second writer for the same id blocks rather than races
+  the tip read. `tests/concurrency.rs`'s
+  `racing_writers_get_distinct_versions_and_a_verifiable_chain` confirms 8 of
+  8 racing writers get distinct, consecutive versions and a chain that still
+  verifies afterward.
 
 ## What this port has not decided
 
 Stated explicitly, because `X15.6` treats silence as a defect rather than as
 "nothing to say".
 
-- **M14.25** **Snapshot isolation (`R4.5`) is undecided.** SQL Server's
-  `SNAPSHOT` level provides the stable snapshot the requirement needs, but it
-  must be enabled at the database level
-  (`ALTER DATABASE … SET ALLOW_SNAPSHOT_ISOLATION ON`) — a deployment action
-  this port has not specified. `READ COMMITTED SNAPSHOT` is the alternative and
-  has different semantics for writers. Choosing between them, and stating what
-  `init` must verify, is required before this port has a store.
-- **M14.26** **Write serialization (`H5.4`) is undecided** — the T-SQL
-  equivalent of `SELECT … FOR UPDATE` for ordering `version_id` assignment and
-  the chain append.
 - **M14.27** **Install atomicity at scale (`G2.5`) is untested.** SQL Server has
   transactional DDL; whether ~7,400 tables in one transaction is workable, and
   what the staged-schema equivalent would be, is unknown.
