@@ -1,245 +1,155 @@
 # The trust boundary
 
-fhir-oracle is a component, not a system. It cannot make a deployment compliant,
-and it must not be the reason a deployment cannot be. This chapter states, in
-one place, what fhir-oracle guarantees and what the deployment around it has to
-provide — because a boundary nobody can point at is not a boundary (spec
-PR12.8).
+fhir-oracle is a component, not a system. It cannot make a deployment
+compliant, and it must not be the reason a deployment cannot be. This
+chapter states, in one place, what fhir-oracle guarantees and what the
+deployment around it has to provide — because a boundary nobody can point at
+is not a boundary (`PR12.8`).
+
+It is also a **library**, not a server (`C0.17`, `C0.18`). Every guarantee
+below is something the Rust API does when you call it, not something an HTTP
+server enforces on your behalf — there is no `fhir-oracle serve`, no
+`--bind`, no `--trust-proxy`. If those concepts matter to your deployment,
+they belong to whatever process embeds this store.
 
 ## What fhir-oracle guarantees
 
 | Property | How | Spec |
 | --- | --- | --- |
-| Writes are transactional and versioned | one transaction per write, monotonic `version_id`, append-only history | R4.4, H5.1 |
-| Reads see one consistent snapshot | every multi-statement read runs `REPEATABLE READ READ ONLY` | R4.5 |
-| Conditional interactions are atomic | criteria-hash advisory lock, match and write in one transaction | A7.10 |
-| Optimistic concurrency | `ETag` / `If-Match`, 412 on mismatch, honored inside bundles too | D11, A7.9 |
-| Every change records who made it | audit envelope written by the same statement as the change | M3.15 |
-| Every read is recorded | disclosure row in `fhir_oracle_access_log` | PR12.5 |
-| History cannot be quietly rewritten | per-resource SHA-256 chain plus a database trigger refusing UPDATE/DELETE | M3.16, M3.17 |
-| PHI is encrypted in transit to the database | rustls, `sslmode` honored, refusal to serve non-loopback over a plaintext link | O10.7 |
-| Responses are not cached | `Cache-Control: no-store` and friends on every response | A7.8 |
-| Emitted URLs are not attacker-controlled | configured `--base-url`; forwarded headers only under `--trust-proxy` | A7.7 |
-| Nothing is silently dropped | unknown elements rejected; `_include` truncation warns in the bundle | D12, P6.7 |
-| Diagnostics do not leak stored data | client-safe errors are a separate type from internal ones | A7.11 |
+| Writes are transactional and versioned | one transaction per write, `SELECT … FOR UPDATE` row lock, monotonic `version_id`, append-only history | `R4.4`, `H5.1`, `H5.4` |
+| Every change records who made it | audit envelope columns written by the same statement as the change | `M3.15` |
+| Every read *can* be recorded | `log_access` writes a disclosure row to `fhir_oracle_access_log` — calling it is the caller's responsibility, this library does not intercept reads to do it automatically | `PR12.5` |
+| History cannot be quietly rewritten | per-resource SHA-256 **and** SHA-3-256 chain, plus a database trigger refusing `UPDATE`/`DELETE` on history outside a declared erasure | `M3.16`, `M3.17` |
+| Nothing is silently dropped | unknown elements rejected during shred, not swallowed | `D12` |
 
-## What the deployment must provide
+## What fhir-oracle does **not** guarantee, and why
 
-fhir-oracle does **not** do these, and a deployment that skips them is not safe to
-put patient data in:
-
-| Obligation | Why it is not here |
+| Property | Why not |
 | --- | --- |
-| **Authentication** | Identity belongs to the perimeter (plan D13). fhir-oracle accepts a principal asserted by a trusted proxy and records it; it verifies nothing. |
-| **Authorization** | There is no scope check, no compartment restriction, no `meta.security` label enforcement, and no consent evaluation. Any caller who reaches the API can read and write anything in it. |
-| **TLS to clients** | Terminate at the perimeter, or use the in-process `tls` feature. |
-| **Rate limiting per identity** | fhir-oracle bounds concurrency and request cost, not per-user quotas. |
-| **Network isolation** | The API, `/metrics`, and the database link should not share a network with untrusted clients. |
-| **Backup and retention** | Your engine's own tooling — RMAN, Data Guard, flashback or RMAN point-in-time recovery. fhir-oracle guarantees a consistent snapshot is a valid store; it does not schedule anything. |
-| **Key management and at-rest encryption** | Filesystem, volume, or cloud-provider encryption. fhir-oracle stores no secrets and manages no keys. |
+| **Reads see one consistent snapshot (`R4.5`)** | **Open, confirmed gap.** The one candidate mechanism this port considered, `SET TRANSACTION READ ONLY`, fails outright on this engine (`ORA-01466` on any session that has run DDL) — see [Operations](operations.md). `get` currently reads with no snapshot-isolation protection under concurrent writers at all. |
+| Authentication | Identity belongs to whatever calls this library. `Audit::from_principal(...)` records who the caller says did something; it verifies nothing. |
+| Authorization | There is no scope check, no compartment restriction, no `meta.security` label enforcement, and no consent evaluation. |
+| Transport encryption to the database | Undecided on this engine (`O10.7`, `M14.22`) — the live test suite connects over a plain local port with no encryption configured either way. |
+| Terminology validation | Required-binding `CHECK` constraints only. No value-set expansion, no SNOMED/LOINC/ICD membership checks. |
+| Profile conformance | Base-specification structure only — not US Core, IPS, or any implementation guide. |
+| Referential integrity across resources | FHIR permits dangling references and so does this store (`M3.10`). |
 
-## What neither provides yet
+## Attributing a write
 
-Stated rather than implied, so nobody discovers it during an audit:
+Every write takes an `Audit`:
 
-- **Terminology validation.** Required-binding `CHECK` constraints only. No
-  value-set expansion, no SNOMED/LOINC/ICD membership checks.
-- **Profile conformance.** Base-specification structure only — not US Core,
-  IPS, or any implementation guide.
-- **FHIRPath invariants.** The `fhir` crate enforces three of 314.
-- **Referential integrity across resources.** FHIR permits dangling
-  references and so does fhir-oracle (M3.10).
+```rust,ignore
+use fhir_oracle_store::Audit;
 
-## Configuring the boundary
+// A write attributed to a principal your own perimeter vouched for —
+// this library does not authenticate the string, it only records it.
+let audit = Audit::from_principal("dr-who", "header:X-Fhir-Oracle-Principal");
 
-A deployment that means it:
-
-```sh
-export PGSSLMODE=require PGSSLROOTCERT=/etc/ssl/pg-ca.pem
-fhir-oracle serve \
-  --bind 0.0.0.0:8080 \
-  --base-url https://fhir.example.org \
-  --trust-proxy --allowed-host fhir.example.org \
-  --principal-header X-Fhir-Oracle-Principal \
-  --reason-header X-Fhir-Oracle-Purpose \
-  --require-principal
+store.put(&patient_json, &audit).await?;
 ```
 
-Each flag is load-bearing:
+`Audit::cli()` attributes a write to whoever is running the current OS
+process (`$USER`/`$USERNAME`) — useful for scripts and tests, not for a
+deployment with real callers.
 
-- Without `--base-url`, paging links are built from the address fhir-oracle bound,
-  which behind a proxy is wrong. With it, no request header can change them.
-- `--trust-proxy` is what makes `--principal-header` mean anything. Without
-  it the header is *ignored*, not honored — otherwise any client could name
-  itself anyone. Only set it when a proxy you control is the only route in.
-- `--require-principal` turns an unattributable request into a 401. Without
-  it, writes are recorded as `unauthenticated`, which is honest but not
-  useful.
+## Recording a disclosure
 
-## Choosing an audit mode
+Reads are not audited automatically — call `log_access` yourself, once per
+interaction that returned or could have returned patient data:
 
-`--audit-mode` decides how a disclosure record reaches the log, and the
-choice is a real trade rather than a tuning knob:
-
-| Mode | What it costs | What it risks |
-| --- | --- | --- |
-| `sync` (default) | A round trip on every read. | Nothing: the record commits before the response is sent. |
-| `async` | An in-memory enqueue. | Records still queued when the process is killed are lost. Graceful shutdown drains them; `SIGKILL` does not. |
-| `off` | Nothing. | Everything this section is about. Requires `--allow-unaudited`. |
-
-`sync` is the default because the failure it prevents cannot be repaired
-afterwards. A disclosure with no record is indistinguishable, later, from a
-disclosure that never happened, and no amount of investigation recovers the
-difference.
-
-In **every** mode, a disclosure that cannot be recorded is refused rather
-than served: a saturated queue answers 503. Four counters per version make
-the difference visible on `/metrics`:
-
-- `refused` — reads turned away to keep the log honest. Non-zero means the
-  system is working as designed under strain.
-- `lost` — records the writer could not commit *after* the data was served.
-  **Non-zero is an incident**: disclosures happened that the log does not
-  show.
-
-Alert on `lost` above zero. Alert on sustained `refused` as a capacity
-signal.
+```rust,ignore
+store.log_access(&fhir_oracle_store::AccessRecord {
+    audit: Audit::from_principal("dr-who", "header:X-Fhir-Oracle-Principal"),
+    interaction: "read".into(),
+    rtype: Some("Patient".into()),
+    id: Some("example".into()),
+    version_id: Some(1),
+    outcome: "ok".into(),
+    result_count: None,
+}).await?;
+```
 
 ## Verifying the audit trail
 
-The hash chain is checked on demand, not on every read:
-
-```sh
-fhir-oracle verify-audit --fhir-version r5
+```rust,ignore
+let breaks = store.verify_audit().await?;
+assert!(breaks.is_empty(), "{breaks:?}");
 ```
 
-It recomputes every resource's chain and exits nonzero on the first break,
-naming the resource and version. Rows written before the audit columns
-existed carry no hash; they are reported as the point a chain begins, not as
-tampering.
+It recomputes every resource's chain — both the SHA-256 and SHA-3-256
+families — and returns every break it finds; an empty vector means a clean
+chain. Rows written before the audit columns existed carry no hash and are
+reported as the point a chain begins, not as tampering.
 
-### What each layer proves
+An optional HMAC signing key stops one specific thing a plain hash chain
+cannot: without a key, anyone with `INSERT` access to the history tables can
+recompute matching digests, so a bare hash chain proves only that nothing
+changed *by accident*. Supplying one changes that:
 
-Three layers, and they stop different things. Conflating them is how a
-deployment ends up believing it has protection it does not.
+```rust,ignore
+use fhir_oracle_store::chain::{ChainKey, KeyRing};
 
-| Layer | Stops | Does not stop |
-| --- | --- | --- |
-| SHA-256 + SHA3-256 digests | Careless or unaware modification: a migration, a stray `UPDATE`, a row restored from the wrong backup. Two design families, so one line of cryptanalysis cannot take both. | An attacker who knows the pre-image format — it is public, and the digests are unkeyed, so they can recompute them. |
-| `HMAC-SHA-256` tag | Forgery. Producing a valid tag needs a key held in the application process and never written to the database, so SQL write access is not enough. | A row being **deleted**. |
-| Chain witness, recorded off-box | Truncation and wholesale deletion. | — |
-
-That second row is the one worth dwelling on. Without a key, a hash chain
-proves only that nothing changed *by accident*: anyone who can write the rows
-can also write matching digests. Set `FHIR_ORACLE_CHAIN_KEY` and that stops being
-true.
-
-```sh
-# 32 bytes minimum. A placeholder like "changeme" would produce tags an
-# attacker could reproduce by guessing.
-export FHIR_ORACLE_CHAIN_KEY=$(openssl rand -hex 32)
-export FHIR_ORACLE_CHAIN_KEY_ID=k1
+let hex = std::env::var("FHIR_ORACLE_CHAIN_KEY_HEX").expect("set a 32-byte hex key");
+let keys = KeyRing::new(vec![ChainKey::from_hex("k1", &hex)?]);
+let store = OracleStore::connect(user, password, connect_string, map)
+    .await?
+    .with_chain_keys(keys);
 ```
 
-The key must not be readable by the database role. A key stored where the
-attacker already has write access protects nothing.
+**`KeyRing::from_env()` exists but do not use it here — it silently reads
+the wrong variable.** It is shared code (`fhir_store::chain`, identical
+across all six ports) and hardcodes `FHIR_SQLITE_CHAIN_KEY`/`_ID`/
+`_RETIRED` regardless of which port calls it — there is no
+`FHIR_ORACLE_CHAIN_KEY` support in it. Setting a variable by that name
+compiles, looks correct, and does nothing; `from_env()` returns an empty
+key ring and every chain link is an unkeyed hash. Construct the ring
+explicitly, as above, until this is fixed upstream — see `audit.md`
+**F-70**.
 
-**Rotation is additive.** Each tag records the key that signed it
-(`k1:9f86d0…`), so turning a key over does not invalidate history:
-
-```sh
-export FHIR_ORACLE_CHAIN_KEY=$(openssl rand -hex 32)   # the new signing key
-export FHIR_ORACLE_CHAIN_KEY_ID=k2
-export FHIR_ORACLE_CHAIN_KEYS_RETIRED="k1=<previous hex>"   # still verifies
-```
-
-Drop a retired key and rows signed with it become *unverifiable*, which
-`verify-audit` reports as exactly that — not as tampering. A missing tag, a
-tag naming a key you do not hold, and a malformed tag are each reported as
-what they are. Only a mismatch is a finding. Reporting a key-distribution
-problem as a forgery would burn an incident response.
-
-### The witness
-
-The tag stops a row being rewritten. It says nothing about a row that is
-simply gone: a chain missing its last version verifies perfectly, because
-nothing left behind refers to what was removed.
-
-```sh
-fhir-oracle chain-witness --fhir-version r5   # e.g. k1:3f2a…  or  1042:9c81…
-```
-
-Record it somewhere the database cannot reach — another host, a ticket, a log
-you do not administer — and compare periodically. It is deterministic over
-unchanged history, so a difference means a chain gained a version, lost one,
-or had its head altered.
-
-**If you already ship logs, you already have somewhere to put it.** Every
-checkpoint is emitted as an INFO line on its own `audit_checkpoint` target:
-at startup, after any erasure, and every `--checkpoint-interval-mins`
-(default 60; `0` disables the interval, keeping the startup and erasure
-ones).
-
-```
-INFO audit_checkpoint: chain checkpoint schema=r5 keyed=true
-     reason=startup witness=k1:3f2a8c…
-```
-
-The dedicated target is the point. Route and retain `audit_checkpoint` on its
-own schedule without keeping every other line — and because a checkpoint is
-only counts and digests, with **no PHI**, it can be kept far longer than
-ordinary application logs and stored where patient data must not go.
-
-One caveat that decides whether any of this is worth anything: a checkpoint
-is a witness only if it lands where the database cannot reach. Logs shipped
-off-host qualify. Logs written to a table in this same database, or to a disk
-the same compromised account can rewrite, do not. fhir-oracle cannot enforce that
-and does not claim to — the guarantee belongs to your log path.
+**What this port does not have**, unlike `fhir-postgresql`: `chain_witness`
+(an off-box, recomputable checkpoint you can compare against later) and
+`resign_history` (rotating the countersign after a key change). Both exist
+only on the reference port today.
 
 ## Erasure versus append-only history
 
-GDPR Article 17 says a record must be removable. Everything above says history
-must not be. These genuinely conflict, and fhir-oracle resolves it in one direction,
-explicitly:
+GDPR Article 17 says a record must be removable. The guarantee above says
+history must not be quietly rewritten. These genuinely conflict, and this
+port resolves it in one direction, explicitly:
 
-```sh
-fhir-oracle purge Patient 1234 --reason "art-17 request #4471" --allow-erasure
+```rust,ignore
+let report = store.purge("Patient", "1234", &audit).await?;
+// report.existed, report.versions_erased
 ```
 
-The resource and every historical version are deleted, and a **tombstone**
-takes their place recording who erased it, when, why, and the `row_hash` the
-chain ended on. So an erased record leaves a *verifiable hole* — an auditor
-can still see that a chain existed and was deliberately terminated by a named
-person — rather than a gap indistinguishable from a resource that never
-existed.
-
-`verify-audit` treats a tombstone as a recorded erasure, not a break. That
-distinction matters more than it looks: a tamper-evidence report that cries
-wolf on every lawful erasure is one an operator learns to ignore, at which
-point it detects nothing.
+Every historical version of the resource is deleted, and a **tombstone**
+takes their place. `verify_audit` treats a tombstone as a recorded erasure,
+not a chain break — a tamper-evidence report that cries wolf on every
+lawful erasure is one an operator learns to ignore, at which point it
+detects nothing (`purge_erases_history_and_leaves_a_verifiable_hole`, live).
 
 Two limits to state before anyone relies on this:
 
-- **The database is not the estate.** Backups, replicas, WAL archives, and any
-  downstream system that consumed the resource still hold it until they age
-  out. Promising erasure means having a plan for all of them; `purge` is one
-  step in that plan, not the plan.
-- **The guard is against accident, not against the application.** The
-  append-only trigger permits `DELETE` inside a transaction that sets
-  `fhir_oracle.erasure`, which is how `purge` works — so application-level SQL
-  execution could do the same. The trigger stops ordinary code, migrations,
-  and stray statements from touching history at all; the tombstone and the
-  access log are what make a deliberate erasure accountable.
+- **The database is not the estate.** Backups, standbys (Data Guard), and
+  any downstream system that consumed the resource still hold it until they
+  age out. `purge` is one step in an erasure plan, not the plan.
+- **The guard is against accident, not against a determined operator.** The
+  append-only trigger permits `DELETE` only inside a window where
+  `DBMS_APPLICATION_INFO`'s `CLIENT_INFO` names the erasure — which is how
+  `purge` itself works, so application code with direct SQL access could do
+  the same. The trigger stops ordinary code, migrations, and stray
+  statements from touching history at all; the tombstone and the access log
+  are what make a *deliberate* erasure accountable rather than invisible.
 
 ## Grants
 
-The append-only trigger is enforcement the application cannot bypass. Belt and
-braces, restrict the application role too:
+The append-only trigger is enforcement the application cannot bypass from
+ordinary SQL. Belt and braces, restrict the application role too:
 
 ```sql
-REVOKE UPDATE, DELETE ON ALL TABLES IN SCHEMA r5 FROM fhir_oracle_app;
-GRANT SELECT, INSERT ON r5.patient_history TO fhir_oracle_app;  -- and each _history
+REVOKE UPDATE, DELETE ON "R5"."patient_history" FROM some_readonly_role;
+-- and every other <resource>_history table
 ```
 
-With both in place, rewriting history requires a superuser deliberately
-disabling a trigger — an act that is itself visible in the server log.
+With both in place, rewriting history requires a DBA deliberately disabling
+a trigger — an act that is itself visible in the server's own audit trail.

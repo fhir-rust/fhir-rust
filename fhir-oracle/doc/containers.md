@@ -88,8 +88,16 @@ that finishes in 0.00s did not run.
 | `FHIR_ORACLE_SPEC_DIR` | FHIR definitions directory. |
 | `FHIR_ORACLE_CORPUS_DIR` | Example corpus directory. |
 | `FHIR_ORACLE_TEST_CORPUS_LIMIT` | Examples per version (default 400; use 10–25 for a fast loop). |
-| `FHIR_ORACLE_CHAIN_KEY` | Hex key enabling the keyed-MAC audit tests. |
 | `FHIR_ORACLE_BENCH` | Set to a row count to enable the benchmark test. |
+
+There is no `FHIR_ORACLE_CHAIN_KEY` — an earlier revision of this table
+claimed one "enabling the keyed-MAC audit tests", which was never true, and
+unlike the four other non-postgresql ports there is not even an
+unconditional keyed-MAC test to gate: this port has no per-algorithm tamper
+test yet (`T11.8` gap, see the conformance matrix). `OracleStore` does
+support an explicit `KeyRing` via `with_chain_keys` (see the [trust boundary
+chapter](../book/src/trust-boundary.md)); it is just not exercised by any
+test today. See `audit.md` **F-70**.
 
 ## Why the readiness probe uses TCP
 

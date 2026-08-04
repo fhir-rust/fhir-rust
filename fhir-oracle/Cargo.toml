@@ -36,15 +36,17 @@ zeroize = { version = "1", features = ["zeroize_derive"] }
 getrandom = "0.3"
 clap = { version = "4", features = ["derive", "env"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal", "sync", "time"] }
-# No database driver yet, deliberately. This port is Scaffold level: `ddl.rs`
-# is still the MySQL emitter (spec/audit.md F-08) and there is no store, so a
-# driver here would imply a connection nothing can make. Choosing one is
-# blocked on two open questions in spec/14-oracle-dialect.md — which crate,
-# and whether an Oracle Database Free image runs on arm64 at all, since that
-# decides whether live verification can be promised.
-#
-# Decision D5's reason for rejecting sqlx will hold here as it does elsewhere:
-# the SQL is generated, so compile-time checked queries buy nothing.
+# The `oracle` crate (ODPI-C/OCI bindings) — chosen 2026-08-04 over sqlx per
+# Decision D5's reasoning elsewhere in this workspace (the SQL is generated,
+# so compile-time checked queries buy nothing) and over a hand-rolled OCI
+# binding as unjustifiable scope for a port with no live engine to develop
+# against. Builds and `cargo check`s cleanly with no Oracle Instant Client on
+# the host — ODPI-C loads `libclntsh` via `dlopen` at connection time, not
+# link time — which is also why the store could be written before Instant
+# Client was available and connected live once it was; see
+# `spec/databases/audit.md` **F-68** (superseding **F-66**). `chrono` for
+# TIMESTAMP(6)/DATE columns, matching every other port's driver choice.
+oracle = { version = "0.6", features = ["chrono"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 

@@ -1,7 +1,10 @@
 # 14. Oracle dialect
 
-**Status: proposed, and mostly undecided.** A draft for review, not ratified
-(`X15.9`). It MUST NOT be cited as evidence for a conformance level.
+**Status: proposed; the type mapping, namespace, and store decisions below are
+now live-verified, transport security and install atomicity are not.** A
+draft for review, not ratified (`X15.9`). It MUST NOT be cited as evidence
+for a conformance level — the [conformance matrix](../../spec/databases/conformance-matrix.md)
+is that document.
 
 This annex records where the Oracle port departs from the
 [monorepo core](../../spec/databases/index.md). Requirements are numbered `M14.x` and use
@@ -21,11 +24,12 @@ RFC 2119 keywords.
 > `M14.x` in `fhir-oracle` predating this rewrite is void, and should be traced
 > to the MySQL annex it actually came from.
 
-> ## ⚠ Nothing in this port is Oracle yet
+> ## This port now has a live-verified store
 >
-> This annex is therefore mostly a **decision list**, not a specification of
-> behaviour. Most entries below say what must be decided and why the obvious
-> answer is wrong; a handful state decisions that can be made now.
+> This annex is still mostly a **decision list**, not a specification of
+> settled behaviour — most entries below say what had to be decided and why
+> the obvious answer was wrong. But as of 2026-08-04 the decisions in it have
+> been executed by a real store against a real database, not just read.
 >
 > Writing it that way is the requirement, not a shortcut. `X15.6` treats silence
 > as a defect, because silence and having-not-considered-it are identical on the
@@ -44,13 +48,23 @@ RFC 2119 keywords.
 >   DELETE guard **failing open** on Oracle's empty-string-is-NULL rule
 >   (`M14.29a`), and 453 unindexable reference targets that turned out to be a
 >   shared-core defect (**F-50**).
-> - **There is no store**, and no driver in the workspace. Nothing has been
->   written through the schema by this port.
+> - **There is a store, and it has connected to a database** (**F-68**,
+>   superseding **F-66**'s "compiles but never connected"). Oracle Instant
+>   Client for macOS arm64 turned out to be a direct, no-login download;
+>   installed, `crates/fhir-oracle-store` connected to a live
+>   `gvenzl/oracle-free:23-slim-faststart` and its `init`/`put`/`get`/
+>   `delete`/`history`/`vread`/`verify_audit`/`purge`/`log_access`/`search`
+>   surface was run against it in `tests/oracle_store.rs`: **7 of 7 tests
+>   pass, 0 ignored.** Getting there found and fixed five real defects — see
+>   `M14.5`, `M14.19`, `M14.34`, and `audit.md` **F-68** for the account. Not
+>   done: `R4.5` has no working mechanism (`M14.19`, regressed from
+>   "presumed" to "confirmed absent"), no `concurrency.rs` verifies `H5.4`
+>   under contention, no `redaction.rs`, and no `upgrade`/`backfill_norm`.
 > - **There are no map tests** — `crates/fhir-oracle-map/tests/` does not exist.
 >   The unit tests in `ddl.rs` are what exists.
 >
-> The port's `ddl.rs` module header is honest about all of this and is the
-> source for most of what follows. Conformance level: **Scaffold** (`C0.8`).
+> Conformance level: **Store** (`C0.8`), not Reference — see the [conformance
+> matrix](../../spec/databases/conformance-matrix.md) for the row-by-row claim.
 
 ## What does not change
 
@@ -106,6 +120,21 @@ RFC 2119 keywords.
   qualification, and three sets of grants have to be managed. A deployment that
   cannot grant `CREATE USER` cannot install this port, and that is a real
   limitation to state in the README before anyone meets it at 2am.
+
+  **Live-verified, 2026-08-04, with a correction this requirement did not
+  originally state: the user MUST be created unquoted, and the schema name
+  bound in `RelMap` MUST be uppercase.** Oracle folds an *unquoted*
+  `CREATE USER r5 ...` to uppercase (`R5`) for both authentication and
+  session identity (`SELECT USER FROM DUAL`). A first attempt created the
+  user quoted (`CREATE USER "r5" IDENTIFIED BY ...`) to preserve the
+  lowercase spelling this requirement's examples use — login as `"r5"`
+  succeeded, but the session's *resolved* identity was still uppercase
+  `"R5"`, and every DDL/DML statement qualified as `"r5".*` then failed
+  `ORA-01031: insufficient privileges` against a session that was really
+  `"R5"`. The working configuration is the unquoted, naturally-uppercase
+  user with a matching uppercase `RelMap.schema` — the opposite convention
+  from `r5`/`r4`/`r3` on every other port, and now what `scripts/db.sh` and
+  `tests/oracle_store.rs` both use (**F-68**).
 
 ## Type mapping — to decide
 
@@ -189,11 +218,13 @@ RFC 2119 keywords.
   chain signed and every chain would fail verification. `CLOB` is the intended
   binding.
 
-## The `ords` column — to decide
+## The `ords` column — decided
 
 - **M14.13** `ords` MUST hold the shared text image (`M3.4b`, `X15.5`), as on
-  every other port. The type is undecided between `VARCHAR2(n)` and `RAW(n)`;
-  `VARBINARY` — the SQL Server answer — does not exist in Oracle.
+  every other port. **Decided and executed: `RAW(255)`** — `ddl.rs` emits it
+  directly (`"ords" RAW(255) NOT NULL`); `VARBINARY`, the SQL Server answer,
+  does not exist in Oracle, and `RAW` is Oracle's binary type, compared and
+  indexed like any fixed column, never treated as a LOB.
 - **M14.14** Whichever is chosen, `M3.4a`'s three value-domain properties MUST
   survive: negative ordinals verbatim, `{}` storable and distinct from null, and
   unbounded depth.
@@ -231,18 +262,47 @@ RFC 2119 keywords.
   object with its own trusted package. That is a heavier dependency than any
   other port's and MUST be specified, not improvised.
 
-## Undecided, and required before any store
+## Store requirements
 
-- **M14.18** Install atomicity at scale (`G2.5`) — see `M14.15`.
-- **M14.19** Snapshot isolation (`R4.5`). Oracle's multiversion read consistency
-  is strong and `SET TRANSACTION READ ONLY` is the likely answer, but it MUST be
-  named rather than assumed.
-- **M14.20** Write serialization for `version_id` and the chain append (`H5.4`)
-  — presumably `SELECT … FOR UPDATE`, unverified.
+- **M14.18** Install atomicity at scale (`G2.5`) — see `M14.15`. Still
+  undecided; the live schema install (`M14.23a`) was a single hand-run
+  script, not tested for partial-failure behavior.
+- **M14.19** Snapshot isolation (`R4.5`). **Tried live, 2026-08-04, and
+  rejected: `SET TRANSACTION READ ONLY` does not work on this engine for
+  this port's shape of session.** The candidate this requirement named as
+  "the likely answer" fails every read with `ORA-01466: unable to read data
+  - table definition has changed` on any session that has ever executed
+  DDL — reproduced independently with a minimal 3-statement probe (`CREATE
+  TABLE` + commit, then on the *same session* `SET TRANSACTION READ ONLY` +
+  `SELECT`), with no application logic involved, confirming this is a
+  genuine Oracle session-level behavior and not a bug in how the store
+  called it. Every session that runs `init` (which is `CREATE TABLE`-heavy)
+  is poisoned for this technique for its lifetime.
+
+  The call was removed from `get` rather than shipped broken (see `oracle.rs`
+  module doc, `audit.md` **F-68**). **`R4.5` is therefore an open,
+  unresolved requirement on this port** — worse than merely undecided, since
+  the one candidate mechanism named here is now known not to work. A
+  dedicated Oracle session per read-transaction that has never run DDL, a
+  separate read-only connection pool, or `DBMS_FLASHBACK`/flashback query
+  (`AS OF SCN`/`AS OF TIMESTAMP`) are the remaining candidates and are
+  **untried**.
+- **M14.20** Write serialization for `version_id` and the chain append
+  (`H5.4`). **Implemented, 2026-08-04: `SELECT … FOR UPDATE`** on the base
+  row, held until commit/rollback, mirroring the pattern in `put`/`delete`
+  (`oracle.rs`). This is exercised by every live test in
+  `tests/oracle_store.rs` in the sense that each test's single-writer
+  sequence passes, but **no test races concurrent writers** the way
+  `fhir-mssql`'s and `fhir-mysql`'s `concurrency.rs` do — the mechanism is
+  present and plausible, not contention-verified.
 - **M14.21** Paging. `OFFSET … FETCH` exists from 12c, so it is available at the
-  `M14.2` floor. Placeholders are `:1`, `:2`, ….
+  `M14.2` floor. Placeholders are `:1`, `:2`, …. Implemented in
+  `oracle_search.rs::search_page`; not yet exercised by a test that requests
+  a second page with a cursor.
 - **M14.22** Transport security (`O10.7`) — Oracle Net encryption and/or TLS,
-  and which is the documented production setting.
+  and which is the documented production setting. Still undecided; the live
+  container this pass connects to over a plain local Docker/Podman port with
+  no encryption configured either way.
 - **M14.23** **A driver has not been chosen.** This was blocked on a practical
   question that also decides whether live verification can be promised at all:
   **whether an Oracle Database Free image runs on arm64.**
@@ -442,7 +502,7 @@ RFC 2119 keywords.
   |---|---|---|
   | `path` | yes — a FHIR element path | `VARCHAR2`, so it can be compared and indexed |
   | `v_kind` | yes — one character | `VARCHAR2(1 CHAR)`, never `CHAR` (`M3.6b`: no PAD SPACE) |
-  | `ords` | yes — the text image (`M14.13`) | `VARCHAR2`, still undecided against `RAW` |
+  | `ords` | yes — the text image (`M14.13`) | `RAW(255)`, decided and executed |
   | `key_hash` | yes — 32 bytes | `RAW(32)` |
   | `url`, `leaf`, `v_text` | **no** | `CLOB` plus `U1` adjuncts wherever search touches them |
 
@@ -460,9 +520,10 @@ RFC 2119 keywords.
   bytes.
 
   So this port's bindings follow: `path` and `v_kind` to `VARCHAR2` under `U12`;
-  `url`, `leaf` and `v_text` to `CLOB` with adjuncts under `U11`. What remains
-  open is `M14.13` — `ords` as `VARCHAR2` or `RAW` — and the generator work
-  `U11` now requires, which is shared-core and lands in all six ports at once.
+  `url`, `leaf` and `v_text` to `CLOB` with adjuncts under `U11`; `ords` to
+  `RAW(255)` (`M14.13`, decided and executed). What remained open was the
+  generator work `U11` now requires, which is shared-core and lands in all
+  six ports at once.
 
 - **M14.23e** **`M14.8`'s CHECK cannot live where `M14.6` implies it does.**
 
@@ -603,6 +664,33 @@ RFC 2119 keywords.
 - **M14.25** The eleven `#[ignore]`d MySQL-asserting tests in `ddl.rs` MUST stay
   ignored and MUST stay tracked in `tasks.md` (`T11.14`). They are the record of
   what has to be replaced.
+
+- **M14.34** Three store-level binding rules, each found live by
+  `fhir-oracle-store` connecting to a real Oracle for the first time
+  (**F-68**), not decidable by reading the driver or the annex alone:
+
+  1. `insert_row` (and any future helper that builds an `INSERT`/`UPDATE`)
+     MUST take one already-schema-qualified target identifier, never a bare
+     table name plus a separate schema argument. Passing both produced
+     `"R5"."R5"."patient_history"` and `ORA-00926: Missing VALUES or SET
+     keyword` — Oracle does not reject a doubly-qualified identifier the way
+     a syntax error would suggest; it reads as a malformed statement instead,
+     which is a slower error to trace back to its cause.
+  2. `Timestamptz` and `Date` values MUST bind through a typed
+     (`chrono::NaiveDateTime`/`NaiveDate`) parameter, never a plain string
+     left to Oracle's implicit conversion. Implicit conversion reads the
+     session's `NLS_TIMESTAMP_FORMAT`, not ISO 8601, and rejects an
+     ISO 8601 string with `ORA-01843: An invalid month was specified` unless
+     the session happens to be configured to expect it — which a generated
+     schema cannot assume. `M14.11` names the column type; this requirement
+     is the bind-side companion it did not yet state.
+  3. A `Bool` (`NUMBER(1)`) value used as a search predicate MUST bind as
+     `0`/`1`, never as the string `"true"`/`"false"`. Oracle refuses the
+     implicit string-to-number conversion SQL Server and MySQL both allow:
+     `ORA-01722: unable to convert string value containing 't' to a number`.
+     `oracle_search.rs`'s `target_pred` MUST resolve the target column's
+     `ColTy` before choosing a bind kind for a `Token` target — see that
+     file's module doc.
 
 ---
 

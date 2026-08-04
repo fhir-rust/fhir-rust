@@ -1,11 +1,36 @@
-//! fhir-oracle-store: the Oracle layer — **not yet written**.
+//! fhir-oracle-store: the Oracle layer.
 //!
-//! **There is no store here yet.** This crate is a placeholder: it re-exports
-//! the shared audit chain and defines the error type, and that is all. No
-//! driver, no connection, no operations — see `C0.8`, and the port README.
+//! # Live-verified, 2026-08-04 — Store level (`C0.8`)
+//!
+//! Written 2026-08-04 with no Oracle Instant Client on the build host, and
+//! for a time unverified beyond a clean `cargo build` (**F-66**). Instant
+//! Client for macOS arm64 turned out to be a direct, no-login download; once
+//! installed, this store connected to a live
+//! `gvenzl/oracle-free:23-slim-faststart` and its full CRUD/history/search/
+//! audit surface was run against it in `tests/oracle_store.rs` (**F-68**,
+//! `T11.2`): **7 of 7 tests pass, 0 ignored.** Running it live found and
+//! fixed five real defects — uppercase schema case-folding, `R4.5`'s
+//! candidate mechanism failing outright, a double schema-qualification bug,
+//! a timestamp-binding bug, and a boolean bound as text in token search —
+//! see `oracle.rs`'s module doc and `audit.md` **F-68** for the account.
+//!
+//! **What this does *not* mean:** `R4.5` (snapshot reads under concurrent
+//! writers) has no working mechanism on this port — the candidate named in
+//! `M14.19` was tried live and removed after it broke every read
+//! (`ORA-01466`) — so `get` is not protected against torn reads today. There
+//! is also no `concurrency.rs` exercising `H5.4` under contention, no
+//! `redaction.rs`, and no `upgrade`/`backfill_norm`. See the [conformance
+//! matrix](../../../spec/databases/conformance-matrix.md) for the precise,
+//! row-by-row claim — this module doc is a summary, not the source of truth.
+//!
+//! See `oracle.rs`'s own module doc for the architecture decisions behind
+//! the implementation.
 
 /// The tamper-evident audit chain, shared by every port (`M3.16`).
 pub use fhir_store::chain;
+pub mod oracle;
+pub mod oracle_search;
+pub mod pool;
 
 use thiserror::Error;
 
@@ -14,7 +39,7 @@ pub enum StoreError {
     #[error("pool: {0}")]
     Pool(String),
     /// A database failure, as the engine reported it.
-    #[error("mysql: {0}")]
+    #[error("oracle: {0}")]
     Db(String),
     #[error("shred: {0}")]
     Shred(#[from] fhir_oracle_map::ShredError),

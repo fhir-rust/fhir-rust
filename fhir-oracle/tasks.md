@@ -1,6 +1,6 @@
 # fhir-oracle — work breakdown
 
-**Conformance level: Scaffold (`C0.8`).** This file lists what has been done in
+**Conformance level: Store (`C0.8`).** This file lists what has been done in
 *this port* and what has not. Nothing here is inherited.
 
 ## Why this file was rewritten
@@ -31,21 +31,35 @@ not because this port did them.
 - [x] **Search-parameter compilation.** Shared, including the `U1`–`U13`
   adjunct channel this port needs because it cannot index its unbounded text
   type (`TEXT_ADJUNCTS = true`).
-- [x] **DDL emitter.** Oracle, and **executed**: the full R5 schema — 158 resources, 9,636 statements — installed on Oracle 26ai with 0 invalid objects and 0 unindexable search targets (**F-08**). Verified **by hand**, not by a test, which is why the level is still Scaffold (**F-51**).
+- [x] **DDL emitter.** Oracle, and **executed**: the full R5 schema — 158 resources, 9,636 statements — installed on Oracle 26ai with 0 invalid objects and 0 unindexable search targets (**F-08**). Verified by hand at first (**F-51**), and since **F-68** it is also what every `tests/oracle_store.rs::init_installs_tables_and_triggers` run installs live.
+- [x] **A store.** `crates/fhir-oracle-store/src/` implements `connect`,
+  `init`, `put`, `get`, `delete`, `history`, `vread`, `verify_audit`, `purge`,
+  `log_access`, `search`/`search_full`/`search_page` — connected to a live
+  `gvenzl/oracle-free:23-slim-faststart` for the first time 2026-08-04
+  (**F-68**). `tests/oracle_store.rs`: 7 of 7 tests pass, 0 ignored.
+- [x] **A database driver.** The `oracle` crate (ODPI-C/OCI), synchronous,
+  wrapped in `spawn_blocking`. Needs Oracle Instant Client on the host at
+  connection time (not build time) — a direct, no-login download for macOS
+  arm64; see `scripts/db.sh`'s header comment.
+- [x] **Write through the schema by this port**, live: `put`/`delete`
+  exercised in every `tests/oracle_store.rs` run against a real database, not
+  by hand.
 
 ## What does not exist
 
-Not "planned and unstarted" — **absent**. Each of these is why the port is
-Scaffold rather than Store.
+Not "planned and unstarted" — **absent**.
 
-- [ ] **A store.** `crates/fhir-oracle-store/src/lib.rs` is 48 lines: it
-  re-exports the shared audit chain and defines an error type. There is no
-  connection, no transaction, no operation.
-- [ ] **A database driver.** None. The `oracle` crate binds Oracle Instant Client, a native dependency with its own licence terms — a real decision, tracked as **F-51**, not an oversight.
-- [ ] **Any write through the schema by this port.** Every behaviour verified
-  so far was verified by hand or by DDL install alone.
-- [ ] **Map tests beyond DDL**, a live round-trip, history, search execution,
-  concurrency, redaction, audit, upgrade, or benchmarks.
+- [ ] **A working `R4.5` mechanism.** The candidate this port's annex named,
+  `SET TRANSACTION READ ONLY`, was tried live and fails outright with
+  `ORA-01466` on any session that has run DDL. `get` currently has no
+  snapshot-isolation protection at all. This is an open, confirmed gap, not
+  merely an unverified requirement — see `M14.19` and **F-68**.
+- [ ] **A concurrency test.** `H5.4` (serialized `version_id`) is implemented
+  via `SELECT … FOR UPDATE`, but no test races concurrent writers against it
+  the way `fhir-mssql`'s and `fhir-mysql`'s `concurrency.rs` do.
+- [ ] **A redaction test**, `upgrade`, `backfill_norm`, or benchmarks.
+- [ ] **A transport-security decision** (`O10.7`, `M14.22`) — the live tests
+  connect over a plain local port with no encryption configured either way.
 
 ## Not decided, not merely undone
 
@@ -58,11 +72,13 @@ here.
 
 ## Next, in order
 
-1. Decide the driver (see above); it gates everything below.
-2. A live test that installs the generated schema and **fails** rather than
-   skips when the DSN is set (`T11.12`, `T11.13`).
-3. `init` / `put` / `get` against a real server, then the corpus round-trip that
-   `C0.8` requires for **Store**.
+1. A working `R4.5` mechanism — the annex's one named candidate is now known
+   not to work (`M14.19`); a replacement is untried.
+2. `concurrency.rs`, racing writers against `put`/`delete` to verify `H5.4`
+   under contention, not just in sequence.
+3. `redaction.rs`.
+4. `upgrade` / `backfill_norm`.
+5. The transport-security decision (`O10.7`, `M14.22`).
 
 The [conformance matrix](../spec/databases/conformance-matrix.md) is the status
 document to trust. This file is a plan; it is not evidence (`C0.9`).

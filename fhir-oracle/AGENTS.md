@@ -1,6 +1,6 @@
 # Working in fhir-oracle
 
-**Engine:** Oracle Database · **Conformance level:** Scaffold (`C0.8`)
+**Engine:** Oracle Database · **Conformance level:** Store (`C0.8`)
 
 This port is one of six in a monorepo. Operational guidance is shared and lives
 at the root:
@@ -25,15 +25,32 @@ Normative behaviour is the monorepo core plus this port's annex:
 
 ## Specific to this port
 
-**The DDL is Oracle and has been executed; the runtime does not exist.**
-`ddl.rs` was the MySQL emitter until 2026-08-03 (**F-08**, closed). The full R5
-schema — 158 resources, 9,636 statements — now installs on Oracle 26ai with
-0 invalid objects and 0 unindexable search targets.
+**The DDL is Oracle and has been executed; the store now connects and its
+full surface is live-tested, with one confirmed gap.** `ddl.rs` was the
+MySQL emitter until 2026-08-03 (**F-08**, closed). The full R5 schema — 158
+resources, 9,636 statements — now installs on Oracle 26ai with 0 invalid
+objects and 0 unindexable search targets. `crates/fhir-oracle-store/src/`
+connected to a live `gvenzl/oracle-free:23-slim-faststart` for the first
+time 2026-08-04 (**F-68**, superseding **F-66**'s "compiles but never
+connected"): `tests/oracle_store.rs` runs `init`/`put`/`get`/`delete`/
+`history`/`vread`/`verify_audit`/`purge`/`log_access`/`search` against it —
+**7 of 7 tests pass, 0 ignored**. Getting there found and fixed five real
+defects — see **F-68** in full, or the short version: Oracle folds an
+unquoted username to uppercase for session identity, so the three version
+namespaces must be **uppercase** Oracle users (`M14.5`, the opposite
+convention from `r3`/`r4`/`r5` elsewhere); `R4.5`'s presumed mechanism (`SET
+TRANSACTION READ ONLY`) fails outright with `ORA-01466` (`M14.19` — this is
+an **open, confirmed gap**, not merely unverified); a double
+schema-qualification bug (`ORA-00926`); a timestamp-binding bug
+(`ORA-01843`); and a boolean bound as text in token search (`ORA-01722`,
+`M14.34`).
 
-What is still missing, and why the level has not moved: there is no
-store crate and no driver, so nothing has been written through the schema by
-this port. The eleven MySQL-asserting tests in `ddl.rs` are still `#[ignore]`d
-and still need replacing (`M14.25`, `T11.14`).
+Conformance level moved from Scaffold to **Store**. Not yet Reference: no
+`concurrency.rs` verifies `H5.4` under contention (the `SELECT … FOR UPDATE`
+mechanism is present, untested against racing writers), no `redaction.rs`,
+no `upgrade`/`backfill_norm`, and `R4.5` has no working answer at all. The
+eleven MySQL-asserting tests in `ddl.rs` are still `#[ignore]`d and still
+need replacing (`M14.25`, `T11.14`).
 
 The engine floor is Oracle 12.2 (`M14.2`) under a 63-byte identifier budget;
 **F-09** is closed.
@@ -58,10 +75,18 @@ Dialect differences belong in exactly two places: `map/src/ddl.rs` and the
 ## Running the live suite
 
 ```sh
-scripts/db.sh up      # start the pinned engine container
-scripts/db.sh test    # up, then the live suite
-scripts/db.sh down
+DYLD_LIBRARY_PATH=~/lib scripts/db.sh up      # start the pinned engine container
+DYLD_LIBRARY_PATH=~/lib scripts/db.sh test    # up, then the live suite
+DYLD_LIBRARY_PATH=~/lib scripts/db.sh down
 ```
+
+Unlike the other five ports, this one also needs **Oracle Instant Client** on
+the host — the `oracle` crate `dlopen`s `libclntsh` at connection time, not
+build time, so `cargo check`/`cargo build` work without it but every live
+test fails `DPI-1047` without it. See `scripts/db.sh`'s header comment for
+the (direct, no-login) download. `db.sh up`'s `ready()` check detects a
+missing client and fails fast with a named error rather than polling to a
+generic timeout.
 
 `cargo test` alone passes with no database, because the corpus- and
 database-driven tests self-skip. Most of what this library guarantees is a
@@ -75,4 +100,5 @@ database guarantee, so the live suite is the gate that means something.
 - [`tasks.md`](tasks.md) — the work breakdown.
 - [`plan.md`](plan.md) — design decisions and their reasons.
 
-**Do not push:** `origin` is still the ancestor project's repository (**F-11**).
+**Pushing:** still ask first — see [`../CLAUDE.md`](../CLAUDE.md#commit-and-push)
+for the current, narrower reason (F-37, not the old six-remotes one).

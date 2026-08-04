@@ -1,6 +1,6 @@
 [package]
 name = "fhir-oracle-store"
-description = "Oracle Database storage layer for fhir-oracle (scaffold: no store yet)"
+description = "Oracle Database storage layer for fhir-oracle (Store level: live-verified against gvenzl/oracle-free, 7/7 tests — see audit.md F-68; R4.5 is an open gap)"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -24,7 +24,12 @@ fhir-store = { path = "../../../fhir-store", version = "0.1.0" }
 fhir-oracle-map.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
-tokio.workspace = true
+tokio = { workspace = true, features = ["rt-multi-thread"] }
+oracle.workspace = true
+# Only for rendering the DATE/TIMESTAMP(6) columns the `oracle` crate's
+# `chrono` feature converts to — not for anything this store decides on its
+# own. Mirrors `fhir-mssql-store`'s identical comment on the same dependency.
+chrono = { version = "0.4", default-features = false, features = ["std"] }
 tracing.workspace = true
 sha2.workspace = true
 sha3.workspace = true
