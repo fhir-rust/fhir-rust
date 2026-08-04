@@ -3822,10 +3822,655 @@ here, for the same reason **F-60** didn't build a doc-compile CI job in the
 same pass it fixed the examples: doing it properly is a separate piece of work
 from stopping the bleeding.
 
----
+## F-65
 
-Part of the [fhir-databases specification](index.md).
+**`fhir-mssql` gained a real store this pass** — `connect`, `init`, `put`,
+`get`, `delete`, `history`, `vread`, `verify_audit`, `purge`, `log_access`,
+`search`/`search_full`/`search_page` — live-verified against `azure-sql-edge`
+by a new `mssql_store.rs`, `concurrency.rs`, `redaction.rs`, and
+`roundtrip_types.rs`. Five defects surfaced by running that work live; all
+five are now fixed, the fifth (`R4.5`) in a follow-up pass — see the amendment
+below. Recorded here per `W16.10`, the same reason **F-64** records numbers
+rather than assuming implementation once existed means it was correct.
 
+**Fixed:**
+
+1. **Cross-column collation conflict (468) in any chained reference search.**
+   `ColTy::Text` (`*_ref_id`, `*_ref_type`, `*_ref_url`) rendered as
+   `NVARCHAR(MAX)` with the *database* default collation, while `id`/`rid`
+   (`ColTy::TextC`) are always `Latin1_General_100_BIN2`. Comparing them —
+   exactly what a `subject:Patient.family=…` chain does — made SQL Server
+   refuse the query outright: "Cannot resolve the collation conflict between
+   SQL_Latin1_General_CP1_CI_AS and Latin1_General_100_BIN2." Fixed by giving
+   `Text`, `Numeric`, and `Jsonb` the same `BIN2` collation as `TextC` in
+   `ddl.rs`'s `col_sql`, so every unbounded column in the schema compares
+   consistently rather than three columns being special-cased.
+2. **`verify_audit` never read `row_mac` back.** The column was written on
+   every insert and never checked, so a keyed tag being wrong reported no
+   `hmac-sha256` break at all — confirmed live: tampering an `actor` column
+   correctly broke both hash chains but the HMAC check was silently absent.
+   Ported the MySQL store's `check_mac`/countersign-table logic verbatim
+   (`fhir_store::chain::{KeyRing, MacCheck}` is shared).
+3. **`connect` returned `Ok` for an unreachable server.** `bb8::Builder::build`
+   does not itself open a connection; a bad DSN (dead port) only failed on
+   first use. Fixed by borrowing and releasing one connection inside
+   `connect_pool` before returning.
+4. **`purge`'s `versions_erased` was double the true count.** `INSTEAD OF
+   DELETE` (`M14.19`) issues its own nested `DELETE`, and
+   `ExecuteResult::total()` summed both statements' `DONE` tokens — measured
+   live as `6` for `3` real history rows. Fixed by `SELECT COUNT(*)` before
+   the delete instead of trusting the post-delete row count.
+
+**Originally reported not fixed — `R4.5` (snapshot reads) violated under
+concurrent writers,** confirmed by a live torn read: a reader observed one
+write's `active` value alongside a different write's `name`/`telecom`. `get`
+wraps its multi-table read in `BEGIN`/`ROLLBACK TRANSACTION`, which is not
+snapshot isolation — this engine's default `READ COMMITTED` gives each
+statement inside that transaction the latest committed data as of when *it*
+runs, not one instant for the whole transaction, unlike PostgreSQL's or
+MySQL's default. `M14.25` already named this "undecided" before any store
+existed; running the reproduction (`tests/concurrency.rs`,
+`reads_never_tear_under_concurrent_writes`) turned it into a confirmed
+violation.
+
+Closing it needed a database this port could run `ALTER DATABASE` against —
+every DSN used so far, including `scripts/db.sh`'s `dsn_line`, omitted
+`database=` and landed in `master`, which SQL Server refuses the option on
+outright: `Option 'READ_COMMITTED_SNAPSHOT' cannot be set in database
+'master'.` That was a provisioning gap, not a code change, so it was recorded
+here rather than patched around in the same pass.
+
+**Amendment, same day: fixed, in a follow-up pass, after the first fix
+attempt was tried live and found insufficient.** `scripts/db.sh`'s `post_ready`
+now creates a dedicated `fhir_mssql` database on container start-up, before
+any pooled connection exists (so `ALTER DATABASE` never has to wait out an
+active transaction), and `dsn_line` targets it with `database=fhir_mssql`.
+
+The obvious fix — enable `READ_COMMITTED_SNAPSHOT` alone — was tried first and
+**did not** stop the torn read when run against the live reproduction: RCSI
+gives each individual *statement* inside a `READ COMMITTED` transaction its
+own snapshot, not the whole *transaction* one shared snapshot, which is what
+`get`'s multi-statement read actually needs. The fix that measurably works —
+confirmed by the same test passing five consecutive runs after the change,
+having failed every run before it — is `get` issuing `SET TRANSACTION
+ISOLATION LEVEL SNAPSHOT` immediately before its `BEGIN TRANSACTION`, backed
+by `ALLOW_SNAPSHOT_ISOLATION` enabled on the dedicated database. Because
+`SET TRANSACTION ISOLATION LEVEL` is session-scoped rather than
+transaction-scoped, `get` resets it back to `READ COMMITTED` before releasing
+the connection to the pool, on every exit path — the same leak discipline
+`purge`'s `SESSION_CONTEXT` erasure flag already needed, for the same reason.
+
+The `#[ignore]` was removed from `reads_never_tear_under_concurrent_writes`
+once it passed; the full live suite (23 tests) is green with none ignored.
+Both the "RCSI alone is insufficient" finding and the working fix are
+reproducible: `scripts/db.sh up` provisions the database correctly from a
+clean state, and the test fails again if `SET TRANSACTION ISOLATION LEVEL
+SNAPSHOT` is removed from `get` without removing `ALLOW_SNAPSHOT_ISOLATION`
+too.
+
+**One more pool-safety gap closed in passing, not itself live-reproduced.**
+`get`'s original shape returned early via `?` from inside its per-table read
+loop on any query error, skipping the rollback and (now) the isolation-level
+reset — an open transaction, `SNAPSHOT`-isolated, would have gone back to the
+pool for an unrelated later caller to inherit. The read loop is now a
+separate function (`read_resource_rows`) whose `Result` is captured before
+the rollback/reset run unconditionally, on the error path as well as the
+success one. No live reproduction exists for this one specifically — it
+would need a query mid-loop to fail, which nothing in this pass's test suite
+forces — so it is recorded as a defect found by reasoning about the new
+isolation-level state this fix introduced, not by running something and
+watching it fail.
+
+`scripts/db.sh`'s readiness check was also found broken while doing this
+work, unrelated to `R4.5` itself: `ready`/`post_ready` used to shell out to
+`sqlcmd` inside the container, and the `azure-sql-edge` image this port uses
+locally on arm64 ships no client tools at all — neither `/opt/mssql-tools` nor
+`/opt/mssql-tools18` exists in it. `wait_ready` therefore timed out and `up`
+exited nonzero on **every** local run, masked because the invocations used to
+verify this session's earlier work all piped `db.sh up`'s output through
+something like `tail`, which swallows the exit code. Fixed by replacing the
+`sqlcmd` calls with a tiny ephemeral `tiberius` probe generated into
+`target/` (mirroring the sqlite branch's `$WRAPPER` pattern, not a workspace
+member). `scripts/db.sh client` still shells out to `sqlcmd` and is not
+fixed — nothing in the test suite calls it.
+
+*Found live-testing the search and test-suite work this pass; fixed in a
+follow-up pass the same day. See `spec/14-mssql-dialect.md` `M14.25` for the
+fuller account.*
+
+## F-66
+
+**`fhir-oracle-store` now contains a full store implementation —
+`connect`, `init`, `put`, `get`, `delete`, `history`, `vread`, `verify_audit`,
+`purge`, `log_access`, `search`/`search_full`/`search_page`, plus a search
+builder (`oracle_search.rs`) and a connection pool (`pool.rs`) — written with
+**no Oracle Instant Client available on the build host**, and it must not be
+read as evidence of anything beyond what is stated below. Severity: **N/A**
+(a scope note, not a defect) — recorded per `W16.10` for the same reason
+**F-64** and **F-65** record what was and was not verified, and because a
+future reader finding ~2,000 lines of Oracle store code with no test result
+attached needs to know why before trusting any of it.
+
+**Context: the user's explicit choice.** Mid-session, asked how to handle
+Oracle given the missing driver, the options offered were (1) skip Oracle and
+leave it at Scaffold, (2) write the store anyway with no way to compile or
+run it, or (3) have the user install Instant Client first. The user chose
+(2) — write it anyway, unverified — over the recommended (1), after an
+explicit warning that it "will very likely fail to build here... and cannot
+be tested against the live oracle-probe container from this environment even
+if it did build," and that doing so "contradicts this session's own
+standard: every claim verified by running something." That warning's premise
+turned out to be half wrong, in the more favorable direction — see below —
+but the user's choice to proceed was made before that was known, on the
+information available at the time.
+
+**The premise — "this will not even compile" — was checked by running it,
+and was wrong.** `cargo check -p fhir-oracle-store` and
+`cargo build -p fhir-oracle-store` both **succeed** with no Instant Client
+installed. The `oracle` crate wraps ODPI-C, which loads `libclntsh` via
+`dlopen` at *connection* time, not link time, so nothing before an actual
+`Connection::connect` or `Pool::get` call needs the library at all. A minimal
+probe built against the same `oracle 0.6.3` confirms exactly where the real
+wall is:
+
+```
+error: DPI Error: DPI-1047: Cannot locate a 64-bit Oracle Client library:
+"dlopen(libclntsh.dylib, ...)" ... See https://oracle.github.io/odpi/doc/installation.html#macos for help
+```
+
+So the accurate claim is narrower and stronger than "written but never
+compiled": **this crate compiles and type-checks against the real shared
+core and the real `oracle` crate API, and has never once connected to a
+database.** Every doc comment written before this was discovered — and there
+were several, across `lib.rs`, `oracle.rs`, `oracle_search.rs`, `pool.rs`,
+and both `Cargo.toml` files — originally said "never compiled, never run"
+and was corrected in the same pass, once running `cargo build` made the
+original claim false. Left uncorrected, it would have been exactly the kind
+of confident-but-wrong text this project's audit exists to catch, just
+authored by this session instead of an earlier one.
+
+**What a clean compile is evidence of, and what it is not.** It confirms:
+every SQL string is at least well-formed Rust (no argument-count or
+mismatched-type errors), every column index and type dispatch in `cell_text`
+matches the map's own `ColTy`, and the calls into `shred.rs`/`reconstruct.rs`/
+`canon.rs`/`value.rs` — the shared core, identical across all six ports
+(`X15.1`) — use their *real* signatures rather than guessed ones. Getting
+those signatures right took several rounds of reading `fhir-mssql-store`'s
+actual (live-verified) source and the shared modules directly, because the
+first draft guessed wrong on `ReconIn`'s shape, `LeafVal::from_cols`'s
+signature, `canon::canonicalize` vs. a guessed `canon::canon`, and
+`ShredError`'s variants — all caught by the compiler, none of which a
+"written but never compiled" file would have had the chance to catch.
+
+It confirms **nothing** about: whether any SQL statement is syntactically
+valid *Oracle* SQL (`ddl.rs`'s own history includes `ORA-02438`, an
+empty-string-is-NULL trigger that failed open, and 453 unindexable targets
+that were shared-core defects — all found only by executing DDL, never by
+reading it); whether the `oracle` crate's actual runtime behavior matches
+this file's assumptions about it (the `Bound`/`ToSql`/`FromSql` NULL-typing
+scheme in particular, adapted from a defect class **found live** in
+`fhir-mssql-store` — see **F-65** — but never itself exercised here); whether
+`:1`-style positional placeholders bind in the order this code assumes;
+whether `SET TRANSACTION READ ONLY` actually gives `get`'s multi-table read
+one snapshot, the same unverified claim `fhir-mssql`'s analogous comment
+turned out to be wrong about (**F-65**) until a live test proved it one way;
+or whether the `CLIENT_INFO` erasure escape hatch works at all, given that
+its SQL Server analogue's first version **failed open** (`M14.29a`) and was
+only caught by executing a forbidden `DELETE`, not by reading the trigger.
+
+**Known, stated gaps within the unverified code itself**, beyond "nothing
+has run":
+
+1. `oracle_search.rs`'s `U6` confirming comparison (`DBMS_LOB.COMPARE`
+   against the source `CLOB` after a digest-adjunct hit) is not implemented
+   — a digest collision would go uncaught. Stated in that file's module doc
+   rather than silently omitted.
+2. Booleans are bound as `i64` 0/1 rather than the `oracle` crate's native
+   `bool` binding, because that binding targets Oracle's `BOOLEAN` type
+   (23ai+) while this port's schema uses `NUMBER(1)` at the 12.2 floor
+   (`M14.2`, `M14.4`) — reasoned from reading the driver source, not
+   confirmed by sending one.
+3. `drop_schema` queries `user_constraints` assuming the connecting user owns
+   exactly this schema's objects (per `M14.5`'s "three users, one per
+   version" decision) — untested against an actual multi-user Oracle
+   install.
+
+**Conformance impact: none, deliberately.** `fhir-oracle`'s level stays
+**Scaffold** (`C0.8`) — unchanged by this finding. `C0.9` requires a level be
+justified by tests that ran; a clean `cargo build` is real evidence of a
+narrower claim (the code matches real APIs) and not the claim `C0.9` is
+about. `fhir-oracle-map/src/ddl.rs` remains the only thing in this port
+verified against a live Oracle (**F-08**), and `mod oracle`/`mod
+oracle_search`/`mod pool` in `fhir-oracle-store` MUST NOT be cited as
+evidence of anything until someone with Instant Client available compiles,
+connects, and runs the live suite the way `fhir-mssql-store` and
+`fhir-mysql-store` already have.
+
+*Found writing and then attempting to verify the Oracle store this pass, at
+the user's explicit direction after being warned it would likely not even
+compile.*
+
+## F-67
+
+**`fhir-mssql`'s `deny.toml` justified ignoring four TLS-library vulnerability
+advisories on the grounds that they reached only a dev-dependency — and that
+became false the moment this port gained a store, unnoticed until this
+finding.** Severity: **High**. `O10.7` is about protecting PHI in transit,
+this port stores patient data, and the crate now shipping the vulnerable code
+is `fhir-mssql-store` itself.
+
+`RUSTSEC-2025-0134` (`rustls-pemfile` unmaintained) and `RUSTSEC-2026-0098`,
+`-0099`, `-0104` (three `rustls-webpki 0.101.7` certificate-handling defects)
+were recorded 2026-08-02 with the reasoning "`tiberius` is a dev-dependency of
+`fhir-mssql-map`... verified absent from `cargo tree -e normal`... nothing
+that ships is affected." That was true when written. `fhir-mssql-store`
+(**F-65**) was built two tasks later in the same session and depends on
+`tiberius` as a normal dependency; nobody re-ran `cargo tree -e normal`
+against the new crate, so `deny.toml`'s comments kept asserting a scope that
+no longer held. `cargo tree -p fhir-mssql-store -e normal`, run while
+investigating `O10.7` for this finding, shows `rustls-webpki 0.101.7` and
+`rustls-pemfile 1.0.4` both present in the shipping dependency tree.
+
+**Two things resolved, one escalated, one remains open:**
+
+1. **Resolved: the verification *mechanism* itself works.**
+   `tests/ssl_live.rs`, new this pass, proves live that
+   `TrustServerCertificate=false` rejects `azure-sql-edge`'s self-signed
+   certificate — deterministically, reproduced across repeated connections —
+   while `=true` accepts the identical certificate. The rejection is stricter
+   than an ordinary chain-of-trust failure: `rustls-webpki` refuses the
+   certificate's X.509 structure outright (`invalid peer certificate:
+   Other(UnsupportedCertVersion)`), found by running the connection attempt
+   with `RUST_LOG=trace` and reading the handshake.
+2. **Resolved (negative result): `native-tls` was tried as the escape `M14.34`
+   itself suggested, and does not work here.** Substituted for `rustls` in
+   both the real workspace and a standalone probe, it fails the TLS handshake
+   outright against this exact server — `Error forming TLS connection:
+   connection closed via error` — even under blind trust
+   (`TrustConfig::TrustAll`). `cargo tree`/`cargo deny check advisories`
+   confirm the vulnerable chain genuinely disappears under `native-tls` (not
+   merely hidden), so the finding is specifically "works elsewhere, not on
+   this host" — plausibly Apple's deprecated Secure Transport backend
+   refusing whatever certificate format `azure-sql-edge` generates, which
+   `rustls-webpki` also, separately, cannot fully parse. Reverted; the driver
+   is `rustls` again, unchanged from before this investigation.
+3. **Escalated, corrected, not fixed: the four advisories now demonstrably
+   reach a shipping crate,** contradicting the exception list's own stated
+   scope. `deny.toml`'s `ignore` comments are rewritten with the true current
+   dependency graph and this history; the advisories remain ignored because
+   there is no available fix (confirmed: `tiberius 0.12.3` is still the
+   newest release, checked against the crates.io index the same day), not
+   because the exposure is now understood to be small.
+4. **Open: this is a standing residual risk requiring an owner decision,**
+   not a research question with an obvious next experiment — accept it
+   formally with the corrected scope on record, find or fund a different TDS
+   driver, or state that this port's TLS story is unresolved and must not be
+   relied on for its own sake. `M14.24`/`M14.34` in
+   `fhir-mssql/spec/14-mssql-dialect.md` carry the full account.
+
+`O10.7` therefore stays unclaimed for this port, but the claim is now
+precisely diagnosed rather than an open question: the trust/no-trust logic is
+proven correct, and the certificate-parsing code underneath it is proven to
+carry unpatched CVEs — two independent facts, both true at once, and
+conflating them (as "just say verification works" would) is exactly the kind
+of half-true claim this project's audit process exists to catch.
+
+*Found investigating `O10.7` this pass, triggered by writing
+`tests/ssl_live.rs` and then checking what the store's own dependency tree
+actually contains rather than trusting a two-day-old comment.*
+
+## F-68
+
+**`fhir-oracle-store` has now connected to a live Oracle database, run its
+full CRUD/history/search/audit surface against it, and found and fixed four
+real defects — superseding F-66's "compiles but has never connected"
+premise, which was accurate when written and is now obsolete.** Severity:
+**N/A** for this finding itself (a status update, recorded per `W16.10`
+because F-66 is cited elsewhere as a reason not to trust this store, and that
+reason no longer applies in its original form); the four defects it
+describes were each real bugs, three of them High (data written incorrectly
+or not at all) and one Medium (a feature — token search on a boolean field —
+simply not working).
+
+**What changed: Oracle Instant Client, which F-66 and the annex's `M14.23`
+both treated as an open, potentially unresolvable blocker, turned out to be a
+direct, no-login download.** `instantclient-basiclite-macos-arm64.dmg` from
+`download.oracle.com` — no OTN click-through, no account — mounts and its
+dylibs copy straight to `~/lib`, a default ODPI-C search path. Once present,
+`gvenzl/oracle-free:23-slim-faststart` (the same arm64 image `M14.23a`
+measured booting to "DATABASE IS READY TO USE!" in ~13 seconds) gave this
+port its first live database, and the store built in F-66 connected to it on
+the first attempt.
+
+**Four defects found by running it, none of them visible from reading the
+code:**
+
+1. **Uppercase schema case-folding (`M14.5`).** Oracle folds an *unquoted*
+   username to uppercase for session identity — `SELECT USER FROM DUAL`
+   returns `"R5"` — regardless of how `CREATE USER` quoted the object name at
+   creation. A user created as `CREATE USER "r5" IDENTIFIED BY ...` (quoted,
+   to preserve the lowercase spelling `M14.5` assumed) could still log in as
+   `"r5"`, but every DDL statement addressed to `"r5".*` then failed
+   `ORA-01031: insufficient privileges`, because the session that ran it was
+   really `"R5"`. Fixed by creating users **unquoted** (naturally uppercase)
+   and setting the map's `schema` field to match, uppercase — the opposite
+   convention from every other port's lowercase schema names, and now
+   recorded in `M14.5` and `tests/oracle_store.rs`'s `sampled()` helper.
+2. **`R4.5`'s presumed answer doesn't work (`M14.19`).** The annex named
+   `SET TRANSACTION READ ONLY` as "the likely answer" for snapshot reads,
+   unverified. Tried live, it failed every read with
+   `ORA-01466: unable to read data - table definition has changed` —
+   reproduced independently with a minimal 3-statement probe (`CREATE TABLE`
+   + commit, then on the *same session* `SET TRANSACTION READ ONLY` +
+   `SELECT`), confirming this is a genuine Oracle behavior (any session that
+   has ever executed DDL is poisoned for later read-only or serializable
+   transactions) rather than a bug in how the store called it. The call was
+   removed rather than shipped broken. **`R4.5` regresses from "an
+   unverified but plausible design" to a confirmed, open gap** — `get` now
+   has no snapshot-isolation protection at all on this engine. This is the
+   opposite direction from `fhir-mssql`'s `R4.5` story (**F-65**, where the
+   first attempt was insufficient but a second one worked); here the
+   candidate mechanism itself doesn't apply, and no replacement is proposed.
+3. **Double schema-qualification (`ORA-00926`).** `insert_row` took a
+   separate `schema` argument *and*, at several call sites, an
+   already-schema-qualified table string, producing SQL like
+   `INSERT INTO "R5"."R5"."patient_history" (...) — Missing VALUES or SET
+   keyword`. Fixed by changing `insert_row` to take one pre-qualified
+   `target: &str` and fixing all nine call sites; its error message now
+   includes the failed SQL text, to make this class of bug faster to
+   root-cause next time.
+4. **Timestamp/date binding relied on session NLS settings
+   (`ORA-01843: An invalid month was specified`).** Values were bound as
+   plain strings, leaning on Oracle's implicit string-to-`TIMESTAMP`/`DATE`
+   conversion — which uses the session's `NLS_TIMESTAMP_FORMAT`, not ISO
+   8601, unlike SQL Server's `DATETIME2` which accepts ISO 8601 regardless of
+   session settings. Fixed by adding real `chrono`-typed bind variants
+   (`Bound::Timestamp`, `Bound::CalDate`) with an explicit
+   `"%Y-%m-%dT%H:%M:%S%.f"` parse.
+
+**A fifth defect surfaced by the checked-in test suite itself, after the
+above four were fixed and a real `tests/oracle_store.rs` (not the `/tmp`
+scratch harness used to find 1–4) was written and run:**
+
+5. **Token search cannot bind a boolean as text
+   (`ORA-01722: unable to convert string value containing 't' to a number`).**
+   `search_by_token_and_family_name` searching `active=true` against
+   `Patient.active` — `NUMBER(1)`, `ColTy::Bool` — bound the raw string
+   `"true"`. Unlike SQL Server/MySQL, Oracle refuses to implicitly convert
+   `'true'`/`'false'` to a number. Fixed by adding a `Bind::I64` variant to
+   `oracle_search.rs` and a `col_is_bool` lookup so `target_pred`'s `Token`
+   branch binds `0`/`1` instead of a string whenever the target column is
+   `ColTy::Bool`, threaded through a new `cols` parameter on `target_pred`
+   and its sole caller `param_predicate`.
+
+A sixth, cosmetic finding belongs to the test fixture, not the store: the
+first run of `put_then_get_round_trips_a_resource` reported `"9.60"`
+round-tripping as `"9.6"`, which looked like the `M3.6` decimal-precision
+defect this whole test exists to catch. It was the test's own fixture: built
+with `serde_json::json!`, whose `9.60` is collapsed to an `f64` literal by
+Rust's own parser before `serde_json` ever sees text — the exact trap
+`fhir-mssql-store`'s test file already documents avoiding. Fixed by building
+the fixture with `serde_json::from_str` instead. Recorded here because it is
+the second time in this session a live test's first failure was misdiagnosed
+against the store before the fixture was found guilty (`fhir-mssql`'s
+`ssl_live.rs` had a milder version, misreading a `bb8` timeout as a
+certificate error) — worth a general note that a live test's first failure
+should be traced to its actual source before it is written down as a store
+defect.
+
+**Conformance impact.** `fhir-oracle` moves from **Scaffold** to **Store**
+(`C0.8`, `C0.9`): a real, checked-in `tests/oracle_store.rs` (7 tests, `T11.2`)
+now runs against a real `scripts/db.sh`-managed Oracle instance and passes
+green with 0 ignored, replacing the `/tmp/oraclelive` and `/tmp/oracle-probe`
+scratch harnesses used to find defects 1–4 as the basis for any claim.
+`R4.5` is now `!` rather than `—` in the [conformance
+matrix](conformance-matrix.md) — a confirmed gap, not merely an untested
+one, and MUST be treated as one until `M14.19` names a working mechanism.
+`H5.4` is `?`: `SELECT … FOR UPDATE` is in the code (`M14.20` discharged),
+but no `concurrency.rs` exists yet for this port to prove it holds under
+contention. See `fhir-oracle/spec/14-oracle-dialect.md` for the annex
+updates this finding requires (`M14.5`, `M14.19`, `M14.20`) and
+`fhir-oracle/CLAUDE.md`/`AGENTS.md`/`README.md`/`tasks.md` for the
+corresponding documentation pass.
+
+*Found installing Oracle Instant Client and running the F-66 store live for
+the first time this pass, then writing a real test suite for it and running
+that too.*
+
+## F-69
+
+**`scripts/db.sh up` silently exits 1 with zero output — no stdout, no
+stderr, no diagnostic of any kind — the first time it runs against a fresh
+`target/` directory, in all six ports.** Severity: **Medium**. It is not a
+data-safety defect, but it is exactly the class this project's audit exists
+to catch: the documented, agent-facing workflow (`scripts/db.sh up`, then
+`scripts/db.sh test`) simply does not work the first time, and fails in the
+one way hardest to diagnose — total silence.
+
+**Root cause.** `spec_exports()`, present verbatim in all six `scripts/
+db.sh` (F-39's fix touched this same function for a related but different
+defect and did not introduce this one — it predates F-39):
+
+```sh
+spec_exports() {
+  local spec
+  if spec="$(find_spec)"; then
+    echo "export $SPEC_ENV=$spec"
+    [ -d "$CORPUS_DIR" ] && echo "export $CORPUS_ENV=$CORPUS_DIR"
+  fi
+}
+```
+
+When `find_spec` succeeds (the FHIR spec checkout is found — true in this
+repository) but `$CORPUS_DIR` (`target/test-corpus`, the symlink tree
+`scripts/db.sh corpus` lays out) does not yet exist, `[ -d "$CORPUS_DIR" ]`
+is false and `&&` short-circuits, making that line — the last one
+executed — return non-zero. Bash functions return the exit status of their
+last command, so `spec_exports` itself returns 1.
+
+Every `up()` calls `spec_exports` as its own unguarded last statement:
+
+```sh
+  echo "to use it in this shell:"
+  dsn_line
+  spec_exports
+}
+```
+
+So `up()` also returns 1. Under this script's `set -euo pipefail`, any
+caller that invokes `up` as a bare statement — the top-level dispatcher
+(`up) up ;;`) and `run_tests`'s `up >/dev/null` alike — dies immediately on
+that non-zero status. Because the failing test produces no output of its own
+and `set -e` prints no message either, the visible result is: every `export
+FHIR_*` line prints correctly, and then the process exits 1 with nothing
+further — not even from `run_tests`, which never gets far enough to reach
+`corpus_ok`/`corpus`/`cargo test`.
+
+**Reproduced live, in two ports, from the actual current repository
+state** (not a constructed scenario): neither `fhir-oracle/target/
+test-corpus` nor `fhir-mssql/target/test-corpus` currently exists, so
+`DYLD_LIBRARY_PATH=~/lib ./scripts/db.sh up` in `fhir-oracle` — and, by the
+same code path, `./scripts/db.sh up` in `fhir-mssql` — both exit 1 despite
+printing a complete, correct `export FHIR_*_TEST_*=...` block immediately
+before doing so. `bash -x` confirms no command after the final `echo`
+produces any output before the script terminates.
+
+This is why it was found now rather than earlier in this session: `fhir-
+mssql`'s live suite was mostly exercised via `cargo test` directly, with the
+DSN exported by hand, not through `scripts/db.sh test`'s own exit code.
+`fhir-oracle`'s **F-68** work was the first time this session actually
+relied on `scripts/db.sh test` end-to-end and checked whether it succeeded.
+
+**Fixed** by adding an explicit `return 0` after the `if` block in
+`spec_exports`, in all six `scripts/db.sh` — the function is purely
+informational (it prints `export` lines for a human to eval, or for
+`eval "$(spec_exports)"` to consume) and was never meant to signal failure
+to its caller; the missing corpus directory is an expected, common state
+`run_tests`'s own `corpus_ok || corpus` a few lines later exists to handle,
+not a fatal error one function-call earlier.
+
+**Verified.** `fhir-oracle`: `scripts/db.sh test -p fhir-oracle-store --test
+oracle_store -- --test-threads=1` against a `target/` with no
+`test-corpus` directory now runs to completion — 7 of 7 tests pass, exit 0
+— where it previously exited 1 with no output at all. `bash -n` confirms all
+six edited scripts remain syntactically valid.
+
+**Conformance impact: none directly** — this is a developer-workflow defect
+in a script `C0.9` does not itself require, not a change to any store's
+behaviour. It does mean that any conformance claim in this session
+established by *running* `scripts/db.sh test` (rather than `cargo test`
+directly with hand-exported variables) should be re-read as "worked after
+this fix", not "always worked" — none currently rests on the broken window,
+since the defect always killed the run before any test could execute, and a
+killed run cannot itself have produced a false positive.
+
+*Found running `fhir-oracle`'s `scripts/db.sh test` for the first time this
+pass, to verify the exact command this pass's documentation updates were
+about to recommend actually works — it did not, silently, until this fix.*
+
+## F-70
+
+**`fhir_store::chain::ChainKey::from_env()`/`KeyRing::from_env()` — shared
+code (`fhir-store`, one crate every port depends on, not six copies)
+hardcoded the literal variable names `FHIR_SQLITE_CHAIN_KEY`/`_ID`/
+`_RETIRED`, regardless of which port called them.** Severity: **Medium**.
+Setting `FHIR_POSTGRESQL_CHAIN_KEY` compiled, looked correct, and did
+nothing: `from_env()` found no `FHIR_SQLITE_CHAIN_KEY`, returned an empty
+`KeyRing`, and every history row signed with a bare SHA-256/SHA-3-256 hash
+instead of the intended HMAC — silently weaker tamper-evidence than a
+deployment believed it configured (`PR12.x`, the guarantee `with_chain_keys`
+exists to provide).
+
+**Blast radius, found independently by two documentation-verification
+agents in the same pass** (the `fhir-postgresql` and `fhir-mariadb`
+book-rewrite agents launched this session, working from separate source
+trees with no shared context): every port's own `CHANGELOG.md` and
+`doc/containers.md` — including `fhir-sqlite`'s own — documented a
+port-specific name as if it "enabled the keyed-MAC audit tests". Checking
+which ports actually call `from_env()` at all turned up a narrower truth:
+only `fhir-postgresql`'s store ever did. The other five ports' keyed-MAC
+test coverage (where it exists — `sqlite_store.rs`, `mysql_store.rs`,
+`mariadb_store.rs`, `mssql_store.rs` each build a `KeyRing` directly with a
+fixed test key) was never gated by an environment variable at all; only
+`fhir-oracle` has no keyed-MAC test coverage yet (`T11.8` gap). So the
+`doc/containers.md` claim was doubly wrong on five of six ports: wrong name,
+*and* describing a toggle that does not exist.
+
+**Fixed.** `ChainKey::from_env`/`KeyRing::from_env` now take a `prefix: &str`
+argument and read `<prefix>_CHAIN_KEY`/`_ID`/`_RETIRED` — the caller names
+itself, since the shared function cannot know which port it is linked into.
+`fhir-postgresql-store`'s sole call site now passes `"FHIR_POSTGRESQL"`.
+Live-verified against a real PostgreSQL 18: `cargo test -p
+fhir-postgresql-store --test audit` with `FHIR_POSTGRESQL_CHAIN_KEY` set
+now genuinely exercises the keyed branch (`mac_breaks == 1`, previously
+unreachable because the ring was silently empty), and with it unset the
+unkeyed branch still passes — both directions, 5/5 tests either way. Full
+`cargo test --workspace` in `fhir-postgresql` is green (22 test binaries, 0
+failed), and all five other ports still `cargo check` clean against the
+new `fhir-store` (none of their own code called the old zero-argument
+signature).
+
+**Documentation corrected to match**: `fhir-sqlite`, `fhir-mysql`,
+`fhir-mariadb`, and `fhir-mssql`'s `doc/containers.md` no longer claim a
+`CHAIN_KEY` environment variable exists — each now states plainly that their
+keyed-MAC coverage runs unconditionally in test code, not from the
+environment. `fhir-oracle`'s notes it has no keyed-MAC test at all yet.
+`fhir-postgresql`'s row needed no change — it is now the one port where the
+claim is true. `fhir-oracle/book/src/trust-boundary.md` (written earlier
+this session, before this fix existed) already routed around the bug by
+constructing a `KeyRing` explicitly; left as-is since that pattern remains
+correct and is now merely no longer the *only* option.
+
+*Found independently by the `fhir-postgresql` and `fhir-mariadb`
+book-documentation-rewrite agents this session, while checking every env var
+a chapter named against the shared `chain.rs` source rather than trusting
+the port's own `CHANGELOG.md`; fixed and live-verified the same pass.*
+
+## F-71
+
+**`fhir-sqlite`: `active=true` — FHIR's own boolean-token search
+spelling — silently matched zero rows against a `Patient.active` (or any
+other `ColTy::Bool`) column.** Severity: **High** for a search feature: not
+an error, not a degraded result, a token search that returns nothing for a
+value that is present, with no indication anything went wrong.
+
+**Root cause.** `sqlite_search.rs`'s `target_pred` bound every token value —
+including a bare boolean code — as a `String` parameter (`rusqlite`'s TEXT
+binding). SQLite's comparison-affinity rule only promotes a bound TEXT value
+to NUMERIC when the text *looks like* a number: the literal word `"true"`
+does not, so it stayed TEXT and was compared against the column's INTEGER
+storage class (`ColTy::Bool` binds `INTEGER` on this port) — TEXT and
+INTEGER never compare equal in SQLite regardless of value, so `active =
+'true'` matched nothing. Binding `"1"` instead works, because `"1"` *does*
+look like a number and SQLite's affinity rule converts it before comparing.
+
+This is a different failure shape from the analogous Oracle defect found
+earlier this session (**F-68**, part 5: `ORA-01722`, a hard error) — SQLite
+does not error, it just quietly returns an empty result set, which is worse
+for a caller to notice.
+
+**Fixed.** Added `col_is_bool` (a `ColTy::Bool` lookup against the target
+table's columns, threaded into `target_pred` via a new `cols` parameter, the
+same shape as the Oracle fix) and `bool_token_as_bind`, which maps
+`"true"`/`"false"` to `"1"`/`"0"` before binding in the `TargetKind::Token`
+bare-value path — the only path booleans reach, since FHIR never models a
+boolean search parameter with a `system` component. Verified with a new
+test, `boolean_token_search_finds_a_true_value`
+(`crates/fhir-sqlite-store/tests/sqlite_store.rs`): puts a `Patient` with
+`active: true`, asserts `active=true` finds it and `active=false` does not.
+Full `cargo test -p fhir-sqlite-store` is green afterward — the fix did not
+disturb the 27 other tests in the same binary.
+
+*Found by the `fhir-sqlite` book-documentation-rewrite agent this session,
+while compiling and running the search examples it was about to write down
+as fact rather than assuming they worked; fixed the same pass.*
+
+## F-72
+
+**The root `CLAUDE.md`'s description of `fhir-store/` was stale and
+self-contradictory: it named the wrong crate as the HTTP surface, repeated
+a nested-repository warning (F-37) that no longer applies to the directory
+now holding that name, and said both `fhir-mssql` and `fhir-oracle` "have no
+store" — both false, and the second false in the most consequential way, on
+the file every agent working in this repository is told to read first.**
+Severity: **Medium** — no data-safety impact, but this is the orientation
+document, and being wrong here compounds: an agent trusting it would look
+for the REST server inside `fhir-store/` (empty) rather than `fhir-loco/`
+(where it is), and would tell a user `fhir-mssql`/`fhir-oracle` have no
+store months after both did.
+
+**The `fhir-store` name has meant two different things at two different
+times, and the file described the earlier one.** `fhir-store/` was
+originally the HTTP surface's home; it had its own untracked `.git` with no
+remote, a genuine defect (**F-37**), fixed 2026-08-02 by removing the nested
+repo and committing its source directly — the same day, that directory was
+renamed `fhir-loco` (**F-45**). The name `fhir-store` was then reused,
+within the same finding (**F-45**), for an unrelated extraction: a small
+shared library (the tamper-evident audit chain, `Audit`, `AccessRecord`, and
+the value types every port returns), pulled out of ~860 lines duplicated six
+times. Root `CLAUDE.md` kept describing the *first* meaning — "the HTTP
+surface... has no spec at all" in its orientation paragraph, and the F-37
+nested-repository warning verbatim in its commit-and-push section — after
+both had stopped being true of the crate holding that name. The file's own
+later section (`## Traps specific to this repository`) already correctly
+named `fhir-loco` as the real server, so the document contradicted itself
+by the time a reader reached paragraph three.
+
+Verified before fixing, not assumed: `ls -la fhir-store/.git` (no such
+file), `git status --short fhir-store/` (ordinary tracked-file entries, no
+`??`), and `git ls-files fhir-store/ | wc -l` (7 files, normally tracked) —
+2026-08-04. `fhir-mssql`/`fhir-oracle` "no store" was checked against
+findings **F-65**/**F-68**, both closed this session.
+
+**Fixed.** Root `CLAUDE.md`'s orientation paragraph, "traps" section, scope
+discipline note, and commit-and-push section all corrected — see the file's
+own current text rather than duplicating it here, per this project's own
+rule against maintaining the same fact in two places.
+
+*Found while doing a documentation-accuracy pass on `fhir-store/` at the
+user's request, expecting a routine README check and instead finding the
+crate's own name was actively misleading relative to the repository's most
+important orientation file.*
 
 ---
 
