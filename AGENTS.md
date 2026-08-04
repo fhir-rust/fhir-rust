@@ -181,13 +181,20 @@ gate against a substitute engine is worse than none (**F-06**).
   without checking which is right. Both may be wrong; the core says which.
 - Do not text-substitute an engine name through a document. That is exactly how
   **F-01**, **F-08**, and **F-16** happened — six READMEs, a `ddl.rs`, and two
-  dialect annexes describing engines they did not target. Three of those are
-  fixed; `fhir-oracle`'s `ddl.rs` and every port's `book/` are not.
+  dialect annexes describing engines they did not target. All are now fixed,
+  including `fhir-oracle`'s `ddl.rs` and every port's `book/` (rewritten from
+  copy-substituted templates to source-verified content 2026-08-04) — but the
+  failure mode recurs easily, so keep checking for it rather than assuming
+  it is settled forever.
 - Do not add a test that cannot fail. Verify it by mutation (`T11.10`).
 - Do not delete an audit finding because the text that stated it was rewritten.
   Findings close when they are fixed.
-- Ask before pushing — but not for the reason this line used to give. The six
-  ports no longer have their own `origin`s (**F-11** is resolved: they are
-  directories in one repository, remote `fhir-rust/fhir-rust`). What is still
-  unsettled is `fhir-store/`, a nested repository with no remote that the parent
-  does not track (**F-37**) — pushing would silently omit it.
+- Ask before pushing — but not for either reason this line used to give. The
+  six ports no longer have their own `origin`s (**F-11** is resolved: they are
+  directories in one repository, remote `fhir-rust/fhir-rust`). The
+  nested-repository warning about `fhir-store/` (**F-37**) is also resolved,
+  and for a more confusing reason than F-11: F-37 was about a *different*
+  directory that used to carry this name — the HTTP surface, since renamed
+  `fhir-loco/` (**F-45**) — not the persistence-core crate that holds the
+  name today, which has never had a nested `.git` (verified 2026-08-04,
+  **F-72**). Ask anyway; it is still someone else's decision when to push.

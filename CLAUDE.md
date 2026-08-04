@@ -9,15 +9,26 @@ applies — in particular its five rules, which are the ones that get broken.
 
 ## The one-paragraph orientation
 
-Three families in one monorepo. [`fhir/`](fhir/) is the FHIR **model** — every
-resource and datatype as Rust types, generated from the specification packages,
-with its own spec and its own `AGENTS.md`. Six `fhir-<engine>/` directories are
-the **database** ports: they store FHIR R3/R4/R5 resources as real relational
-tables and give them back losslessly, governed by one normative core in
-`/spec/databases`, each adding only a dialect annex. [`fhir-store/`](fhir-store/)
-is the **HTTP surface** over one of those ports, and has no spec at all. The
-pure-Rust core of the ports (shred, reconstruct, fold, canon, gen) is
-**identical across all six** and must be changed in all six at once.
+Three families in one monorepo, plus two supporting crates. [`fhir/`](fhir/)
+is the FHIR **model** — every resource and datatype as Rust types, generated
+from the specification packages, with its own spec and its own `AGENTS.md`.
+Six `fhir-<engine>/` directories are the **database** ports: they store FHIR
+R3/R4/R5 resources as real relational tables and give them back losslessly,
+governed by one normative core in `/spec/databases`, each adding only a
+dialect annex. The pure-Rust core of the ports (shred, reconstruct, fold,
+canon, gen) is **identical across all six** and must be changed in all six
+at once. [`fhir-store/`](fhir-store/) is **not** the HTTP surface, despite
+the name and despite what an earlier revision of this file said — it is a
+small shared **library** (the tamper-evident audit chain, `Audit`,
+`AccessRecord`, and the other engine-agnostic value types every port
+returns), extracted from ~860 duplicated lines across the six ports
+(**F-45**) and has no spec of its own. The actual HTTP surface is
+[`fhir-loco/`](fhir-loco/), a separate crate that mounts a FHIR REST API
+over `fhir-sqlite` — it inherited the name `fhir-store` briefly before being
+renamed (**F-37**, fixed 2026-08-02), and the name was then reused for the
+unrelated library crate a few days later (**F-45**), which is exactly the
+kind of history a name collision leaves behind for the next reader to trip
+on.
 
 ## Read before editing
 
@@ -107,14 +118,23 @@ distinct letter. Resolve a bare citation by the file it appears in, and write
 new ones qualified: `db:R4.2`, `model:R4.2`. Neither family may renumber to fix
 it (`C0.5`); see [`spec/index.md`](spec/index.md#the-r4-collision--read-this-before-citing-r4x).
 
-**The two scaffold ports have no store.** `fhir-mssql` and `fhir-oracle` contain
-`lib.rs` and no implementation — `chain.rs` moved to `fhir-store` (**F-45**).
-Until 2026-07-31 both also
-provisioned **MySQL** in CI and in `scripts/db.sh` while invoking a test target
-that did not exist, so their database jobs could not pass at all (**F-06**,
-fixed): `fhir-mssql` now provisions SQL Server 2022 and fails rather than skips
-without a database; `fhir-oracle`'s gate was removed, because there is nothing
-yet to point it at.
+**`fhir-mssql` and `fhir-oracle` were the two scaffold ports with no store.
+Neither is, any longer.** Both reached **Store** level this project
+(`fhir-mssql`: **F-65**; `fhir-oracle`: **F-68**, superseding the earlier
+"compiles but never connects" **F-66**) — each has a real store with `put`/
+`get`/`delete`/`history`/`vread`/`search`/`verify_audit`/`purge`/
+`log_access`, live-tested against a real server, `azure-sql-edge` and
+`gvenzl/oracle-free` respectively. Do not describe either as "no
+implementation" — check the [conformance
+matrix](spec/databases/conformance-matrix.md) for what actually remains
+(both still lack `upgrade`/`backfill_norm`; `fhir-oracle` additionally has
+no working `R4.5` mechanism and no concurrency test). Until 2026-07-31 both
+also provisioned **MySQL** in CI and in `scripts/db.sh` while invoking a
+test target that did not exist, so their database jobs could not pass at
+all (**F-06**, fixed): `fhir-mssql` now provisions SQL Server 2022 and fails
+rather than skips without a database; `fhir-oracle`'s CI gate was removed
+rather than faked — nothing runs it in CI yet, though `scripts/db.sh` now
+works for local live testing.
 
 **Requirement ids are permanent** (`C0.5`). Never renumber, never reuse. If you
 split a requirement, use letter suffixes and keep the parent.
@@ -146,7 +166,10 @@ The shared core makes small changes large. A one-line fix in `fold.rs` is:
 1. six identical edits (rule 2),
 2. a spec check — does it change `L4`/`L6`, and is that a data migration
    (`L12`, `O10.4a`)?
-3. a backfill story per port — four ports have no `upgrade` (**F-15**),
+3. a backfill story per port — check the [conformance
+   matrix](spec/databases/conformance-matrix.md)'s `init --upgrade` row for
+   which ports currently have no `upgrade` at all (**F-15**; shrinking, not
+   fixed everywhere — verify before citing a count),
 4. a mutation-verified test (`T11.10`, `L16`).
 
 Say so before starting, rather than discovering it at step 3.
@@ -163,10 +186,19 @@ ports, nor `fhir/`, has a `.git` of its own. They are directories in one
 repository with one remote, `git@github.com:fhir-rust/fhir-rust.git`.
 
 What remains is narrower. That URL 404s anonymously — which a private repository
-also does, so it is unverified rather than known-absent (`P-5`). And
-`fhir-store/` is a **nested repository with no remote**, listed as untracked by
-the parent (**F-37**): `git add` on it records a gitlink, not the files, so a
-clone would get an empty directory and no error. Settle F-37 before pushing
-anything that is supposed to include `fhir-store`.
+also does, so it is unverified rather than known-absent (`P-5`).
 
-Still ask before pushing. Just do not repeat the six-remotes reason.
+**The old `fhir-store/`-nested-repository warning (F-37) is obsolete too, and
+for a more confusing reason than the six-remotes one.** F-37 was real and was
+about a *different* directory that used to be called `fhir-store/` — the
+HTTP surface, which had its own untracked `.git` with no remote. It was
+fixed 2026-08-02 by removing the nested repo and committing the source
+directly; that directory was then renamed `fhir-loco` (**F-45**, the same
+day). The name `fhir-store` was reused a few days later for an unrelated
+extraction — a small shared library, not a server — and **that** crate has
+never had a nested `.git`: `git status` shows its files tracked normally
+(`git ls-files fhir-store/` lists them; the index has no `160000` gitlink
+mode entries), verified 2026-08-04. Do not carry F-37's caution forward onto
+the crate that now holds this name.
+
+Still ask before pushing.
