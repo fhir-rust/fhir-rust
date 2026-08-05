@@ -2,6 +2,14 @@ target/
 tmp/
 .sota
 
+# Not a build directory: FHIR's own `target` property (SearchParameter/
+# StructureDefinition reference constraints) gets a source module named
+# `target/`, same as any other property. The unanchored `target/` rule above
+# would otherwise silently exclude real, hand-documented source from every
+# clone and from `cargo publish`'s dirty-tree check — found doing exactly
+# that, publishing the `fhir` crate.
+!fhir/src/r5/parse/all/target/
+
 # CycloneDX SBOMs (O10.10). Generated per release by `cargo cyclonedx` and
 # uploaded as a CI artifact, not committed: an SBOM describes one build, and a
 # stale one in the tree is worse than none — the same failure the map assets
