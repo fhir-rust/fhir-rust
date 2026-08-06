@@ -1,18 +1,31 @@
 #!/bin/sh
 # Verify llms.txt and llms.json mention every top-level module.
 #
-# The AI-readable crate summaries must stay in sync with the module tree. This
-# extracts every `pub mod <name>;` declared in the crate root (src/lib.rs) and
-# in each release root (src/r3.rs, src/r4.rs, src/r5.rs), and fails if any module name is
-# absent from either llms.txt or llms.json.
+# The AI-readable crate summaries must stay in sync with the module tree.
+# Top-level modules come from three places since the crate split:
+#   - `pub mod <name>` in the facade root (src/lib.rs);
+#   - `pub use ::fhir_release_N as rN` release aliases in the same file;
+#   - `pub mod <name>` in a release crate root (fhir-release-5/src/lib.rs —
+#     every release exposes the same module shape, so one suffices; R12.2).
+# An earlier revision grepped src/r3.rs, src/r4.rs and src/r5.rs, which the
+# crate split deleted — the check silently shrank to the facade's modules and
+# still failed (T38, audit 2026-08-06).
 set -euf
 
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
 cd "$ROOT"
 
-# Collect declared module names (the identifier after `pub mod`).
-mods="$(grep -hoE '^[[:space:]]*pub mod [a-z_]+' src/lib.rs src/r3.rs src/r4.rs src/r5.rs \
-        | sed -E 's/.*pub mod //' | sort -u)"
+mods="$( { grep -hoE '^[[:space:]]*pub mod [a-z_0-9]+' src/lib.rs fhir-release-5/src/lib.rs \
+             | sed -E 's/.*pub mod //'; \
+           grep -hoE '^pub use ::fhir_release_[0-9]+ as r[0-9b]+' src/lib.rs \
+             | sed -E 's/.* as //'; } | sort -u)"
+
+# The check must not pass vacuously (R13.20): the split surface is ~20 modules.
+count="$(printf '%s\n' $mods | wc -l | tr -d ' ')"
+if [ "$count" -lt 15 ]; then
+    echo "ERROR: only $count modules found — the extraction is broken, not the docs" >&2
+    exit 1
+fi
 
 status=0
 for m in $mods; do
@@ -25,6 +38,6 @@ for m in $mods; do
 done
 
 if [ "$status" -eq 0 ]; then
-    echo "OK: llms.txt and llms.json mention all $(printf '%s\n' $mods | wc -l | tr -d ' ') modules."
+    echo "OK: llms.txt and llms.json mention all $count modules."
 fi
 exit "$status"

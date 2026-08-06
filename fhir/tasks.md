@@ -72,10 +72,10 @@ Conventions for the executing session:
 - **Accept:** `cargo test proptest_` passes, ≥5 types covered.
 - **Depends:** —
 
-### T5. MSRV + toolchain policy — *done, with a live defect*
-- *Status:* the CI `msrv` job pins 1.88.0 and the 12 member crates declare
-  `rust-version = "1.88"` — but the facade's `Cargo.toml` now says `1.97`,
-  contradicting all of them, AGENTS.md and CONTRIBUTING.md. See T37.
+### T5. MSRV + toolchain policy — *done*
+- *Status:* the CI `msrv` job pins 1.88.0 and all 13 crates declare
+  `rust-version = "1.88"`. (The facade briefly said `1.97`, contradicting
+  everything else — found by the 2026-08-06 audit, fixed under T37.)
 - **Do:** Determine minimum supported Rust (edition 2024 ⇒ likely 1.85+);
   set `rust-version` in both Cargo.tomls; add CI job on that toolchain.
 - **Accept:** CI green on MSRV.
@@ -315,11 +315,11 @@ Conventions for the executing session:
   `lib.rs` "More examples".
 - **Accept:** `cargo build --examples` green; each prints sensible output.
 
-### T25. `llms.txt` / `llms.json` — *done, then rotted*
-- *Status:* `llms.json` still says version 1.1.0 and 419 enums and mentions
-  neither `r2`, `r6` nor `convert`; `bin/check-llms` greps module lists from
-  the dead `src/r3.rs`/`r4.rs`/`r5.rs` paths and currently exits 1; `llms.txt`
-  is byte-identical to `fhir.md` (22 MB duplicated in git). See T38.
+### T25. `llms.txt` / `llms.json` — *done; rot repaired under T38*
+- *Status:* `bin/check-llms` checks the real module roots and passes (27
+  modules); `llms.json` says 3.0.0, five releases, 442 R5 enums, and
+  mentions `r2`/`r6`/`convert`. Still open: `llms.txt` is byte-identical to
+  `fhir.md` (22 MB duplicated in git) — see T38's remaining decision.
 - **Do:** Author AI-readable crate summaries (crate purpose, module map, key
   types, examples index); restore them to `Cargo.toml` `include`; add a CI
   check that they mention every top-level module.
@@ -738,24 +738,34 @@ contradict the build; P1 items are missing guarantees; P2 items are stale
 text and leftovers. Each fact below was verified against the tree on the date
 above.
 
-### T37. Reconcile the MSRV declaration — **P0**
-- **Why:** the facade's `Cargo.toml` says `rust-version = "1.97"` while the
+### T37. Reconcile the MSRV declaration — **P0** — *done*
+- **Why:** the facade's `Cargo.toml` said `rust-version = "1.97"` while the
   12 member crates say `1.88`, the CI `msrv` job pins 1.88.0, and AGENTS.md
   and CONTRIBUTING.md both document 1.88. The msrv job builds on 1.88 and
-  will refuse the facade.
-- **Do:** decide the real MSRV (likely revert the facade to 1.88) and add a
-  check that every workspace crate declares the same one.
+  would refuse the facade.
+- **Done (2026-08-06):** facade reverted to `1.88` — nothing anywhere
+  motivated 1.97; every other statement of the MSRV already agreed.
+  *Remaining nicety:* a check that every workspace crate declares the same
+  `rust-version` (one grep in CI), so a stray edit like this one cannot
+  land silently again.
 
-### T38. Repair `bin/check-llms` and regenerate the llms artifacts — **P0**
-- **Why:** `bin/check-llms` collects module names from `src/r3.rs`,
-  `src/r4.rs` and `src/r5.rs`, which no longer exist, and currently exits 1 —
-  so the `llms` CI job cannot pass. `llms.json` is stale: version 1.1.0,
-  "419" code enums, no mention of `r2`, `r6` or `convert`. `llms.txt` is
-  byte-identical to `fhir.md`, 22 MB duplicated in git.
-- **Do:** point the check at the real module roots (`src/lib.rs` and each
-  `fhir-release-N/src/lib.rs`); regenerate `llms.json` for 3.0.0; decide
-  whether `llms.txt` should exist in git at all when `fhir.md` is the same
-  bytes.
+### T38. Repair `bin/check-llms` and regenerate the llms artifacts — **P0** — *done except the llms.txt decision*
+- **Why:** `bin/check-llms` collected module names from `src/r3.rs`,
+  `src/r4.rs` and `src/r5.rs`, which no longer exist, and exited 1 — so the
+  `llms` CI job could not pass. `llms.json` was stale: version 1.1.0, "419"
+  code enums, no mention of `r2`, `r6` or `convert`.
+- **Done (2026-08-06):** the check now collects from the real roots —
+  `src/lib.rs` (`pub mod` + the `pub use ::fhir_release_N as rN` aliases)
+  and `fhir-release-5/src/lib.rs` (every release exposes the same module
+  shape, R12.2) — and refuses to pass vacuously if extraction finds fewer
+  than 15 modules (R13.20). `llms.json` updated: version 3.0.0, five
+  releases with per-release counts (incl. r2 94/265 and r6 161/459), R5
+  enums corrected to 442, `r2`/`r6`/`convert` module entries added.
+  `./bin/check-llms` → `OK: llms.txt and llms.json mention all 27 modules`,
+  exit 0.
+- **Remaining (owner decision):** whether `llms.txt` — byte-identical to
+  `fhir.md`, 22 MB duplicated in git — should exist as a separate file at
+  all.
 
 ### T39. `#![forbid(unsafe_code)]` in all 13 crates — **P1**
 - **Why:** R13.14 is currently met by 1 of 13 crates — only the facade
