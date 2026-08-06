@@ -33,6 +33,8 @@
 //!
 //! See the [crate-level guide](crate) for a task-oriented walkthrough.
 
+// A data model has no business dereferencing raw pointers (spec R13.14).
+#![forbid(unsafe_code)]
 // The README's examples are compiled and run as doctests, so they cannot
 // drift from the model they document. `cfg(doctest)` means this costs
 // nothing in a normal build and adds nothing to the rendered docs — it

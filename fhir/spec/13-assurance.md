@@ -150,11 +150,11 @@ exists because a test in this repository was found in exactly that state.
   same RUSTSEC database and additionally honours the `[advisories] ignore`
   policy in `deny.toml`, so it is the single gate — the rationale is recorded
   in `security.yml` itself.
-- **R13.14** The crate MUST declare `#![forbid(unsafe_code)]`. *Status:* met by
-  1 of the 13 workspace crates. Only the `fhir` facade declares it
-  (`src/lib.rs`); `fhir-core` — which carries the REST client and the XML
-  reader — `fhir-derive-macros`, and the release crates do not. This is an open
-  gap, tracked as T39 in `tasks.md`.
+- **R13.14** The crate MUST declare `#![forbid(unsafe_code)]`. *Status:* met
+  by all 13 workspace crates since 2026-08-06 (T39) — the facade had been the
+  only one; `fhir-core` (the REST client and XML reader), `fhir-derive-macros`,
+  and the ten release crates now declare it too, verified by a full-feature
+  `cargo check --workspace`.
 - **R13.15** The published package MUST contain only what a consumer compiles
   against. `llms.txt` is 22 MB and was in the `include` list when this
   requirement was written; it was removed under T32, so the requirement is now

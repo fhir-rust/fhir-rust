@@ -21,6 +21,8 @@
 //!
 //! R5 is the default, since it is the release this crate shipped first.
 
+// A data model has no business dereferencing raw pointers (spec R13.14).
+#![forbid(unsafe_code)]
 use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use syn::{

@@ -28,4 +28,6 @@
 // Nothing is exported, and that is the point. `#![no_std]` keeps the crate
 // honest: it cannot accidentally acquire a dependency or an API before there
 // is a specification to model.
+// A data model has no business dereferencing raw pointers (spec R13.14).
+#![forbid(unsafe_code)]
 #![no_std]

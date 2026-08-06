@@ -18,6 +18,8 @@
 // in the release crates and are not visible from here. The links are correct
 // for readers of the `fhir` facade, where these modules are re-exported, so
 // they are kept rather than stripped.
+// A data model has no business dereferencing raw pointers (spec R13.14).
+#![forbid(unsafe_code)]
 #![allow(rustdoc::broken_intra_doc_links)]
 // FHIR prose contains bare specification URLs and `value[x]` notation.
 #![allow(rustdoc::bare_urls)]
