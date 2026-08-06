@@ -85,7 +85,9 @@ lacking them.
   provision the **engine that port targets**, at the version its annex declares.
   A pipeline that starts a substitute engine produces green builds and no
   evidence (`C0.10`), and is worse than having no live gate, because the summary
-  says the gate passed. Tracked as [`audit.md`](audit.md) **F-06**.
+  says the gate passed. Originating defect **F-06**, fixed; note the per-family
+  workflows are currently inert in the monorepo regardless (**F-49**), which
+  the [conformance matrix](conformance-matrix.md) `O10.12` row records.
 
 ---
 

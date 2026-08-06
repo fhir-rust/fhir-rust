@@ -145,11 +145,13 @@ were diverging, and its absence is why they did.
   exported row columns alone ([`audit.md`](audit.md) **F-07**, fixed).
 
 - **X15.12** A **cross-engine conformance test** SHOULD exist: shred a corpus
-  under two ports and diff the logical rows. Nothing in the current tree tests
-  `X15.1`, `X15.4`, `X15.5`, or `X15.10` across ports, so every one of them is
-  an assertion about six independently edited copies. That is the same
-  arrangement that let sections 1–13 drift, and it will fail the same way.
-  Tracked as [`audit.md`](audit.md) **F-10**.
+  under two ports and diff the logical rows. `X15.1` is now tested and
+  CI-gated — `scripts/check-shared-core.sh` compares 100 files token-wise
+  across all six ports on every push (`gates.yml`; **F-10** fixed, **F-49**
+  first half closed). `X15.4`, `X15.5`, and `X15.10` remain untested across
+  ports, and the shred-a-corpus-under-two-ports diff this requirement asks
+  for does not exist yet. *(An earlier revision said nothing tested `X15.1`
+  either — stale since F-10 closed, **F-77**.)*
 
 ---
 

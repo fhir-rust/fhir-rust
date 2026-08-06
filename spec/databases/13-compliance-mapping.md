@@ -69,8 +69,10 @@ Stated rather than papered over:
 3. Follow the evidence column into the test suite.
 4. Check the [conformance matrix](conformance-matrix.md) for the port you are
    actually deploying. A requirement satisfied by the PostgreSQL reference is
-   not thereby satisfied by the Oracle scaffold, and the matrix is the only
-   document in this tree that distinguishes them.
+   not thereby satisfied by another port — `fhir-oracle` is Store level now
+   (**F-68**), and its matrix row still differs from the reference on `R4.5`,
+   `O10.7`, and every concurrency cell — and the matrix is the only document
+   in this tree that distinguishes them.
 
 Step 4 is the one that gets skipped, and it is the one that matters: five of the
 six ports currently sit below Reference level (`C0.8`).

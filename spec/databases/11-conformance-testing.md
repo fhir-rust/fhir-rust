@@ -79,7 +79,7 @@
   evidence for a conformance level (`C0.9`). Where a port's live suite requires
   a DSN that its own pipeline never sets, that suite is not a gate, and the
   [conformance matrix](conformance-matrix.md) MUST record the requirement as
-  unverified rather than as passing. Tracked as [`audit.md`](audit.md) **F-06**.
+  unverified rather than as passing. Originating defect **F-06**, fixed.
 - **T11.14** A test disabled with `#[ignore]` because it asserts another
   engine's behaviour MUST be accompanied by an entry in the port's `tasks.md`
   and in the [conformance matrix](conformance-matrix.md). An ignored test is a

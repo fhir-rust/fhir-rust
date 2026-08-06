@@ -11,7 +11,10 @@ It is **cross-family** — the one document in `spec/` that is, because publishi
 is the one activity that treats the whole repository as a single release
 surface. Family-specific findings still belong in that family's own register.
 
-**Assessed:** 2026-08-01, against the tree as it then stood. **Method:**
+**Assessed:** 2026-08-01, against the tree as it then stood; **P-1 restated
+2026-08-06** after both former scaffolds reached Store level (**F-65**,
+**F-68** — the four days between assessments invalidated P-1's whole
+premise, **F-76**). **Method:**
 `cargo package --list` on representative crates; `cargo metadata` on every
 workspace; the crates.io API for all 32 package names; anonymous HTTP for every
 declared `repository` URL.
@@ -50,50 +53,31 @@ enforces from here on.
 
 Ranked by what they would cost if published as-is.
 
-### P-1 — The scaffold ports ship a store that does not exist, and a MySQL DDL emitter — **OWNER DECIDED: PUBLISH**
+### P-1 — The scaffold ports ship a store that does not exist, and a MySQL DDL emitter — **OVERTAKEN BY EVENTS, 2026-08-06**
 
-**Severity: High.** `C0.11`, `W16.14`, and step 6 of
-[`AGENTS/release.md`](../AGENTS/release.md#before-any-release) — no port
-publishes over an open High finding against it.
+*The section below recorded a real 2026-08-01 state and a real owner decision;
+neither premise survived the week. It is retained in summary because the
+decision ("publish scaffolds, mitigate in metadata") remains the precedent for
+any future scaffold — but every factual claim it rested on is now false:*
 
-**The concern, recorded because it was raised and overruled.**
-`fhir-oracle-map/src/ddl.rs` is still the MySQL emitter it was forked from
-(**F-08**, open). Verified: 20 MySQL-specific tokens (`AUTO_INCREMENT`,
-`ENGINE=InnoDB`, `utf8mb4`, `LONGTEXT`) against 5 occurrences of Oracle types,
-all of which sit inside the doc comment explaining what still has to change.
-`fhir-oracle-store` and `fhir-mssql-store` are 869 lines of `lib.rs` and
-`chain.rs` against the reference port's 3,959, and contain no store.
+- `fhir-oracle-map/src/ddl.rs` is a real Oracle emitter, executed live
+  against 26ai with 0 invalid objects (**F-08** fixed 2026-08-03; the MySQL
+  tokens survive only in doc comments and the test that *forbids* them).
+- `fhir-oracle-store` (2,598 lines) and `fhir-mssql-store` (3,296 lines) are
+  real stores, live-verified — **Store** level, not Scaffold (**F-68**,
+  **F-65**).
+- The "SCAFFOLD" `description` strings this section prescribed became the
+  defect: four of the six manifests still carried them after the stores
+  landed, which is exactly the above-the-level/below-the-level mismatch
+  `C0.11` exists to prevent, inverted. Corrected 2026-08-06 (**F-76**):
+  `fhir-oracle-store`'s description now records Store level with its evidence;
+  the `-map`/`-gen` descriptions no longer claim a MySQL emitter or a missing
+  store; `fhir-mssql-map`'s "never run against a green CI gate" is gone
+  (`tests/upgrade.rs` runs the DDL live).
 
-`fhir-oracle-map` **passes `cargo publish --dry-run`**, and its packaged file
-list includes `src/ddl.rs`. The one file that makes the crate wrong is the one
-the mechanical gate is least able to judge. No tooling will stop this being
-published.
-
-**The decision: publish both** (owner, 2026-08-01). `C0.11` forbids *claiming
-above the level*, not publishing at it — so publishing a Scaffold is conformant
-exactly as long as nothing in the artifact reads as more. The whole mitigation
-is therefore the metadata, because the crate **name** is what a dependent
-writes and the name cannot be made honest:
-
-| Crate | `description` now says |
-| --- | --- |
-| `fhir-oracle-map` | "SCAFFOLD: the DDL emitter still emits MySQL, not Oracle" |
-| `fhir-oracle-gen` | "SCAFFOLD: the DDL it emits is MySQL, not Oracle" |
-| `fhir-oracle-store` | "scaffold: no store yet" |
-| `fhir-mssql-map` | "SCAFFOLD: T-SQL DDL emitted but never run against a green CI gate" |
-| `fhir-mssql-gen` | "SCAFFOLD: no store exists to consume it" |
-| `fhir-mssql-store` | "scaffold: no store yet" |
-
-Every one of the six READMEs opens with a blockquote naming what is absent
-before it says anything the crate does (**P-8**). `description` is what
-crates.io lists and docs.rs renders, so it reaches the reader who has not opened
-the code — which is the reader this finding was always about.
-
-**What this does not license.** Neither port may be described as a working FHIR
-store anywhere, its conformance level stays **Scaffold** until a green run
-justifies otherwise (`C0.9`), and **F-08** stays open. If the scaffolds are
-published and later gain stores, the `0.4.0` line will contain versions that
-could not read or write a resource; the changelog should say so.
+What survives of the original finding: the six ports remain **unpublished**,
+and if published, the `0.4.0` line's changelogs must still say what each
+version could and could not do — that obligation is unchanged.
 
 ### P-2 — The port version number contradicted its own changelog — **RESOLVED**
 
@@ -470,9 +454,9 @@ one crate a hard prerequisite for eighteen others.
 4. **`fhir-loco`** — last. It depends on `fhir-sqlite-map` and
    `fhir-sqlite-store`, so it follows the whole of step 3 for that port.
 
-All six ports are in step 3, including the two scaffolds — **P-1** is decided,
-and their honesty rests on `description` and README rather than on withholding
-them.
+All six ports are in step 3 — **P-1** is overtaken (both former scaffolds are
+Store level now), and each port's honesty rests on `description` and README
+staying current with the matrix (**F-76** is what happens when they do not).
 
 **A consequence of step 1 worth naming.** A change to the engine-agnostic half
 now needs a `fhir-store` release before any port can take it. That version

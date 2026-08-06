@@ -77,6 +77,10 @@ annex must contain.
 - **12.** [Trust, principal, and audit](12-trust-principal-and-audit.md) — `PR12.x`
 - **13.** [Compliance mapping](13-compliance-mapping.md) — table, not requirements
 
+Section **14** is not in this directory by design: it is the per-port dialect
+annex (`M14.x`), one `spec/14-<engine>-dialect.md` in each port — see
+[§15](15-portability-and-dialects.md) `X15.6` for what an annex must contain.
+
 Sections **7** (REST API) and **8** (CLI) are retired: these are embeddable
 libraries, and neither an HTTP server nor a command-line tool is in scope. The
 numbering keeps the gap rather than renumbering, so a requirement id like `M9.2`
@@ -128,8 +132,8 @@ still means what it meant. Several retired ids are still cited from §11 and §1
 | [`fhir-sqlite`](../../fhir-sqlite/spec/index.md) | SQLite 3 | native store, embeddable |
 | [`fhir-mysql`](../../fhir-mysql/spec/index.md) | MySQL 8.4 | native store |
 | [`fhir-mariadb`](../../fhir-mariadb/spec/index.md) | MariaDB 11.4 | native store |
-| [`fhir-mssql`](../../fhir-mssql/spec/index.md) | SQL Server | DDL only, no store |
-| [`fhir-oracle`](../../fhir-oracle/spec/index.md) | Oracle Database | scaffold only |
+| [`fhir-mssql`](../../fhir-mssql/spec/index.md) | SQL Server | native store (**F-65**) |
+| [`fhir-oracle`](../../fhir-oracle/spec/index.md) | Oracle Database | native store (**F-68**); no `upgrade`, `R4.5` open |
 
 The [conformance matrix](conformance-matrix.md) is the detailed version of that
 last column, and is the one to trust.

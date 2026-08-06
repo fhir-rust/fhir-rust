@@ -363,26 +363,32 @@ Non-normative summary of each port's `ddl::col_sql`; the annexes govern.
 
 | `ColTy` | PostgreSQL | SQLite | MySQL | MariaDB | SQL Server | Oracle |
 | --- | --- | --- | --- | --- | --- | --- |
-| `Bool` | `boolean` | `INTEGER` | `TINYINT(1)` | `TINYINT(1)` | `BIT` | ⚠ |
-| `Int` | `integer` | `INTEGER` | `INT` | `INT` | `INT` | ⚠ |
-| `BigInt` | `bigint` | `INTEGER` | `BIGINT` | `BIGINT` | `BIGINT` | ⚠ |
-| `Numeric` | `numeric` | `TEXT` | `TEXT` | `TEXT` | `NVARCHAR(MAX)` | ⚠ |
-| `Text` | `text` | `TEXT` | `TEXT` | `TEXT` | `NVARCHAR(MAX)` | ⚠ |
-| `TextC` | `text COLLATE "C"` | `TEXT COLLATE BINARY` | `TEXT COLLATE utf8mb4_0900_bin` | `TEXT COLLATE utf8mb4_nopad_bin` | `NVARCHAR(450) COLLATE Latin1_General_100_BIN2` | ⚠ |
-| `Date` | `date` | `TEXT` (ISO-8601) | `DATE` | `DATE` | `DATE` | ⚠ |
-| `Timestamptz` | `timestamptz` | `TEXT` (ISO-8601 UTC) | `DATETIME(6)` | `DATETIME(6)` | `DATETIME2(6)` | ⚠ |
-| `Jsonb` | `jsonb` | `TEXT` | `LONGTEXT` | `LONGTEXT` | `NVARCHAR(MAX)` | ⚠ |
+| `Bool` | `boolean` | `INTEGER` | `TINYINT(1)` | `TINYINT(1)` | `BIT` | `NUMBER(1)` |
+| `Int` | `integer` | `INTEGER` | `INT` | `INT` | `INT` | `NUMBER(10)` |
+| `BigInt` | `bigint` | `INTEGER` | `BIGINT` | `BIGINT` | `BIGINT` | `NUMBER(19)` |
+| `Numeric` | `numeric` | `TEXT` | `TEXT` | `TEXT` | `NVARCHAR(MAX)` | `VARCHAR2(64 CHAR)` |
+| `Text` | `text` | `TEXT` | `TEXT` | `TEXT` | `NVARCHAR(MAX)` | `CLOB` |
+| `TextC` | `text COLLATE "C"` | `TEXT COLLATE BINARY` | `TEXT COLLATE utf8mb4_0900_bin` | `TEXT COLLATE utf8mb4_nopad_bin` | `NVARCHAR(450) COLLATE Latin1_General_100_BIN2` | `VARCHAR2(450 CHAR)` |
+| `Date` | `date` | `TEXT` (ISO-8601) | `DATE` | `DATE` | `DATE` | `DATE` |
+| `Timestamptz` | `timestamptz` | `TEXT` (ISO-8601 UTC) | `DATETIME(6)` | `DATETIME(6)` | `DATETIME2(6)` | `TIMESTAMP(6)` |
+| `Jsonb` | `jsonb` | `TEXT` | `LONGTEXT` | `LONGTEXT` | `NVARCHAR(MAX)` | `CLOB` |
 
-⚠ **Oracle is not bound.** `fhir-oracle`'s `col_sql` is a verbatim copy of
-MySQL's and emits `TEXT`, `TINYINT(1)`, `DATETIME(6)`, and
-`COLLATE utf8mb4_0900_bin` — none of which exist in Oracle. The port is
-Scaffold level (`C0.8`) and the DDL it generates is not an Oracle schema.
-Tracked as [`audit.md`](audit.md) **F-08**.
+The Oracle column was all `⚠` until 2026-08-03: `fhir-oracle`'s `col_sql` was
+a verbatim copy of MySQL's, the port was Scaffold level, and the DDL it
+generated was not an Oracle schema. That was **F-08**, now fixed — every
+binding above has been executed against a live Oracle 26ai Free and read back
+from `user_tab_columns` (`M14.23d`), and the port is Store level (**F-68**).
+An earlier revision of this section still described the pre-F-08 state in the
+present tense (**F-77**). `Numeric` binds `VARCHAR2`, not `NUMBER`, because
+`NUMBER` normalizes `1.50` to `1.5` (`M3.6a`, `M14.7`); `Text` binds `CLOB`,
+which can be neither indexed nor `=`-compared — the case the `U1`–`U10`
+adjunct channel exists to answer.
 
 PostgreSQL's `jsonb` binding is the one row that violates `M3.6c`, and the
-consequence is live rather than theoretical: `fhir-postgresql` still derives the
-chain pre-image with `(($1::text)::jsonb)::text`, so its canonical bytes were
-whatever `jsonb` produced when it reordered keys and rewrote number spellings.
+consequence *was* live rather than theoretical: `fhir-postgresql` used to
+derive the chain pre-image with `(($1::text)::jsonb)::text`, so its canonical
+bytes were whatever `jsonb` produced when it reordered keys and rewrote
+number spellings.
 `M3.16b` had moved the *digest* into Rust there; `X15.2` moves the *canonical
 form* too. `canon.rs` is now present in all six `map/src` directories and
 `fhir-postgresql` derives its pre-image from it, so a PostgreSQL chain can be

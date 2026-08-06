@@ -6,7 +6,7 @@
   holding a self-contained Cargo workspace.
 
   ```
-  spec/                      the normative core (§0–§16)          ← shared
+  spec/databases/            the normative core (§0–§16)          ← shared
   AGENTS.md  AGENTS/         contributor and agent guidance       ← shared
   CLAUDE.md                  pointer to AGENTS.md                 ← shared
   doc/                       tutorials, examples, comparisons     ← shared
@@ -31,12 +31,14 @@
   segment matches the directory. A crate whose name says one engine and whose
   code targets another is the failure this rule exists to catch.
 - **W16.3** Every crate's `description` MUST name the engine the crate actually
-  targets. Six store crates currently describe themselves as "PostgreSQL storage
-  layer" — a string published to crates.io, shown on docs.rs, and read by
-  someone choosing a dependency. Tracked as [`audit.md`](audit.md) **F-02**.
+  targets — a string published to crates.io, shown on docs.rs, and read by
+  someone choosing a dependency. The rule's originating defect (six store
+  crates calling themselves "PostgreSQL storage layer", **F-02**) is fixed;
+  the same rule caught four "SCAFFOLD" descriptions that outlived the
+  scaffolds (**F-76**, fixed 2026-08-06).
 - **W16.4** A port's workspace MUST declare only the drivers it uses, and every
-  dependency comment MUST describe the dependency it sits above. Tracked as
-  **F-03**.
+  dependency comment MUST describe the dependency it sits above. Originating
+  defect **F-03**, fixed.
 
 ## The single source of truth
 
@@ -49,7 +51,9 @@
 - **W16.6** CI MUST verify `X15.1`: normalize the crate-name substitution and
   diff the shared modules across ports; any difference fails the build. Without
   this the shared core is shared by convention, and convention is what produced
-  six diverging spec directories. Tracked as **F-10**.
+  six diverging spec directories. Satisfied: `scripts/check-shared-core.sh`
+  runs in `gates.yml` on every push (**F-10** fixed; **F-49** first half
+  closed).
 - **W16.7** A change to shared code MUST be applied to every port in the same
   commit. A port left behind is not "pending"; it is a divergence that `W16.6`
   will report as a defect.
@@ -60,16 +64,19 @@
   README, book, and `doc/` of a port describe **that port**: its engine, its
   conformance level (`C0.11`), its measured numbers, and its own limitations.
 
-  Every port's README currently carries the PostgreSQL reference's status
-  paragraph with the engine name swapped — "all 7,399 official FHIR example
-  resources round-trip losslessly", "94.8% of R5 search parameters compile",
-  and a `serve` command — in products where none of it was measured and two of
-  which have no store. Tracked as **F-01**.
+  The originating defect — every port's README carrying the PostgreSQL
+  reference's status paragraph with the engine name swapped, including a
+  `serve` command and figures never measured there — was **F-01**, fixed;
+  the corpus round-trip has since been run in every port (**F-42**), and the
+  search-compilation figure is 92.4% since **F-38** (an earlier revision of
+  this section quoted the superseded 94.8%).
 
 - **W16.9** A code example in documentation MUST be runnable against the code as
-  shipped. Every README documents `cargo install --path crates/fhir-<engine>`
-  and a CLI; no such crate exists in any workspace (`C0.18`). An example that
-  cannot run is worse than none: it costs a reader the time to find out.
+  shipped. An example that cannot run is worse than none: it costs a reader
+  the time to find out. The originating defect (every README documenting a
+  `cargo install` of a CLI crate that exists in no workspace, `C0.18`) is
+  fixed — READMEs show library usage, and `scripts/check-doc-examples.sh`
+  compiles every documented example in CI (**F-60**).
 - **W16.10** Measured numbers MUST name what measured them and when. A
   throughput figure inherited by substitution is not a measurement of the port
   that now carries it.
@@ -88,9 +95,10 @@
   level (`C0.8`). Publishing a Scaffold-level port under a name that implies a
   working store is a claim about clinical software made to people who cannot
   check it.
-- **W16.15** Each port's git remote MUST match the port. All six currently share
-  the ancestor project's `origin`, so pushing any branch would send that port to
-  the wrong repository. Tracked as **F-11**.
+- **W16.15** Each port's git remote MUST match the port. The originating
+  defect — all six sharing the ancestor project's `origin` — was resolved
+  outright by the monorepo merge (**F-11**): the ports are directories in one
+  repository with one remote, and none has a `.git` of its own.
 
 ---
 

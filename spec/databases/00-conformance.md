@@ -60,7 +60,8 @@ conform, and how the text is changed.
   engine than the one it targets. Running a port's live suite against a
   substitute engine — because that is the container that was already in the
   pipeline — produces a green build and no evidence, which is worse than a red
-  one. See [`audit.md`](audit.md) finding **F-06**.
+  one. Originating defect **F-06** (both former scaffolds provisioned MySQL),
+  fixed.
 - **C0.11** Documentation MUST NOT describe a capability at a level above the
   port's. A README inherited from a Reference-level port and text-substituted
   into a Scaffold-level one asserts, in the new product's name, results that
@@ -135,19 +136,22 @@ conform, and how the text is changed.
   citations. Reconstructed requirements would carry the authority of ratified
   ones without ever having been reviewed, and §13 maps them to regulatory
   obligations, which is the worst possible place for text nobody wrote. Tracked
-  as [`audit.md`](audit.md) **F-04**; resolving it means the owner either
-  restores the sections or amends the citing requirements.
+  as [`audit.md`](audit.md) **F-04** — **closed 2026-08-03**: the citing
+  obligations were restated as `SV` ids in
+  [`fhir-loco/spec/`](../../fhir-loco/spec/index.md); the struck citations
+  stay struck.
 
 - **C0.17** Text elsewhere in the core that specifies a service — `serve`,
   `--bind`, `--admin-bind`, request headers, HTTP status codes, `/metrics`,
-  `/health`, `/ready` — describes a **service layer that does not exist in this
-  monorepo**. It is retained because the obligations it encodes are real and
-  will bind whatever service is eventually built, but it MUST NOT be read as
-  describing shipped behaviour, and a port MUST NOT be marked non-conformant for
-  failing to implement it. Affected: parts of `O10.1`, `O10.3`, `O10.5`,
+  `/health`, `/ready` — describes a **service layer that is not part of any
+  port**. The service now exists as its own crate,
+  [`fhir-loco`](../../fhir-loco/), with its own specification (`SV1`–`SV4`) —
+  that closed **F-05**, 2026-08-03 — but the rule stands unchanged for the
+  ports: service text MUST NOT be read as describing a port's shipped
+  behaviour, and a port MUST NOT be marked non-conformant for failing to
+  implement it. Affected: parts of `O10.1`, `O10.3`, `O10.5`,
   `O10.7`–`O10.9`, `V9.2`, `V9.3`, and most of `PR12.1`–`PR12.8`. Each such
-  requirement is marked **[service]** at its point of use. Tracked as
-  [`audit.md`](audit.md) **F-05**.
+  requirement is marked **[service]** at its point of use.
 
 - **C0.18** Similarly, requirements phrased as CLI subcommands — `init`, `load`,
   `gen`, `verify-audit`, `chain-witness`, `chain-resign`, `chain-key-new`,
