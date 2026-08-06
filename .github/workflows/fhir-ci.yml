@@ -1,9 +1,15 @@
-name: CI
+name: fhir CI
 
 on:
   push:
     branches: [main]
+    paths:
+      - 'fhir/**'
+      - '.github/workflows/fhir-ci.yml'
   pull_request:
+    paths:
+      - 'fhir/**'
+      - '.github/workflows/fhir-ci.yml'
   workflow_dispatch:
   schedule:
     # 03:00 UTC daily, for the per-release fuzzing matrix below.
@@ -18,6 +24,12 @@ env:
   CARGO_PROFILE_DEV_DEBUG: "0"
   CARGO_PROFILE_TEST_DEBUG: "0"
   CARGO_INCREMENTAL: "0"
+
+# Consolidated from fhir/.github/workflows/ (F-49): GitHub only reads
+# workflows at the repository root, so the per-family copy never ran.
+defaults:
+  run:
+    working-directory: fhir
 
 jobs:
 # The three release models are separate crates, so enabling them together is
@@ -48,6 +60,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
+          workspaces: fhir
           key: build-${{ matrix.name }}
       - run: cargo build --all-targets ${{ matrix.flags }}
 
@@ -70,6 +83,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
+          workspaces: fhir
           key: test-${{ matrix.name }}
       - run: cargo test ${{ matrix.flags }} ${{ matrix.scope }}
       - name: Doctests (default model only)
@@ -115,6 +129,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
+          workspaces: fhir
           key: doctests-${{ matrix.release }}
       # The `test` job runs `cargo test --doc` for the root package only, so
       # the per-release crates' own doctests — several hundred each, and the
@@ -145,6 +160,7 @@ jobs:
           components: clippy
       - uses: Swatinem/rust-cache@v2
         with:
+          workspaces: fhir
           key: all-releases
       # The case the per-model matrix cannot see: a collision at the crate
       # root, such as a shared type defined once in fhir-core and re-exported
@@ -164,6 +180,8 @@ jobs:
         with:
           components: clippy
       - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: fhir
       - run: cargo clippy --all-targets --features "xml client" -- -D warnings
       - run: cargo clippy --all-targets --no-default-features --features "r4 xml client" -- -D warnings
       - run: cargo clippy --all-targets --no-default-features --features "r3 xml client" -- -D warnings
@@ -175,6 +193,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.88.0
       - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: fhir
       - run: cargo build --all-targets
       - run: cargo test
 
@@ -192,6 +212,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: fhir
       # The `client` feature (reqwest/tokio); HAPI integration tests are #[ignore].
       - run: cargo test --features client
       - run: cargo test --features xml
@@ -222,6 +244,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: fhir
       - run: cargo doc --no-deps
       - run: cargo doc --no-deps --features "r3 r4 xml client"
 
@@ -232,6 +256,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: fhir
       # A crates.io version is immutable, so if this tree carries a version
       # that is already published, the two must agree. When they do not, every
       # local build still looks fine — it uses the path dependency — and the
@@ -288,6 +314,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: fhir
       # A FHIR data model is a component in someone's IEC 62304 file
       # (spec 13, R13.13). Continuous evidence beats reconstruction. The
       # advisory, license, source, and ban half of that evidence lives in
@@ -299,7 +327,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: sbom
-          path: "**/*.cdx.json"
+          path: "fhir/**/*.cdx.json"
 
   package-size:
     name: Published package stays small
@@ -369,6 +397,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@nightly
       - uses: Swatinem/rust-cache@v2
         with:
+          workspaces: fhir
           key: fuzz-${{ matrix.target }}
       - run: cargo install cargo-fuzz --locked
       - name: Run ${{ matrix.target }}
@@ -382,7 +411,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: fuzz-artifacts-${{ matrix.target }}
-          path: fuzz/artifacts/
+          path: fhir/fuzz/artifacts/
 
   fuzz-releases:
     name: Fuzz ${{ matrix.target }}
@@ -407,6 +436,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@nightly
       - uses: Swatinem/rust-cache@v2
         with:
+          workspaces: fhir
           key: fuzz-${{ matrix.kind }}-${{ matrix.release }}
       - run: cargo install cargo-fuzz --locked
       - name: Run ${{ matrix.kind }}_${{ matrix.release }}
@@ -421,7 +451,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: fuzz-artifacts-${{ matrix.kind }}-${{ matrix.release }}
-          path: fuzz/artifacts/
+          path: fhir/fuzz/artifacts/
 
   corpus:
     name: Full official example corpus
@@ -430,6 +460,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: fhir
       # R13.1: the curated subset is chosen to pass, so it cannot detect a
       # regression in the examples it does not run. The gate is the whole
       # corpus, with a named allowlist that can only shrink (R13.2).

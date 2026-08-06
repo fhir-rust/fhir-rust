@@ -55,7 +55,9 @@ jobs:
             echo "::error::CARGO_REGISTRY_TOKEN is not set for this environment"
             exit 1
           fi
-          for crate in fhir-mssql-map fhir-mssql-gen fhir-mssql-store fhir-mssql-server fhir-mssql; do
+          # fhir-mssql-server and a fhir-mssql CLI crate were listed here too — neither has
+          # ever existed in any port (C0.17, C0.18; audit F-84, fixed 2026-08-06).
+          for crate in fhir-mssql-map fhir-mssql-gen fhir-mssql-store; do
             echo "::group::$crate"
             if [ "$DRY" = "true" ]; then
               # --dry-run cannot resolve sibling crates that are not on the

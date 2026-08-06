@@ -94,11 +94,11 @@ were misattributed rather than unfinished.
    `./scripts/check-shared-core.sh` — 100 files. It compares tokens rather than
    lines (`X15.1a`), because rustfmt wraps by crate-name length and a line-based
    gate reports that as a divergence nobody can fix.
-   **Run it yourself.** `.github/workflows/gates.yml` at the root runs this and
-   `scripts/check-doc-examples.sh`, and is the *only* workflow here that
-   executes — the other eight families keep theirs under
-   `<family>/.github/workflows/`, which GitHub does not read (**F-49**). It is
-   also inert until `scripts/` is committed.
+   **Run it yourself before pushing.** `.github/workflows/gates.yml` at the
+   root runs this and `scripts/check-doc-examples.sh` in CI, and since the
+   F-49 consolidation (2026-08-06) every family's CI lives beside it at the
+   root too — `fhir-ci.yml`, one `<port>-ci.yml` per port, `fhir-loco-ci.yml`,
+   `fhir-store-ci.yml` — each path-filtered to its family.
 3. **A dialect difference goes in the annex, by number** (`C0.12`). If the port
    cannot do what the core requires, write an `M14.x` departure that names the
    requirement it amends. An undeclared departure is a defect, not an

@@ -1,0 +1,54 @@
+# Consolidated from fhir-loco/.github/workflows/ci.yaml (F-49): GitHub only
+# reads workflows at the repository root, so the per-family copy never ran.
+#
+# Rewritten rather than moved: the old file was the loco-rs template's,
+# provisioning Redis and PostgreSQL services this application does not use —
+# fhir-loco mounts fhir-sqlite, an embedded file, and its config mentions
+# neither service. The deprecated actions-rs steps are plain `run:` steps now,
+# which is also what lets `defaults.run.working-directory` apply.
+name: fhir-loco CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'fhir-loco/**'
+      - 'fhir-sqlite/**'
+      - 'fhir-store/**'
+      - '.github/workflows/fhir-loco-ci.yml'
+  pull_request:
+    paths:
+      - 'fhir-loco/**'
+      - 'fhir-sqlite/**'
+      - 'fhir-store/**'
+      - '.github/workflows/fhir-loco-ci.yml'
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+defaults:
+  run:
+    working-directory: fhir-loco
+
+jobs:
+  test:
+    name: Build, lint, test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: fhir-loco
+      - run: cargo fmt --all --check
+      - run: cargo clippy --all-targets -- -D warnings
+      # The request suite runs against fhir-sqlite in-process: no service
+      # containers, no DSN. SV2.x endpoint behaviour, the CapabilityStatement
+      # agreement test (F-57), PASETO auth, and the production-config boot
+      # tests (F-59) all run here.
+      - run: cargo test

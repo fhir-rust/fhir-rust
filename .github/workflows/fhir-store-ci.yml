@@ -1,0 +1,52 @@
+# fhir-store never had a workflow anywhere — the shared persistence core was
+# tested only transitively, through the six ports that depend on it, and its
+# cargo-deny policy (added under F-43) ran on no machine but the one that
+# wrote it. Added with the F-49 consolidation.
+name: fhir-store CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'fhir-store/**'
+      - '.github/workflows/fhir-store-ci.yml'
+  pull_request:
+    paths:
+      - 'fhir-store/**'
+      - '.github/workflows/fhir-store-ci.yml'
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+defaults:
+  run:
+    working-directory: fhir-store
+
+jobs:
+  test:
+    name: Build, lint, test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: fhir-store
+      - run: cargo fmt --all --check
+      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo test
+
+  supply-chain:
+    name: cargo-deny (O10.10)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: fhir-store
+      - run: cargo install cargo-deny --locked
+      - run: cargo deny check

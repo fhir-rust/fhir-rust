@@ -8,11 +8,13 @@
 # Both are cross-cutting: the shared-core check compares six ports against each
 # other, and the doc-example check compiles prose that describes all of them.
 #
-# It is also, as of F-49, the only workflow in this repository that runs at all.
-# The other eight families keep theirs under <family>/.github/workflows/, which
-# GitHub does not read — correct when each family was its own repository, inert
-# once they were merged. Consolidating those is tracked in F-49 and is not this
-# file's job.
+# For a while (F-49) this was the only workflow in this repository that ran:
+# the families kept theirs under <family>/.github/workflows/, which GitHub
+# does not read — correct when each family was its own repository, inert once
+# they were merged. The 2026-08-06 consolidation moved every family's CI to
+# sibling files in this directory, each with a paths filter and a
+# working-directory default; this file keeps only the cross-port gates no
+# single family can run.
 name: repository gates
 
 on:

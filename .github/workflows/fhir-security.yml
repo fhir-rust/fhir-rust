@@ -1,4 +1,4 @@
-name: Security Audit
+name: fhir Security Audit
 
 # Supply-chain gate (spec 13, R13.13): cargo-deny scans the dependency tree
 # for RUSTSEC advisories, disallowed licenses, banned crates, and untrusted
@@ -16,10 +16,20 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'fhir/**'
+      - '.github/workflows/fhir-security.yml'
   pull_request:
+    paths:
+      - 'fhir/**'
+      - '.github/workflows/fhir-security.yml'
   schedule:
     # Weekly, Monday 02:00 UTC — catches advisories filed after merge.
     - cron: '0 2 * * 1'
+
+defaults:
+  run:
+    working-directory: fhir
 
 jobs:
   cargo-deny:

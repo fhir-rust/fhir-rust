@@ -55,7 +55,9 @@ jobs:
             echo "::error::CARGO_REGISTRY_TOKEN is not set for this environment"
             exit 1
           fi
-          for crate in fhir-mariadb-map fhir-mariadb-gen fhir-mariadb-store fhir-mariadb-server fhir-mariadb; do
+          # fhir-mariadb-server and a fhir-mariadb CLI crate were listed here too — neither has
+          # ever existed in any port (C0.17, C0.18; audit F-84, fixed 2026-08-06).
+          for crate in fhir-mariadb-map fhir-mariadb-gen fhir-mariadb-store; do
             echo "::group::$crate"
             if [ "$DRY" = "true" ]; then
               # --dry-run cannot resolve sibling crates that are not on the

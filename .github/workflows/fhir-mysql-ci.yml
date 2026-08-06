@@ -1,13 +1,27 @@
-name: CI
+name: fhir-mysql CI
 
 on:
   push:
     branches: [main]
+    paths:
+      - 'fhir-mysql/**'
+      - '.github/workflows/fhir-mysql-ci.yml'
+      - 'fhir-store/**'
   pull_request:
+    paths:
+      - 'fhir-mysql/**'
+      - '.github/workflows/fhir-mysql-ci.yml'
+      - 'fhir-store/**'
   workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
+
+# Consolidated from fhir-mysql/.github/workflows/ (F-49): GitHub only reads
+# workflows at the repository root, so the per-family copy never ran.
+defaults:
+  run:
+    working-directory: fhir-mysql
 
 jobs:
   test:
@@ -19,6 +33,8 @@ jobs:
         with:
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: fhir-mysql
       - run: cargo fmt --all --check
       - run: cargo clippy --all-targets -- -D warnings
       # Unit tests pass with no database and no spec packages present;
@@ -30,23 +46,38 @@ jobs:
           ./mdbook build book
 
   database:
-    name: Live SQLite tests
+    name: Live-database tests (MySQL 8.4)
     runs-on: ubuntu-latest
-    # No service container: SQLite is a library, not a server. What CI pins
-    # instead is the sqlite3 *version*, because SQLite's DDL features move
-    # between releases and "passed on the runner's default" is a weaker claim
-    # than "passed on a known version". doc/containers.md does the same locally.
+    services:
+      db:
+        image: mysql:8.4
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: "1"
+          MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: "1"
+        ports: ["3306:3306"]
+        # Probed over TCP on purpose. Both official images run a temporary
+        # server with networking disabled while initializing, so a probe that
+        # accepts a local socket reports healthy before the mapped port is
+        # open — and the first test to connect then fails for no visible
+        # reason. This bit us locally before it was a comment.
+        options: >-
+          --health-cmd "mariadb-admin --protocol=TCP -h 127.0.0.1 -u root ping || mysqladmin --protocol=TCP -h 127.0.0.1 -u root ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 30
     env:
-      FHIR_SQLITE_TEST_DB: ${{ github.workspace }}/target/ci.sqlite
+      FHIR_MYSQL_TEST_DSN: mysql://root@127.0.0.1:3306
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - name: Install sqlite3
+        with:
+          workspaces: fhir-mysql
+      - name: Install a client
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends sqlite3
-          sqlite3 --version
+          sudo apt-get install -y --no-install-recommends mysql-client
+          mysql --version
       # The live tests need the FHIR definitions and an example corpus.
       - name: Fetch FHIR spec packages and example corpora
         run: |
@@ -61,36 +92,41 @@ jobs:
             mkdir -p "corpus/$cdir"
             unzip -qo ex.zip -d "corpus/$cdir"
           done
-      # Installs every generated schema — all three FHIR versions, thousands of
-      # tables each — into a real SQLite database. This is the job's core claim
-      # today, and it does not depend on the store port (T64).
-      - name: Generated DDL installs in real SQLite
-        run: cargo test --release -p fhir-sqlite-map --test sqlite_ddl -- --nocapture --test-threads=1
+      # Installs the generated schema on a real server and proves the
+      # append-only triggers refuse writes. This is the job's core claim today
+      # and does not depend on the store port (T64). FHIR_FHIR_MYSQL_DDL_FULL
+      # installs every resource type rather than a sample; it is slow here
+      # because creating thousands of InnoDB tables is slow.
+      - name: Generated DDL installs on a live server
+        env:
+          FHIR_MYSQL_DDL_FULL: "1"
+        run: cargo test --release -p fhir-mysql-map --test mysql_ddl -- --nocapture --test-threads=1
       - name: Round-trip and property tests + 10k proptests
         env:
-          FHIR_SQLITE_SPEC_DIR: ${{ github.workspace }}/spec-cache
-          FHIR_SQLITE_CORPUS_DIR: ${{ github.workspace }}/corpus
-          FHIR_SQLITE_TEST_CORPUS_LIMIT: "400"
-          FHIR_SQLITE_PROPTEST_CASES: "10000"
+          FHIR_MYSQL_SPEC_DIR: ${{ github.workspace }}/spec-cache
+          FHIR_MYSQL_CORPUS_DIR: ${{ github.workspace }}/corpus
+          FHIR_MYSQL_TEST_CORPUS_LIMIT: "400"
+          FHIR_MYSQL_PROPTEST_CASES: "10000"
         run: |
           set -o pipefail
-          cargo test --release -p fhir-sqlite-gen --test proptest_roundtrip -- --nocapture
+          cargo test --release -p fhir-mysql-gen --test proptest_roundtrip -- --nocapture
       # NOTE: the store suite still speak tokio-postgres (T64), so
-      # they self-skip here rather than exercising SQLite. This step exists so
-      # the gap is visible in the run rather than inferred from its absence.
+      # they self-skip here rather than exercising MySQL 8.4. This step exists
+      # so the gap is visible in the run rather than inferred from its absence.
       - name: Store and server suites (expected to skip until T64)
         env:
-          FHIR_SQLITE_SPEC_DIR: ${{ github.workspace }}/spec-cache
-          FHIR_SQLITE_CORPUS_DIR: ${{ github.workspace }}/corpus
+          FHIR_MYSQL_SPEC_DIR: ${{ github.workspace }}/spec-cache
+          FHIR_MYSQL_CORPUS_DIR: ${{ github.workspace }}/corpus
         run: |
-          echo "::notice::store live suite are not yet ported to SQLite (T64); they self-skip"
-          cargo test --release -p fhir-sqlite-store -- --nocapture --test-threads=1
+          echo "::notice::store live suite are not yet ported to MySQL 8.4 (T64); they self-skip"
+          cargo test --release -p fhir-mysql-store -- --nocapture --test-threads=1
 
   # The TLS-only database job from the PostgreSQL original is removed here, not
-  # ported. A SQLite database is a local file; there is no
-  # transport to secure, and the store's SslPolicy surface does not apply
-  # (spec M14.25). Keeping a PostgreSQL TLS job would have tested nothing this
-  # project ships. At-rest protection is tracked separately.
+  # ported. MySQL is a network server, so transport security does
+  # apply and this job should come back — but it cannot be written honestly
+  # until the store speaks MySQL (T64), because SslPolicy and the
+  # plaintext-refusal guard are store-layer behaviour. Tracked as an open task
+  # rather than left as a PostgreSQL job pretending to cover this port.
 
   msrv:
     name: Minimum supported Rust version
@@ -111,6 +147,7 @@ jobs:
           toolchain: ${{ steps.msrv.outputs.version }}
       - uses: Swatinem/rust-cache@v2
         with:
+          workspaces: fhir-mysql
           key: msrv-${{ steps.msrv.outputs.version }}
       - run: cargo check --workspace --all-targets --locked
 
@@ -126,6 +163,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@nightly
       - uses: Swatinem/rust-cache@v2
         with:
+          workspaces: fhir-mysql
           key: fuzz-${{ matrix.target }}
       # T11.9: targets that are committed but never executed prove nothing.
       #
@@ -149,7 +187,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: fuzz-artifacts-${{ matrix.target }}
-          path: fuzz/artifacts/
+          path: fhir-mysql/fuzz/artifacts/
 
   published-versions:
     name: No version diverges from crates.io
@@ -166,7 +204,7 @@ jobs:
       - name: Compare each published version against this tree
         run: |
           fail=0
-          for crate in fhir-sqlite-map fhir-sqlite-gen fhir-sqlite-store; do
+          for crate in fhir-mysql-map fhir-mysql-gen fhir-mysql-store; do
             version=$(cargo metadata --format-version 1 --no-deps \
               | python3 -c "import json,sys;print(next(p['version'] for p in json.load(sys.stdin)['packages'] if p['name']=='$crate'))")
             url="https://static.crates.io/crates/$crate/$crate-$version.crate"
@@ -193,6 +231,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: fhir-mysql
       # A component handling clinical data is part of someone's IEC 62304
       # file (spec O10.10). This evidence is cheap to keep green continuously
       # and expensive to reconstruct after the fact.
@@ -207,4 +247,4 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: sbom
-          path: "**/*.cdx.json"
+          path: "fhir-mysql/**/*.cdx.json"

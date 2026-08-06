@@ -25,9 +25,9 @@ criterion. Order within a milestone is roughly dependency order.
 - [x] **T1 Workspace scaffold.** Cargo workspace per plan D14
   (`fhir-mysql-map`, `fhir-mysql-gen`, `fhir-mysql-store`, `fhir-mysql` — the server crate
   arrives with M4), CI (fmt, clippy, test, live-database job — the port's
-  workflow file provisions `mysql:8.4`, though per-port workflows are inert in
-  the monorepo: GitHub reads only the root `.github/workflows/` (**F-49**)).
-  *Done:* `.github/workflows/ci.yml`; tests self-skip without inputs.
+  workflow provisions `mysql:8.4`; it lives at the repository root as
+  `fhir-mysql-ci.yml` since the F-49 consolidation, 2026-08-06).
+  *Done:* root `fhir-mysql-ci.yml`; tests self-skip without inputs.
 - [x] **T2 Spec-package ingestion.** profiles-resources.json +
   profiles-types.json parsed directly (simpler than reusing the fhir
   crate's parser; that crate still backs `--validate` later) into element
@@ -57,8 +57,11 @@ criterion. Order within a milestone is roughly dependency order.
   multi-row inserts; values bound as text so decimal scale and partial dates
   survive (`M3.6`). **Not** tokio-postgres, and there are no `($n::text)`
   casts — that was PostgreSQL's wire protocol (**F-27** class 3).
-  *Accept:* full-corpus live round trip 7,396/7,396 across r3/r4/r5;
-  bulk benchmark: 6,146 res/s load, 1.18 ms reads (doc/benchmarks.md).
+  *Accept:* full-corpus round trip green in this port (map layer, **F-42**);
+  the live-round-trip and bulk-benchmark figures an earlier revision cited
+  here (7,396/7,396 live; 6,146 res/s; 1.18 ms reads) were
+  `fhir-postgresql`'s — this port's own live evidence is its store suite
+  against MySQL 8.4, and it has no bench harness (**F-64**).
 ### T8. — removed 2026-08-06: misattributed ancestor (REST/CLI) work; the server is [fhir-loco](../fhir-loco/) (F-27)
 - [x] **T9 Round-trip property tests.** Map-driven random-resource
   generator (deterministic SplitMix64 seeds — no proptest dependency):
@@ -428,10 +431,9 @@ guarantees, P2 items are reach.
 - [x] **T58 CI/CD on GitHub and Codeberg.** The pipeline files exist in this
   port (`.github/workflows/`, `.woodpecker/`) and provision `mysql:8.4` — not
   the "live-PostgreSQL suite" this entry used to claim (**F-27** class 3).
-  Two caveats the tick must not hide: in the monorepo the per-port
-  `.github/workflows/` files are **inert** — GitHub reads only the root
-  `.github/workflows/`, whose `gates.yml` runs the shared-core and
-  doc-example gates (**F-49**) — and the tag/release/SBOM machinery described
+  Two caveats the tick must not hide: the port's CI now lives at the
+  repository root (`fhir-mysql-ci.yml`, F-49 consolidation 2026-08-06) but
+  no hosted run has executed yet — and the tag/release/SBOM machinery described
   here has not been exercised from this repository. See `doc/ci.md`.
 
 ## M14 — MySQL port
@@ -536,9 +538,9 @@ implementation, not new ground.
   behaviour; tracked rather than faked.
   The "store not yet ported (T64), suites self-skip" sentence this entry
   ended on is stale: the native store has since landed (T64/T74/T75) and the
-  store suites run for real against `mysql:8.4`. Note also that in the
-  monorepo the per-port workflow files are inert — GitHub reads only the root
-  `.github/workflows/` (**F-49**).
+  store suites run for real against `mysql:8.4`. The port's CI lives at the
+  repository root (`fhir-mysql-ci.yml`) since the F-49 consolidation,
+  2026-08-06.
 
 - [x] **T73 Reduced to an embeddable library.** Scope correction: this project
   is a library to embed, not an HTTP server and not a command-line tool.

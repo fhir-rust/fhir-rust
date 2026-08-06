@@ -77,11 +77,11 @@ also emptied the shared-core gate's exemption list — **100 files identical
 across all six ports, nothing excused** (75→100 when the gate widened under
 **F-48**; an earlier revision of this paragraph said 65).
 
-What is left open, as of 2026-08-06: **F-47** (a physical-schema migration),
-**F-49**'s second half (the per-family workflows are inert until consolidated
-into root ones), **F-51** (narrowed by **F-68**), **F-58** (`fhir-loco`'s five
-`SV` gaps), and **F-67** (the TLS advisory exposure in `fhir-mssql-store`,
-which is a risk-acceptance decision, not a code fix).
+What is left open, as of 2026-08-06 (end of day — **F-49** closed by the
+CI consolidation): **F-47** (a physical-schema migration), **F-51** (narrowed
+by **F-68**), **F-58** (`fhir-loco`'s five `SV` gaps), and **F-67** (the TLS
+advisory exposure in `fhir-mssql-store`, which is a risk-acceptance decision,
+not a code fix).
 
 ## Severity
 
@@ -143,7 +143,7 @@ which is a risk-acceptance decision, not a code fix).
 | [F-46](#f-46) | Medium | `U11` cannot reach the extension and deep tables: they have no columns in the map, and the cheaper workaround contradicts `U2b` | **fixed** 2026-08-02, verified live |
 | [F-47](#f-47) | Low | `path` and `v_kind` are bounded in practice but bound to unbounded types on mssql and oracle, so `U12` is unsatisfied; fixing it is a physical-schema migration for all six | open |
 | [F-48](#f-48) | Low | the shared-core gate did not watch `gen/tests/`, and could not while its normalization was line-based — rustfmt wraps by crate-name *length* | **fixed** 2026-08-02 — token-based verdict, 75→100 files |
-| [F-49](#f-49) | **High** | No workflow in this repository runs: all 20-odd sit under `<family>/.github/workflows/`, which GitHub does not read. Every "gated in CI" claim is unverified | **half-fixed** — `scripts/` committed and the root gates run (`gates.yml`: shared-core + doc-examples); the eight families' own workflows remain inert, an owner decision |
+| [F-49](#f-49) | **High** | No workflow in this repository runs: all 20-odd sit under `<family>/.github/workflows/`, which GitHub does not read. Every "gated in CI" claim is unverified | **fixed** 2026-08-06 — root gates first (`gates.yml`), then every family's CI consolidated to root files with paths filters and working-directory defaults; first hosted run pending a push |
 | [F-50](#f-50) | Medium | The `U2a` reference rule attached an adjunct to `c_url`, which no index uses, while every port indexes `(c_type, c_id)` — 453 of R5's 1,947 search targets unindexable on Oracle | **fixed** 2026-08-02 — all six; gaps now 0 |
 | [F-51](#f-51) | Medium | `fhir-oracle`'s DDL was executed by hand, not by a test, so `C0.9` keeps the port at Scaffold; a live test needs an Oracle driver decision | open |
 | [F-52](#f-52) | **High** | The repository's only live database test was flaky — its cleanup dropped tables before foreign keys and discarded the error, so failures were misattributed to a correct `CREATE TABLE` | **fixed** 2026-08-03 — 5/5 runs green |
@@ -178,7 +178,7 @@ which is a risk-acceptance decision, not a code fix).
 | [F-81](#f-81) | Medium | Six ports' `plan.md` decision entries are status-bearing and wrong — worst: `fhir-oracle` D18 asserts `R4.5` is handled by a mechanism Oracle rejects (`ORA-01466`), and D20 asserts TLS neither former scaffold has | **fixed** 2026-08-06 |
 | [F-82](#f-82) | Medium | `fhir-loco/tasks.md` predated the crate's own spec: zero `SV` ids, shipped features omitted, three provably-obsolete open items (git remotes, shared history, the fixed T70 fold) | **fixed** 2026-08-06 — replaced |
 | [F-83](#f-83) | Low | `fhir-oracle`'s book lacks the F-56 banner that root `CLAUDE.md` says all six books carry | **fixed** 2026-08-06 |
-| [F-84](#f-84) | Medium | `fhir-mssql`/`fhir-oracle` `publish.yml`/`release.yml` iterate a `fhir-<engine>-server` crate and build a `fhir-<engine>` binary — neither exists; the workflows are inert (F-49) but assert the F-27 fiction in CI config | open — resolve with F-49's consolidation |
+| [F-84](#f-84) | Medium | **All six** ports' `publish.yml` iterate a `fhir-<engine>-server` crate and a CLI crate, and all six `release.yml` build a `fhir-<engine>` binary — none of which has ever existed (wider than first recorded: not just the two former scaffolds) | **fixed** 2026-08-06 — publish loops corrected in all six; the six binary-release workflows deleted outright |
 
 ## What remains, and why
 
@@ -189,7 +189,7 @@ own closures — every one of them contradicted the summary table above.*
 | Finding | Why it is not fixed here |
 | --- | --- |
 | **F-47** | `path` and `v_kind` bounded-type fix is a physical-schema migration for all six ports — sequenced work, not a one-pass edit. |
-| **F-49** | The root gates (`gates.yml`) now run — `scripts/` is committed and the shared-core and doc-example checks execute on push. What remains is the other half: the eight families' workflows still sit under `<family>/.github/workflows/`, which GitHub does not read, so every per-port "CI provisions the engine" claim describes an inert file. Consolidating those into root workflows is an owner decision about CI cost and layout. |
+| ~~F-49~~ | Closed 2026-08-06: every family's CI now lives at the repository root — `fhir-ci.yml`, `fhir-security.yml`, one `<port>-ci.yml` per port, `fhir-loco-ci.yml` (rewritten: the old file was loco-rs template boilerplate provisioning Redis/PostgreSQL this app never used), and a new `fhir-store-ci.yml` for the one family that never had CI anywhere. Each carries a paths filter and a `working-directory` default; artifact paths were re-rooted. The inert per-family CI files are deleted. Deliberately **not** consolidated: the six ports' `publish.yml` (publishing is owner-gated; their fictional crate lists are fixed, F-84) and `fhir/release.yml` (cargo-dist manages it; moot until a release is cut). Honesty note: no hosted run has executed yet — this host cannot run GitHub Actions — so the matrix keeps `~` until the first push turns them green. |
 | **F-51** | `fhir-oracle`'s store tests now install and exercise a schema live (**F-68**), which narrows this finding; what has not been re-run test-driven is the full-R5 install the finding originally concerned. |
 | **F-58** | `fhir-loco`'s five named gaps (`SV2.14`, `SV2.15`, `SV3.11`, `SV4.2`, `SV4.3`) are feature work in a crate with its own spec. |
 | **F-67** | The TLS advisory exposure in `fhir-mssql-store` has no good fix available on this host — `native-tls` fails the handshake — so it is a standing risk only the owner can accept, mitigate, or re-platform away. |
@@ -4767,15 +4767,20 @@ sibling books' wording.
 
 ## F-84
 
-**`fhir-mssql`'s and `fhir-oracle`'s `publish.yml` iterate a
-`fhir-<engine>-server` crate, and their `release.yml` build a `fhir-<engine>`
-binary — neither of which exists, as each port's own `tasks.md` and `plan.md`
-correctly state.** Severity: **Medium**, tempered by the fact that these
-workflows are inert (F-49: GitHub does not read `<family>/.github/workflows/`)
-— the fiction cannot currently execute, but the F-27 class-1 cleanup missed
-CI config, and the moment F-49's consolidation copies these files rootward,
-publishing would fail on a nonexistent crate. **Open** — fold into F-49's
-consolidation rather than patching inert files piecemeal.
+**All six ports' `publish.yml` iterate a `fhir-<engine>-server` crate and a
+`fhir-<engine>` CLI crate, and all six `release.yml` build a `fhir-<engine>`
+binary — none of which has ever existed, as each port's own `tasks.md` and
+`plan.md` correctly state.** Severity: **Medium**, tempered by the fact that
+these workflows were inert (F-49) — the fiction could not execute — but the
+F-27 class-1 cleanup missed CI config, and any consolidation or future
+publish would have failed on a nonexistent crate. *(As first recorded this
+named only the two former scaffolds; executing the F-49 consolidation showed
+the same lines in all six — the file was copied per port, like everything
+F-27 catalogued.)* **Fixed** 2026-08-06 with F-49's consolidation: the six
+publish loops now name only the three real crates, each with a comment citing
+this finding, and the six binary-release workflows are deleted outright — a
+release pipeline for a binary that violates `C0.18` by existing is not
+machinery worth keeping inert.
 
 ---
 

@@ -1,13 +1,27 @@
-name: CI
+name: fhir-postgresql CI
 
 on:
   push:
     branches: [main]
+    paths:
+      - 'fhir-postgresql/**'
+      - '.github/workflows/fhir-postgresql-ci.yml'
+      - 'fhir-store/**'
   pull_request:
+    paths:
+      - 'fhir-postgresql/**'
+      - '.github/workflows/fhir-postgresql-ci.yml'
+      - 'fhir-store/**'
   workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
+
+# Consolidated from fhir-postgresql/.github/workflows/ (F-49): GitHub only reads
+# workflows at the repository root, so the per-family copy never ran.
+defaults:
+  run:
+    working-directory: fhir-postgresql
 
 jobs:
   test:
@@ -19,6 +33,8 @@ jobs:
         with:
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: fhir-postgresql
       - run: cargo fmt --all --check
       - run: cargo clippy --all-targets -- -D warnings
       # Unit tests pass with no database and no spec packages present;
@@ -66,6 +82,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: fhir-postgresql
       # The live tests need the FHIR definitions and an example corpus.
       - name: Fetch FHIR spec packages and example corpora
         run: |
@@ -130,6 +148,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: fhir-postgresql
       # fhir-postgresql refuses a networked bind over a plaintext database link, and
       # its `require` validates the server certificate where libpq's does
       # not. Neither claim is worth anything untested against a server that
@@ -217,6 +237,7 @@ jobs:
           toolchain: ${{ steps.msrv.outputs.version }}
       - uses: Swatinem/rust-cache@v2
         with:
+          workspaces: fhir-postgresql
           key: msrv-${{ steps.msrv.outputs.version }}
       - run: cargo check --workspace --all-targets --locked
 
@@ -232,6 +253,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@nightly
       - uses: Swatinem/rust-cache@v2
         with:
+          workspaces: fhir-postgresql
           key: fuzz-${{ matrix.target }}
       # T11.9: targets that are committed but never executed prove nothing.
       #
@@ -255,7 +277,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: fuzz-artifacts-${{ matrix.target }}
-          path: fuzz/artifacts/
+          path: fhir-postgresql/fuzz/artifacts/
 
   published-versions:
     name: No version diverges from crates.io
@@ -299,6 +321,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: fhir-postgresql
       # A component handling clinical data is part of someone's IEC 62304
       # file (spec O10.10). This evidence is cheap to keep green continuously
       # and expensive to reconstruct after the fact.
@@ -313,4 +337,4 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: sbom
-          path: "**/*.cdx.json"
+          path: "fhir-postgresql/**/*.cdx.json"

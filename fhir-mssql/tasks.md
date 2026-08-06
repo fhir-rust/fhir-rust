@@ -46,8 +46,8 @@ not because this port did them.
   `#[ignore]`d. Run with `--test-threads=1` (concurrent DDL deadlocks the
   container). These 33 run **locally** via `scripts/db.sh`; the workflow
   provisions SQL Server 2022 but invokes only the map crate's `mssql_ddl`
-  test — and per-port workflows are currently inert in the monorepo anyway
-  (**F-49**).
+  test. (The workflow lives at the repository root as
+  `fhir-mssql-ci.yml` since the F-49 consolidation, 2026-08-06.)
 - [x] **`R4.5` (snapshot reads).** `get` issues `SET TRANSACTION ISOLATION
   LEVEL SNAPSHOT` before `BEGIN TRANSACTION`, backed by
   `ALLOW_SNAPSHOT_ISOLATION` on a dedicated `fhir_mssql` database
