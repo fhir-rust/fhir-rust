@@ -9,9 +9,7 @@ cargo run --example read_bundle
 A search or transaction `Bundle` carries a heterogeneous list of resources.
 Each `Bundle.entry.resource` is held as raw `serde_json::Value` (its type is
 only known at runtime), so we deserialize each one into the polymorphic
-[`Resource`] enum, which serde selects by the `resourceType` tag.
-
-[`Resource`]: fhir::r5::resources::Resource
+`Resource` enum, which serde selects by the `resourceType` tag.
 
 ## The program
 

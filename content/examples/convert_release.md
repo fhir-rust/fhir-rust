@@ -6,9 +6,9 @@ Run with:
 cargo run --example convert_release --features "r4 r5"
 ```
 
-[`fhir::convert::between`] converts a document's JSON wire form from one
+`fhir::convert::between` converts a document's JSON wire form from one
 release to another, driven by both releases' element metadata, and returns
-a [`LossReport`] naming everything it changed or discarded. The report is
+a `LossReport` naming everything it changed or discarded. The report is
 the point: serde alone would silently drop an element the target release
 does not have, which is the failure mode a converter exists to prevent.
 
@@ -16,9 +16,6 @@ This example converts an R5 `Observation` down to R4 twice — once with a
 shape both releases agree on (the report comes back empty, and that
 emptiness is an assertion), and once carrying `triggeredBy`, an element R5
 added, so the downgrade has something to report.
-
-[`fhir::convert::between`]: fhir::convert::between
-[`LossReport`]: fhir::convert::LossReport
 
 ## The program
 

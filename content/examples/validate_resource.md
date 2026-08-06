@@ -10,8 +10,6 @@ Validation is *recursive*: calling `.validate()` on a resource walks every
 field, so primitive-format problems anywhere in the tree are reported with a
 dotted `path` that shows where they occurred.
 
-[`Validate`]: fhir::r5::validate::Validate
-
 ## The program
 
 ```rust

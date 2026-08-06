@@ -6,17 +6,13 @@ Run with:
 cargo run --example search_response
 ```
 
-A search returns a `searchset` [`Bundle`]: a page of matches, a `total`
+A search returns a `searchset` `Bundle`: a page of matches, a `total`
 that counts the whole result set (not the page), and a `next` link when
 there are more pages. This example parses one, pulls the `Patient` matches
-out as typed values with [`Bundle::resources`], and walks the `next` links
-with [`Bundle::next_link`] the way a client pages through a real server —
+out as typed values with `Bundle::resources`, and walks the `next` links
+with `Bundle::next_link` the way a client pages through a real server —
 here the "server" is a closure handing out canned pages, so the example
 runs offline.
-
-[`Bundle`]: fhir::r5::resources::Bundle
-[`Bundle::resources`]: fhir::r5::resources::Bundle::resources
-[`Bundle::next_link`]: fhir::r5::resources::Bundle::next_link
 
 ## The program
 

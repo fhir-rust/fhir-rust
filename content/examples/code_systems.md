@@ -6,7 +6,7 @@ Run with:
 cargo run --example code_systems
 ```
 
-Every FHIR `CodeSystem` is generated into an enum under [`fhir::r5::codes`].
+Every FHIR `CodeSystem` is generated into an enum under `fhir::r5::codes`.
 Each variant serializes to its canonical FHIR code string, so you get
 compile-time checking and editor autocomplete instead of stringly-typed
 codes, while the wire format stays exactly as FHIR specifies.

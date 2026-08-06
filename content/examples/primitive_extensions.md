@@ -10,10 +10,8 @@ In FHIR, even a primitive value such as `birthDate` may carry an `id` and
 `extension`s. JSON can't hang those on a bare scalar, so FHIR puts them in a
 *sibling* property whose name is the field prefixed with an underscore:
 `birthDate` holds the value, `_birthDate` holds its extensions. This crate
-models that sibling as a `<field>_ext` field of type [`Element`], serialized
+models that sibling as a `<field>_ext` field of type `Element`, serialized
 back to the `_field` key. See `spec/09-primitive-extensions.md`.
-
-[`Element`]: fhir::r5::types::Element
 
 ## The program
 

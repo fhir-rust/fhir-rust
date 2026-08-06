@@ -119,7 +119,18 @@ if (existsSync(examplesDir)) {
 		// First sentence of the header is the title; the rest stays prose.
 		const titleLine = prose.find((l) => l.trim() !== '') ?? stem;
 		const title = titleLine.replace(/\.\s*$/, '');
-		const body = prose.slice(prose.indexOf(titleLine) + 1).join('\n');
+		let body = prose.slice(prose.indexOf(titleLine) + 1).join('\n');
+
+		// Rustdoc intra-doc links ([`Bundle`]: fhir::r5::resources::Bundle)
+		// only resolve inside rustdoc. Drop the reference definitions whose
+		// target is a Rust path rather than a URL, then unwrap the now-orphaned
+		// bracket references — otherwise they render as dead `fhir:…` links,
+		// which the first build of these pages shipped.
+		body = body
+			.split('\n')
+			.filter((line) => !/^\[[^\]]+\]:\s+(?!https?:\/\/)\S+\s*$/.test(line.trim()))
+			.join('\n')
+			.replace(/\[([^\]]+)\](?!\()/g, '$1');
 
 		const markdown = [
 			`# \`${stem}\` — ${title}`,
