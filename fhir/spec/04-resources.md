@@ -36,10 +36,14 @@ A resource is a top-level FHIR entity that can be exchanged on its own
   duplicating it. Releases spell the reference differently — R4 writes a bare
   fragment (`#Observation.referenceRange`), R5 a full canonical URL with the
   same fragment — and both MUST resolve identically.
-- **R4.5** The `contained` element, and any element whose FHIR type is
-  `Resource`/`DomainResource`, MUST be represented as `::serde_json::Value`.
-  Such a slot may hold any resource at all, including one the release models
-  differently, so it stays raw JSON.
+- **R4.5** An element whose FHIR type is `Resource`/`DomainResource` MUST be
+  represented as `::serde_json::Value` — such a slot may hold any resource at
+  all, and its consumers (`bundle_util`, `Parameters`) dispatch on the JSON —
+  **except `contained`**, which MUST be the release's own
+  `resources::Resource` enum: it holds this release's resources and nothing
+  else, and typing it makes contained resources validate with their
+  container. *(Amended 2026-08-06, T47; before the amendment `contained` was
+  also required to stay raw.)*
 - **R4.6** Each resource lives in `fhir-release-N/src/resources/<snake>.rs`,
   declared in `fhir-release-N/src/resources.rs` (`pub mod` + `pub use <Pascal>`).
 - **R4.7** `fhir-release-N/src/resources.rs` MUST define a **polymorphic

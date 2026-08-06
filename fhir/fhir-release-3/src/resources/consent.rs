@@ -65,7 +65,7 @@ pub struct Consent {
 
     /// Contained, inline Resources
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub contained: Vec<::serde_json::Value>,
+    pub contained: Vec<crate::r3::resources::Resource>,
 
     /// Additional Content defined by implementations
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

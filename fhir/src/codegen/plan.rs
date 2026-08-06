@@ -377,6 +377,15 @@ fn plan_field(
 
 /// The Rust type for a non-choice, non-backbone element.
 fn scalar_type(type_code: &str, element: &ElementDefinition, ctx: &Context) -> String {
+    // `contained` is the one polymorphic slot narrow enough to type: it holds
+    // this release's own resources and nothing else, so it is the `Resource`
+    // enum rather than raw JSON (T47). `Bundle.entry.resource` and the other
+    // `Resource`-typed slots stay raw — their consumers (`bundle_util`,
+    // `Parameters`) dispatch on the JSON themselves.
+    if type_code == "Resource" && element.path.ends_with(".contained") {
+        let module = &ctx.module;
+        return format!("crate::{module}::resources::Resource");
+    }
     // A `required` binding is modelled as the matching enum rather than an
     // opaque `code`, wrapped so that codes outside the value set still parse.
     if type_code == "code"

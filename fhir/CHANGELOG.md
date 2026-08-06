@@ -5,6 +5,24 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased - 4.0.0-dev
+
+### Changed - **breaking**: `contained` is typed (T47)
+
+Every DomainResource's `contained` field is now
+`Vec<crate::<release>::resources::Resource>` instead of
+`Vec<serde_json::Value>` — the one polymorphic slot narrow enough to type,
+since it holds the release's own resources and nothing else.
+`Bundle.entry.resource` and the other `Resource`-typed slots deliberately
+stay raw JSON (`bundle_util` and `Parameters` dispatch on them). The wire
+form is unchanged — the corpus gate is the proof — and two things improve:
+contained resources are now **validated** when their container is (the
+`Validate` derive recurses the typed field), and the `dom-2`/`dom-4` checks
+read typed accessors (`Resource::has_contained`, `Resource::meta`, both
+generated) instead of probing raw JSON. Breaking for any code that built or
+matched `contained` as `Value`; construct the release's `Resource` enum
+instead.
+
 ## [fhir-derive-macros 1.2.0] - 2026-08-06 (retroactive entry)
 
 Published without a changelog entry — recorded here after the 2026-08-06

@@ -77,9 +77,12 @@ elements exist, never in how an element is mapped.
 
 ### Polymorphic slots
 
-- **R6.12** `contained` and other `Resource`/`DomainResource`-typed elements
-  are `::serde_json::Value`. A top-level polymorphic resource uses the
-  `Resource` enum tagged by `resourceType` (spec 04, R4.7).
+- **R6.12** `Resource`/`DomainResource`-typed elements are
+  `::serde_json::Value`, except `contained`, which is the release's typed
+  `Resource` enum (spec 04, R4.5 as amended 2026-08-06, T47). A top-level
+  polymorphic resource uses the `Resource` enum tagged by `resourceType`
+  (spec 04, R4.7); serde reads and writes the discriminator, so the wire
+  form of a typed `contained` is byte-for-byte what the raw form was.
 
 ### Round-trip guarantee
 

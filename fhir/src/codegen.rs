@@ -389,6 +389,57 @@ fn render_resources_module(plans: &[plan::TypePlan], version: Version) -> String
         );
     }
     out.push_str("}\n");
+
+    // Accessors the `dom-2`/`dom-4` invariant checks need over typed
+    // `contained` entries (T47). Only DomainResources carry `contained`;
+    // every resource carries `meta`.
+    let _ = write!(
+        out,
+        "\nimpl Resource {{\n\
+         \x20   /// Whether this resource itself carries contained resources (`dom-2`).\n\
+         \x20   #[must_use]\n\
+         \x20   pub fn has_contained(&self) -> bool {{\n\
+         \x20       match self {{\n"
+    );
+    for plan in plans {
+        let has_contained = plan
+            .structs
+            .iter()
+            .find(|s| s.is_root)
+            .is_some_and(|s| s.fields.iter().any(|f| f.ident == "contained"));
+        let _ = if has_contained {
+            writeln!(
+                out,
+                "            Self::{}(r) => !r.contained.is_empty(),",
+                plan.type_name
+            )
+        } else {
+            writeln!(out, "            Self::{}(_) => false,", plan.type_name)
+        };
+    }
+    let _ = write!(
+        out,
+        "        }}\n\
+         \x20   }}\n\
+         \n\
+         \x20   /// The resource's `meta`, when present (`dom-4`).\n\
+         \x20   #[must_use]\n\
+         \x20   pub fn meta(&self) -> Option<&crate::{module}::types::Meta> {{\n\
+         \x20       match self {{\n"
+    );
+    for plan in plans {
+        let _ = writeln!(
+            out,
+            "            Self::{}(r) => r.meta.as_ref(),",
+            plan.type_name
+        );
+    }
+    let _ = write!(
+        out,
+        "        }}\n\
+         \x20   }}\n\
+         }}\n"
+    );
     out
 }
 

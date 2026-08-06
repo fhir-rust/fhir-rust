@@ -72,7 +72,7 @@ pub struct Linkage {
 
     /// Contained, inline Resources
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub contained: Vec<::serde_json::Value>,
+    pub contained: Vec<crate::r5::resources::Resource>,
 
     /// Additional content defined by implementations
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

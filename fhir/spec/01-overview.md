@@ -64,8 +64,10 @@ Out of scope (for now; see each spec's Future work):
   FHIR faithfully.
 - Papering over the differences between FHIR releases. Where the releases
   disagree, the types disagree too.
-- Runtime reflection or dynamic typing beyond the `Resource` enum and the
-  `serde_json::Value` used for polymorphic `contained` slots.
+- Runtime reflection or dynamic typing beyond the `Resource` enum (which also
+  types `contained`, since T47) and the `serde_json::Value` used for the
+  remaining polymorphic slots (`Bundle.entry.resource`,
+  `Parameters.parameter.resource`).
 
 ## Crate identity
 

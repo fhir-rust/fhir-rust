@@ -354,18 +354,20 @@ fn invariant_stmts(struct_name: &str, fields: &Fields) -> proc_macro2::TokenStre
     let has_contained = matches!(fields, Fields::Named(f)
         if f.named.iter().any(|x| x.ident.as_ref().is_some_and(|i| i == "contained")));
     if has_contained {
+        // `contained` is the typed `Resource` enum (T47); its generated
+        // `has_contained`/`meta` accessors carry these two checks. An earlier
+        // revision probed the raw JSON with `Value::get`.
         checks.extend(quote! {
             for (__i, __c) in self.contained.iter().enumerate() {
-                if __c.get("contained").is_some() {
+                if __c.has_contained() {
                     issues.push(crate::validate::ValidationIssue::new(
                         &format!("contained[{__i}]"),
                         "dom-2: a contained resource SHALL NOT itself contain resources",
                     ));
                 }
-                let __meta = __c.get("meta");
-                if __meta.and_then(|m| m.get("versionId")).is_some()
-                    || __meta.and_then(|m| m.get("lastUpdated")).is_some()
-                {
+                if __c.meta().is_some_and(|__m| {
+                    __m.version_id.is_some() || __m.last_updated.is_some()
+                }) {
                     issues.push(crate::validate::ValidationIssue::new(
                         &format!("contained[{__i}]"),
                         "dom-4: a contained resource SHALL NOT have meta.versionId or meta.lastUpdated",
