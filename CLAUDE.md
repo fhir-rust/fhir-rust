@@ -76,9 +76,13 @@ are now fixed:
   only in `fhir-postgresql`. mysql and mariadb are now unticked; sqlite says
   plainly that a local file has no link to encrypt.
 
-**Still untrue in the four non-scaffold files: everything about a REST server
-and a CLI.** That is class 1, and it stays until the owner decides whether these
-libraries grow a server — unticking would assert a plan nobody has recorded.
+**The class-1 REST/CLI entries are gone as of 2026-08-06** (**F-80**): the
+owner had already resolved that the server is `fhir-loco` (F-27's class-1
+disposition, 2026-08-03), and this pass executed it — each misattributed entry
+in the four store ports' files is now a one-line tombstone keeping its task id
+and pointing at `fhir-loco`. Two ticked store-layer *guarantees* that never
+existed in mysql/mariadb (conditional-op atomicity, the `*_audited` envelope)
+were also found and unticked (**F-78**).
 
 **Do not use a `tasks.md` to decide what is done** — read the conformance matrix
 and the port's dialect annex instead.

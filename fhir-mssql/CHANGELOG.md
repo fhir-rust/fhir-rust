@@ -2,11 +2,17 @@
 
 > ## ⚠ This changelog is inherited, and most of it did not happen here
 >
-> It is `fhir-postgresql`'s history with the crate name substituted. This port
-> has **no store and no driver** ([`C0.8`](../spec/databases/00-conformance.md)),
-> so every entry below about a connector, TLS to the database, a live corpus
-> round-trip, `jsonb`, advisory locks, or a `fhir-mssql init --upgrade` describes
-> work that was **not done in this port**. Audit **F-62**.
+> It is `fhir-postgresql`'s history with the crate name substituted. When these
+> entries were written this port had no store and no driver; it has both since
+> 2026-08-04 (**F-65** — a real `tiberius` store, live-verified against
+> `azure-sql-edge` by 33 tests, including `upgrade`/`backfill_norm`). Entries
+> below about a connector, TLS to the database, a live corpus round-trip,
+> `jsonb`, or advisory locks still describe work that was **done in
+> `fhir-postgresql`, not here**. Audit **F-62**; banner corrected 2026-08-06
+> (**F-75** — an earlier revision said "no store and no driver" in the present
+> tense long after F-65, and pointed readers to the *Unreleased* section
+> below as "what is true of this port" when that section is itself inherited
+> fiction).
 >
 > A changelog is the strongest claim a project makes — it says a thing shipped —
 > and these say a security fix shipped that this port never had. They are kept
@@ -14,8 +20,9 @@
 > the shared code came from, and because the shared half (the generator, the
 > shred/reconstruct engine, the fold) genuinely does change with these releases.
 >
-> **What is true of this port** is at the top of the file under *Unreleased*,
-> and in the [conformance matrix](../spec/databases/conformance-matrix.md).
+> **What is true of this port** is in the [conformance
+> matrix](../spec/databases/conformance-matrix.md) and this port's own
+> `tasks.md` — not in any entry below, including *Unreleased*.
 
 ## 0.4.0 — tamper evidence that survives the database (2026-07-27)
 
@@ -29,7 +36,8 @@ beginning where their first digest appears.
 
 **Changed — hash chains are computed in Rust, not by the database.** True of
 this port in the sense that matters: `canon.rs` is shared and identical in all
-six (`X15.1`). Nothing here has ever *written* a chain, having no store. The
+six (`X15.1`). (When this entry was written nothing here had written a chain;
+since **F-65** the store writes and verifies chains live.) The
 digests were computed in SQL. They are unkeyed over a published pre-image,
 so a database that computes them holds everything needed to forge them — and,
 decisively, a MAC can only be introduced where the database is not. A key
@@ -322,7 +330,13 @@ accent-insensitive search (P6.6), bounded search cost (P6.7), A7.7–A7.12,
 O10.7–O10.10, § 12 *Trust, principal, and audit*, and § 13 *Compliance
 mapping* (HIPAA, GDPR, ONC/HTI, IEC 62304).
 
-## Unreleased — 2.0.0-dev (ground-up rewrite, 2026-07)
+## Inherited 2.0.0-dev notes (2026-07) — `fhir-postgresql`'s, not this port's
+
+> ⚠ Everything in this section describes the **ancestor project**: the
+> PostgreSQL round-trip, the optimistic concurrency, the REST server, and the
+> CLI in the bullets below never existed in `fhir-mssql` (`C0.17`, `C0.18`,
+> **F-27**/**F-75**). This port's real state is its `tasks.md` and the
+> [conformance matrix](../spec/databases/conformance-matrix.md).
 
 A complete rewrite: FHIR resources now live in **fully normalized
 relational tables** (typed columns, child tables per repeating element,

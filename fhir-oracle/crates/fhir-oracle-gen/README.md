@@ -49,8 +49,9 @@ nothing is typed twice.
 | relational map | tables, columns, types, search-parameter compilation |
 | DDL | MySQL DDL — **not** Oracle's (**F-08**) |
 
-Search-parameter compilation is partial by design: **94.8% of R5 parameters**
-compile to a column target. The remainder — composites, and a handful of
+Search-parameter compilation is partial by design: **92.4% of R5 parameters**
+compile to a column target (an earlier revision said 94.8% — **F-38** removed
+51 compilations that silently dropped a `where()` value restriction). The remainder — composites, and a handful of
 expressions using FHIRPath functions the static walker does not implement — are
 recorded as unsupported with a reason rather than guessed at.
 

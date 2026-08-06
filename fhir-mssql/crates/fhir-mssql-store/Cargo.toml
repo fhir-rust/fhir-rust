@@ -1,6 +1,6 @@
 [package]
 name = "fhir-mssql-store"
-description = "SQL Server storage layer for fhir-mssql"
+description = "SQL Server storage layer for fhir-mssql (Store level: live-verified against azure-sql-edge, 33/33 tests - audit.md F-65; TLS advisory risk F-67)"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

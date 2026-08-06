@@ -69,13 +69,17 @@ live PostgreSQL 18 in CI, and its measured results are its own. It has one open
 high-severity defect (**F-07**, chain portability) that does not affect
 correctness within the port.
 
-`fhir-sqlite`, `fhir-mysql`, `fhir-mariadb`: working stores, but their
-concurrency, redaction, and audit tests do not exist yet. The
-[conformance matrix](../spec/databases/conformance-matrix.md) marks those requirements `?`
-— plausibly satisfied by shared code, unproven here. Whether that is acceptable
-depends on what you are storing.
+`fhir-sqlite`, `fhir-mysql`, `fhir-mariadb`: working stores, and their
+concurrency, redaction, and round-trip suites now exist and run green against
+live engines (an earlier revision of this answer predated them — writing
+those suites found five real defects, **F-20**–**F-24**). The remaining `?`
+cells are narrower — see the
+[conformance matrix](../spec/databases/conformance-matrix.md).
 
-`fhir-mssql`, `fhir-oracle`: no. Neither has a store.
+`fhir-mssql`: a working store, live-verified (**F-65**) — weigh the TLS
+advisory risk (**F-67**) first. `fhir-oracle`: a working store (**F-68**),
+but `R4.5` snapshot reads are a confirmed open gap and it has no concurrency
+or redaction tests — not yet, for patient data.
 
 In every case you also need the perimeter — authentication, authorization,
 consent, TLS. See [the trust boundary](trust-boundary.md).

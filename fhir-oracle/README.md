@@ -56,8 +56,9 @@ check constraints — not JSON blobs.
 > - **Transport security is undecided** (`O10.7`, `M14.22`) — the live tests
 >   above connect over a plain local port with no encryption configured
 >   either way.
-> - **The eleven MySQL-asserting tests in `ddl.rs` are still `#[ignore]`d** and
->   still need replacing (`M14.25`).
+> - The eleven `#[ignore]`d MySQL-asserting tests in `ddl.rs` are **gone** —
+>   replaced with Oracle-asserting ones under **F-08** (an earlier revision of
+>   this line said they still needed replacing after they had been, F-79).
 > - **There is no live CI gate.** It provisioned **MySQL** and was removed
 >   rather than repointed (**F-06**); nothing in this repository runs in CI at
 >   all — see **F-49**. `scripts/db.sh` now exists for local use (`up`/`down`/

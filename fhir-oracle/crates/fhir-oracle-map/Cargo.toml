@@ -1,6 +1,6 @@
 [package]
 name = "fhir-oracle-map"
-description = "Relational map and shred/reconstruct engine for fhir-oracle - SCAFFOLD: the DDL emitter still emits MySQL, not Oracle"
+description = "Relational map and shred/reconstruct engine for fhir-oracle (Oracle DDL, live-verified on Oracle 26ai Free - audit.md F-08)"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

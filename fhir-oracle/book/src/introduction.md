@@ -1,5 +1,23 @@
 # Introduction
 
+> ## ⚠ Read this first
+>
+> This book was written for `fhir-postgresql` and copied to every port. The
+> engine-specific text is now corrected throughout.
+>
+> What several chapters still call `fhir-oracle serve` is really
+> **`fhir-loco`** — a separate crate (Loco.rs, Axum, Tokio, Hyper) that mounts
+> a FHIR REST API over a store. `fhir-oracle` itself is a **library**: no
+> binary, no `serve`, no HTTP surface
+> ([`C0.17`](../../../spec/databases/00-conformance.md),
+> [`C0.18`](../../../spec/databases/00-conformance.md); audit **F-56**, banner
+> added under **F-83**).
+>
+> Read any endpoint, status code or `serve` command below as `fhir-loco`'s
+> behaviour, not this crate's. The
+> [conformance matrix](../../../spec/databases/conformance-matrix.md) is the
+> status document to trust.
+
 fhir-oracle stores [FHIR](https://hl7.org/fhir/) resources in Oracle
 Database 12.2 or later as **real relational tables** — typed columns, child
 tables, primary and foreign keys — not JSON blobs.

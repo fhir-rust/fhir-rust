@@ -47,8 +47,8 @@ fhir-postgresql   PostgreSQL 18    Reference — full store, full test suite
 fhir-sqlite       SQLite 3         Store
 fhir-mysql        MySQL 8.4        Store
 fhir-mariadb      MariaDB 11.4     Store
-fhir-mssql        SQL Server       Scaffold — DDL only, no store
-fhir-oracle       Oracle           Scaffold — real Oracle DDL, no store
+fhir-mssql        SQL Server       Store — live-verified, incl. upgrade (F-65)
+fhir-oracle       Oracle           Store — live-verified; no upgrade, R4.5 open (F-68)
 ```
 
 Those are conformance levels (`C0.8`), and they are load-bearing: what a port is

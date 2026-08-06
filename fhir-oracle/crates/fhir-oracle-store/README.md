@@ -45,9 +45,11 @@ before depending on any operation this README does not name above.
 
 ## Tests
 
-53 tests, eleven of which are `#[ignore]`d because they assert MySQL
-behaviour (`ddl.rs`, in the sibling `-map` crate). This crate's own
-`tests/oracle_store.rs`: 7 tests, 0 ignored, all live against a real Oracle.
+This crate's own `tests/oracle_store.rs`: 7 tests, 0 ignored, all live
+against a real Oracle. (An earlier revision said eleven sibling-crate tests
+were `#[ignore]`d as MySQL-asserting — they were replaced with
+Oracle-asserting ones under **F-08**; no `#[ignore]` remains anywhere in
+this workspace.)
 
 ## Trust boundary
 

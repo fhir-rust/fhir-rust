@@ -10,25 +10,29 @@ the `store` crate — and in how much has been verified.
 | Production today | **`fhir-postgresql`** | the only port whose test suite substantiates its claims |
 | Embedded, no server | **`fhir-sqlite`** | one file, bundled engine, always-runnable tests |
 | An existing MySQL/MariaDB estate | `fhir-mysql`, `fhir-mariadb` | native stores and search, live CI gates |
-| SQL Server | **not yet** | verified T-SQL DDL, but no store |
-| Oracle | **not yet** | real Oracle DDL, installed on 26ai (**F-08**); no store and no driver (**F-51**) |
+| SQL Server | `fhir-mssql` | native store and search, live-verified incl. `upgrade` (**F-65**); note the TLS advisory risk (**F-67**) |
+| Oracle | `fhir-oracle`, cautiously | native store and search, live-verified (**F-68**) — but no `upgrade`, no concurrency/redaction tests, and `R4.5` snapshot reads are a confirmed open gap |
 
 ## Status in detail
 
 | | pg | sqlite | mysql | mariadb | mssql | oracle |
 | --- | :-: | :-: | :-: | :-: | :-: | :-: |
-| Conformance level | Reference | Store | Store | Store | Scaffold | Scaffold |
+| Conformance level | Reference | Store | Store | Store | Store | Store |
 | Dialect annex exists and is real | • | • | • | • | • | • |
-| Store implementation | • | • | • | • | — | — |
-| Search | • | • | • | • | — | — |
-| History, audit, chain | • | • | • | • | — | — |
+| Store implementation | • | • | • | • | • | • |
+| Search | • | • | • | • | • | • |
+| History, audit, chain | • | • | • | • | • | • |
 | Transaction bundles | • | ~ | — | — | — | — |
 | Conditional create/delete | • | • | — | — | — | — |
-| `upgrade` / backfill | • | — | — | — | — | — |
+| `upgrade` / backfill | • | • | • | • | • | — |
 | `chain_witness`, re-sign | • | — | — | — | — | — |
-| Concurrency / redaction / audit **tests** | • | — | — | — | — | — |
-| CI runs the right engine | • | • | • | • | • | n/a |
+| Concurrency / redaction / audit **tests** | • | • | • | • | • | — |
+| CI runs the right engine | ~ | ~ | ~ | ~ | ~ | — |
 | Dialect annex describes the right engine | • | • | • | • | • | • |
+
+(The CI row is `~` everywhere because per-family workflows are inert in the
+monorepo — the workflow files provision the right engines but nothing runs
+them until they are consolidated rootward, **F-49**.)
 
 Full detail: [conformance matrix](../spec/databases/conformance-matrix.md).
 
@@ -104,40 +108,48 @@ The visible difference is the collation: `utf8mb4_0900_bin` on MySQL,
 binary property `M3.6b` requires; `utf8mb4_bin` would be wrong, because it is
 PAD SPACE and would make `'Smith' = 'Smith '` true.
 
-Costs: no `transact_audited`, no conditional operations, no `upgrade`, no
-checkpoint. `DATETIME(6)` rather than `TIMESTAMP`, because `TIMESTAMP` converts
+Costs: no `transact_audited`, no conditional operations, no
+checkpoint (`upgrade`/`backfill_norm` exist and are live-verified — **F-15**
+closed here). `DATETIME(6)` rather than `TIMESTAMP`, because `TIMESTAMP` converts
 on session time zone and its range ends in 2038.
 
 ### SQL Server
 
-**Not usable yet.** The T-SQL DDL emitter is real, deliberate, and hand-verified
-against `azure-sql-edge` — `BIT`, `NVARCHAR(450) COLLATE
-Latin1_General_100_BIN2`, `DATETIME2(6)`, `OFFSET … FETCH`. Everything else is
-missing or wrong:
+**Store level since 2026-08-04** (**F-65** — an earlier revision of this
+section began "Not usable yet"). A real `tiberius` store with search,
+live-verified against `azure-sql-edge` by 33 tests, 0 ignored, including
+`upgrade`/`backfill_norm` (this port's `upgrade` is genuinely one
+transaction — T-SQL DDL is transactional, `M14.35`). `R4.5` snapshot reads
+needed two live attempts: `READ_COMMITTED_SNAPSHOT` alone still tore;
+`SET TRANSACTION ISOLATION LEVEL SNAPSHOT` on a dedicated database is what
+works. What to weigh before choosing it:
 
-- No store: `store/src/` holds `lib.rs` and `chain.rs`, and there are no store
-  tests.
-- Until 2026-07-31, CI and `scripts/db.sh` provisioned **MySQL 8.4** and invoked
-  a test target that does not exist, so the DDL had never been verified in CI at
-  all. Both now use SQL Server 2022, and the test fails rather than skips
-  without a database (**F-06** fixed) — but no green run exists yet to cite.
-- The dialect annex was the MySQL annex, unedited, and contradicted the working
-  T-SQL code. It has been rewritten (**F-16** fixed).
+- **The TLS advisory risk (`F-67`)**: three unpatched `rustls-webpki` CVEs
+  reach the shipping store crate, and `native-tls` fails the handshake — a
+  standing risk awaiting an owner decision, so `O10.7` is `!` in the matrix.
+- Verified only against `azure-sql-edge`, not full SQL Server (`M14.31`).
 - A token's `system`/`code` are `NVARCHAR(MAX)` and are dropped from their
-  index, so those searches scan. The intended fix is a persisted computed column
-  holding the leading 450 characters (`P6.4a`).
+  index, so those searches scan. The intended fix is a persisted computed
+  column holding the leading 450 characters (`P6.4a`).
+- No `put_audited`, `transact_audited`, or conditional operations.
 
 ### Oracle
 
-**Scaffold only, and nothing in it is Oracle.** `ddl.rs` is still the MySQL
-emitter and produces types Oracle does not have (**F-08**) — that is the port's
-main body of work. Its annex has been rewritten as a decision list (**F-16**
-fixed), its engine floor is now declared as 12.2 (**F-09** fixed), and its fake
-MySQL CI gate has been removed rather than repointed (**F-06** fixed). There is
-still no store and no driver chosen.
+**Store level since 2026-08-04** (**F-68** — an earlier revision of this
+section said "Scaffold only, and nothing in it is Oracle"). `ddl.rs` is a
+real Oracle emitter now (**F-08** fixed): the full R5 schema — 9,636
+statements — installs on 26ai with 0 invalid objects, and the store (the
+`oracle` ODPI-C crate, synchronous, wrapped in `spawn_blocking`) runs its
+CRUD/history/search/audit surface live, 7/7 tests, 0 ignored. The caveats
+are sharper here than anywhere else:
 
-The port's own `tasks.md` has always said this plainly and `#[ignore]`s the
-misleading tests; its README now does too (**F-01** fixed).
+- **`R4.5` snapshot reads are a confirmed open gap**, not an unverified one:
+  `SET TRANSACTION READ ONLY` fails with `ORA-01466` on any session that has
+  run DDL, so `get` currently reads with no snapshot protection.
+- No `upgrade`/`backfill_norm`, no concurrency or redaction tests, transport
+  security undecided (`M14.22`), and no CI gate — the fake MySQL gate was
+  removed rather than repointed (**F-06**), and `scripts/db.sh` is the local
+  gate.
 
 Open Oracle questions that make this more than mechanical: no boolean type
 before 23ai; `VARCHAR2` capped at 4000 bytes with longer values becoming `CLOB`,

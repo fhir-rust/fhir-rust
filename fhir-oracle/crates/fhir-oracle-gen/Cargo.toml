@@ -1,6 +1,6 @@
 [package]
 name = "fhir-oracle-gen"
-description = "Generates the fhir-oracle relational map from FHIR specification packages - SCAFFOLD: the DDL it emits is MySQL, not Oracle"
+description = "Generates the fhir-oracle relational map from FHIR specification packages"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

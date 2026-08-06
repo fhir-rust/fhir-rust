@@ -32,8 +32,11 @@ with its own generated schema in its own database (`r5`, `r4`, `r3`).
 >
 > **Not yet:** there is no optimistic concurrency at all — no `put_audited` and
 > no `expected_version` anywhere in the crate — and no `transact_audited`,
-> conditional create/delete, `init --upgrade`, `emit_checkpoint`,
-> `chain_witness`, or `resign_history`. Read the
+> conditional create/delete, `emit_checkpoint`, `chain_witness`, or
+> `resign_history`. (`init --upgrade` and `backfill_norm` **do** exist now,
+> live-verified by `tests/upgrade.rs` — closing this port's share of **F-15**;
+> an earlier revision of this line listed `init --upgrade` as missing after it
+> had shipped.) Read the
 > [conformance matrix](../spec/databases/conformance-matrix.md) before deploying.
 >
 > Normative behaviour: the shared [core spec](../spec/databases/index.md) plus this port's

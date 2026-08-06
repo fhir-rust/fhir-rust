@@ -1,6 +1,6 @@
 [package]
 name = "fhir-mssql-map"
-description = "Relational map and shred/reconstruct engine for fhir-mssql - SCAFFOLD: T-SQL DDL emitted but never run against a green CI gate"
+description = "Relational map and shred/reconstruct engine for fhir-mssql (T-SQL DDL, live-verified against SQL Server - audit.md F-65)"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
