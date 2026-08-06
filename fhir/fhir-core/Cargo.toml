@@ -35,5 +35,16 @@ tokio = { version = "1", features = [
 ], optional = true }
 quick-xml = { version = "0.41", optional = true }
 
+[dev-dependencies]
+# The doctests demonstrate this crate through the facade (`use fhir::…`),
+# which is how a reader actually reaches it — several need a release model
+# (`fhir::r5::meta`) that this release-independent crate deliberately does
+# not have. A dev-dependency cycle is the standard way to let those examples
+# compile from this crate's own test harness (T49): cargo resolves
+# dev-dependencies separately, so the cycle is legal and nothing ships.
+# Before this, `cargo test -p fhir-core --doc` could not compile 13 doctests
+# and no CI invocation ran them at all.
+fhir = { path = "..", version = "3.0.0" }
+
 [lints.rust]
 unsafe_code = "forbid"

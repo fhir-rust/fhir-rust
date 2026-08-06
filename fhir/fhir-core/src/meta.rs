@@ -157,9 +157,10 @@ pub fn find(table: &'static [ElementMeta], path: &str) -> Option<&'static Elemen
 /// boundary is returned, so `valueQuantity` resolves to `Observation.value[x]`.
 ///
 /// ```
-/// use fhir::r5::meta;
+/// use fhir_core::meta;
 ///
-/// let el = meta::resolve("Observation.valueQuantity", "Observation", "valueQuantity").unwrap();
+/// let table = fhir::r5::meta::elements();
+/// let el = meta::resolve(table, "Observation.valueQuantity", "Observation", "valueQuantity").unwrap();
 /// assert_eq!(el.path, "Observation.value[x]");
 /// ```
 #[must_use]

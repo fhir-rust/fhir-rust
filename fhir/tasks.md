@@ -886,19 +886,21 @@ above.
 
 ---
 
-### T49. `fhir-core`'s facade-facing doctests never run — **P2**
+### T49. `fhir-core`'s facade-facing doctests never run — **P2** — *done*
+- *Status (2026-08-06):* fixed by a dev-dependency cycle — `fhir-core`
+  dev-depends on the facade, which cargo resolves separately and never
+  ships — so the facade-oriented examples (`use fhir::r5::meta;`, the way a
+  reader actually uses the crate) compile from the crate's own harness, and
+  a new `fhir-core doctests` CI step runs them beside the existing `--lib`
+  steps. All 13 now pass; `cargo publish --dry-run -p fhir-core` stays
+  green. **Running them immediately found rot**: the `meta::resolve` example
+  predated the function's `table` parameter and could never have compiled —
+  exactly the decay an unrun doctest suite accumulates.
 - **Why (found running T47's gates):** `fhir-core`'s doctests are written
-  against the facade (`use fhir::r5::meta;`, `use fhir::util::last_word;`),
-  so `cargo test -p fhir-core --doc` cannot compile them — 13 fail — and no
-  CI job runs them any other way: the root `test` job's `--doc` covers the
-  root package only, and `release-crate-tests` covers the release crates
-  only. The examples are good documentation and are currently invisible to
-  every gate, the same shape as the gap the `release-crate-tests` job was
-  added to close.
-- **Do:** either rewrite them against `fhir_core::…` paths (compilable from
-  the crate itself) or add a CI invocation that runs them with the facade
-  linked (e.g. as facade doctests via `#[doc = include_str!…]`), and add
-  whichever gate keeps them running.
+  against the facade, so `cargo test -p fhir-core --doc` could not compile
+  them — 13 failed — and no CI job ran them any other way: the root `test`
+  job's `--doc` covers the root package only, and `release-crate-tests`
+  covers the release crates only.
 
 ---
 

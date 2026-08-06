@@ -89,6 +89,15 @@ jobs:
         run: |
           cargo test -p fhir-core --lib
           cargo test -p fhir-core --lib --features "xml client"
+      # fhir-core's doctests demonstrate the crate through the facade
+      # (`use fhir::…`), so they compile via a dev-dependency cycle on the
+      # facade — legal, dev-deps resolve separately and nothing ships. Until
+      # this step existed no invocation anywhere ran them: 13 doctests were
+      # invisible to every gate, and one had rotted against a signature
+      # change (T49).
+      - name: fhir-core doctests
+        if: matrix.name == 'r5'
+        run: cargo test -p fhir-core --doc
 
   release-crate-tests:
     name: Tests (fhir-release-${{ matrix.release }})

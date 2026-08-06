@@ -290,6 +290,7 @@ name = "fhir-core"
 version = "3.0.0"
 dependencies = [
  "convert_case",
+ "fhir",
  "quick-xml",
  "reqwest",
  "serde",
