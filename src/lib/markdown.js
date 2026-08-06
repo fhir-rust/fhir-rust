@@ -193,13 +193,22 @@ export function renderMarkdown(markdown, { file, route }) {
 
 /** A one-line description for <meta name="description">. */
 function summarize(markdown) {
+	let inFence = false;
 	for (const line of markdown.split('\n')) {
 		const text = line.trim();
+		// A fenced block is code, not a description — the example pages open
+		// with a `Run with: ```sh …` block, which used to become the meta text.
+		if (text.startsWith('```')) {
+			inFence = !inFence;
+			continue;
+		}
+		if (inFence) continue;
 		if (!text || text.startsWith('#') || text.startsWith('---') || text.startsWith('>')) continue;
 		// Table rows and list bullets read badly as a description.
 		if (text.startsWith('|')) continue;
 		const plain = text
 			.replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+			.replace(/\[([^\]]+)\]/g, '$1')
 			.replace(/[*_`]/g, '')
 			.trim();
 		if (plain.length < 20) continue;
