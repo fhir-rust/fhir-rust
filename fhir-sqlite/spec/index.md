@@ -35,7 +35,7 @@ Summarized from the annex; the annex governs.
 | `ords` binding (`M3.4a`) | `TEXT` holding the shared array literal (`M14.6`–`M14.8`) |
 | Index limits (`P6.4a`) | no key-length cap; not applicable |
 | Transport (`O10.7`) | **not applicable** — embedded, no connection. The obligation is at-rest: file permissions and storage encryption |
-| Unmet core requirements | `O10.4a` (no `upgrade`), `M3.16c`/`M3.16d` (no `chain_witness`/`resign`) |
+| Unmet core requirements | `M3.16c`/`M3.16d` (no `chain_witness`/`resign`). `O10.4a` is now met: `upgrade` + `backfill_norm` exist (**F-15** closed here) |
 
 The annex's own account of why the port is easier than it looks is worth keeping
 in view: `gen`, `shred`, `reconstruct`, `value`, `fold`, and `model` do not
@@ -53,8 +53,11 @@ From `tasks.md`, and reflected in the
   process dying mid-unwind leaves partial state permanently. Doing it properly
   needs `put` and `delete` split so their bodies run inside a caller-supplied
   `BEGIN IMMEDIATE`.
-- `resign_history`, `chain_witness`, `export`, and `init --upgrade` are
-  unimplemented; each fails saying so rather than pretending.
+- `resign_history`, `chain_witness`, and `export` are unimplemented; each
+  fails saying so rather than pretending. `init --upgrade` is no longer
+  among them: `SqliteStore::upgrade` (`sqlite.rs:390`) and `backfill_norm`
+  (`:632`) exist, live-verified by 8 tests in `tests/upgrade.rs` (`O10.4a`;
+  the matrix row is `•`).
 - `ColTy::Numeric` has no derived `_sort` companion yet, so numeric range search
   works via `CAST(… AS REAL)` — correct, but it gives up the index.
 - The book teaches PostgreSQL's `ords[1]` subscript idiom, which a `TEXT` column
@@ -62,10 +65,14 @@ From `tasks.md`, and reflected in the
 
 ## Open findings against this port
 
-- **F-15** — no `upgrade`, so the corrected fold (`L12`–`L14`, `O10.4a`) is a
-  full reload rather than a migration here.
-- **F-01** — the README carries the PostgreSQL reference's measured results.
-- **F-02**, **F-11** — shared; see the [register](../../spec/databases/audit.md).
+- **F-15** — **closed for this port**: `upgrade` and `backfill_norm` exist
+  (`sqlite.rs:390`/`:632`), so the corrected fold (`L12`–`L14`, `O10.4a`) is
+  a migration, not a reload — except for a database installed before `init`
+  recorded the map asset, which has nothing to diff.
+- **F-01** — **fixed**: the README no longer carries the PostgreSQL
+  reference's measured results (rewritten under F-01).
+- **F-02** — shared; see the [register](../../spec/databases/audit.md).
+  **F-11** is resolved (monorepo merge, one remote, no per-port `.git`).
 
 ## Contents of the core
 

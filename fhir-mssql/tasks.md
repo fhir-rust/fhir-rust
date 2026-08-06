@@ -44,7 +44,10 @@ not because this port did them.
   `redaction.rs` (2), `roundtrip_types.rs` (6), `ssl_live.rs` (1),
   `upgrade.rs` (9) — **33 of 33 green** against `azure-sql-edge`, 0
   `#[ignore]`d. Run with `--test-threads=1` (concurrent DDL deadlocks the
-  container).
+  container). These 33 run **locally** via `scripts/db.sh`; the workflow
+  provisions SQL Server 2022 but invokes only the map crate's `mssql_ddl`
+  test — and per-port workflows are currently inert in the monorepo anyway
+  (**F-49**).
 - [x] **`R4.5` (snapshot reads).** `get` issues `SET TRANSACTION ISOLATION
   LEVEL SNAPSHOT` before `BEGIN TRANSACTION`, backed by
   `ALLOW_SNAPSHOT_ISOLATION` on a dedicated `fhir_mssql` database

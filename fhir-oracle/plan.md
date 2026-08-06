@@ -40,12 +40,16 @@ Work breakdown: [`tasks.md`](tasks.md).
   R3/R4/R5 serde types + spec parser. The generator reuses its
   spec-package parsing where practical rather than re-implementing
   StructureDefinition traversal.
-- **D5 — no driver yet, not sqlx.** SQL here is generated and
+- **D5 — the `oracle` crate, not sqlx.** SQL here is generated and
   dynamic; sqlx's compile-time checking can't see it, so its cost buys
   nothing. (The original reasoning was tokio-postgres's pipelining and
-  binary-format parameters; this port's driver is no driver yet.)
-- **D6 — axum for HTTP.** Boring, maintained, tower middleware for
-  timeouts/limits/tracing.
+  binary-format parameters; this port's driver is the `oracle` crate —
+  ODPI-C/OCI, synchronous, wrapped in `spawn_blocking` — see `tasks.md`
+  and **F-68**.)
+- **D6 — axum for HTTP.** Inherited, and no longer this port's decision: the
+  HTTP surface is [`fhir-loco`](../fhir-loco/) (Loco.rs, which is Axum
+  underneath), and that crate owns the middleware for
+  timeouts/limits/tracing (`C0.17`, `C0.18`).
 - **D7 — History is JSONB.** `<resource>_history` stores full-resource
   snapshots as jsonb. This is the sanctioned exception to D1 (with contained
   resources, M3.13): history is write-once audit data read only by
@@ -69,7 +73,11 @@ Work breakdown: [`tasks.md`](tasks.md).
   References are parsed into (type, id) columns for joins; an advisory
   integrity report replaces constraints (M3.10).
 - **D11 — ETag optimistic concurrency.** `W/"{version_id}"`, If-Match on
-  PUT/DELETE, 412 on mismatch; transactions serialize per-resource writes.
+  PUT/DELETE, 412 on mismatch. In this port that is future work, not a built
+  thing: there is no `put_audited` and no conditional operations, so no code
+  path checks a precondition (`tasks.md`). The lower half — `H5.4`'s
+  serialized `version_id` via `SELECT … FOR UPDATE` — is implemented but not
+  yet raced by a concurrency test.
 - **D12 — Reject unknown elements.** Silent data loss is disqualifying in a
   clinical system; anything the map doesn't know is a 422/load error naming
   the path (R4.3).
@@ -102,26 +110,37 @@ Work breakdown: [`tasks.md`](tasks.md).
   a silent edit or deletion detectable (M3.16). Chosen over write-once
   storage or an external ledger, both of which push the problem into the
   deployment.
-- **D18 — Snapshot reads.** Multi-table reads run in one
-  `REPEATABLE READ READ ONLY` transaction (R4.5). The cost is one extra
-  round trip per read; the alternative is reconstructing resources that
-  never existed, which is not a trade a clinical store gets to make.
+- **D18 — Snapshot reads.** The intent — multi-table reads see one snapshot
+  (R4.5) — stands; the mechanism does not exist in this port, and that is a
+  confirmed open gap, not an unverified requirement. The one candidate the
+  annex named, `SET TRANSACTION READ ONLY`, was tried live and fails with
+  `ORA-01466` on any session that has run DDL (reproduced minimally); the
+  call was removed rather than shipped broken, so `get` currently has no
+  snapshot-isolation protection at all (`M14.19`, **F-68**). The reason
+  this must be fixed is the ancestor's: the alternative is reconstructing
+  resources that never existed, which is not a trade a clinical store gets
+  to make.
 - **D19 — Normalize for search, keep the original for truth.** Accent- and
   case-insensitive matching (P6.6) uses generated normalized columns, not
   mangled stored values. The stored column stays lexically exact for
   round-trip (R4.2); the normalized column exists purely to be indexed and
   matched against.
-- **D20 — Encrypt the database link by default.** rustls, `sslmode`
-  honored, and a startup refusal when a non-loopback bind meets an
-  unencrypted database connection (O10.7). PHI in flight between the server
-  and the database is exactly as sensitive as PHI in flight to the client.
+- **D20 — Encrypt the database link by default.** The intent stands — PHI in
+  flight between the server and the database is exactly as sensitive as PHI
+  in flight to the client — but the machinery this entry used to describe
+  (rustls, `sslmode` honored, a startup bind refusal) is the ancestor's and
+  none of it exists here. This port's transport security is **undecided**
+  (`O10.7`, `M14.22`): the live tests connect over a plain local port with
+  no encryption configured either way.
 
 ## Risks
 
 - **R1 — Schema scale.** ~3,000+ tables per version; `init` time, catalog
   bloat, and dump/restore ergonomics need measurement early (task T4 spike).
-  Mitigation: per-version Oracle user, generated DDL applied in one
-  transaction, benchmarks from milestone 1.
+  Mitigation: per-version Oracle user, benchmarks from milestone 1. (The
+  ancestor's "DDL applied in one transaction" is impossible here: Oracle
+  DDL autocommits, so a failed `init` leaves a partial schema rather than
+  rolling back.)
 - **R2 — Reconstruction performance.** Reading one resource touches many
   tables. Mitigation: single round-trip per read using a generated
   multi-table query (one query with UNION/ordering or per-table queries
@@ -147,27 +166,26 @@ Work breakdown: [`tasks.md`](tasks.md).
 - **R7 — the fold is pure Rust, not a database extension.** This risk was
   PostgreSQL's `unaccent`; it does not apply here, and is retained because the
   decision it drove — fold in Rust — is why P6.6 works identically on all six
-  engines. P6.6 depends on
-  it, and managed providers vary in whether an unprivileged role may create
-  it. Mitigation: `init` probes for it and fails with a clear instruction
-  rather than degrading silently; a fallback pure-SQL folding function
-  covers Latin-1/Latin Extended-A when the extension is unavailable.
+  engines.
 - **R8 — Schema migration for the audit columns.** M3.15/M3.16 change every
   history table across three versions. Mitigation: the changes are purely
   additive, so `init --upgrade` (T26) already covers them; existing rows get
   `actor = 'unknown (pre-audit)'` and a null hash chain, and `verify-audit`
   reports chains as starting at the first hashed version rather than
   claiming a break.
-- **R9 — Snapshot reads under long transactions.** REPEATABLE READ readers
-  hold a snapshot; a slow reconstruction of a very large resource delays
-  vacuum. Mitigation: reads are already bounded by `statement_timeout`, the
-  transaction is READ ONLY, and bloat is watched by the existing metrics.
+- **R9 — Snapshot reads under long transactions.** Snapshot readers hold a
+  snapshot; on Oracle a slow reconstruction of a very large resource risks
+  `ORA-01555` when it outruns undo retention (delayed vacuum was the
+  ancestor's, PostgreSQL, form of this risk). Mitigation: reads are bounded
+  by timeouts and undo retention is an operational setting to size. Moot
+  until D18's gap is closed — today `get` holds no snapshot at all.
 
 ## Milestones
 
 - **M1 — Engine proven (R5, vertical slice).** Generator produces DDL + map
   for all R5 resource types; shred/reconstruct round-trips every R5 spec
-  example; `init`/`load`/`transform`/`export` work; live-PG round-trip tests
+  example; `init`/`load`/`transform`/`export` work; live Oracle
+  (`gvenzl/oracle-free`) round-trip tests
   green. Exit criterion: R4.2 holds for the entire R5 examples corpus.
 - **M2 — History + CRUD semantics.** version_id/history/soft delete;
   transactional writes; ETag concurrency; `fhir_oracle_meta` and idempotent init.

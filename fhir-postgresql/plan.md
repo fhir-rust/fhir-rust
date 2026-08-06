@@ -1,13 +1,16 @@
 # fhir-postgresql plan
 
-> **A record of decisions, not of status.** Two things this plan assumes are
-> true of no port: there is no CLI, and the REST server is a separate crate,
-> [`fhir-loco`](../fhir-loco/) (`C0.17`, `C0.18`). The
+> **A record of decisions, not of status.** This plan is the ancestor
+> project's, adapted: it was written when the server and CLI lived inside the
+> port, and it survives as the record of *why* decisions were made. Two things
+> it assumes are true of no port: there is no CLI, and the REST server is a
+> separate crate, [`fhir-loco`](../fhir-loco/) (`C0.17`, `C0.18`). The
 > [conformance matrix](../spec/databases/conformance-matrix.md) is the status
 > document (audit **F-61**).
 
 Ground-up rewrite of fhir-postgresql: fully normalized relational storage of FHIR
-R3/R4/R5 in PostgreSQL 18, with a FHIR REST server and CLI. The prior
+R3/R4/R5 in PostgreSQL 18, as an embeddable library — the REST server is a
+separate crate, `fhir-loco`, and there is no CLI. The prior
 fhirbase-style implementation (jsonb bodies) remains in git history and is a
 reference, not a base. Normative behaviour: [`spec/index.md`](spec/index.md).
 Work breakdown: [`tasks.md`](tasks.md).
@@ -38,8 +41,9 @@ Work breakdown: [`tasks.md`](tasks.md).
 - **D5 — tokio-postgres + deadpool, not sqlx.** SQL here is generated and
   dynamic; sqlx's compile-time checking can't see it, so its cost buys
   nothing. tokio-postgres gives pipelining and binary-format parameters.
-- **D6 — axum for HTTP.** Boring, maintained, tower middleware for
-  timeouts/limits/tracing.
+- **D6 — axum for HTTP.** Inherited decision, now owned by
+  [`fhir-loco`](../fhir-loco/): the HTTP layer left this port and the axum
+  choice went with it. Retained because this is where it was recorded.
 - **D7 — History is JSONB.** `<resource>_history` stores full-resource
   snapshots as jsonb. This is the sanctioned exception to D1 (with contained
   resources, M3.13): history is write-once audit data read only by
@@ -67,11 +71,12 @@ Work breakdown: [`tasks.md`](tasks.md).
 - **D12 — Reject unknown elements.** Silent data loss is disqualifying in a
   clinical system; anything the map doesn't know is a 422/load error naming
   the path (R4.3).
-- **D13 — Auth is perimeter, not core.** The server implements no
-  authentication; deployments front it with their identity layer. This keeps
-  the trust boundary explicit and auditable. Documented prominently (O10.5).
-  **Amended by D15:** the perimeter authenticates, but fhir-postgresql must still
-  *record* who acted.
+- **D13 — Auth is perimeter, not core.** This library implements no
+  authentication; that is [`fhir-loco`](../fhir-loco/)'s job (`SV3.x`,
+  PASETO v4.public, no unauthenticated mode). This keeps the trust boundary
+  explicit and auditable (O10.5). **Amended by D15:** the server
+  authenticates, but fhir-postgresql must still *record* who acted — the
+  store takes a caller-supplied `Audit` principal on every audited write.
 - **D14 — Workspace layout.** One cargo workspace:
   `fhir-postgresql-map` (relational map types + generic shred/reconstruct engine),
   `fhir-postgresql-gen` (spec → DDL + map), `fhir-postgresql-store` (PostgreSQL layer:
@@ -81,16 +86,22 @@ Work breakdown: [`tasks.md`](tasks.md).
   Generated artifacts live in `assets/` and are embedded in the crate.
 - **D15 — Attribution is core, even though authentication is not.** D13
   keeps identity *verification* outside; it does not excuse anonymous
-  history. fhir-postgresql accepts a principal from a trusted proxy (PR12.1–PR12.3)
-  and records it on every write and every read. Rationale: HIPAA
-  §164.312(b) asks who accessed a record, and no perimeter can answer that
-  for us — the perimeter knows the identity, only the store knows which rows
-  were touched. Consequence: a schema change (M3.15) and an access log
-  (PR12.5), both additive.
-- **D16 — Audit before latency.** Access logging defaults to `async` with a
-  bounded queue that **fails closed** (PR12.6). Dropping a disclosure record
-  to keep latency down is the wrong trade for this system; a deployment that
-  disagrees says so explicitly with `--allow-unaudited`.
+  history. The trusted-proxy header extraction the original PR12.1–PR12.3
+  text described was never built here — there is no proxy or header code in
+  this library. What exists: the store accepts an `Audit` principal as a
+  caller-supplied value type (from the shared `fhir-store` crate) and
+  records it on every audited write and every reported disclosure.
+  Rationale: HIPAA §164.312(b) asks who accessed a record, and no perimeter
+  can answer that for us — the caller knows the identity, only the store
+  knows which rows were touched. Consequence: a schema change (M3.15) and an
+  access log (PR12.5), both additive.
+- **D16 — Audit before latency.** The `--audit-mode` machinery and
+  `--allow-unaudited` opt-out the original text described do not exist — no
+  mode flags, no bounded queue. What the library does is simpler and
+  stricter: audited writes record their audit row synchronously, in the
+  same transaction as the write, so a write without its record cannot
+  commit. Whether a *disclosure* is recorded before a response is released
+  is the caller's (`fhir-loco`'s) decision via `log_access`.
 - **D17 — Tamper-evidence by hash chain, per resource id.** A global chain
   would serialize every write; per-id chains keep concurrency and still make
   a silent edit or deletion detectable (M3.16). Chosen over write-once
@@ -105,10 +116,14 @@ Work breakdown: [`tasks.md`](tasks.md).
   mangled stored values. The stored column stays lexically exact for
   round-trip (R4.2); the normalized column exists purely to be indexed and
   matched against.
-- **D20 — Encrypt the database link by default.** rustls, `sslmode`
-  honored, and a startup refusal when a non-loopback bind meets an
-  unencrypted database connection (O10.7). PHI in flight between the server
-  and PostgreSQL is exactly as sensitive as PHI in flight to the client.
+- **D20 — Encrypt the database link by default.** rustls, `sslmode` honored,
+  and — since **F-17** was fixed — a default that *verifies* the server
+  certificate (`SslPolicy::Require`, pinned by `tests/ssl_default.rs`),
+  which is stronger than the original text asked for (O10.7). The "startup
+  refusal when a non-loopback bind meets an unencrypted connection" half was
+  server fiction: a bind guard is [`fhir-loco`](../fhir-loco/)'s concern,
+  not a library's. PHI in flight to PostgreSQL is exactly as sensitive as
+  PHI in flight to the client.
 
 ## Risks
 
@@ -138,11 +153,12 @@ Work breakdown: [`tasks.md`](tasks.md).
   measured before/after in `doc/benchmarks.md`, and `sync` mode reserved for
   deployments that ask for it. Accept a real cost here; the alternative is
   not shipping into a hospital.
-- **R7 — `unaccent` is an extension, not core PostgreSQL.** P6.6 depends on
-  it, and managed providers vary in whether an unprivileged role may create
-  it. Mitigation: `init` probes for it and fails with a clear instruction
-  rather than degrading silently; a fallback pure-SQL folding function
-  covers Latin-1/Latin Extended-A when the extension is unavailable.
+- **R7 — `unaccent` is an extension, not core PostgreSQL.** Retired: the
+  SQL `unaccent` dependency was deliberately removed. The fold is pure Rust
+  (`fhir_postgresql_map::fold`) and the database stores its output, so P6.6
+  needs no extension at all — `ddl.rs:444` asserts the emitted DDL contains
+  no `unaccent`. Kept because the decision it drove — fold in Rust — is why
+  P6.6 works identically on all six engines.
 - **R8 — Schema migration for the audit columns.** M3.15/M3.16 change every
   history table across three versions. Mitigation: the changes are purely
   additive, so `init --upgrade` (T26) already covers them; existing rows get
@@ -158,8 +174,10 @@ Work breakdown: [`tasks.md`](tasks.md).
 
 - **M1 — Engine proven (R5, vertical slice).** Generator produces DDL + map
   for all R5 resource types; shred/reconstruct round-trips every R5 spec
-  example; `init`/`load`/`transform`/`export` work; live-PG round-trip tests
-  green. Exit criterion: R4.2 holds for the entire R5 examples corpus.
+  example; the store's `init`/`put`/`get` work; live-PG round-trip tests
+  green. (The original listed the `init`/`load`/`transform`/`export` CLI
+  verbs — there is no CLI, and `export` exists in no port at all.) Exit
+  criterion: R4.2 holds for the entire R5 examples corpus.
 - **M2 — History + CRUD semantics.** version_id/history/soft delete;
   transactional writes; ETag concurrency; `fhir_postgresql_meta` and idempotent init.
 - **M3 — Search.** Search-parameter compiler, indexes, result parameters,
@@ -172,9 +190,11 @@ Work breakdown: [`tasks.md`](tasks.md).
 - **M5 — R4 and R3.** Run the same generator + engine over 4.0.1 and 3.0.2
   spec packages; version-specific quirks fixed; full example-corpus
   round-trip per version.
-- **M6 — Production hardening.** Metrics, health, logging redaction,
-  migrations/upgrade path, TLS feature, benchmarks + regression gate, book,
-  security review, crates.io release.
+- **M6 — Production hardening.** Migrations/upgrade path, database TLS
+  (there is no `tls` cargo feature in this workspace — `SslPolicy` is
+  unconditional), benchmarks + regression gate, book, security review.
+  Nothing has been published to crates.io; the metrics/health/redaction
+  items were the server's and left with it.
 - **M7 — Trustworthy under load and under audit.** The gap between "works"
   and "may hold patient data". Correctness under concurrency (snapshot
   reads, atomic conditionals, honored preconditions), the audit envelope and

@@ -60,6 +60,9 @@ Not "planned and unstarted" — **absent**.
 - [ ] **A redaction test**, `upgrade`, `backfill_norm`, or benchmarks.
 - [ ] **A transport-security decision** (`O10.7`, `M14.22`) — the live tests
   connect over a plain local port with no encryption configured either way.
+- [ ] **A live CI gate.** The Oracle job was removed rather than faked
+  (**F-06**); nothing in CI runs this port's tests. `scripts/db.sh`
+  (`gvenzl/oracle-free:23-slim-faststart`) is the local gate.
 
 ## Not decided, not merely undone
 

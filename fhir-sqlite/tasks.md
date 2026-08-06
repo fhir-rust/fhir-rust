@@ -1,19 +1,22 @@
 # fhir-sqlite tasks
 
-> **Parts of this file are untrue of this port (audit [F-27](../spec/databases/audit.md#f-27)).**
-> The `M4 — REST server` milestone, `T8 CLI v1`, and `T23 Multi-version serve`
-> are checked off, and none of that code exists in any port: there is no
-> `fhir-*-server` crate, no `serve` binary, and no REST test suite anywhere in
-> this repository.
+> **Parts of this file were untrue of this port (audit [F-27](../spec/databases/audit.md#f-27)).**
+> The REST-server and CLI entries were misattributed ancestor-project work:
+> the server is [`fhir-loco`](../fhir-loco/), a separate crate that mounts
+> this port, and there is no CLI (`C0.17`, `C0.18`). Class 1 was resolved
+> 2026-08-06 by **deleting** those entries — each is now a one-line tombstone
+> keeping its task id, because unticking would have asserted that this port
+> is going to grow a server, and it is not.
 >
 > Do not read a `[x]` here as evidence. The
 > [conformance matrix](../spec/databases/conformance-matrix.md) is the status document to
 > trust.
 >
-> This port's store tasks also describe **PostgreSQL** mechanisms it does not use
-> — `tokio-postgres`, `FOR UPDATE` row locks, staged-schema install, `ILIKE` —
-> because the file was copied per port and never re-read. The store is real; the
-> description of how it works is the reference port's.
+> This port's store tasks also described **PostgreSQL** mechanisms it does not
+> use — `tokio-postgres`, `FOR UPDATE` row locks, staged-schema install,
+> `ILIKE` — because the file was copied per port and never re-read (class 3,
+> now corrected in place). The store is real; where an entry names a
+> mechanism, it now names SQLite's.
 
 Work breakdown for the plan's milestones. Each task lists its acceptance
 criterion. Order within a milestone is roughly dependency order.
@@ -21,8 +24,9 @@ criterion. Order within a milestone is roughly dependency order.
 ## M1 — Engine proven (R5 vertical slice)
 
 - [x] **T1 Workspace scaffold.** Cargo workspace per plan D14
-  (`fhir-sqlite-map`, `fhir-sqlite-gen`, `fhir-sqlite-store`, `fhir-sqlite` — the server crate
-  arrives with M4), CI (fmt, clippy, test, live-PG job).
+  (`fhir-sqlite-map`, `fhir-sqlite-gen`, `fhir-sqlite-store`; the ancestor
+  plan's server crate became [`fhir-loco`](../fhir-loco/)),
+  CI (fmt, clippy, test — SQLite-only, no service container).
   *Done:* `.github/workflows/ci.yml`; tests self-skip without inputs.
 - [x] **T2 Spec-package ingestion.** profiles-resources.json +
   profiles-types.json parsed directly (simpler than reusing the fhir
@@ -53,12 +57,12 @@ criterion. Order within a milestone is roughly dependency order.
   multi-row inserts; values bound as text so decimal scale and partial dates
   survive (`M3.6`). **Not** tokio-postgres, and there are no `($n::text)`
   casts — that was PostgreSQL's wire protocol (**F-27** class 3).
-  *Accept:* full-corpus live round trip 7,396/7,396 across r3/r4/r5;
-  bulk benchmark: 6,146 res/s load, 1.18 ms reads (doc/benchmarks.md).
-- [x] **T8 CLI v1.** `gen`, `init`, `load` (NDJSON/Bundle/single, gzip,
-  content-detection, per-resource error reporting, nonzero exit), `get`,
-  `delete`, `export`, `transform`. *Remaining:* streaming (bounded-memory)
-  reads for multi-GB NDJSON — currently whole-file.
+  *Accept:* full-corpus round trip green in this port (map layer, **F-42**);
+  the bulk-benchmark figures an earlier revision cited here (6,146 res/s,
+  1.18 ms reads) were `fhir-postgresql`'s — this port has no bench harness,
+  a recorded gap (**F-64**).
+- **T8.** — removed 2026-08-06: misattributed ancestor (REST/CLI) work; the
+  server is [fhir-loco](../fhir-loco/), and no port has a CLI (**F-27**).
 - [x] **T9 Round-trip property tests.** Map-driven random-resource
   generator (deterministic SplitMix64 seeds — no proptest dependency):
   deep recursion, sparse primitive arrays with extensions, nested
@@ -76,16 +80,24 @@ criterion. Order within a milestone is roughly dependency order.
   history append on C/U/D, soft delete, `vread`, `history`, and `status`
   (the 404-vs-410 distinction); version numbering continues past deletes
   (derived from history max, not the base row).
-  *Accept met:* m2_semantics integration test — create→update→delete shows
-  D/U/C history, vread of each version matches, deleted reads as Deleted.
+  *Accept met:* asserted in `tests/sqlite_store.rs` (an earlier revision
+  named an `m2_semantics` test this port does not have — that file is
+  `fhir-postgresql`'s) — create→update→delete shows D/U/C history, vread of
+  each version matches, deleted reads as Deleted.
 - [x] **T11 Optimistic concurrency.** `put_if(resource, expected_version)`
-  under FOR UPDATE row locks; `StoreError::Conflict` for the API's 412;
-  expected 0 = create-only (If-None-Exist shape). *Accept met:* two racing
-  conditional writers — exactly one wins.
-- [x] **T12 fhir_sqlite_meta + idempotent init.** Staged-schema install +
-  atomic rename, checksum recorded; re-init no-ops on matching checksum
-  and refuses a mismatch. Chunked `drop_schema` + `fhir-sqlite drop --yes`.
-  *Accept met* in m2_semantics.
+  with the version check inside the same `BEGIN IMMEDIATE` transaction as
+  the write, serialized by the process-level `write_gate`
+  (`sqlite.rs:127`) — SQLite has no `FOR UPDATE` row locks; that wording
+  was PostgreSQL's (**F-27** class 3). `StoreError::Conflict` for the
+  caller's 412; expected 0 = create-only (If-None-Exist shape).
+  *Accept met:* two racing conditional writers — exactly one wins.
+- [x] **T12 fhir_sqlite_meta + idempotent init.** Statement-by-statement
+  install — **not** staged-schema + atomic rename, which SQLite cannot do
+  (see T4); a failed install is cleaned up by unlinking the file, because
+  the schema *is* the file. Checksum recorded; re-init no-ops on matching
+  checksum and refuses a mismatch. `drop_schema` exists; the
+  `fhir-sqlite drop --yes` CLI never did (**F-27**).
+  *Accept met* in `tests/sqlite_store.rs`.
 
 ## M3 — Search
 
@@ -100,20 +112,23 @@ criterion. Order within a milestone is roughly dependency order.
   interpolation), modifiers :exact/:contains, token system|code, date
   prefixes with precision ranges + Period overlap, quantity value|system|
   code, reference forms, `_id`, `_lastUpdated`, `_count`/offset; strict
-  unsupported-parameter errors; `fhir-sqlite search` CLI; `_sort` (base-table
+  unsupported-parameter errors; `_sort` (base-table
   params + _id/_lastUpdated, honest errors otherwise) and
-  `_total=accurate`. *Accept mostly met:* search_semantics + rest suites
-  green against live PG. Single-hop `_include` (via compiled reference
+  `_total=accurate`. *Accept mostly met:* the search assertions in
+  `tests/sqlite_store.rs` run against a local file — the "search_semantics +
+  rest suites green against live PG" and the `fhir-sqlite search` CLI this
+  entry once cited were the reference port's (**F-27**). Single-hop
+  `_include` (via compiled reference
   targets) and `_revinclude` (via the search machinery) with
   search.mode=include entries and dangling-reference tolerance.
   *Remaining:* chained `reference.`, cursor paging, lenient handling.
-- [x] **T15 Index emission + explain audit.** One index per distinct
-  search-target column set emitted with the DDL (R5: 1,813 indexes; full
-  init 5.8 s). EXPLAIN audit in tests/bench.rs: token/reference/date
-  searches all plan index scans at 100k resources; the test fails when a
-  full scan appears. *Note:* prefix string search uses `LIKE`, which is already case-insensitive for ASCII; the fold column carries the rest —
-  the `ILIKE`/`text_pattern_ops` note here was PostgreSQL's (**F-27**
-  class 3).
+- [x] **T15 Index emission.** One index per distinct search-target column
+  set emitted with the DDL (`CREATE INDEX "s"."ix" ON "t"` per T63). There
+  is no EXPLAIN audit and no `tests/bench.rs` in this port — the
+  1,813-index count, the 5.8 s init and the plan assertions were the
+  PostgreSQL reference's (**F-27** class 3). Prefix string search uses
+  `LIKE` over the Rust-folded `_norm` column (T43); the
+  `ILIKE`/`text_pattern_ops` note here was PostgreSQL's too.
 
 ## M4 — REST server: **moved to `fhir-loco`**
 
@@ -148,10 +163,11 @@ work, it is in `fhir-loco`.
 
 > **Ledger drift, needs a human call.** T21 and T22 are unchecked, but T7
 > records a full-corpus live round trip of 7,396/7,396 across r3/r4/r5, the
-> README claims all three corpora round-trip losslessly, and `fhir-sqlite serve`
-> mounts all three (T23, checked). Either the boxes are stale or the README
-> overstates. Since the spec is meant to be the source of truth, reconcile
-> before release rather than after.
+> README claims all three corpora round-trip losslessly, and
+> [`fhir-loco`](../fhir-loco/) loads all three maps at startup (T23,
+> redirected — not `fhir-sqlite serve`, which does not exist). Either the
+> boxes are stale or the README overstates. Since the spec is meant to be
+> the source of truth, reconcile before release rather than after.
 
 - [ ] **T21 R4 artifacts.** Run generator on 4.0.1; fix spec-parsing deltas.
   *Accept:* full R4 examples corpus round-trips live; REST suite green on
@@ -166,61 +182,54 @@ work, it is in `fhir-loco`.
 
 ## M6 — Production hardening
 
-- [x] **T-validate (V9.2).** `fhir-sqlite load --validate` deserializes each
-  resource through the typed `fhir` crate model behind the `validate`
-  build feature. **All three versions**, since `fhir` 1.2.1.
-  *The upstream bug is fixed and released:* published 1.2.0 could not compile
-  its own r3/r4 features — the `Validate` derive expanded to `crate::r5::`
-  paths — but only for crates.io consumers, since the repository resolves the
-  derive macro through its `path` dependency where the fix already lived. It
-  needed `fhir-derive-macros` 1.0.1 published alongside `fhir` 1.2.1; a
-  `fhir` release on its own would have pulled the same broken macro.
-  *Accept met:* `validate_tests` covers R3/R4/R5 and records the one thing
-  `--validate` does not catch (unknown elements — serde ignores them; the
-  shredder rejects them per D12).
+- **T-validate.** — removed 2026-08-06: misattributed ancestor (REST/CLI)
+  work; there is no `validate` build feature, no `load --validate`, and no
+  `validate_tests` here — the `fhir` crate is not a dependency of any port
+  crate (**F-27**).
 - [x] **T-graceful.** *Belongs to [`fhir-loco`](../fhir-loco/).* Shutdown
   is the server's concern, and Loco owns the signal handling; a library
   has no process to shut down.
 
-- [~] **T24 Observability.** Done: /health, /ready, /metrics (Prometheus
-  text: request/response-class/latency counters), X-Request-Id
-  (propagated or generated) with per-request tracing that logs
-  method/path/status only — never resource content. *Remaining:* JSON log
-  format wiring in the CLI, an automated redaction test, latency
-  histogram buckets.
-- [~] **T25 Pool + timeout hardening.** Done: server-side
-  statement_timeout (FHIR_SQLITE_STATEMENT_TIMEOUT_MS, default 30 s), pool
-  wait timeout 2 s, exhaustion → 503 + Retry-After.
-  *Remaining:* an automated saturation test.
+- **T24.** — removed 2026-08-06: misattributed ancestor (REST/CLI) work
+  (/health, /ready, /metrics, X-Request-Id); the server is
+  [fhir-loco](../fhir-loco/) (**F-27**).
+- **T25.** — removed 2026-08-06: misattributed ancestor (server
+  pool/timeout) work; the server is [fhir-loco](../fhir-loco/) (**F-27**).
+  SQLite has no `statement_timeout` and no pool; the store's real timeout
+  knob is `busy_timeout` = 30 s (`sqlite.rs:170`).
 - [x] **T26 Migrations + upgrade.** `init` stores the map asset in
   fhir_sqlite_meta; `init --upgrade` diffs installed vs current maps and
-  applies additive DDL (new tables/columns/indexes) in lock-safe chunks;
+  applies additive DDL (new tables/columns/indexes) in one transaction
+  (`M14.31` — an earlier revision said "lock-safe chunks", the ancestor's
+  approach);
   destructive steps refuse without --allow-destructive; column type
   changes always demand manual migration. *Accept met:* upgrade test —
   reduced install upgrades to full, data survives, re-upgrade no-ops,
   downgrade guarded then forced.
-- [x] **T27 TLS feature + bind guard.** rustls in-process behind the
-  `tls` feature (`serve --tls-cert/--tls-key`, axum-server) with graceful
-  shutdown; loopback-default binding (an explicit --bind is the
-  non-loopback acknowledgement). *Verified:* live HTTPS smoke test
-  (HTTP/2, CapabilityStatement served, clean SIGTERM shutdown).
-- [~] **T28 Benchmarks + regression gate.** Done: gated bench harness
-  (load throughput, read latency, EXPLAIN audit) + doc/benchmarks.md with
-  measured numbers (6,146 res/s; 1.18 ms reads at 100k).
-  *Remaining:* CI regression gate against a recorded baseline; comparison
-  against the historical jsonb implementation.
+- **T27.** — removed 2026-08-06: misattributed ancestor (TLS serve/bind
+  guard) work; the server is [fhir-loco](../fhir-loco/) (**F-27**). A SQLite
+  file has no connection to encrypt, so `O10.7` is vacuous here — see T32
+  for the honest statement of what displaces it.
+- [ ] **T28 Benchmarks + regression gate.** Unticked 2026-08-06: the "gated
+  bench harness" and the measured numbers (6,146 res/s; 1.18 ms reads) this
+  entry carried were `fhir-postgresql`'s (**F-64**) — there is no `bench.rs`
+  in this workspace. A real SQLite harness is the recorded gap; a CI
+  regression gate would follow it.
 - [x] **T29 Book + generated schema docs.** mdBook (9 chapters:
-  introduction, getting started, storage model, SQL querying, search,
-  REST API, versions, operations, architecture); builds locally and in
+  introduction, getting started, storage model, querying, search,
+  FHIR versions, operations, architecture, trust boundary — the REST
+  chapter went with the server, T71); builds locally and in
   CI. Column/table→FHIR-path mapping ships inside the map assets
   themselves. *Remaining nicety:* a rendered path→table index page.
 - [~] **T30 Security review + release.** Done: LICENSE-MIT/APACHE,
   CHANGELOG, publish metadata (versioned internal deps, keywords), map
-  assets embedded in the binary so `cargo install fhir-sqlite` is
-  self-contained, `cargo publish --dry-run` clean for the leaf crate.
+  assets embedded in the published crates (`RelMap::bundled()`, **F-33** —
+  an earlier revision said "embedded in the binary so `cargo install
+  fhir-sqlite` is self-contained"; there is no binary and no such crate,
+  `C0.18`), `cargo publish --dry-run` clean for the leaf crate; cargo-deny
+  + SBOM run in the port workflow (`O10.10`).
   *Remaining (human decisions):* pick the release version, publish the
-  five crates in dependency order, tag; optionally add cargo-audit/deny
-  to CI.
+  three crates in dependency order, tag.
 
 ## M7 — Trustworthy under load and under audit
 
@@ -230,15 +239,15 @@ guarantees, P2 items are reach.
 
 ### P0 — defects in shipped behaviour
 
-- [x] **T31 Snapshot reads (R4.5).** `Store::get` reads the base row and
-  every child table as separate implicit transactions
-  (`fhir-sqlite-store/src/lib.rs:554`), while `put_in` deletes and re-inserts
-  (`:512`). A write landing mid-read reconstructs a resource that never
-  existed. Wrap every multi-statement read in one
-  `REPEATABLE READ READ ONLY` transaction; same for `export` and search
-  materialization.
-  *Accept:* a reader loop against a writer loop over 10k iterations never
-  observes a torn resource and never errors (T11.6).
+- [x] **T31 Snapshot reads (R4.5).** A write landing mid-read must not let
+  a reader reconstruct a resource that never existed: every multi-statement
+  read runs inside one **deferred read transaction**, which under WAL
+  observes a stable snapshot for its duration (annex `M14.20`,
+  `spec/14-sqlite-dialect.md:232`). SQLite has no `REPEATABLE READ READ
+  ONLY`, and the `lib.rs:554`/`:512` citations this entry used to carry
+  were the PostgreSQL reference's (**F-27** class 3).
+  *Accept:* a reader loop against a writer loop never observes a torn
+  resource and never errors (T11.6, `tests/concurrency.rs`).
 - [x] **T32 Encrypted database transport (O10.7).** **Vacuous here, and that is
   the honest answer.** SQLite is a local file: there is no connection, so there
   is nothing to encrypt and `O10.7` has no work to do. What it displaces is not
@@ -254,103 +263,73 @@ guarantees, P2 items are reach.
   claim was the most misleading of the set, because it asserted PHI-in-transit
   protection for a link that does not exist.
 
-- [x] **T33 Atomic conditional interactions (A7.10).** `If-None-Exist`
-  searches then writes (`fhir-sqlite-server/src/lib.rs:444`); two concurrent
-  identical conditional creates both create. Move match and write into one
-  transaction guarded by `pg_advisory_xact_lock` on the criteria hash; same
-  for conditional delete and conditional update.
-  *Done:* `Store::conditional_create`/`conditional_delete` take
-  `pg_advisory_xact_lock` on a sorted hash of the criteria, then match and
-  write in one transaction. *Accept met:* 8 racing conditional creates yield
-  exactly one resource and seven `Existing`. *Remaining:* conditional update
-  (the server does not implement it yet).
+- [x] **T33 Atomic conditional interactions (A7.10).** Two concurrent
+  identical conditional creates must not both create. *Done:*
+  `conditional_create_audited`/`conditional_delete_audited`
+  (`sqlite.rs:2827`/`:2857`) take the process-level `write_gate` **before**
+  the criteria search, so search-then-write is indivisible — SQLite has no
+  `pg_advisory_xact_lock`; one writer at a time is structural here (annex
+  `M14.18`/`M14.19`). The `fhir-sqlite-server/src/lib.rs:444` citation this
+  entry used to carry named a crate that never existed (**F-27**).
+  *Accept met:* racing conditional creates yield exactly one resource.
+  *Remaining:* conditional update.
 - [x] **T34 Audit envelope on history (M3.15, PR12.1–PR12.4).** History
   records no actor at all. Add the audit columns to the generated history
-  DDL, thread a `Principal` through the store write path, and extract it
-  from the configured trusted header behind `--trust-proxy`. Additive, so
-  `init --upgrade` migrates existing installs.
-  *Done:* `Audit` envelope threaded through `put_audited`/`delete_audited`/
-  `transact_audited`/`conditional_*_audited`; `PrincipalPolicy` on the
-  server honoring a configured header **only** behind `--trust-proxy`;
-  `--require-principal` → 401; CLI writes attributed to the operator
-  (`Audit::cli()`). Upgrade reconciles the new columns idempotently.
-  *Accept met:* the `audit` suite asserts all three, and that a plain `put`
-  records `unauthenticated` rather than nothing.
-- [x] **T35 Configured service base URL (A7.7).** Bundle `fullUrl` and
-  `link` are built from the `Host` header and hard-coded `http://`
-  (`fhir-sqlite-server/src/lib.rs:739`). Add `--base-url`, honor forwarded
-  headers only under `--trust-proxy` with a host allowlist.
-  *Done:* `BaseUrl` with `--base-url`, `--trust-proxy`, `--allowed-host`;
-  the default emits URLs for the address actually bound and reads no request
-  header at all. *Remaining:* a test asserting a poisoned `Host` changes
-  nothing.
-- [x] **T36 Preconditions inside bundles (A7.9).** `parse_entries`
-  (`:888`) ignores `ifMatch`/`ifNoneExist`/`ifModifiedSince`. Honor them, or
-  fail the entry 501 — never accept-and-ignore. *Done:* `ifMatch` is honored
-  in batch and transaction entries (412 on mismatch, mapped as 412 rather
-  than a generic 400); `ifNoneExist`/`ifModifiedSince`/`ifNoneMatch` fail the
-  entry 501, and fail the whole bundle for a transaction.
-- [x] **T37 Reference rewriting precision.** `rewrite_refs` (`:1130`)
-  replaces any string equal to a `urn:uuid`, including narrative and
-  `valueString`. Restrict to `Reference.reference` values and
-  `Bundle.entry.fullUrl`. *Done:* only `reference` keys are rewritten.
-- [x] **T38 Resource id validation (R4.6).** No `[A-Za-z0-9\-\.]{1,64}`
-  check anywhere; ids from URL or body land in unbounded `text`.
-  *Done:* `valid_fhir_id` guards read, vread, history, update, delete, and
-  Bundle entry urls. *Remaining:* the same check inside `fhir-sqlite load`.
-- [x] **T39 PHI response headers (A7.8).** `Cache-Control: no-store`,
-  `Pragma: no-cache`, `X-Content-Type-Options`, `Referrer-Policy`; CORS
-  denied unless `--cors-origin` names an origin. *Done:* the four headers are
-  set on every response. *Remaining:* `--cors-origin` (there is still no CORS
-  layer at all, which is closed rather than open).
-- [x] **T40 Diagnostics hygiene (A7.11).** `StoreError::Other` text is
-  reflected verbatim into OperationOutcomes (`:174`). Client-visible
-  diagnostics become path + rule id; detail goes to the log with the
-  incident id. *Done:* `StoreError` now distinguishes `Unsupported`
-  (client-safe: names the caller's own parameter) from `Other` (internal:
-  logged behind an incident id, never returned). Search-compilation errors
-  are `Unsupported`, so the honest "this parameter is not supported"
-  messages survive.
+  DDL and thread an audit principal through the store write path.
+  *Done (store half):* `Audit` threaded through `put_audited`/
+  `delete_audited`/`conditional_*_audited` (`transact_audited` stays
+  `Unsupported` — T64c); `upgrade` *diffs* the audit envelope rather than
+  reconciling it in place, because SQLite has no `ADD COLUMN IF NOT EXISTS`
+  (`M14.32`). The `PrincipalPolicy`, `--trust-proxy`, `--require-principal`
+  and `Audit::cli()` claims were the ancestor server/CLI's (**F-27**): the
+  principal is a caller-supplied value type (`fhir-store::Audit`), and
+  verifying it is `fhir-loco`'s job.
+- **T35.** — removed 2026-08-06: misattributed ancestor (REST/CLI) work
+  (`--base-url`, forwarded headers); the server is
+  [fhir-loco](../fhir-loco/) (**F-27**).
+- **T36.** — removed 2026-08-06: misattributed ancestor (REST/CLI) work
+  (Bundle precondition handling); the server is
+  [fhir-loco](../fhir-loco/) (**F-27**).
+- **T37.** — removed 2026-08-06: misattributed ancestor (REST/CLI) work
+  (`rewrite_refs`); the server is [fhir-loco](../fhir-loco/) (**F-27**).
+- **T38.** — removed 2026-08-06: misattributed ancestor (REST/CLI) work;
+  `valid_fhir_id` exists nowhere in this port; the server is
+  [fhir-loco](../fhir-loco/) (**F-27**).
+- **T39.** — removed 2026-08-06: misattributed ancestor (REST/CLI) work
+  (PHI response headers, CORS); the server is
+  [fhir-loco](../fhir-loco/) (**F-27**).
+- [x] **T40 Diagnostics hygiene (A7.11).** *Done (store half):* `StoreError`
+  distinguishes `Unsupported` (client-safe: names the caller's own
+  parameter, or the operation the port honestly declines — e.g.
+  `transact_audited`) from `Other` (internal detail, never client-facing).
+  Search-compilation errors are `Unsupported`, so the honest "this
+  parameter is not supported" messages survive. The OperationOutcome and
+  incident-id HTTP mapping this entry used to describe is the server's,
+  i.e. [`fhir-loco`](../fhir-loco/)'s (**F-27**).
 
 ### P1 — missing guarantees
 
-- [x] **T41 Access log (PR12.5, PR12.6).** `fhir_sqlite_access_log` per schema;
-  every read, vread, history, and search appends a record naming the actor,
-  the subject, and (for search) how many resources were disclosed.
-  `--audit-mode sync|async|off`, bounded queue, fail closed on saturation,
-  per-version counters, `--allow-unaudited` to opt out loudly.
-
-  *On the default.* The spec draft had `async` as the default for
-  throughput; it ships as `sync`. The failure `sync` prevents is the one
-  that cannot be repaired afterwards — a disclosure with no record is
-  indistinguishable, later, from a disclosure that never happened — and a
-  fast default would make every deployment silently accept a loss window it
-  never chose. `async` announces that window at startup.
-
-  *Fail closed became real, not aspirational.* Recording used to be
-  best-effort: a failed insert was logged and the read served anyway. Now
-  `audit_read` returns a refusal that the four read paths propagate as 503,
-  so in every mode a disclosure that cannot be recorded is not made.
-
-  *Two bugs worth remembering, both in code that compiled and looked right.*
-  `Sender::closed()` waits for the *receiver* to drop, so using it to
-  shut the writer down deadlocks against the task it is waiting for; the
-  sender has to actually be dropped, which means holding it somewhere
-  takeable. And a queue-depth gauge maintained by read-then-subtract can
-  underflow under concurrency, so depth is derived from the monotonic
-  counters instead — an audit queue reporting a nonsense depth is worse than
-  one reporting none. `tests/audit_async.rs` pins both, the drain test under
-  a timeout so a deadlock fails instead of hanging the suite.
+- [x] **T41 Access log (PR12.5).** *Done (store half):*
+  `fhir_sqlite_access_log`, written by `log_access`/`log_access_batch` and
+  read back by `access_log_for` (T64/T64b), recording actor and subject for
+  each disclosure a caller reports. The `--audit-mode sync|async|off`
+  flags, bounded queue, `audit_read`, the fail-closed 503 read paths and
+  `tests/audit_async.rs` never existed in this port — they were the
+  ancestor server's (**F-27**, `PR12.6`); whether a disclosure is recorded
+  before the response is released is the caller's
+  ([`fhir-loco`](../fhir-loco/)'s) decision.
 
 - [x] **T42 Tamper-evident history (M3.16, M3.17).** `prev_hash`/`row_hash`
-  chain per resource id, `BEFORE UPDATE OR DELETE` reject triggers,
-  `fhir-sqlite verify-audit` walking every chain, and the documented `REVOKE`
-  grants. *Done:* all of it. The chain is computed **in SQL** so it covers
-  the database's own `now()` and cannot race the read of the previous hash,
-  and it hashes `resource::jsonb::text` — the stored normalized form — since
-  hashing the submitted text would fail verification against what was
-  actually saved. *Accept met:* the `audit` suite tampers with a history row
-  behind the application's back and the chain names exactly that version.
+  chain per resource id, per-table `BEFORE UPDATE`/`BEFORE DELETE` triggers
+  with `RAISE(ABORT)` (T63), and `verify_audit` walking every chain.
+  *Done.* The chain pre-image is computed **in Rust** — canonical bytes
+  from `fhir_sqlite_map::canon`, chained by the shared `fhir-store::chain`
+  (**F-07**) — never "in SQL" over `resource::jsonb::text`, which was the
+  PostgreSQL reference's pre-F-07 design and was never true here. The
+  `fhir-sqlite verify-audit` CLI and the `REVOKE` grants were the
+  ancestor's (**F-27**); SQLite has no `GRANT`/`REVOKE`. *Accept met:*
+  `verify_audit_detects_a_tampered_history_row` (T64) edits a stored
+  resource behind the store's back and both chains flag it.
 - [x] **T59 Tamper evidence that survives the database (M3.16a-c).** Two
   chains in two design families, a keyed tag, and an external witness.
 
@@ -358,7 +337,8 @@ guarantees, P2 items are reach.
   real reasons — it covered the database's own `now()`, and it could not race
   the read of the previous digest. Both survive without it: the timestamp is
   read in the same transaction and written back verbatim, and the write path
-  already holds a `SELECT … FOR UPDATE` row lock before appending history.
+  already holds the `write_gate` and its `BEGIN IMMEDIATE` transaction
+  before appending history (SQLite has no `SELECT … FOR UPDATE`).
   What SQL-side computation cost was the only fix that matters. The digests
   are unkeyed over a published pre-image, so anyone who can write the rows
   can write matching digests; the answer is a MAC, and a MAC can only be
@@ -376,9 +356,10 @@ guarantees, P2 items are reach.
   let an outside auditor check the chain unaided. The `HMAC-SHA-256` tag
   resists forgery. Neither notices a row that is simply **gone** — a chain
   missing its last version verifies perfectly, because nothing left behind
-  refers to what was removed — so `chain-witness` digests every head, and
-  checkpoints go out on an `audit_checkpoint` log target at startup, after
-  erasure, and on an interval.
+  refers to what was removed — so a witness layer must digest every head.
+  Here that layer is incomplete: `emit_checkpoint` writes to an
+  `audit_checkpoint` log target (T64b), but `chain_witness` itself is still
+  unimplemented in this port (T64c).
 
   *Found by looking, not by testing.* The erasure tombstone terminated only
   the SHA-256 chain: 11 rows, 11 SHA-256 digests, 10 SHA-3. The suite was
@@ -397,73 +378,25 @@ guarantees, P2 items are reach.
   `with_chain_keys` wired to it, which is API that exists but has no CLI
   surface.
 - [x] **T43 Worldwide string search (P6.6).** Each string search target
-  column gets a `_norm` companion holding the folded value, computed in Rust
-  at write time; prefix search is a range predicate against it. Closes T15's
-  unindexed-prefix note. No PostgreSQL extension required.
-
-  *Two traps, both found by measurement rather than reasoning.*
-
-  First: the cheap-looking version — an expression index on `fhir_sqlite_norm(col)`
-  plus a predicate `fhir_sqlite_norm(col) LIKE fhir_sqlite_norm($1) || '%'` — **does not
-  use the index**. PostgreSQL's btree prefix optimization for `LIKE` needs a
-  *constant* pattern, and `fhir_sqlite_norm($1)` is only stable, not constant.
-  Folding the term in Rust instead keeps the pattern constant, but then the
-  fold exists twice — once in Rust, once in SQL — and the two must agree for
-  every codepoint, forever, or a patient is simply not found. So the fold
-  lives in Rust only (`fhir-sqlite-map::fold`), and the database stores its output.
-
-  Second, and the reason the first fix is not enough: even against a plain
-  column with a `text_pattern_ops` index, `col LIKE $1` **still** scans. The
-  prefix is extracted at plan time, so a custom plan (which substitutes
-  parameter values) uses the index and a generic plan does not — meaning the
-  query is fast in every hand-run `EXPLAIN` with a literal, fast for its first
-  few executions, and then quietly degrades once PostgreSQL switches to the
-  generic plan. The fix is to stop asking the planner to analyze a pattern at
-  all: compute the upper bound in Rust and emit `col >= $1 AND col < $2`, an
-  ordinary index condition. `tests/search_semantics.rs::string_prefix_search_uses_its_index`
-  pins this with `plan_cache_mode = force_generic_plan`, which is the only
-  setting under which the old form visibly fails.
-
-  Ordering is by `COLLATE "C"` — set on the column itself — because the range
-  bound is only sound under codepoint order. Under a linguistic collation a
-  string beginning with the prefix can sort past the computed upper bound.
-
+  column gets a `_norm` companion holding the folded value, computed in
+  Rust at write time (`fhir-sqlite-map::fold`); search runs `LIKE` over the
+  folded column (`sqlite_search.rs`). No SQL fold function exists — T63
+  records that the inherited `fhir_sqlite_norm` SQL function was dropped,
+  having never had a caller. The ~40 lines of PostgreSQL planner analysis
+  this entry used to carry — `fhir_sqlite_norm(col)` expression indexes,
+  `text_pattern_ops`, `plan_cache_mode`, `COLLATE "C"`, and the
+  `search_semantics.rs` test — were the reference port's (**F-27** class 3).
   `:exact` deliberately compares the *stored* column: it is defined as the
   literal string, so folding must not leak into it.
+  Migration: `upgrade` adds the columns and `backfill_norm` fills them,
+  resumably and in batches (T90a).
 
-  Migration: `upgrade` adds the columns, then backfills them
-  (`Store::backfill_norm`) before returning. Without the backfill an upgraded
-  install would answer string searches from NULL columns and silently return
-  fewer results — the one failure mode a clinical search must not have. The
-  backfill folds distinct *values* rather than rows, in batches, and is
-  resumable, since each pass only looks at rows still NULL.
-
-- [x] **T44 Edge resource limits (O10.8, P6.7).** Per-request timeout,
-  concurrency limit, in-flight cap, configurable pool size; batched result
-  materialization instead of one `get` per id; `_include`/`_revinclude` caps
-  that warn in the bundle when they truncate. Every ceiling is now a flag —
-  `--request-timeout`, `--max-concurrent`, `--max-body-mb`, `--max-count`,
-  `--max-included`, `--pool-size` — rather than a constant compiled into the
-  binary, because the right value depends on the deployment and the previous
-  answer was "rebuild it".
-
-  `--pool-size` takes precedence over `FHIR_SQLITE_POOL_SIZE`: a flag the operator
-  typed should not be silently overridden by an environment variable they
-  inherited.
-
-  `tests/edge_limits.rs` asserts a configured ceiling is *enforced*, not just
-  parsed. A limit that reaches the config struct but never reaches the code
-  that should apply it is worse than no limit, because the operator believes
-  a ceiling exists.
-- [x] **T45 Admin plane separation (O10.9).** `--admin-bind` for
-  `/metrics`, `/health`, `/ready`; latency as a histogram so p99 is
-  answerable. *Done:* `--admin-bind` serves /health, /ready and /metrics on
-  their own address against the same counters, on their own task so they
-  answer while the API is shedding load, and latency is a Prometheus
-  histogram (`fhir_sqlite_request_latency_seconds`, default 1ms–10s buckets) so
-  `histogram_quantile` answers p99. A running total plus a count gives only
-  the mean, and the mean cannot tell "every request took 40ms" from "99%
-  took 5ms and 1% took 4 seconds" — which is the case anyone is paged for.
+- **T44.** — removed 2026-08-06: misattributed ancestor (REST/CLI) work
+  (edge limit flags; `tests/edge_limits.rs` does not exist); the server is
+  [fhir-loco](../fhir-loco/) (**F-27**).
+- **T45.** — removed 2026-08-06: misattributed ancestor (REST/CLI) work
+  (`--admin-bind`, the `fhir_sqlite_request_latency_seconds` histogram);
+  the server is [fhir-loco](../fhir-loco/) (**F-27**).
 - [x] **T46 Honest CapabilityStatement (A7.12).** *In
   [`fhir-loco`](../fhir-loco/)* — `GET /{version}/metadata`, generated from
   the map this port produces.
@@ -482,26 +415,30 @@ guarantees, P2 items are reach.
   release workflow.
 - [x] **T48 Concurrency, redaction, and audit test suites (T11.6–T11.8).**
   The adversarial tests that keep T31–T42 honest. *Done:* `concurrency.rs`
-  covers torn reads, racing conditional creates, and racing `If-Match`
-  updates (T11.6); `redaction.rs` covers T11.7; `audit.rs` covers T11.8 —
-  the audit envelope, the disclosure record, chain verification, and the
-  database refusing to let history be rewritten. `audit_async.rs` adds the
-  async path: batching, the shutdown drain, and saturation refusing rather
-  than dropping.
-- [x] **T49 Erasure (M3.18).** `fhir-sqlite purge` with tombstone rows,
-  `--allow-erasure`, and a test that `verify-audit` reports a purge as a
-  recorded hole rather than a chain break. *Done:* `Store::purge` and
-  `fhir-sqlite purge`, the tombstone carrying who/when/why plus the terminated
-  chain hash, and the append-only trigger relaxed to permit `DELETE` only
-  inside a transaction that sets `fhir_sqlite.erasure`. The book states the two
-  limits plainly: backups and replicas are outside this, and the guard stops
-  accidents rather than the application itself.
+  covers torn reads and racing writers (T11.6); `redaction.rs` covers
+  T11.7; the audit assertions — the envelope, chain verification,
+  tampered-row detection, erasure tombstones — live in
+  `tests/sqlite_store.rs` (T11.8), exactly as the conformance matrix's
+  "A correction" section records. There is no `audit.rs` and no
+  `audit_async.rs` in this port; the async audit queue was the ancestor
+  server's (**F-27**).
+- [x] **T49 Erasure (M3.18).** *Done (store half):* `SqliteStore::purge`
+  leaves a tombstone recording who/when/why plus the hash the chain ended
+  on, and the append-only trigger permits the `DELETE` only while the
+  in-schema erasure flag row exists — inserted and removed inside the same
+  transaction, so an aborted erasure cannot leave the escape hatch open the
+  way PostgreSQL's session GUC could (T63/T64; the `fhir_sqlite.erasure`
+  GUC wording here was the reference port's). `verify_audit` reports a
+  purge as a recorded hole rather than a chain break. The
+  `fhir-sqlite purge` CLI and its `--allow-erasure` flag went with the CLI
+  crate (T71, **F-27**).
 - [x] **T50 Trust-boundary chapter (PR12.8).** One table in the book: what
-  fhir-sqlite guarantees, what the perimeter must provide, what neither does yet.
-  *Done:* `book/src/trust-boundary.md`, including a worked `serve`
-  invocation where every flag is explained, the `REVOKE` grants, and an
-  honest statement of what the hash chain does *not* prove (an attacker who
-  can recompute it — hence: ship `row_hash` off-box).
+  fhir-sqlite guarantees, what the deployment must provide, what neither
+  does yet. *Done:* `book/src/trust-boundary.md`, and an honest statement
+  of what the hash chain does *not* prove (an attacker who can recompute
+  it — hence: ship `row_hash` off-box). The "worked `serve` invocation" and
+  `REVOKE` grants this entry used to cite were the ancestor server's —
+  there is no `serve`, and SQLite has no `GRANT`/`REVOKE` (**F-27**).
 
 ### P2 — reach
 
@@ -520,13 +457,13 @@ guarantees, P2 items are reach.
 - [ ] **T57 Restore and failover drills.** A documented, tested PITR
   restore and a `fhir-sqlite fsck` that checks orphan rows, ordinal gaps, and
   history/current agreement.
-- [x] **T58 CI/CD on GitHub and Codeberg.** Parallel pipelines on both
-  forges (`.github/workflows/`, `.woodpecker/`): fmt, clippy, unit tests,
-  book, live-PostgreSQL suite, advisories/licenses/SBOM. Tag builds
-  artifacts with checksums and a CycloneDX SBOM attached to the release;
-  crates.io publishing is manual and confirmation-gated, since a published
-  version can be yanked but never replaced. Also verifies the declared MSRV,
-  which until now was a claim nothing checked. See `doc/ci.md`.
+- [~] **T58 CI/CD.** Corrected: the per-port pipelines under
+  `fhir-sqlite/.github/workflows/` and `.woodpecker/` are **inert** —
+  GitHub reads only the repository root's `.github/workflows/` (**F-49**) —
+  and the "live-PostgreSQL suite" they describe is the wrong engine
+  entirely: this port's tests run against a local file and need no
+  service at all. What actually gates commits is the root `gates.yml`,
+  which runs the shared-core and doc-example gates only.
 
 ## M14 — SQLite port
 
@@ -650,20 +587,16 @@ PostgreSQL implementation, not new ground.
   a deliberate divergence — the PostgreSQL original skips tombstones before the
   MAC check and so cannot verify them at all — and it is backed by a test that
   forges a tombstone's actor and asserts it is caught.
-  *Also landed:* the CLI is wired to `SqliteStore`, so `fhir-sqlite` is a
-  working command-line FHIR store on a file. `--dsn` is now a database path
-  (default `fhir.sqlite`), with each FHIR version in its own file beside it.
-  Verified by driving the built binary, not by unit tests: `init` installs 9,490
-  statements, `load` ingests, `get` returns the resource with `9.60` intact
-  through the whole file → SQLite → JSON path, `search status=final` finds it,
-  `verify-audit` names the layers that actually ran and warns when unkeyed,
-  `purge` refuses without `--allow-erasure` and leaves a tombstone with it, and
-  the chain still verifies afterwards.
-  *Commands with no SQLite store behind them yet — `export`, `chain-resign`,
-  `chain-witness`, `init --upgrade` — now fail saying so.* They previously
-  compiled against the PostgreSQL store and would have tried to reach a server
-  that is not there; an honest refusal naming the task beats a confusing
-  connection error.
+  *Also landed, since removed:* the CLI was wired to `SqliteStore` at the
+  time and verified by driving the built binary — `init` installing 9,490
+  statements, `load`, `get` returning `9.60` intact, `search status=final`,
+  `verify-audit` naming its layers, `purge` refusing without
+  `--allow-erasure` — but the CLI crate was later removed by the
+  library-scope correction (T71), so none of those commands exist today;
+  what survives is the store surface they exercised. (The "commands with no
+  SQLite store behind them" list this entry kept — `export`,
+  `chain-resign`, `chain-witness`, `init --upgrade` — went with the CLI
+  too; `upgrade` has since been implemented on the store itself, T90a.)
   *Also landed:* most of the surface the HTTP layer needs. Measured rather than
   assumed — the server calls fourteen distinct `Store` methods, not the ~53 the
   type exposes — so `SqliteStore` gained `map`, `ping`, `get_versioned`,
@@ -717,8 +650,10 @@ PostgreSQL implementation, not new ground.
 
 - [ ] **T64c Remaining store gaps.** `transact_audited` (still an explicit
   `Unsupported`; needs one transaction across all ops), `resign_history`,
-  `chain_witness`, `export`, and `init --upgrade`. Each fails saying so rather
-  than pretending.
+  `chain_witness`, and `export`. Each fails saying so rather than
+  pretending. `init --upgrade` is no longer on this list:
+  `SqliteStore::upgrade` (`sqlite.rs:390`) and `backfill_norm` (`:632`)
+  exist, with 8 tests in `tests/upgrade.rs` — see T90a.
 
 - [x] **Accent folding does not cover Nordic letters — fixed; see T90 under
   Remaining work.** Original finding, kept for the reasoning: Found by curling the
@@ -739,8 +674,9 @@ PostgreSQL implementation, not new ground.
   Removed the server crate (and Axum, tower, axum-server with it) and the CLI
   binary crate; the workspace is now `-map`, `-gen`, `-store`.
   The generated relmaps lived inside the CLI crate and had to outlive it, so
-  `crates/fhir-sqlite/assets/` moved to a top-level `assets/`, with test paths
-  repointed and the published checksums re-verified against the moved files.
+  `crates/fhir-sqlite/assets/` moved to `crates/fhir-sqlite-map/assets/`,
+  with test paths repointed and the published checksums re-verified against
+  the moved files.
   Spec sections 7 (REST API) and 8 (CLI) are deleted rather than left standing:
   the spec's own index says code and spec must be reconciled rather than allowed
   to drift, and normative text for features that no longer exist is exactly that
@@ -782,8 +718,10 @@ Native SQLite store, complete enough to embed. No PostgreSQL dependencies.
   bundle, and a process dying mid-unwind leaves partial state permanently. Doing
   it properly needs `put` and `delete` split so their bodies run inside a
   caller-supplied `BEGIN IMMEDIATE`.
-- [ ] **`resign_history`, `chain_witness`, `export`, `init --upgrade`** are
-  unimplemented; each fails saying so rather than pretending.
+- [ ] **`resign_history`, `chain_witness`, `export`** are unimplemented;
+  each fails saying so rather than pretending. (`init --upgrade` used to be
+  on this list; it is done — `SqliteStore::upgrade` + `backfill_norm`,
+  T90a.)
 - [ ] **T65 Decimal sort columns (M14.11).** `ColTy::Numeric` needs a derived
   `<name>_sort` companion in the generated map, following the pattern `date` and
   `dateTime` already use. Until then numeric range search works via
@@ -794,14 +732,10 @@ Native SQLite store, complete enough to embed. No PostgreSQL dependencies.
 
 ### Cross-cutting, all repos
 
-- [ ] **Git remotes are wrong.** Every database repo still has `origin` =
-  `git@github.com:fhirpg/fhirpg.git`, correct for at most one of them. Pushing
-  any `port/*` branch as-is would send that port to the upstream project. Set
-  each remote before pushing. Nothing has been pushed.
-- [ ] **Shared history.** All six database repos descend from `688641a` of the
-  original `fhirpg` project. Whether five separate products should keep that
-  history, be squashed, or be re-rooted is a decision to make deliberately
-  rather than discover after a push.
+- [x] **Git remotes and shared history** — resolved by the monorepo merge:
+  the ports are directories in one repository with one remote,
+  `git@github.com:fhir-rust/fhir-rust.git`, and no per-port `.git`
+  (**F-11**).
 - [x] **T90 Accent folding misses Nordic letters — fixed.** `fold` now expands
   the letters NFD cannot reach, following PostgreSQL's `unaccent` rules so a
   folded value means the same thing whichever engine stores it: `æ`→`ae`,
@@ -827,6 +761,17 @@ Native SQLite store, complete enough to embed. No PostgreSQL dependencies.
   (`M14.34`). *Accept:* 8 tests in `tests/upgrade.rs`, none needing a server;
   mutation-verified — skipping the backfill makes the seeded patient unfindable
   by their own name.
-  *Still open on MySQL, MariaDB, MSSQL and Oracle* (audit **F-15**), and on a
-  SQLite database installed before `init` recorded the asset, which has nothing
-  to diff and must still be reloaded.
+  *Since closed elsewhere too:* MySQL, MariaDB and MSSQL now carry
+  `upgrade`/`backfill_norm` as well (audit **F-15**, closed everywhere it
+  can be; Oracle has a store but no `upgrade` built on it yet). Still true
+  here: a SQLite database installed before `init` recorded the asset has
+  nothing to diff and must be reloaded.
+- [x] **T91 Boolean token search matched nothing (audit F-71) — fixed
+  2026-08-04.** `active=true` silently returned zero rows: SQLite's affinity
+  rule only promotes a bound TEXT value to NUMERIC when it *looks like* a
+  number, so `active = ?` bound to `"true"` compared the TEXT value
+  `'true'` against the column's INTEGER storage class and never matched —
+  FHIR's own boolean-token spelling, found live. Fixed with `col_is_bool` +
+  `bool_token_as_bind` (`sqlite_search.rs:281-293`, `:372-375`), which bind
+  `"1"`/`"0"` for `ColTy::Bool` columns. *Accept:*
+  `boolean_token_search_finds_a_true_value` (`tests/sqlite_store.rs:836`).

@@ -44,8 +44,9 @@ Work breakdown: [`tasks.md`](tasks.md).
   dynamic; sqlx's compile-time checking can't see it, so its cost buys
   nothing. (The original reasoning was tokio-postgres's pipelining and
   binary-format parameters; this port's driver is rusqlite.)
-- **D6 — axum for HTTP.** Boring, maintained, tower middleware for
-  timeouts/limits/tracing.
+- **D6 — axum for HTTP.** Inherited decision, now owned by
+  [`fhir-loco`](../fhir-loco/): the HTTP layer left this port and the axum
+  choice went with it. Retained because this is where it was recorded.
 - **D7 — History is JSONB.** `<resource>_history` stores full-resource
   snapshots as jsonb. This is the sanctioned exception to D1 (with contained
   resources, M3.13): history is write-once audit data read only by
@@ -73,11 +74,12 @@ Work breakdown: [`tasks.md`](tasks.md).
 - **D12 — Reject unknown elements.** Silent data loss is disqualifying in a
   clinical system; anything the map doesn't know is a 422/load error naming
   the path (R4.3).
-- **D13 — Auth is perimeter, not core.** The server implements no
-  authentication; deployments front it with their identity layer. This keeps
-  the trust boundary explicit and auditable. Documented prominently (O10.5).
-  **Amended by D15:** the perimeter authenticates, but fhir-sqlite must still
-  *record* who acted.
+- **D13 — Auth is perimeter, not core.** This library implements no
+  authentication; that is [`fhir-loco`](../fhir-loco/)'s job (`SV3.x`,
+  PASETO v4.public, no unauthenticated mode). This keeps the trust boundary
+  explicit and auditable (O10.5). **Amended by D15:** the server
+  authenticates, but fhir-sqlite must still *record* who acted — the store
+  takes a caller-supplied `Audit` principal on every audited write.
 - **D14 — Workspace layout.** One cargo workspace:
   `fhir-sqlite-map` (relational map types + generic shred/reconstruct engine),
   `fhir-sqlite-gen` (spec → DDL + map), `fhir-sqlite-store` (SQLite 3 layer:
@@ -87,41 +89,56 @@ Work breakdown: [`tasks.md`](tasks.md).
   Generated artifacts live in `assets/` and are embedded in the crate.
 - **D15 — Attribution is core, even though authentication is not.** D13
   keeps identity *verification* outside; it does not excuse anonymous
-  history. fhir-sqlite accepts a principal from a trusted proxy (PR12.1–PR12.3)
-  and records it on every write and every read. Rationale: HIPAA
-  §164.312(b) asks who accessed a record, and no perimeter can answer that
-  for us — the perimeter knows the identity, only the store knows which rows
-  were touched. Consequence: a schema change (M3.15) and an access log
-  (PR12.5), both additive.
-- **D16 — Audit before latency.** Access logging defaults to `async` with a
-  bounded queue that **fails closed** (PR12.6). Dropping a disclosure record
-  to keep latency down is the wrong trade for this system; a deployment that
-  disagrees says so explicitly with `--allow-unaudited`.
+  history. The trusted-proxy header extraction the original PR12.1–PR12.3
+  text described was never built here — there is no proxy or header code in
+  this library. What exists: the store accepts an `Audit` principal as a
+  caller-supplied value type (from the shared `fhir-store` crate) and
+  records it on every audited write and every reported disclosure.
+  Rationale: HIPAA §164.312(b) asks who accessed a record, and no perimeter
+  can answer that for us — the caller knows the identity, only the store
+  knows which rows were touched. Consequence: a schema change (M3.15) and
+  an access log (PR12.5), both additive.
+- **D16 — Audit before latency.** The `--audit-mode` machinery and
+  `--allow-unaudited` opt-out the original text described do not exist — no
+  mode flags, no bounded queue; `tasks.md` (T41) says the same. What the
+  library does is simpler and stricter: audited writes record their audit
+  row synchronously, in the same `BEGIN IMMEDIATE` transaction as the
+  write, so a write without its record cannot commit. Whether a
+  *disclosure* is recorded before a response is released is the caller's
+  (`fhir-loco`'s) decision via `log_access`.
 - **D17 — Tamper-evidence by hash chain, per resource id.** A global chain
   would serialize every write; per-id chains keep concurrency and still make
   a silent edit or deletion detectable (M3.16). Chosen over write-once
   storage or an external ledger, both of which push the problem into the
   deployment.
-- **D18 — Snapshot reads.** Multi-table reads run in one
-  `REPEATABLE READ READ ONLY` transaction (R4.5). The cost is one extra
-  round trip per read; the alternative is reconstructing resources that
-  never existed, which is not a trade a clinical store gets to make.
+- **D18 — Snapshot reads.** Multi-table reads run in one **deferred read
+  transaction**, which under WAL observes a stable snapshot for its
+  duration (R4.5; annex `M14.20`,
+  [`spec/14-sqlite-dialect.md`](spec/14-sqlite-dialect.md)). SQLite has no
+  `REPEATABLE READ READ ONLY` syntax — that wording was PostgreSQL's. The
+  alternative is reconstructing resources that never existed, which is not
+  a trade a clinical store gets to make.
 - **D19 — Normalize for search, keep the original for truth.** Accent- and
   case-insensitive matching (P6.6) uses generated normalized columns, not
   mangled stored values. The stored column stays lexically exact for
   round-trip (R4.2); the normalized column exists purely to be indexed and
   matched against.
-- **D20 — Encrypt the database link by default.** rustls, `sslmode`
-  honored, and a startup refusal when a non-loopback bind meets an
-  unencrypted database connection (O10.7). PHI in flight between the server
-  and the database is exactly as sensitive as PHI in flight to the client.
+- **D20 — Protect the data at rest.** The original decision — rustls,
+  `sslmode`, a bind guard (O10.7) — is vacuous for an embedded file: there
+  is no connection to encrypt. What displaces it is the at-rest obligation:
+  the PHI sits in a file whose protection is filesystem permissions and
+  disk encryption, both the deployment's responsibility (see `tasks.md`
+  T32, which says the same).
 
 ## Risks
 
 - **R1 — Schema scale.** ~3,000+ tables per version; `init` time, catalog
   bloat, and dump/restore ergonomics need measurement early (task T4 spike).
-  Mitigation: per-version attached database file, generated DDL applied in one
-  transaction, benchmarks from milestone 1.
+  Mitigation: per-version database file; `init` applies the DDL
+  statement-by-statement and a failed install is cleaned up by unlinking
+  the file (T4/T12 — the "one transaction" wording was the ancestor's;
+  `upgrade`, by contrast, genuinely is one transaction, `M14.31`);
+  benchmarks from milestone 1.
 - **R2 — Reconstruction performance.** Reading one resource touches many
   tables. Mitigation: single round-trip per read using a generated
   multi-table query (one query with UNION/ordering or per-table queries
@@ -147,28 +164,29 @@ Work breakdown: [`tasks.md`](tasks.md).
 - **R7 — the fold is pure Rust, not a database extension.** This risk was
   PostgreSQL's `unaccent`; it does not apply here, and is retained because the
   decision it drove — fold in Rust — is why P6.6 works identically on all six
-  engines. P6.6 depends on
-  it, and managed providers vary in whether an unprivileged role may create
-  it. Mitigation: `init` probes for it and fails with a clear instruction
-  rather than degrading silently; a fallback pure-SQL folding function
-  covers Latin-1/Latin Extended-A when the extension is unavailable.
+  engines.
 - **R8 — Schema migration for the audit columns.** M3.15/M3.16 change every
   history table across three versions. Mitigation: the changes are purely
   additive, so `init --upgrade` (T26) already covers them; existing rows get
   `actor = 'unknown (pre-audit)'` and a null hash chain, and `verify-audit`
   reports chains as starting at the first hashed version rather than
   claiming a break.
-- **R9 — Snapshot reads under long transactions.** REPEATABLE READ readers
-  hold a snapshot; a slow reconstruction of a very large resource delays
-  vacuum. Mitigation: reads are already bounded by `statement_timeout`, the
-  transaction is READ ONLY, and bloat is watched by the existing metrics.
+- **R9 — Snapshot reads under long transactions.** A deferred read
+  transaction under WAL holds its snapshot open, and readers pin WAL frames
+  until they finish. There is no `statement_timeout` in SQLite — that
+  mitigation was PostgreSQL's; what exists is `busy_timeout` (30 s, set at
+  open — `sqlite.rs:170`), which bounds how long a writer waits, and the
+  single-writer `write_gate`, which keeps write transactions short.
 
 ## Milestones
 
 - **M1 — Engine proven (R5, vertical slice).** Generator produces DDL + map
   for all R5 resource types; shred/reconstruct round-trips every R5 spec
-  example; `init`/`load`/`transform`/`export` work; live-PG round-trip tests
-  green. Exit criterion: R4.2 holds for the entire R5 examples corpus.
+  example; the store's `init`/`put`/`get` work; round-trip tests green
+  against a local file. (The original listed the
+  `init`/`load`/`transform`/`export` CLI verbs and "live-PG" tests — there
+  is no CLI, `export` exists in no port, and this port needs no server.)
+  Exit criterion: R4.2 holds for the entire R5 examples corpus.
 - **M2 — History + CRUD semantics.** version_id/history/soft delete;
   transactional writes; ETag concurrency; `fhir_sqlite_meta` and idempotent init.
 - **M3 — Search.** Search-parameter compiler, indexes, result parameters,

@@ -1,10 +1,12 @@
 # fhir-postgresql tasks
 
-> **Parts of this file are untrue of this port (audit [F-27](../spec/databases/audit.md#f-27)).**
-> The `M4 — REST server` milestone, `T8 CLI v1`, and `T23 Multi-version serve`
-> are checked off, and none of that code exists in any port: there is no
-> `fhir-*-server` crate, no `serve` binary, and no REST test suite anywhere in
-> this repository.
+> **Parts of this file were untrue of this port (audit [F-27](../spec/databases/audit.md#f-27)).**
+> The REST-server and CLI entries were misattributed ancestor-project work:
+> the server is [`fhir-loco`](../fhir-loco/), a separate crate, and no port
+> has a CLI (`C0.17`, `C0.18`). Class 1 was resolved 2026-08-06 by
+> **deleting** those entries — each is now a one-line tombstone keeping its
+> task id, because unticking would have asserted that this port is going to
+> grow a server, and it is not.
 >
 > Do not read a `[x]` here as evidence. The
 > [conformance matrix](../spec/databases/conformance-matrix.md) is the status document to
@@ -16,8 +18,9 @@ criterion. Order within a milestone is roughly dependency order.
 ## M1 — Engine proven (R5 vertical slice)
 
 - [x] **T1 Workspace scaffold.** Cargo workspace per plan D14
-  (`fhir-postgresql-map`, `fhir-postgresql-gen`, `fhir-postgresql-store`, `fhir-postgresql` — the server crate
-  arrives with M4), CI (fmt, clippy, test, live-PG job).
+  (`fhir-postgresql-map`, `fhir-postgresql-gen`, `fhir-postgresql-store`; the
+  ancestor plan's server crate became [`fhir-loco`](../fhir-loco/)),
+  CI (fmt, clippy, test, live-PG job).
   *Done:* `.github/workflows/ci.yml`; tests self-skip without inputs.
 - [x] **T2 Spec-package ingestion.** profiles-resources.json +
   profiles-types.json parsed directly (simpler than reusing the fhir
@@ -47,10 +50,8 @@ criterion. Order within a milestone is roughly dependency order.
   chunked multi-row inserts; text-image wire protocol with explicit casts.
   *Accept:* full-corpus live round trip 7,396/7,396 across r3/r4/r5;
   bulk benchmark: 6,146 res/s load, 1.18 ms reads (doc/benchmarks.md).
-- [x] **T8 CLI v1.** `gen`, `init`, `load` (NDJSON/Bundle/single, gzip,
-  content-detection, per-resource error reporting, nonzero exit), `get`,
-  `delete`, `export`, `transform`. *Remaining:* streaming (bounded-memory)
-  reads for multi-GB NDJSON — currently whole-file.
+- **T8.** — removed 2026-08-06: misattributed ancestor (REST/CLI) work; the
+  server is [fhir-loco](../fhir-loco/), and no port has a CLI (**F-27**).
 - [x] **T9 Round-trip property tests.** Map-driven random-resource
   generator (deterministic SplitMix64 seeds — no proptest dependency):
   deep recursion, sparse primitive arrays with extensions, nested
@@ -92,13 +93,18 @@ criterion. Order within a milestone is roughly dependency order.
   interpolation), modifiers :exact/:contains, token system|code, date
   prefixes with precision ranges + Period overlap, quantity value|system|
   code, reference forms, `_id`, `_lastUpdated`, `_count`/offset; strict
-  unsupported-parameter errors; `fhir-postgresql search` CLI; `_sort` (base-table
+  unsupported-parameter errors; `_sort` (base-table
   params + _id/_lastUpdated, honest errors otherwise) and
-  `_total=accurate`. *Accept mostly met:* search_semantics + rest suites
-  green against live PG. Single-hop `_include` (via compiled reference
-  targets) and `_revinclude` (via the search machinery) with
-  search.mode=include entries and dangling-reference tolerance.
-  *Remaining:* chained `reference.`, cursor paging, lenient handling.
+  `_total=accurate`. *Accept mostly met:* the `search_semantics` suite is
+  green against live PG (the `fhir-postgresql search` CLI and REST suites
+  this entry once cited were the ancestor's, **F-27**). Single-hop
+  `_include` (via compiled reference targets) and `_revinclude` (via the
+  search machinery) with search.mode=include entries and
+  dangling-reference tolerance. Single-hop chained reference search
+  (`subject:Patient.name=x`) is implemented (`src/search.rs:148`), and
+  `search_page` takes a keyset cursor (`after_id`, `lib.rs:1487`).
+  *Remaining:* deeper-than-one-hop chains (refused honestly), lenient
+  handling.
 - [x] **T15 Index emission + explain audit.** One index per distinct
   search-target column set emitted with the DDL (R5: 1,813 indexes; full
   init 5.8 s). EXPLAIN audit in tests/bench.rs: token/reference/date
@@ -139,10 +145,11 @@ work, it is in `fhir-loco`.
 
 > **Ledger drift, needs a human call.** T21 and T22 are unchecked, but T7
 > records a full-corpus live round trip of 7,396/7,396 across r3/r4/r5, the
-> README claims all three corpora round-trip losslessly, and `fhir-postgresql serve`
-> mounts all three (T23, checked). Either the boxes are stale or the README
-> overstates. Since the spec is meant to be the source of truth, reconcile
-> before release rather than after.
+> README claims all three corpora round-trip losslessly, and
+> [`fhir-loco`](../fhir-loco/) loads all three maps at startup (T23,
+> redirected — not `fhir-postgresql serve`, which does not exist). Either
+> the boxes are stale or the README overstates. Since the spec is meant to
+> be the source of truth, reconcile before release rather than after.
 
 - [ ] **T21 R4 artifacts.** Run generator on 4.0.1; fix spec-parsing deltas.
   *Accept:* full R4 examples corpus round-trips live; REST suite green on
@@ -157,32 +164,23 @@ work, it is in `fhir-loco`.
 
 ## M6 — Production hardening
 
-- [x] **T-validate (V9.2).** `fhir-postgresql load --validate` deserializes each
-  resource through the typed `fhir` crate model behind the `validate`
-  build feature. **All three versions**, since `fhir` 1.2.1.
-  *The upstream bug is fixed and released:* published 1.2.0 could not compile
-  its own r3/r4 features — the `Validate` derive expanded to `crate::r5::`
-  paths — but only for crates.io consumers, since the repository resolves the
-  derive macro through its `path` dependency where the fix already lived. It
-  needed `fhir-derive-macros` 1.0.1 published alongside `fhir` 1.2.1; a
-  `fhir` release on its own would have pulled the same broken macro.
-  *Accept met:* `validate_tests` covers R3/R4/R5 and records the one thing
-  `--validate` does not catch (unknown elements — serde ignores them; the
-  shredder rejects them per D12).
+- **T-validate.** — removed 2026-08-06: misattributed ancestor (REST/CLI)
+  work; there is no `validate` build feature, no `load --validate`, and no
+  `validate_tests` here — the `fhir` crate is not a dependency of any port
+  crate (**F-27**).
 - [x] **T-graceful.** *Belongs to [`fhir-loco`](../fhir-loco/).* Shutdown
   is the server's concern, and Loco owns the signal handling; a library
   has no process to shut down.
 
-- [~] **T24 Observability.** Done: /health, /ready, /metrics (Prometheus
-  text: request/response-class/latency counters), X-Request-Id
-  (propagated or generated) with per-request tracing that logs
-  method/path/status only — never resource content. *Remaining:* JSON log
-  format wiring in the CLI, an automated redaction test, latency
-  histogram buckets.
-- [~] **T25 Pool + timeout hardening.** Done: server-side
-  statement_timeout (FHIR_POSTGRESQL_STATEMENT_TIMEOUT_MS, default 30 s), pool
-  wait timeout 2 s, exhaustion → 503 + Retry-After.
-  *Remaining:* an automated saturation test.
+- **T24.** — removed 2026-08-06: misattributed ancestor (REST/CLI) work
+  (/health, /ready, /metrics, X-Request-Id); the server is
+  [fhir-loco](../fhir-loco/) (**F-27**).
+- [x] **T25 Statement-timeout hardening.** Runaway statements die
+  server-side: `statement_timeout` is set on every connection
+  (`FHIR_POSTGRESQL_STATEMENT_TIMEOUT_MS`, default 30 s; overridable, never
+  unset — `crates/fhir-postgresql-store/src/lib.rs:468`). The pool-wait
+  timeout and the 503 + Retry-After on exhaustion this entry used to claim
+  were the ancestor server's, not this library's (**F-27**).
 - [x] **T26 Migrations + upgrade.** `init` stores the map asset in
   fhir_postgresql_meta; `init --upgrade` diffs installed vs current maps and
   applies additive DDL (new tables/columns/indexes) in lock-safe chunks;
@@ -190,28 +188,32 @@ work, it is in `fhir-loco`.
   changes always demand manual migration. *Accept met:* upgrade test —
   reduced install upgrades to full, data survives, re-upgrade no-ops,
   downgrade guarded then forced.
-- [x] **T27 TLS feature + bind guard.** rustls in-process behind the
-  `tls` feature (`serve --tls-cert/--tls-key`, axum-server) with graceful
-  shutdown; loopback-default binding (an explicit --bind is the
-  non-loopback acknowledgement). *Verified:* live HTTPS smoke test
-  (HTTP/2, CapabilityStatement served, clean SIGTERM shutdown).
+- [x] **T27 TLS to the database.** The `serve --tls-cert/--tls-key`,
+  axum-server and SIGTERM claims this entry used to carry were the ancestor
+  server's — there is no `serve` (**F-27**); a bind guard is
+  [`fhir-loco`](../fhir-loco/)'s concern. What is real here is store-level
+  TLS: `SslPolicy` with a **verifying default** (`Require`, **F-17** fixed),
+  pinned by `crates/fhir-postgresql-store/tests/ssl_default.rs`.
 - [~] **T28 Benchmarks + regression gate.** Done: gated bench harness
   (load throughput, read latency, EXPLAIN audit) + doc/benchmarks.md with
   measured numbers (6,146 res/s; 1.18 ms reads at 100k).
   *Remaining:* CI regression gate against a recorded baseline; comparison
   against the historical jsonb implementation.
 - [x] **T29 Book + generated schema docs.** mdBook (9 chapters:
-  introduction, getting started, storage model, SQL querying, search,
-  REST API, versions, operations, architecture); builds locally and in
+  introduction, getting started, storage model, querying, search,
+  FHIR versions, operations, architecture, trust boundary — the REST
+  chapter went with the server, T61); builds locally and in
   CI. Column/table→FHIR-path mapping ships inside the map assets
   themselves. *Remaining nicety:* a rendered path→table index page.
 - [~] **T30 Security review + release.** Done: LICENSE-MIT/APACHE,
   CHANGELOG, publish metadata (versioned internal deps, keywords), map
-  assets embedded in the binary so `cargo install fhir-postgresql` is
-  self-contained, `cargo publish --dry-run` clean for the leaf crate.
+  assets embedded in the published crates (`RelMap::bundled()`, **F-33** —
+  an earlier revision said "embedded in the binary so `cargo install
+  fhir-postgresql` is self-contained"; there is no binary and no such
+  crate, `C0.18`), `cargo publish --dry-run` clean for the leaf crate;
+  cargo-deny + SBOM run in the port workflow (`O10.10`).
   *Remaining (human decisions):* pick the release version, publish the
-  five crates in dependency order, tag; optionally add cargo-audit/deny
-  to CI.
+  three crates in dependency order, tag.
 
 ## M7 — Trustworthy under load and under audit
 
@@ -246,12 +248,14 @@ guarantees, P2 items are reach.
   there is no `serve` binary for them to guard (`C0.17`, `C0.18`). The
   reasoning recorded there — that a bind which will not resolve must count as
   not-loopback, or the check silently skips itself — is a sound argument about
-  code nobody has written. Corrected under **F-27**; it belongs with the REST
-  milestones, whose fate is undecided.
+  code nobody has written. Corrected under **F-27**; a bind guard belongs to
+  the server, which is [`fhir-loco`](../fhir-loco/), not this library.
 
-  **The default is still `Prefer`, which does not verify** — `O10.7` asks for a
-  verifying default and this port does not have one. Tracked as **F-17**; it is
-  a breaking change and the owner's call.
+  **The default now verifies** — `SslPolicy::Require` is the default,
+  closing **F-17**: `O10.7` asks for a verifying default and this port has
+  one, pinned by `crates/fhir-postgresql-store/tests/ssl_default.rs`. It was
+  a breaking change, recorded in the CHANGELOG under Unreleased; departure
+  `M14.27` records the history.
 
   A live test against a TLS-only PostgreSQL is **written but does not run**.
   The job exists — `.github/workflows/ci.yml`, `tls-database` — but this
@@ -269,103 +273,74 @@ guarantees, P2 items are reach.
   generated in a step does not exist when the database container boots; the
   workarounds (a committed test key, or docker-in-docker) are each worse than
   the gap. Recorded in `doc/ci.md` rather than left to be discovered.
-- [x] **T33 Atomic conditional interactions (A7.10).** `If-None-Exist`
-  searches then writes (`fhir-postgresql-server/src/lib.rs:444`); two concurrent
-  identical conditional creates both create. Move match and write into one
-  transaction guarded by `pg_advisory_xact_lock` on the criteria hash; same
-  for conditional delete and conditional update.
+- [x] **T33 Atomic conditional interactions (A7.10).** Two concurrent
+  identical conditional creates must not both create: match and write move
+  into one transaction guarded by `pg_advisory_xact_lock` on the criteria
+  hash; same for conditional delete.
   *Done:* `Store::conditional_create`/`conditional_delete` take
   `pg_advisory_xact_lock` on a sorted hash of the criteria, then match and
-  write in one transaction. *Accept met:* 8 racing conditional creates yield
-  exactly one resource and seven `Existing`. *Remaining:* conditional update
-  (the server does not implement it yet).
+  write in one transaction. (The `fhir-postgresql-server/src/lib.rs:444`
+  citation this entry used to carry named a crate that never existed here;
+  the HTTP half is `fhir-loco`'s — **F-27**.) *Accept met:* 8 racing
+  conditional creates yield exactly one resource and seven `Existing`.
+  *Remaining:* conditional update.
 - [x] **T34 Audit envelope on history (M3.15, PR12.1–PR12.4).** History
   records no actor at all. Add the audit columns to the generated history
-  DDL, thread a `Principal` through the store write path, and extract it
-  from the configured trusted header behind `--trust-proxy`. Additive, so
-  `init --upgrade` migrates existing installs.
-  *Done:* `Audit` envelope threaded through `put_audited`/`delete_audited`/
-  `transact_audited`/`conditional_*_audited`; `PrincipalPolicy` on the
-  server honoring a configured header **only** behind `--trust-proxy`;
-  `--require-principal` → 401; CLI writes attributed to the operator
-  (`Audit::cli()`). Upgrade reconciles the new columns idempotently.
-  *Accept met:* the `audit` suite asserts all three, and that a plain `put`
-  records `unauthenticated` rather than nothing.
-- [x] **T35 Configured service base URL (A7.7).** Bundle `fullUrl` and
-  `link` are built from the `Host` header and hard-coded `http://`
-  (`fhir-postgresql-server/src/lib.rs:739`). Add `--base-url`, honor forwarded
-  headers only under `--trust-proxy` with a host allowlist.
-  *Done:* `BaseUrl` with `--base-url`, `--trust-proxy`, `--allowed-host`;
-  the default emits URLs for the address actually bound and reads no request
-  header at all. *Remaining:* a test asserting a poisoned `Host` changes
-  nothing.
-- [x] **T36 Preconditions inside bundles (A7.9).** `parse_entries`
-  (`:888`) ignores `ifMatch`/`ifNoneExist`/`ifModifiedSince`. Honor them, or
-  fail the entry 501 — never accept-and-ignore. *Done:* `ifMatch` is honored
-  in batch and transaction entries (412 on mismatch, mapped as 412 rather
-  than a generic 400); `ifNoneExist`/`ifModifiedSince`/`ifNoneMatch` fail the
-  entry 501, and fail the whole bundle for a transaction.
-- [x] **T37 Reference rewriting precision.** `rewrite_refs` (`:1130`)
-  replaces any string equal to a `urn:uuid`, including narrative and
-  `valueString`. Restrict to `Reference.reference` values and
-  `Bundle.entry.fullUrl`. *Done:* only `reference` keys are rewritten.
-- [x] **T38 Resource id validation (R4.6).** No `[A-Za-z0-9\-\.]{1,64}`
-  check anywhere; ids from URL or body land in unbounded `text`.
-  *Done:* `valid_fhir_id` guards read, vread, history, update, delete, and
-  Bundle entry urls. *Remaining:* the same check inside `fhir-postgresql load`.
-- [x] **T39 PHI response headers (A7.8).** `Cache-Control: no-store`,
-  `Pragma: no-cache`, `X-Content-Type-Options`, `Referrer-Policy`; CORS
-  denied unless `--cors-origin` names an origin. *Done:* the four headers are
-  set on every response. *Remaining:* `--cors-origin` (there is still no CORS
-  layer at all, which is closed rather than open).
-- [x] **T40 Diagnostics hygiene (A7.11).** `StoreError::Other` text is
-  reflected verbatim into OperationOutcomes (`:174`). Client-visible
-  diagnostics become path + rule id; detail goes to the log with the
-  incident id. *Done:* `StoreError` now distinguishes `Unsupported`
-  (client-safe: names the caller's own parameter) from `Other` (internal:
-  logged behind an incident id, never returned). Search-compilation errors
-  are `Unsupported`, so the honest "this parameter is not supported"
-  messages survive.
+  DDL and thread an audit principal through the store write path. Additive,
+  so `upgrade` migrates existing installs.
+  *Done (store half):* `Audit` envelope threaded through `put_audited`/
+  `delete_audited`/`transact_audited`/`conditional_*_audited`; upgrade
+  reconciles the new columns idempotently. The `PrincipalPolicy`,
+  `--trust-proxy`, `--require-principal` and `Audit::cli()` claims were the
+  ancestor server/CLI's (**F-27**): the principal is a caller-supplied
+  value type (`fhir-store::Audit`), and verifying it is `fhir-loco`'s job.
+  *Accept met:* the `audit` suite asserts the envelope, and that a plain
+  `put` records `unauthenticated` rather than nothing.
+- **T35.** — removed 2026-08-06: misattributed ancestor (REST/CLI) work
+  (`--base-url`, forwarded headers); the server is
+  [fhir-loco](../fhir-loco/) (**F-27**).
+- **T36.** — removed 2026-08-06: misattributed ancestor (REST/CLI) work
+  (Bundle precondition handling); the server is
+  [fhir-loco](../fhir-loco/) (**F-27**).
+- **T37.** — removed 2026-08-06: misattributed ancestor (REST/CLI) work
+  (`rewrite_refs`); the server is [fhir-loco](../fhir-loco/) (**F-27**).
+- **T38.** — removed 2026-08-06: misattributed ancestor (REST/CLI) work;
+  `valid_fhir_id` exists nowhere in this port; the server is
+  [fhir-loco](../fhir-loco/) (**F-27**).
+- **T39.** — removed 2026-08-06: misattributed ancestor (REST/CLI) work
+  (PHI response headers, CORS); the server is
+  [fhir-loco](../fhir-loco/) (**F-27**).
+- [x] **T40 Diagnostics hygiene (A7.11).** *Done (store half):* `StoreError`
+  distinguishes `Unsupported` (client-safe: names the caller's own
+  parameter) from `Other` (internal detail, never client-facing).
+  Search-compilation errors are `Unsupported`, so the honest "this
+  parameter is not supported" messages survive. The OperationOutcome and
+  incident-id HTTP mapping this entry used to describe is the server's,
+  i.e. [`fhir-loco`](../fhir-loco/)'s (**F-27**).
 
 ### P1 — missing guarantees
 
-- [x] **T41 Access log (PR12.5, PR12.6).** `fhir_postgresql_access_log` per schema;
-  every read, vread, history, and search appends a record naming the actor,
-  the subject, and (for search) how many resources were disclosed.
-  `--audit-mode sync|async|off`, bounded queue, fail closed on saturation,
-  per-version counters, `--allow-unaudited` to opt out loudly.
-
-  *On the default.* The spec draft had `async` as the default for
-  throughput; it ships as `sync`. The failure `sync` prevents is the one
-  that cannot be repaired afterwards — a disclosure with no record is
-  indistinguishable, later, from a disclosure that never happened — and a
-  fast default would make every deployment silently accept a loss window it
-  never chose. `async` announces that window at startup.
-
-  *Fail closed became real, not aspirational.* Recording used to be
-  best-effort: a failed insert was logged and the read served anyway. Now
-  `audit_read` returns a refusal that the four read paths propagate as 503,
-  so in every mode a disclosure that cannot be recorded is not made.
-
-  *Two bugs worth remembering, both in code that compiled and looked right.*
-  `Sender::closed()` waits for the *receiver* to drop, so using it to
-  shut the writer down deadlocks against the task it is waiting for; the
-  sender has to actually be dropped, which means holding it somewhere
-  takeable. And a queue-depth gauge maintained by read-then-subtract can
-  underflow under concurrency, so depth is derived from the monotonic
-  counters instead — an audit queue reporting a nonsense depth is worse than
-  one reporting none. `tests/audit_async.rs` pins both, the drain test under
-  a timeout so a deadlock fails instead of hanging the suite.
+- [x] **T41 Access log (PR12.5).** *Done (store half):*
+  `fhir_postgresql_access_log` per schema, written by `Store::log_access`/
+  `log_access_batch` and read back by `access_log_for` (`lib.rs:1526`), so
+  every disclosure a caller reports is recorded naming the actor and the
+  subject. The `--audit-mode sync|async|off` flags, bounded queue,
+  `audit_read`, the fail-closed 503 read paths and `tests/audit_async.rs`
+  never existed in this port — they were the ancestor server's (**F-27**,
+  `PR12.6`); whether a disclosure is recorded before the response is
+  released is the caller's ([`fhir-loco`](../fhir-loco/)'s) decision.
 
 - [x] **T42 Tamper-evident history (M3.16, M3.17).** `prev_hash`/`row_hash`
   chain per resource id, `BEFORE UPDATE OR DELETE` reject triggers,
-  `fhir-postgresql verify-audit` walking every chain, and the documented `REVOKE`
-  grants. *Done:* all of it. The chain is computed **in SQL** so it covers
-  the database's own `now()` and cannot race the read of the previous hash,
-  and it hashes `resource::jsonb::text` — the stored normalized form — since
-  hashing the submitted text would fail verification against what was
-  actually saved. *Accept met:* the `audit` suite tampers with a history row
-  behind the application's back and the chain names exactly that version.
+  `Store::verify_audit` walking every chain, and the documented `REVOKE`
+  grants. *Done.* The chain pre-image is computed **in Rust** — the stored
+  normalized form is canonicalized by `fhir_postgresql_map::canon` and
+  chained by the shared `fhir-store::chain` (**F-07** fixed) — not "in SQL"
+  over `resource::jsonb::text`, as this entry said before F-07;
+  `tests/chain_portability.rs` proves an outside verifier can recompute a
+  chain from the stored bytes alone. *Accept met:* the `audit` suite
+  tampers with a history row behind the application's back and the chain
+  names exactly that version.
 - [x] **T59 Tamper evidence that survives the database (M3.16a-c).** Two
   chains in two design families, a keyed tag, and an external witness.
 
@@ -453,32 +428,12 @@ guarantees, P2 items are reach.
   backfill folds distinct *values* rather than rows, in batches, and is
   resumable, since each pass only looks at rows still NULL.
 
-- [x] **T44 Edge resource limits (O10.8, P6.7).** Per-request timeout,
-  concurrency limit, in-flight cap, configurable pool size; batched result
-  materialization instead of one `get` per id; `_include`/`_revinclude` caps
-  that warn in the bundle when they truncate. Every ceiling is now a flag —
-  `--request-timeout`, `--max-concurrent`, `--max-body-mb`, `--max-count`,
-  `--max-included`, `--pool-size` — rather than a constant compiled into the
-  binary, because the right value depends on the deployment and the previous
-  answer was "rebuild it".
-
-  `--pool-size` takes precedence over `FHIR_POSTGRESQL_POOL_SIZE`: a flag the operator
-  typed should not be silently overridden by an environment variable they
-  inherited.
-
-  `tests/edge_limits.rs` asserts a configured ceiling is *enforced*, not just
-  parsed. A limit that reaches the config struct but never reaches the code
-  that should apply it is worse than no limit, because the operator believes
-  a ceiling exists.
-- [x] **T45 Admin plane separation (O10.9).** `--admin-bind` for
-  `/metrics`, `/health`, `/ready`; latency as a histogram so p99 is
-  answerable. *Done:* `--admin-bind` serves /health, /ready and /metrics on
-  their own address against the same counters, on their own task so they
-  answer while the API is shedding load, and latency is a Prometheus
-  histogram (`fhir_postgresql_request_latency_seconds`, default 1ms–10s buckets) so
-  `histogram_quantile` answers p99. A running total plus a count gives only
-  the mean, and the mean cannot tell "every request took 40ms" from "99%
-  took 5ms and 1% took 4 seconds" — which is the case anyone is paged for.
+- **T44.** — removed 2026-08-06: misattributed ancestor (REST/CLI) work
+  (edge limit flags; `tests/edge_limits.rs` does not exist); the server is
+  [fhir-loco](../fhir-loco/) (**F-27**).
+- **T45.** — removed 2026-08-06: misattributed ancestor (REST/CLI) work
+  (`--admin-bind`, request-latency histogram); the server is
+  [fhir-loco](../fhir-loco/) (**F-27**).
 - [x] **T46 Honest CapabilityStatement (A7.12).** *In
   [`fhir-loco`](../fhir-loco/)* — `GET /{version}/metadata`, generated from
   the map this port produces.
@@ -500,23 +455,24 @@ guarantees, P2 items are reach.
   covers torn reads, racing conditional creates, and racing `If-Match`
   updates (T11.6); `redaction.rs` covers T11.7; `audit.rs` covers T11.8 —
   the audit envelope, the disclosure record, chain verification, and the
-  database refusing to let history be rewritten. `audit_async.rs` adds the
-  async path: batching, the shutdown drain, and saturation refusing rather
-  than dropping.
-- [x] **T49 Erasure (M3.18).** `fhir-postgresql purge` with tombstone rows,
-  `--allow-erasure`, and a test that `verify-audit` reports a purge as a
-  recorded hole rather than a chain break. *Done:* `Store::purge` and
-  `fhir-postgresql purge`, the tombstone carrying who/when/why plus the terminated
-  chain hash, and the append-only trigger relaxed to permit `DELETE` only
-  inside a transaction that sets `fhir_postgresql.erasure`. The book states the two
+  database refusing to let history be rewritten. (There is no
+  `audit_async.rs` and never was in this port: the async audit queue it
+  claimed to pin was the ancestor server's — **F-27**.)
+- [x] **T49 Erasure (M3.18).** *Done (store half):* `Store::purge`, the
+  tombstone carrying who/when/why plus the terminated chain hash, the
+  append-only trigger relaxed to permit `DELETE` only inside a transaction
+  that sets `fhir_postgresql.erasure`, and a test that `verify_audit`
+  reports a purge as a recorded hole rather than a chain break. The
+  `fhir-postgresql purge` CLI and its `--allow-erasure` flag were the
+  ancestor's — there is no CLI (**F-27**, `C0.17`). The book states the two
   limits plainly: backups and replicas are outside this, and the guard stops
   accidents rather than the application itself.
 - [x] **T50 Trust-boundary chapter (PR12.8).** One table in the book: what
   fhir-postgresql guarantees, what the perimeter must provide, what neither does yet.
-  *Done:* `book/src/trust-boundary.md`, including a worked `serve`
-  invocation where every flag is explained, the `REVOKE` grants, and an
+  *Done:* `book/src/trust-boundary.md`, the `REVOKE` grants, and an
   honest statement of what the hash chain does *not* prove (an attacker who
-  can recompute it — hence: ship `row_hash` off-box).
+  can recompute it — hence: ship `row_hash` off-box). The "worked `serve`
+  invocation" this entry used to cite was the ancestor server's (**F-27**).
 
 ### P2 — reach
 
@@ -535,13 +491,13 @@ guarantees, P2 items are reach.
 - [ ] **T57 Restore and failover drills.** A documented, tested PITR
   restore and a `fhir-postgresql fsck` that checks orphan rows, ordinal gaps, and
   history/current agreement.
-- [x] **T58 CI/CD on GitHub and Codeberg.** Parallel pipelines on both
-  forges (`.github/workflows/`, `.woodpecker/`): fmt, clippy, unit tests,
-  book, live-PostgreSQL suite, advisories/licenses/SBOM. Tag builds
-  artifacts with checksums and a CycloneDX SBOM attached to the release;
-  crates.io publishing is manual and confirmation-gated, since a published
-  version can be yanked but never replaced. Also verifies the declared MSRV,
-  which until now was a claim nothing checked. See `doc/ci.md`.
+- [~] **T58 CI/CD.** Corrected: the per-port pipelines under
+  `fhir-postgresql/.github/workflows/` and `.woodpecker/` are **inert** —
+  GitHub reads only the repository root's `.github/workflows/` (**F-49**),
+  so "parallel pipelines on both forges" never ran. What actually gates
+  commits is the root `gates.yml`, which runs the shared-core and
+  doc-example gates only. The tag/SBOM/MSRV machinery described in
+  `doc/ci.md` is unexecuted workflow text, not CI.
 
 - [x] **T60 Local container testing (`scripts/db.sh`, `doc/containers.md`).**
   The live suite is where most of this project's guarantees are actually
@@ -564,8 +520,9 @@ guarantees, P2 items are reach.
   Removed the server crate (and Axum, tower, axum-server with it) and the CLI
   binary crate; the workspace is now `-map`, `-gen`, `-store`.
   The generated relmaps lived inside the CLI crate and had to outlive it, so
-  `crates/fhir-postgresql/assets/` moved to a top-level `assets/`, with test paths
-  repointed and the published checksums re-verified against the moved files.
+  `crates/fhir-postgresql/assets/` moved to `crates/fhir-postgresql-map/assets/`,
+  with test paths repointed and the published checksums re-verified against
+  the moved files.
   Spec sections 7 (REST API) and 8 (CLI) are deleted rather than left standing:
   the spec's own index says code and spec must be reconciled rather than allowed
   to drift, and normative text for features that no longer exist is exactly that
@@ -582,8 +539,10 @@ guarantees, P2 items are reach.
 This project keeps the PostgreSQL store: that *is* its product. It is now
 library-only — no HTTP server, no CLI.
 
-- [ ] **T21/T22 R4 and R3 artifacts** remain unchecked in M5, though the
-  machinery is version-agnostic and the assets exist.
+- [~] **T21/T22 R4 and R3 artifacts.** The r3/r4/r5 relmap assets are
+  committed (`crates/fhir-postgresql-map/assets/fhir-postgresql-relmap-{r3,r4,r5}.json.gz`)
+  and the matrix's `S1.1` row is satisfied; the M5 boxes stay unchecked only
+  for the live full-corpus acceptance runs.
 - [ ] **P2 reach items** (T51–T57): type/system-level `_history`, Bulk
   `$export`, `X-Provenance`/`AuditEvent`, Inferno/Touchstone conformance,
   `_summary`/`_elements`, PATCH, restore and failover drills.
@@ -592,14 +551,10 @@ library-only — no HTTP server, no CLI.
 
 ### Cross-cutting, all repos
 
-- [ ] **Git remotes are wrong.** Every database repo still has `origin` =
-  `git@github.com:fhirpg/fhirpg.git`, correct for at most one of them. Pushing
-  any `port/*` branch as-is would send that port to the upstream project. Set
-  each remote before pushing. Nothing has been pushed.
-- [ ] **Shared history.** All six database repos descend from `688641a` of the
-  original `fhirpg` project. Whether five separate products should keep that
-  history, be squashed, or be re-rooted is a decision to make deliberately
-  rather than discover after a push.
+- [x] **Git remotes and shared history** — resolved by the monorepo merge:
+  the ports are directories in one repository with one remote,
+  `git@github.com:fhir-rust/fhir-rust.git`, and no per-port `.git`
+  (**F-11**).
 - [x] **T90 Accent folding misses Nordic letters — fixed.** `fold` now expands
   the letters NFD cannot reach, following PostgreSQL's `unaccent` rules so a
   folded value means the same thing whichever engine stores it: `æ`→`ae`,
@@ -612,10 +567,12 @@ library-only — no HTTP server, no CLI.
   now assert it. What must never happen is transliteration — romanising
   Cyrillic would make "the same string" a policy rather than a property of the
   text — and there is a test for that too.
-- [ ] **T90a Backfill the `_norm` columns.** The fix changes stored folded
-  values, so any database written before it holds stale ones and will miss the
-  searches this repaired. fhir-postgresql has `backfill_norm` on its upgrade
-  path; the SQLite, MySQL and MariaDB stores have no `upgrade` yet, so for them
-  this is currently a re-load rather than a migration. **Deploying the new fold
-  against an existing database without backfilling is worse than not fixing it**,
+- [x] **T90a Backfill the `_norm` columns — done.** The fix changes stored
+  folded values, so any database written before it holds stale ones and will
+  miss the searches this repaired. fhir-postgresql has `backfill_norm` on its
+  upgrade path, and the SQLite, MySQL and MariaDB stores now have `upgrade` +
+  `backfill_norm` too, live-verified (**F-15** closed; e.g.
+  `fhir-sqlite/crates/fhir-sqlite-store/src/sqlite.rs:390`/`:632`, with 8
+  tests in that port's `tests/upgrade.rs`). **Deploying the new fold against
+  an existing database without backfilling is worse than not fixing it**,
   because searches would then match neither spelling.

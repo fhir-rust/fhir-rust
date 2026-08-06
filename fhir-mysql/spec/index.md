@@ -45,13 +45,18 @@ engines' spellings of the same NO PAD binary property `M3.6b` requires.
 | `Jsonb` (`M3.6c`) | `LONGTEXT`, not `JSON`: a `JSON` column re-normalizes, so the bytes read back would not be the bytes signed |
 | `ords` binding (`M3.4a`) | `TEXT` holding the shared array literal |
 | Index limits (`P6.4a`) | InnoDB key-length cap; see the annex's index section |
-| Unmet core requirements | `O10.4a` (no `upgrade`), `M3.16c`/`M3.16d`, `transact_audited`, conditional operations |
+| Unmet core requirements | `M3.16c`/`M3.16d`, `transact_audited`, conditional operations — `O10.4a` is now met (`upgrade` + `backfill_norm`, live-verified by `tests/upgrade.rs`) |
 
 ## Open findings against this port
 
-- **F-15** — no `upgrade`, so the corrected fold is a full reload here.
-- **F-01** — the README carries the PostgreSQL reference's measured results.
-- **F-02**, **F-11** — shared; see the [register](../../spec/databases/audit.md).
+- **F-15** — **closed here**: `upgrade` and `backfill_norm` exist and are
+  live-verified by `tests/upgrade.rs`; the corrected fold migrates rather
+  than reloads. The transport finding is closed too: `O10.7` is met via
+  `FHIR_MYSQL_SSL_MODE` defaulting to `VERIFY_IDENTITY` (**F-54**).
+- **F-01** — **fixed**: the README no longer carries the PostgreSQL
+  reference's measured results (rewritten under F-01).
+- **F-02** — shared; see the [register](../../spec/databases/audit.md).
+  (**F-11** is resolved: one monorepo, one remote.)
 
 ## Contents of the core
 

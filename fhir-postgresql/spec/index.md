@@ -38,28 +38,33 @@ What it records, against the `X15.6` checklist:
 | Append-only (`M3.17`) | `BEFORE UPDATE OR DELETE` trigger raising an exception |
 | Index limits (`P6.4a`) | none — `text` indexes without a key-length cap |
 | Paging / placeholders | `LIMIT`/`OFFSET`, `$n` |
-| Transport (`O10.7`) | rustls; `PGSSLMODE`/DSN, `PGSSLROOTCERT` for the anchor. Three effective modes, defaulting to unverified — a departure (`M14.27`) |
-| Unmet core requirements | `M3.6c` (`M14.13`), `X15.2` (`M14.12`), `O10.7` default (`M14.27`) |
+| Transport (`O10.7`) | rustls; `PGSSLMODE`/DSN, `PGSSLROOTCERT` for the anchor. Defaults to `Require`, which verifies (**F-17** fixed; `tests/ssl_default.rs`) |
+| Unmet core requirements | `M3.6c` (`M14.13`) |
 
 Writing it surfaced two departures that were invisible while this port defined
 the spec: the `jsonb` binding, and a TLS default that does not verify.
 
 ## Open findings against this port
 
-- **F-07 (High)** — the chain pre-image is still derived in SQL:
-  `(($1::text)::jsonb)::text` at
-  `crates/fhir-postgresql-store/src/lib.rs:291`. `fhir-postgresql-map` is the
-  only map crate without `canon.rs`. Consequence: a PostgreSQL chain cannot be
-  verified by any other port (`X15.11`), and the bytes signed are defined by a
-  PostgreSQL version rather than by this specification (`X15.2`). Recorded as
-  `M14.12`; fixing it is a chain-format change and needs `M3.16e` treatment.
-- **F-17 (Medium)** — `SslPolicy` defaults to `Prefer`, which does not verify
-  the server certificate, against `O10.7`. Recorded as `M14.27`. Deployments
-  MUST set `PGSSLMODE=verify-full` until the default changes.
+- **F-07 (High)** — **Fixed:** the chain pre-image is computed in Rust. The
+  stored normalized form is canonicalized by `fhir_postgresql_map::canon`
+  (`canon_of`, `crates/fhir-postgresql-store/src/lib.rs:238`) and chained by
+  the shared `fhir-store::chain`, so the signed bytes are defined by this
+  specification, not by a PostgreSQL version (`X15.2`), and
+  `tests/chain_portability.rs` proves an outside verifier can recompute a
+  chain. It was a chain-format change: a database written before it needs a
+  reload, not a migration (`M14.12`).
+- **F-17 (Medium)** — **Fixed:** `SslPolicy` now defaults to `Require`, which
+  verifies the server certificate, meeting `O10.7`'s verifying default. Pinned
+  by `crates/fhir-postgresql-store/tests/ssl_default.rs`; a breaking change,
+  recorded in the CHANGELOG (Unreleased). `M14.27` records the history.
 - **F-18 (Low)** — `ddl.rs` still emits a `fhir_postgresql_norm(text)` SQL
   function that nothing calls, a residue of the pre-`P6.6` design that `L3`
   prohibits. Recorded as `M14.21`.
-- **F-02**, **F-11**, **F-15** — shared with the other ports; see the register.
+- **F-02** — shared with the other ports; see the register. **F-11** is
+  resolved (monorepo merge, one remote) and **F-15** is closed everywhere it
+  can be — `upgrade`/`backfill_norm` exist in sqlite, mysql, mariadb and
+  mssql; oracle has no `upgrade` yet.
 - **F-14** — no dialect annex. **Fixed:** the annex now exists.
 
 This port is Reference level because its test suite substantiates it:

@@ -44,8 +44,10 @@ Work breakdown: [`tasks.md`](tasks.md).
   dynamic; sqlx's compile-time checking can't see it, so its cost buys
   nothing. (The original reasoning was tokio-postgres's pipelining and
   binary-format parameters; this port's driver is tiberius.)
-- **D6 — axum for HTTP.** Boring, maintained, tower middleware for
-  timeouts/limits/tracing.
+- **D6 — axum for HTTP.** Inherited, and no longer this port's decision: the
+  HTTP surface is [`fhir-loco`](../fhir-loco/) (Loco.rs, which is Axum
+  underneath), and that crate owns the middleware for
+  timeouts/limits/tracing (`C0.17`, `C0.18`).
 - **D7 — History is JSONB.** `<resource>_history` stores full-resource
   snapshots as jsonb. This is the sanctioned exception to D1 (with contained
   resources, M3.13): history is write-once audit data read only by
@@ -69,7 +71,11 @@ Work breakdown: [`tasks.md`](tasks.md).
   References are parsed into (type, id) columns for joins; an advisory
   integrity report replaces constraints (M3.10).
 - **D11 — ETag optimistic concurrency.** `W/"{version_id}"`, If-Match on
-  PUT/DELETE, 412 on mismatch; transactions serialize per-resource writes.
+  PUT/DELETE, 412 on mismatch. In this port that is future work, not a built
+  thing: there is no `put_audited` and no conditional operations, so no code
+  path checks a precondition (`tasks.md`). What does exist and is tested is
+  the lower half — transactions serialize per-resource writes
+  (`tests/concurrency.rs`).
 - **D12 — Reject unknown elements.** Silent data loss is disqualifying in a
   clinical system; anything the map doesn't know is a 422/load error naming
   the path (R4.3).
@@ -102,19 +108,31 @@ Work breakdown: [`tasks.md`](tasks.md).
   a silent edit or deletion detectable (M3.16). Chosen over write-once
   storage or an external ledger, both of which push the problem into the
   deployment.
-- **D18 — Snapshot reads.** Multi-table reads run in one
-  `REPEATABLE READ READ ONLY` transaction (R4.5). The cost is one extra
-  round trip per read; the alternative is reconstructing resources that
-  never existed, which is not a trade a clinical store gets to make.
+- **D18 — Snapshot reads.** T-SQL has no `REPEATABLE READ READ ONLY`
+  transaction; that phrasing was the ancestor's. This port's mechanism,
+  live-verified (**F-65**), is `SET TRANSACTION ISOLATION LEVEL SNAPSHOT`
+  before `BEGIN TRANSACTION`, backed by `ALLOW_SNAPSHOT_ISOLATION` on a
+  dedicated `fhir_mssql` database (R4.5). It took two tries:
+  `READ_COMMITTED_SNAPSHOT` alone was tried live first and did not stop the
+  torn read `tests/concurrency.rs` reproduces — it gives each statement its
+  own snapshot, not the whole transaction one. The cost is one extra round
+  trip per read; the alternative is reconstructing resources that never
+  existed, which is not a trade a clinical store gets to make.
 - **D19 — Normalize for search, keep the original for truth.** Accent- and
   case-insensitive matching (P6.6) uses generated normalized columns, not
   mangled stored values. The stored column stays lexically exact for
   round-trip (R4.2); the normalized column exists purely to be indexed and
   matched against.
-- **D20 — Encrypt the database link by default.** rustls, `sslmode`
-  honored, and a startup refusal when a non-loopback bind meets an
-  unencrypted database connection (O10.7). PHI in flight between the server
-  and the database is exactly as sensitive as PHI in flight to the client.
+- **D20 — Encrypt the database link by default.** The intent stands — PHI in
+  flight between the server and the database is exactly as sensitive as PHI
+  in flight to the client — but the machinery this entry used to describe
+  (rustls, `sslmode` honored, a startup bind refusal) is the ancestor's and
+  none of it exists here: the tiberius DSN uses `TrustServerCertificate`,
+  there is no `sslmode`, and nothing refuses a non-loopback bind. The
+  trust/no-trust mechanism itself is live-verified (`tests/ssl_live.rs`),
+  yet `O10.7` is **not claimed**: the driver's rustls-webpki dependency
+  chain carries unpatched advisories that reach the shipping store crate
+  (**F-67**) — a standing risk awaiting an owner decision.
 
 ## Risks
 
@@ -147,27 +165,26 @@ Work breakdown: [`tasks.md`](tasks.md).
 - **R7 — the fold is pure Rust, not a database extension.** This risk was
   PostgreSQL's `unaccent`; it does not apply here, and is retained because the
   decision it drove — fold in Rust — is why P6.6 works identically on all six
-  engines. P6.6 depends on
-  it, and managed providers vary in whether an unprivileged role may create
-  it. Mitigation: `init` probes for it and fails with a clear instruction
-  rather than degrading silently; a fallback pure-SQL folding function
-  covers Latin-1/Latin Extended-A when the extension is unavailable.
+  engines.
 - **R8 — Schema migration for the audit columns.** M3.15/M3.16 change every
   history table across three versions. Mitigation: the changes are purely
   additive, so `init --upgrade` (T26) already covers them; existing rows get
   `actor = 'unknown (pre-audit)'` and a null hash chain, and `verify-audit`
   reports chains as starting at the first hashed version rather than
   claiming a break.
-- **R9 — Snapshot reads under long transactions.** REPEATABLE READ readers
-  hold a snapshot; a slow reconstruction of a very large resource delays
-  vacuum. Mitigation: reads are already bounded by `statement_timeout`, the
-  transaction is READ ONLY, and bloat is watched by the existing metrics.
+- **R9 — Snapshot reads under long transactions.** Snapshot-isolation
+  readers hold a snapshot; on SQL Server a slow reconstruction of a very
+  large resource pins row versions in `tempdb`'s version store (delayed
+  vacuum was the ancestor's, PostgreSQL, form of this risk). Mitigation:
+  reads are bounded by timeouts, the read transaction does nothing but
+  read, and version-store growth is an operational metric to watch.
 
 ## Milestones
 
 - **M1 — Engine proven (R5, vertical slice).** Generator produces DDL + map
   for all R5 resource types; shred/reconstruct round-trips every R5 spec
-  example; `init`/`load`/`transform`/`export` work; live-PG round-trip tests
+  example; `init`/`load`/`transform`/`export` work; live SQL Server
+  (`azure-sql-edge`) round-trip tests
   green. Exit criterion: R4.2 holds for the entire R5 examples corpus.
 - **M2 — History + CRUD semantics.** version_id/history/soft delete;
   transactional writes; ETag concurrency; `fhir_mssql_meta` and idempotent init.

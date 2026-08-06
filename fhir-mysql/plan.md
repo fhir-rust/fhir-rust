@@ -44,8 +44,9 @@ Work breakdown: [`tasks.md`](tasks.md).
   dynamic; sqlx's compile-time checking can't see it, so its cost buys
   nothing. (The original reasoning was tokio-postgres's pipelining and
   binary-format parameters; this port's driver is mysql_async.)
-- **D6 — axum for HTTP.** Boring, maintained, tower middleware for
-  timeouts/limits/tracing.
+- **D6 — axum for HTTP.** Inherited; the decision is now
+  [`fhir-loco`](../fhir-loco/)'s to keep or revisit. Nothing in this
+  workspace depends on axum (`C0.17`).
 - **D7 — History is JSONB.** `<resource>_history` stores full-resource
   snapshots as jsonb. This is the sanctioned exception to D1 (with contained
   resources, M3.13): history is write-once audit data read only by
@@ -68,14 +69,20 @@ Work breakdown: [`tasks.md`](tasks.md).
   enforcement would make load order matter and break real-world data.
   References are parsed into (type, id) columns for joins; an advisory
   integrity report replaces constraints (M3.10).
-- **D11 — ETag optimistic concurrency.** `W/"{version_id}"`, If-Match on
-  PUT/DELETE, 412 on mismatch; transactions serialize per-resource writes.
+- **D11 — ETag optimistic concurrency.** *Future work in this port.* The
+  design stands — `W/"{version_id}"`, If-Match semantics, a conflict on
+  mismatch — but no optimistic concurrency exists here yet: there is no
+  `put_audited` and no `expected_version` anywhere in the store (tasks
+  T34). What does exist is write serialization per resource id (`FOR
+  UPDATE` on the base row, H5.4). The If-Match header itself is
+  `fhir-loco`'s to honor.
 - **D12 — Reject unknown elements.** Silent data loss is disqualifying in a
   clinical system; anything the map doesn't know is a 422/load error naming
   the path (R4.3).
-- **D13 — Auth is perimeter, not core.** The server implements no
-  authentication; deployments front it with their identity layer. This keeps
-  the trust boundary explicit and auditable. Documented prominently (O10.5).
+- **D13 — Auth is perimeter, not core.** This library implements no
+  authentication; the HTTP surface is [`fhir-loco`](../fhir-loco/)'s, and
+  deployments front *that* with their identity layer. This keeps the trust
+  boundary explicit and auditable. Documented prominently (O10.5).
   **Amended by D15:** the perimeter authenticates, but fhir-mysql must still
   *record* who acted.
 - **D14 — Workspace layout.** One cargo workspace:
@@ -87,41 +94,55 @@ Work breakdown: [`tasks.md`](tasks.md).
   Generated artifacts live in `assets/` and are embedded in the crate.
 - **D15 — Attribution is core, even though authentication is not.** D13
   keeps identity *verification* outside; it does not excuse anonymous
-  history. fhir-mysql accepts a principal from a trusted proxy (PR12.1–PR12.3)
-  and records it on every write and every read. Rationale: HIPAA
+  history. The store records a caller-supplied `Audit` on every write and a
+  disclosure record on reads (`log_access`); extracting a principal from a
+  trusted proxy header (PR12.1–PR12.3) is `fhir-loco`'s job. Rationale: HIPAA
   §164.312(b) asks who accessed a record, and no perimeter can answer that
   for us — the perimeter knows the identity, only the store knows which rows
   were touched. Consequence: a schema change (M3.15) and an access log
   (PR12.5), both additive.
-- **D16 — Audit before latency.** Access logging defaults to `async` with a
-  bounded queue that **fails closed** (PR12.6). Dropping a disclosure record
-  to keep latency down is the wrong trade for this system; a deployment that
-  disagrees says so explicitly with `--allow-unaudited`.
+- **D16 — Audit before latency.** The trade still governs, but the
+  `--audit-mode` flags and bounded async queue this entry described were
+  server machinery; none exists here. What the library provides is simpler
+  and stricter: the disclosure record is written inline through
+  `log_access` (PR12.5, PR12.6) — there is no fire-and-forget path on which
+  a record could be dropped. Any async/opt-out policy belongs to the
+  embedding application.
 - **D17 — Tamper-evidence by hash chain, per resource id.** A global chain
   would serialize every write; per-id chains keep concurrency and still make
   a silent edit or deletion detectable (M3.16). Chosen over write-once
   storage or an external ledger, both of which push the problem into the
   deployment.
-- **D18 — Snapshot reads.** Multi-table reads run in one
-  `REPEATABLE READ READ ONLY` transaction (R4.5). The cost is one extra
-  round trip per read; the alternative is reconstructing resources that
-  never existed, which is not a trade a clinical store gets to make.
+- **D18 — Snapshot reads.** Multi-table reads run in one transaction —
+  `start_transaction`, i.e. plain `START TRANSACTION` under InnoDB's default
+  REPEATABLE READ isolation, rolled back rather than committed at exit
+  (R4.5, audit **F-21**; the `REPEATABLE READ READ ONLY` spelling here was
+  PostgreSQL's). The cost is one extra round trip per read; the alternative
+  is reconstructing resources that never existed, which is not a trade a
+  clinical store gets to make.
 - **D19 — Normalize for search, keep the original for truth.** Accent- and
   case-insensitive matching (P6.6) uses generated normalized columns, not
   mangled stored values. The stored column stays lexically exact for
   round-trip (R4.2); the normalized column exists purely to be indexed and
   matched against.
-- **D20 — Encrypt the database link by default.** rustls, `sslmode`
-  honored, and a startup refusal when a non-loopback bind meets an
-  unencrypted database connection (O10.7). PHI in flight between the server
-  and the database is exactly as sensitive as PHI in flight to the client.
+- **D20 — Encrypt the database link by default.** `FHIR_MYSQL_SSL_MODE`, in
+  MySQL's own `--ssl-mode` vocabulary — deliberately not libpq's `sslmode`
+  or `PGSSLROOTCERT`, which this port does not read — defaulting to
+  `VERIFY_IDENTITY` and applied by `connect_with` (O10.7, **F-54**,
+  live-verified by `tests/ssl_live.rs`). There is no startup bind guard,
+  because nothing in this library binds a socket. PHI in flight between the
+  application and the database is exactly as sensitive as PHI in flight to
+  a client.
 
 ## Risks
 
 - **R1 — Schema scale.** ~3,000+ tables per version; `init` time, catalog
   bloat, and dump/restore ergonomics need measurement early (task T4 spike).
-  Mitigation: per-version MySQL database, generated DDL applied in one
-  transaction, benchmarks from milestone 1.
+  Mitigation: per-version MySQL database, benchmarks from milestone 1. Note
+  the DDL is **not** applied in one transaction — MySQL commits DDL
+  implicitly, so install and upgrade apply statement-by-statement and are
+  not atomic; a failed upgrade must report how many statements had already
+  applied and which one failed (`M14.35`; tasks T4, T68).
 - **R2 — Reconstruction performance.** Reading one resource touches many
   tables. Mitigation: single round-trip per read using a generated
   multi-table query (one query with UNION/ordering or per-table queries
@@ -147,11 +168,7 @@ Work breakdown: [`tasks.md`](tasks.md).
 - **R7 — the fold is pure Rust, not a database extension.** This risk was
   PostgreSQL's `unaccent`; it does not apply here, and is retained because the
   decision it drove — fold in Rust — is why P6.6 works identically on all six
-  engines. P6.6 depends on
-  it, and managed providers vary in whether an unprivileged role may create
-  it. Mitigation: `init` probes for it and fails with a clear instruction
-  rather than degrading silently; a fallback pure-SQL folding function
-  covers Latin-1/Latin Extended-A when the extension is unavailable.
+  engines.
 - **R8 — Schema migration for the audit columns.** M3.15/M3.16 change every
   history table across three versions. Mitigation: the changes are purely
   additive, so `init --upgrade` (T26) already covers them; existing rows get
@@ -160,15 +177,19 @@ Work breakdown: [`tasks.md`](tasks.md).
   claiming a break.
 - **R9 — Snapshot reads under long transactions.** REPEATABLE READ readers
   hold a snapshot; a slow reconstruction of a very large resource delays
-  vacuum. Mitigation: reads are already bounded by `statement_timeout`, the
-  transaction is READ ONLY, and bloat is watched by the existing metrics.
+  InnoDB's purge of old row versions. The `statement_timeout`/vacuum
+  mitigation here was PostgreSQL's: the store sets no server-side timeout
+  today (`max_execution_time` would be this engine's equivalent), so
+  bounding long reads falls to the embedding application. The read
+  transaction is at least rolled back, never left open, on every exit path.
 
 ## Milestones
 
 - **M1 — Engine proven (R5, vertical slice).** Generator produces DDL + map
   for all R5 resource types; shred/reconstruct round-trips every R5 spec
-  example; `init`/`load`/`transform`/`export` work; live-PG round-trip tests
-  green. Exit criterion: R4.2 holds for the entire R5 examples corpus.
+  example; `init`/`load`/`transform`/`export` work; live-MySQL 8.4
+  round-trip tests green. Exit criterion: R4.2 holds for the entire R5
+  examples corpus.
 - **M2 — History + CRUD semantics.** version_id/history/soft delete;
   transactional writes; ETag concurrency; `fhir_mysql_meta` and idempotent init.
 - **M3 — Search.** Search-parameter compiler, indexes, result parameters,

@@ -1,19 +1,21 @@
 # fhir-mariadb tasks
 
-> **Parts of this file are untrue of this port (audit [F-27](../spec/databases/audit.md#f-27)).**
-> The `M4 — REST server` milestone, `T8 CLI v1`, and `T23 Multi-version serve`
-> are checked off, and none of that code exists in any port: there is no
-> `fhir-*-server` crate, no `serve` binary, and no REST test suite anywhere in
-> this repository.
+> **Parts of this file were untrue of this port (audit [F-27](../spec/databases/audit.md#f-27)).**
+> The REST-server and CLI entries were **misattributed ancestor work**, not
+> unfinished plans: the server is [`fhir-loco`](../fhir-loco/) (owner decision
+> 2026-08-03). Class 1 was resolved 2026-08-06 by **deletion, not unticking** —
+> each such entry below is now a one-line tombstone. There is no
+> `fhir-*-server` crate, no `serve` binary, and no CLI in this workspace.
 >
 > Do not read a `[x]` here as evidence. The
 > [conformance matrix](../spec/databases/conformance-matrix.md) is the status document to
 > trust.
 >
-> This port's store tasks also describe **PostgreSQL** mechanisms it does not use
-> — `tokio-postgres`, `FOR UPDATE` row locks, staged-schema install, `ILIKE` —
-> because the file was copied per port and never re-read. The store is real; the
-> description of how it works is the reference port's.
+> This port's store tasks also described **PostgreSQL** mechanisms it does not
+> use — `tokio-postgres`, `pg_advisory_xact_lock`, staged-schema install,
+> `ILIKE` — because the file was copied per port and never re-read. Those found
+> by the audit were corrected in place 2026-08-06. (`FOR UPDATE` was never
+> contamination here — this store really uses it, H5.4.)
 
 Work breakdown for the plan's milestones. Each task lists its acceptance
 criterion. Order within a milestone is roughly dependency order.
@@ -22,7 +24,9 @@ criterion. Order within a milestone is roughly dependency order.
 
 - [x] **T1 Workspace scaffold.** Cargo workspace per plan D14
   (`fhir-mariadb-map`, `fhir-mariadb-gen`, `fhir-mariadb-store`, `fhir-mariadb` — the server crate
-  arrives with M4), CI (fmt, clippy, test, live-PG job).
+  arrives with M4), CI (fmt, clippy, test, live-database job — the port's
+  workflow file provisions `mariadb:11.4`, though per-port workflows are inert
+  in the monorepo: GitHub reads only the root `.github/workflows/` (**F-49**)).
   *Done:* `.github/workflows/ci.yml`; tests self-skip without inputs.
 - [x] **T2 Spec-package ingestion.** profiles-resources.json +
   profiles-types.json parsed directly (simpler than reusing the fhir
@@ -55,10 +59,7 @@ criterion. Order within a milestone is roughly dependency order.
   casts — that was PostgreSQL's wire protocol (**F-27** class 3).
   *Accept:* full-corpus live round trip 7,396/7,396 across r3/r4/r5;
   bulk benchmark: 6,146 res/s load, 1.18 ms reads (doc/benchmarks.md).
-- [x] **T8 CLI v1.** `gen`, `init`, `load` (NDJSON/Bundle/single, gzip,
-  content-detection, per-resource error reporting, nonzero exit), `get`,
-  `delete`, `export`, `transform`. *Remaining:* streaming (bounded-memory)
-  reads for multi-GB NDJSON — currently whole-file.
+### T8. — removed 2026-08-06: misattributed ancestor (REST/CLI) work; the server is [fhir-loco](../fhir-loco/) (F-27)
 - [x] **T9 Round-trip property tests.** Map-driven random-resource
   generator (deterministic SplitMix64 seeds — no proptest dependency):
   deep recursion, sparse primitive arrays with extensions, nested
@@ -82,10 +83,11 @@ criterion. Order within a milestone is roughly dependency order.
   under FOR UPDATE row locks; `StoreError::Conflict` for the API's 412;
   expected 0 = create-only (If-None-Exist shape). *Accept met:* two racing
   conditional writers — exactly one wins.
-- [x] **T12 fhir_mariadb_meta + idempotent init.** Staged-schema install +
-  atomic rename, checksum recorded; re-init no-ops on matching checksum
-  and refuses a mismatch. Chunked `drop_schema` + `fhir-mariadb drop --yes`.
-  *Accept met* in m2_semantics.
+- [x] **T12 fhir_mariadb_meta + idempotent init.** Checksum recorded; re-init
+  no-ops on matching checksum and refuses a mismatch; chunked `drop_schema`.
+  **Not** staged-schema + atomic rename: MariaDB DDL implicitly commits, so
+  the install applies statement-by-statement and is not atomic — see T4 and
+  T68 (**F-27** class 3). There is no `fhir-mariadb drop` CLI (`C0.17`).
 
 ## M3 — Search
 
@@ -100,20 +102,23 @@ criterion. Order within a milestone is roughly dependency order.
   interpolation), modifiers :exact/:contains, token system|code, date
   prefixes with precision ranges + Period overlap, quantity value|system|
   code, reference forms, `_id`, `_lastUpdated`, `_count`/offset; strict
-  unsupported-parameter errors; `fhir-mariadb search` CLI; `_sort` (base-table
+  unsupported-parameter errors; `_sort` (base-table
   params + _id/_lastUpdated, honest errors otherwise) and
-  `_total=accurate`. *Accept mostly met:* search_semantics + rest suites
-  green against live PG. Single-hop `_include` (via compiled reference
+  `_total=accurate`. *Accept mostly met:* the search assertions in
+  `tests/mariadb_store.rs` are green against live MariaDB 11.4 (there is no
+  `fhir-mariadb search` CLI — `C0.17`). Single-hop `_include` (via compiled reference
   targets) and `_revinclude` (via the search machinery) with
   search.mode=include entries and dangling-reference tolerance.
   *Remaining:* chained `reference.`, cursor paging, lenient handling.
 - [x] **T15 Index emission + explain audit.** One index per distinct
-  search-target column set emitted with the DDL (R5: 1,813 indexes; full
-  init 5.8 s). EXPLAIN audit in tests/bench.rs: token/reference/date
-  searches all plan index scans at 100k resources; the test fails when a
-  full scan appears. *Note:* prefix string search uses `LIKE` against the folded column with a binary collation; MariaDB has no `ILIKE` —
-  the `ILIKE`/`text_pattern_ops` note here was PostgreSQL's (**F-27**
-  class 3).
+  search-target column set emitted with the DDL. The EXPLAIN audit "in
+  tests/bench.rs" and its figures (R5: 1,813 indexes; 5.8 s init; index scans
+  at 100k resources) were the reference port's — there is no `tests/bench.rs`
+  in this port, and no EXPLAIN audit has been run here (**F-27** class 3).
+  *Note:* prefix string search is a range predicate against the folded
+  `_norm` column under a NO PAD binary collation (`:contains` falls back to
+  `LIKE`); MariaDB has no `ILIKE` — the `ILIKE`/`text_pattern_ops` note here
+  was PostgreSQL's.
 
 ## M4 — REST server: **moved to `fhir-loco`**
 
@@ -147,11 +152,12 @@ work, it is in `fhir-loco`.
 ## M5 — R4 and R3
 
 > **Ledger drift, needs a human call.** T21 and T22 are unchecked, but T7
-> records a full-corpus live round trip of 7,396/7,396 across r3/r4/r5, the
-> README claims all three corpora round-trip losslessly, and `fhir-mariadb serve`
-> mounts all three (T23, checked). Either the boxes are stale or the README
-> overstates. Since the spec is meant to be the source of truth, reconcile
-> before release rather than after.
+> records a full-corpus live round trip of 7,396/7,396 across r3/r4/r5 and the
+> README claims all three corpora round-trip losslessly. (This note used to
+> add that "`fhir-mariadb serve` mounts all three" — no such binary ever
+> existed here; that was the T23 misattribution, F-27.) Either the boxes are
+> stale or the README overstates. Since the spec is meant to be the source of
+> truth, reconcile before release rather than after.
 
 - [ ] **T21 R4 artifacts.** Run generator on 4.0.1; fix spec-parsing deltas.
   *Accept:* full R4 examples corpus round-trips live; REST suite green on
@@ -159,39 +165,17 @@ work, it is in `fhir-loco`.
 - [ ] **T22 R3 artifacts.** Same for 3.0.2.
   *Accept:* full R3 examples corpus round-trips live; REST suite green on
   `/r3`.
-- [x] **T23 Multi-version serve.** *Done, in [`fhir-loco`](../fhir-loco/),
-  not here.* It loads `r3`, `r4` and `r5` maps at startup and routes on
-  `/{version}/…`; this port supplies the store it reads. Not `fhir-mariadb
-  serve`, which does not exist (`C0.18`).
+### T23. — removed 2026-08-06: misattributed ancestor (REST/CLI) work; the server is [fhir-loco](../fhir-loco/) (F-27)
 
 ## M6 — Production hardening
 
-- [x] **T-validate (V9.2).** `fhir-mariadb load --validate` deserializes each
-  resource through the typed `fhir` crate model behind the `validate`
-  build feature. **All three versions**, since `fhir` 1.2.1.
-  *The upstream bug is fixed and released:* published 1.2.0 could not compile
-  its own r3/r4 features — the `Validate` derive expanded to `crate::r5::`
-  paths — but only for crates.io consumers, since the repository resolves the
-  derive macro through its `path` dependency where the fix already lived. It
-  needed `fhir-derive-macros` 1.0.1 published alongside `fhir` 1.2.1; a
-  `fhir` release on its own would have pulled the same broken macro.
-  *Accept met:* `validate_tests` covers R3/R4/R5 and records the one thing
-  `--validate` does not catch (unknown elements — serde ignores them; the
-  shredder rejects them per D12).
-- [x] **T-graceful.** *Belongs to [`fhir-loco`](../fhir-loco/).* Shutdown
-  is the server's concern, and Loco owns the signal handling; a library
-  has no process to shut down.
+### T-validate. — removed 2026-08-06: misattributed ancestor (REST/CLI) work; the server is [fhir-loco](../fhir-loco/) (F-27) — no `fhir` dependency, `validate` feature, or `validate_tests` exists in this workspace
 
-- [~] **T24 Observability.** Done: /health, /ready, /metrics (Prometheus
-  text: request/response-class/latency counters), X-Request-Id
-  (propagated or generated) with per-request tracing that logs
-  method/path/status only — never resource content. *Remaining:* JSON log
-  format wiring in the CLI, an automated redaction test, latency
-  histogram buckets.
-- [~] **T25 Pool + timeout hardening.** Done: server-side
-  statement_timeout (FHIR_MARIADB_STATEMENT_TIMEOUT_MS, default 30 s), pool
-  wait timeout 2 s, exhaustion → 503 + Retry-After.
-  *Remaining:* an automated saturation test.
+### T-graceful. — removed 2026-08-06: misattributed ancestor (REST/CLI) work; the server is [fhir-loco](../fhir-loco/) (F-27)
+
+### T24. — removed 2026-08-06: misattributed ancestor (REST/CLI) work; the server is [fhir-loco](../fhir-loco/) (F-27)
+
+### T25. — removed 2026-08-06: misattributed ancestor (REST/CLI) work; the server is [fhir-loco](../fhir-loco/) (F-27)
 - [x] **T26 Migrations + upgrade.** `init` stores the map asset in
   fhir_mariadb_meta; `init --upgrade` diffs installed vs current maps and
   applies additive DDL (new tables/columns/indexes) in lock-safe chunks;
@@ -199,11 +183,13 @@ work, it is in `fhir-loco`.
   changes always demand manual migration. *Accept met:* upgrade test —
   reduced install upgrades to full, data survives, re-upgrade no-ops,
   downgrade guarded then forced.
-- [x] **T27 TLS feature + bind guard.** rustls in-process behind the
-  `tls` feature (`serve --tls-cert/--tls-key`, axum-server) with graceful
-  shutdown; loopback-default binding (an explicit --bind is the
-  non-loopback acknowledgement). *Verified:* live HTTPS smoke test
-  (HTTP/2, CapabilityStatement served, clean SIGTERM shutdown).
+- [x] **T27 Encrypted connections.** The `serve --tls-cert/--tls-key` HTTPS
+  listener, axum-server, and the loopback bind guard this entry used to
+  describe are [`fhir-loco`](../fhir-loco/)'s concern — nothing in this
+  library binds a socket (F-27). What is real here is store-level:
+  `ssl::SslMode` in MariaDB's own `--ssl-mode` vocabulary, read from
+  `FHIR_MARIADB_SSL_MODE`, defaulting to `VERIFY_IDENTITY`, live-verified by
+  `tests/ssl_live.rs` (**F-54**; details under T32).
 - [~] **T28 Benchmarks + regression gate.** Done: gated bench harness
   (load throughput, read latency, EXPLAIN audit) + doc/benchmarks.md with
   measured numbers (6,146 res/s; 1.18 ms reads at 100k).
@@ -211,9 +197,10 @@ work, it is in `fhir-loco`.
   against the historical jsonb implementation.
 - [x] **T29 Book + generated schema docs.** mdBook (9 chapters:
   introduction, getting started, storage model, SQL querying, search,
-  REST API, versions, operations, architecture); builds locally and in
-  CI. Column/table→FHIR-path mapping ships inside the map assets
-  themselves. *Remaining nicety:* a rendered path→table index page.
+  versions, operations, architecture, trust boundary — the REST-API chapter
+  went with T73); builds locally. Column/table→FHIR-path mapping ships
+  inside the map assets themselves. *Remaining nicety:* a rendered
+  path→table index page.
 - [~] **T30 Security review + release.** Done: LICENSE-MIT/APACHE,
   CHANGELOG, publish metadata (versioned internal deps, keywords), map
   assets embedded in the binary so `cargo install fhir-mariadb` is
@@ -230,15 +217,18 @@ guarantees, P2 items are reach.
 
 ### P0 — defects in shipped behaviour
 
-- [x] **T31 Snapshot reads (R4.5).** `Store::get` reads the base row and
-  every child table as separate implicit transactions
-  (`fhir-mariadb-store/src/lib.rs:554`), while `put_in` deletes and re-inserts
-  (`:512`). A write landing mid-read reconstructs a resource that never
-  existed. Wrap every multi-statement read in one
-  `REPEATABLE READ READ ONLY` transaction; same for `export` and search
-  materialization.
-  *Accept:* a reader loop against a writer loop over 10k iterations never
-  observes a torn resource and never errors (T11.6).
+- [x] **T31 Snapshot reads (R4.5).** The defect was real and this port had it
+  live: `get` read the base row and every child table with no enclosing
+  transaction, so a reader observed `name` from one version beside `telecom`
+  from the next (audit **F-21**). Fixed in the native store: every
+  multi-statement read runs in one transaction — `start_transaction`, i.e.
+  plain `START TRANSACTION` under InnoDB's default REPEATABLE READ — rolled
+  back rather than committed at each exit (`mariadb.rs`). The
+  `REPEATABLE READ READ ONLY` spelling and the `lib.rs:554`/`:512` citations
+  were the PostgreSQL store's; `lib.rs` here is 51 lines of shared vocabulary
+  (**F-27** class 3).
+  *Accept:* `tests/concurrency.rs::reads_never_tear_under_concurrent_writes`
+  (T11.6).
 - [x] **T32 Encrypted database transport (O10.7).** Done 2026-08-03
   (**F-54**). `ssl::SslMode` in MariaDB's own `--ssl-mode` vocabulary, read from
   `FHIR_MARIADB_SSL_MODE`, defaulting to `VERIFY_IDENTITY`; `connect_with`
@@ -258,109 +248,64 @@ guarantees, P2 items are reach.
 
   The fix is `mysql_async`'s own TLS options plus a verified certificate by
   default — **not** `tokio-postgres-rustls`, and not `sslmode`/`PGSSLROOTCERT`,
-  which are libpq names this port does not read. This entry previously claimed
-  `SslPolicy`, a rustls connector, `Store::connect_with`, a `serve` startup
-  guard and a TLS-only CI job as *done*; none of them exists here (**F-27**
-  class 3). It is now unticked, because unlike the REST milestones this one is
-  unambiguously planned: `O10.7` requires it. Tracked as **F-54**.
+  which are libpq names this port does not read. This entry once claimed
+  `SslPolicy`, a rustls connector, a `serve` startup guard and a TLS-only CI
+  job (**F-27** class 3); the mechanism above replaced them, verified in both
+  directions by `tests/ssl_live.rs`, and the conformance matrix records
+  `O10.7` as met (`•`).
 
-- [x] **T33 Atomic conditional interactions (A7.10).** `If-None-Exist`
-  searches then writes (`fhir-mariadb-server/src/lib.rs:444`); two concurrent
-  identical conditional creates both create. Move match and write into one
-  transaction guarded by `pg_advisory_xact_lock` on the criteria hash; same
-  for conditional delete and conditional update.
-  *Done:* `Store::conditional_create`/`conditional_delete` take
-  `pg_advisory_xact_lock` on a sorted hash of the criteria, then match and
-  write in one transaction. *Accept met:* 8 racing conditional creates yield
-  exactly one resource and seven `Existing`. *Remaining:* conditional update
-  (the server does not implement it yet).
-- [x] **T34 Audit envelope on history (M3.15, PR12.1–PR12.4).** History
-  records no actor at all. Add the audit columns to the generated history
-  DDL, thread a `Principal` through the store write path, and extract it
-  from the configured trusted header behind `--trust-proxy`. Additive, so
-  `init --upgrade` migrates existing installs.
-  *Done:* `Audit` envelope threaded through `put_audited`/`delete_audited`/
-  `transact_audited`/`conditional_*_audited`; `PrincipalPolicy` on the
-  server honoring a configured header **only** behind `--trust-proxy`;
-  `--require-principal` → 401; CLI writes attributed to the operator
-  (`Audit::cli()`). Upgrade reconciles the new columns idempotently.
-  *Accept met:* the `audit` suite asserts all three, and that a plain `put`
-  records `unauthenticated` rather than nothing.
-- [x] **T35 Configured service base URL (A7.7).** Bundle `fullUrl` and
-  `link` are built from the `Host` header and hard-coded `http://`
-  (`fhir-mariadb-server/src/lib.rs:739`). Add `--base-url`, honor forwarded
-  headers only under `--trust-proxy` with a host allowlist.
-  *Done:* `BaseUrl` with `--base-url`, `--trust-proxy`, `--allowed-host`;
-  the default emits URLs for the address actually bound and reads no request
-  header at all. *Remaining:* a test asserting a poisoned `Host` changes
-  nothing.
-- [x] **T36 Preconditions inside bundles (A7.9).** `parse_entries`
-  (`:888`) ignores `ifMatch`/`ifNoneExist`/`ifModifiedSince`. Honor them, or
-  fail the entry 501 — never accept-and-ignore. *Done:* `ifMatch` is honored
-  in batch and transaction entries (412 on mismatch, mapped as 412 rather
-  than a generic 400); `ifNoneExist`/`ifModifiedSince`/`ifNoneMatch` fail the
-  entry 501, and fail the whole bundle for a transaction.
-- [x] **T37 Reference rewriting precision.** `rewrite_refs` (`:1130`)
-  replaces any string equal to a `urn:uuid`, including narrative and
-  `valueString`. Restrict to `Reference.reference` values and
-  `Bundle.entry.fullUrl`. *Done:* only `reference` keys are rewritten.
-- [x] **T38 Resource id validation (R4.6).** No `[A-Za-z0-9\-\.]{1,64}`
-  check anywhere; ids from URL or body land in unbounded `text`.
-  *Done:* `valid_fhir_id` guards read, vread, history, update, delete, and
-  Bundle entry urls. *Remaining:* the same check inside `fhir-mariadb load`.
-- [x] **T39 PHI response headers (A7.8).** `Cache-Control: no-store`,
-  `Pragma: no-cache`, `X-Content-Type-Options`, `Referrer-Policy`; CORS
-  denied unless `--cors-origin` names an origin. *Done:* the four headers are
-  set on every response. *Remaining:* `--cors-origin` (there is still no CORS
-  layer at all, which is closed rather than open).
-- [x] **T40 Diagnostics hygiene (A7.11).** `StoreError::Other` text is
-  reflected verbatim into OperationOutcomes (`:174`). Client-visible
-  diagnostics become path + rule id; detail goes to the log with the
-  incident id. *Done:* `StoreError` now distinguishes `Unsupported`
-  (client-safe: names the caller's own parameter) from `Other` (internal:
-  logged behind an incident id, never returned). Search-compilation errors
-  are `Unsupported`, so the honest "this parameter is not supported"
-  messages survive.
+- [ ] **T33 Atomic conditional interactions (A7.10).** Not started in this
+  port: no `conditional_create` or `conditional_delete` exists here at all
+  (the conformance matrix says `—`), and the earlier text claiming them
+  *done* under `pg_advisory_xact_lock` described the PostgreSQL store
+  (**F-27** class 3). When built, match and write must share one transaction
+  serialized by this engine's own locking — `GET_LOCK` on a hash of the
+  criteria (session-scoped, so it must be released on every path including
+  errors) or `FOR UPDATE` — not pg advisory locks.
+- [ ] **T34 Audit envelope on history (M3.15, PR12.1–PR12.4).** Half real,
+  and the earlier *Done* overstated the other half. Real: `put` and `delete`
+  take a caller-supplied `Audit` and record actor, actor source, client,
+  request id and reason on every history row, bound into the chain preimage
+  (`mariadb.rs`; `put(&self, resource, audit)`), and `upgrade` reconciles the
+  audit columns against `information_schema.columns` (M14.36). A plain write
+  is attributed, not anonymous. Missing, which is why the box is open: the
+  `put_audited`/`delete_audited`/`transact_audited`/`conditional_*_audited`
+  variants and optimistic concurrency (`expected_version`) do not exist in
+  this port. `PrincipalPolicy`, `--trust-proxy` and `--require-principal`
+  were server machinery and belong to [`fhir-loco`](../fhir-loco/) (F-27).
+### T35. — removed 2026-08-06: misattributed ancestor (REST/CLI) work; the server is [fhir-loco](../fhir-loco/) (F-27)
+
+### T36. — removed 2026-08-06: misattributed ancestor (REST/CLI) work; the server is [fhir-loco](../fhir-loco/) (F-27)
+
+### T37. — removed 2026-08-06: misattributed ancestor (REST/CLI) work; the server is [fhir-loco](../fhir-loco/) (F-27)
+
+### T38. — removed 2026-08-06: misattributed ancestor (REST/CLI) work; the server is [fhir-loco](../fhir-loco/) (F-27)
+
+### T39. — removed 2026-08-06: misattributed ancestor (REST/CLI) work; the server is [fhir-loco](../fhir-loco/) (F-27)
+
+- [x] **T40 Diagnostics hygiene (A7.11).** The store half is real:
+  `StoreError` distinguishes `Unsupported` (client-safe — it names the
+  caller's own parameter, e.g. an unknown resource type or search parameter;
+  `lib.rs:35`) from `Other` (internal detail). The OperationOutcome mapping,
+  incident ids and response bodies this entry used to describe are the
+  server's surface, which is [`fhir-loco`](../fhir-loco/)'s (F-27).
 
 ### P1 — missing guarantees
 
-- [x] **T41 Access log (PR12.5, PR12.6).** `fhir_mariadb_access_log` per schema;
-  every read, vread, history, and search appends a record naming the actor,
-  the subject, and (for search) how many resources were disclosed.
-  `--audit-mode sync|async|off`, bounded queue, fail closed on saturation,
-  per-version counters, `--allow-unaudited` to opt out loudly.
-
-  *On the default.* The spec draft had `async` as the default for
-  throughput; it ships as `sync`. The failure `sync` prevents is the one
-  that cannot be repaired afterwards — a disclosure with no record is
-  indistinguishable, later, from a disclosure that never happened — and a
-  fast default would make every deployment silently accept a loss window it
-  never chose. `async` announces that window at startup.
-
-  *Fail closed became real, not aspirational.* Recording used to be
-  best-effort: a failed insert was logged and the read served anyway. Now
-  `audit_read` returns a refusal that the four read paths propagate as 503,
-  so in every mode a disclosure that cannot be recorded is not made.
-
-  *Two bugs worth remembering, both in code that compiled and looked right.*
-  `Sender::closed()` waits for the *receiver* to drop, so using it to
-  shut the writer down deadlocks against the task it is waiting for; the
-  sender has to actually be dropped, which means holding it somewhere
-  takeable. And a queue-depth gauge maintained by read-then-subtract can
-  underflow under concurrency, so depth is derived from the monotonic
-  counters instead — an audit queue reporting a nonsense depth is worse than
-  one reporting none. `tests/audit_async.rs` pins both, the drain test under
-  a timeout so a deadlock fails instead of hanging the suite.
+### T41. — removed 2026-08-06: misattributed ancestor (REST/CLI) work; the server is [fhir-loco](../fhir-loco/) (F-27). The store-level disclosure log itself is real — `log_access`/`log_access_batch` and the access-log table, tested in `tests/mariadb_store.rs` and `tests/redaction.rs` (T74) — but the `--audit-mode` flags, async queue and `tests/audit_async.rs` described here never existed in this port
 
 - [x] **T42 Tamper-evident history (M3.16, M3.17).** `prev_hash`/`row_hash`
-  chain per resource id, `BEFORE UPDATE OR DELETE` reject triggers,
-  `fhir-mariadb verify-audit` walking every chain, and the documented `REVOKE`
-  grants. *Done:* all of it. The chain is computed **in SQL** so it covers
-  the database's own `now()` and cannot race the read of the previous hash,
-  and it hashes `resource::jsonb::text` — the stored normalized form — since
-  hashing the submitted text would fail verification against what was
-  actually saved. *Accept met:* the `audit` suite tampers with a history row
-  behind the application's back and the chain names exactly that version.
+  chain per resource id; per-table `SIGNAL` append-only triggers, proven to
+  refuse an UPDATE and a DELETE and to permit a flagged erasure (T63); and
+  `verify_audit` walking every chain — a store API, not a CLI. The chain is
+  computed **in Rust** by the shared `fhir-store::chain` (**F-07**) over
+  `canon::canonicalize` output, with the timestamp rendered in UTC in Rust
+  and stored verbatim — see T74. The "computed in SQL over
+  `resource::jsonb::text`" description that stood here was the PostgreSQL
+  store's (**F-27** class 3). *Accept met:*
+  `tests/mariadb_store.rs::verify_audit_accepts_a_clean_chain_and_catches_tampering`
+  tampers with a history row behind the application's back and verification
+  names it.
 - [x] **T59 Tamper evidence that survives the database (M3.16a-c).** Two
   chains in two design families, a keyed tag, and an external witness.
 
@@ -386,9 +331,12 @@ guarantees, P2 items are reach.
   let an outside auditor check the chain unaided. The `HMAC-SHA-256` tag
   resists forgery. Neither notices a row that is simply **gone** — a chain
   missing its last version verifies perfectly, because nothing left behind
-  refers to what was removed — so `chain-witness` digests every head, and
-  checkpoints go out on an `audit_checkpoint` log target at startup, after
-  erasure, and on an interval.
+  refers to what was removed — which is what a `chain_witness`/checkpoint
+  layer exists to notice. **Neither exists in this port** (`chain_witness`
+  and `emit_checkpoint`: zero hits in `mariadb.rs`; the matrix rows are `—`) —
+  the sentence this one replaces described the ancestor's witness digests
+  and `audit_checkpoint` log target as this crate's (corrected 2026-08-06,
+  the same class as **F-78**).
 
   *Found by looking, not by testing.* The erasure tombstone terminated only
   the SHA-256 chain: 11 rows, 11 SHA-256 digests, 10 SHA-3. The suite was
@@ -403,77 +351,27 @@ guarantees, P2 items are reach.
   `Store::with_chain_keys` replaces it, which is better design anyway.
 
   *Remaining:* nothing for the control itself. Keys are read from the
-  environment; a deployment wanting a secrets manager or an HSM needs
-  `with_chain_keys` wired to it, which is API that exists but has no CLI
-  surface.
-- [x] **T43 Worldwide string search (P6.6).** Each string search target
-  column gets a `_norm` companion holding the folded value, computed in Rust
-  at write time; prefix search is a range predicate against it. Closes T15's
-  unindexed-prefix note. No PostgreSQL extension required.
+  environment; a deployment wanting a secrets manager or an HSM wires
+  `Store::with_chain_keys` (`mariadb.rs:179`) to it from the embedding
+  application — there is no CLI in this workspace to surface it (`C0.17`).
+- [x] **T43 Worldwide string search (P6.6).** Folding is Rust-side
+  (`fhir-mariadb-map::fold`) into materialized `_norm` companion columns at
+  write time; prefix search is a range predicate against them, and there is
+  no SQL fold function — the emitted one was dropped, since it never had a
+  caller (T63, M14.5). The `_norm` and exact-comparison columns bind
+  `utf8mb4_nopad_bin`, MariaDB's NO PAD binary collation (T70), because the
+  range bound is only sound under codepoint order and `:exact` must not pad.
+  The ~40 lines of PostgreSQL planner analysis that stood here —
+  `fhir_mariadb_norm(col)` expression indexes, `text_pattern_ops`,
+  `plan_cache_mode`, `COLLATE "C"`, `tests/search_semantics.rs` — were the
+  reference port's (**F-27** class 3). `:exact` still deliberately compares
+  the *stored* column. Migration: `upgrade` adds the `_norm` columns and
+  `backfill_norm` fills them — distinct values, batched, resumable — before
+  returning (`tests/upgrade.rs`; **F-15**).
 
-  *Two traps, both found by measurement rather than reasoning.*
+### T44. — removed 2026-08-06: misattributed ancestor (REST/CLI) work; the server is [fhir-loco](../fhir-loco/) (F-27)
 
-  First: the cheap-looking version — an expression index on `fhir_mariadb_norm(col)`
-  plus a predicate `fhir_mariadb_norm(col) LIKE fhir_mariadb_norm($1) || '%'` — **does not
-  use the index**. PostgreSQL's btree prefix optimization for `LIKE` needs a
-  *constant* pattern, and `fhir_mariadb_norm($1)` is only stable, not constant.
-  Folding the term in Rust instead keeps the pattern constant, but then the
-  fold exists twice — once in Rust, once in SQL — and the two must agree for
-  every codepoint, forever, or a patient is simply not found. So the fold
-  lives in Rust only (`fhir-mariadb-map::fold`), and the database stores its output.
-
-  Second, and the reason the first fix is not enough: even against a plain
-  column with a `text_pattern_ops` index, `col LIKE $1` **still** scans. The
-  prefix is extracted at plan time, so a custom plan (which substitutes
-  parameter values) uses the index and a generic plan does not — meaning the
-  query is fast in every hand-run `EXPLAIN` with a literal, fast for its first
-  few executions, and then quietly degrades once PostgreSQL switches to the
-  generic plan. The fix is to stop asking the planner to analyze a pattern at
-  all: compute the upper bound in Rust and emit `col >= $1 AND col < $2`, an
-  ordinary index condition. `tests/search_semantics.rs::string_prefix_search_uses_its_index`
-  pins this with `plan_cache_mode = force_generic_plan`, which is the only
-  setting under which the old form visibly fails.
-
-  Ordering is by `COLLATE "C"` — set on the column itself — because the range
-  bound is only sound under codepoint order. Under a linguistic collation a
-  string beginning with the prefix can sort past the computed upper bound.
-
-  `:exact` deliberately compares the *stored* column: it is defined as the
-  literal string, so folding must not leak into it.
-
-  Migration: `upgrade` adds the columns, then backfills them
-  (`Store::backfill_norm`) before returning. Without the backfill an upgraded
-  install would answer string searches from NULL columns and silently return
-  fewer results — the one failure mode a clinical search must not have. The
-  backfill folds distinct *values* rather than rows, in batches, and is
-  resumable, since each pass only looks at rows still NULL.
-
-- [x] **T44 Edge resource limits (O10.8, P6.7).** Per-request timeout,
-  concurrency limit, in-flight cap, configurable pool size; batched result
-  materialization instead of one `get` per id; `_include`/`_revinclude` caps
-  that warn in the bundle when they truncate. Every ceiling is now a flag —
-  `--request-timeout`, `--max-concurrent`, `--max-body-mb`, `--max-count`,
-  `--max-included`, `--pool-size` — rather than a constant compiled into the
-  binary, because the right value depends on the deployment and the previous
-  answer was "rebuild it".
-
-  `--pool-size` takes precedence over `FHIR_MARIADB_POOL_SIZE`: a flag the operator
-  typed should not be silently overridden by an environment variable they
-  inherited.
-
-  `tests/edge_limits.rs` asserts a configured ceiling is *enforced*, not just
-  parsed. A limit that reaches the config struct but never reaches the code
-  that should apply it is worse than no limit, because the operator believes
-  a ceiling exists.
-- [x] **T45 Admin plane separation (O10.9).** `--admin-bind` for
-  `/metrics`, `/health`, `/ready`; latency as a histogram so p99 is
-  answerable. *Done:* `--admin-bind` serves /health, /ready and /metrics on
-  their own address against the same counters, on their own task so they
-  answer while the API is shedding load, and latency is a Prometheus
-  histogram (`fhir_mariadb_request_latency_seconds`, default 1ms–10s buckets) so
-  `histogram_quantile` answers p99. A running total plus a count gives only
-  the mean, and the mean cannot tell "every request took 40ms" from "99%
-  took 5ms and 1% took 4 seconds" — which is the case anyone is paged for.
+### T45. — removed 2026-08-06: misattributed ancestor (REST/CLI) work; the server is [fhir-loco](../fhir-loco/) (F-27)
 - [x] **T46 Honest CapabilityStatement (A7.12).** *In
   [`fhir-loco`](../fhir-loco/)* — `GET /{version}/metadata`, generated from
   the map this port produces.
@@ -491,13 +389,15 @@ guarantees, P2 items are reach.
   denied, unknown registries denied. *Remaining:* per-binary checksums in the
   release workflow.
 - [x] **T48 Concurrency, redaction, and audit test suites (T11.6–T11.8).**
-  The adversarial tests that keep T31–T42 honest. *Done:* `concurrency.rs`
-  covers torn reads, racing conditional creates, and racing `If-Match`
-  updates (T11.6); `redaction.rs` covers T11.7; `audit.rs` covers T11.8 —
-  the audit envelope, the disclosure record, chain verification, and the
-  database refusing to let history be rewritten. `audit_async.rs` adds the
-  async path: batching, the shutdown drain, and saturation refusing rather
-  than dropping.
+  The adversarial tests that keep T31–T42 honest. *Done here:*
+  `tests/concurrency.rs` covers torn reads and racing writers getting
+  distinct versions with a verifiable chain (T11.6 — not racing conditional
+  creates or `If-Match`, since neither operation exists in this port);
+  `tests/redaction.rs` covers T11.7. The audit assertions — the envelope, the
+  disclosure record, chain verification, tamper detection — live in
+  `tests/mariadb_store.rs` (T11.8). There is no `audit.rs` or
+  `audit_async.rs` in this port — those names, and the async path they
+  tested, were the reference port's (**F-27** class 3).
 - [x] **T49 Erasure (M3.18).** `fhir-mariadb purge` with tombstone rows,
   `--allow-erasure`, and a test that `verify-audit` reports a purge as a
   recorded hole rather than a chain break. *Done:* `Store::purge` and
@@ -506,12 +406,7 @@ guarantees, P2 items are reach.
   inside a transaction that sets `fhir_mariadb.erasure`. The book states the two
   limits plainly: backups and replicas are outside this, and the guard stops
   accidents rather than the application itself.
-- [x] **T50 Trust-boundary chapter (PR12.8).** One table in the book: what
-  fhir-mariadb guarantees, what the perimeter must provide, what neither does yet.
-  *Done:* `book/src/trust-boundary.md`, including a worked `serve`
-  invocation where every flag is explained, the `REVOKE` grants, and an
-  honest statement of what the hash chain does *not* prove (an attacker who
-  can recompute it — hence: ship `row_hash` off-box).
+### T50. — removed 2026-08-06: misattributed ancestor (REST/CLI) work; the server is [fhir-loco](../fhir-loco/) (F-27). `book/src/trust-boundary.md` does exist, but the entry's substance — a worked `serve` invocation with its flags — was the ancestor server's
 
 ### P2 — reach
 
@@ -530,17 +425,18 @@ guarantees, P2 items are reach.
 - [ ] **T57 Restore and failover drills.** A documented, tested PITR
   restore and a `fhir-mariadb fsck` that checks orphan rows, ordinal gaps, and
   history/current agreement.
-- [x] **T58 CI/CD on GitHub and Codeberg.** Parallel pipelines on both
-  forges (`.github/workflows/`, `.woodpecker/`): fmt, clippy, unit tests,
-  book, live-PostgreSQL suite, advisories/licenses/SBOM. Tag builds
-  artifacts with checksums and a CycloneDX SBOM attached to the release;
-  crates.io publishing is manual and confirmation-gated, since a published
-  version can be yanked but never replaced. Also verifies the declared MSRV,
-  which until now was a claim nothing checked. See `doc/ci.md`.
+- [x] **T58 CI/CD on GitHub and Codeberg.** The pipeline files exist in this
+  port (`.github/workflows/`, `.woodpecker/`) and provision `mariadb:11.4` —
+  not the "live-PostgreSQL suite" this entry used to claim (**F-27**
+  class 3). Two caveats the tick must not hide: in the monorepo the per-port
+  `.github/workflows/` files are **inert** — GitHub reads only the root
+  `.github/workflows/`, whose `gates.yml` runs the shared-core and
+  doc-example gates (**F-49**) — and the tag/release/SBOM machinery described
+  here has not been exercised from this repository. See `doc/ci.md`.
 
 ## M14 — MariaDB port
 
-Tracks `spec/14-14-mariadb-dialect.md`. The repo began as a rename of the PostgreSQL
+Tracks `spec/14-mariadb-dialect.md`. The repo began as a rename of the PostgreSQL
 original, so every task here is a *departure* from an inherited PostgreSQL
 implementation, not new ground.
 
@@ -548,7 +444,7 @@ implementation, not new ground.
   rewrote Rust paths, SQL identifiers, the GUC prefix, and env vars into forms
   that are not legal in their respective languages, and the workspace did not
   resolve. Redone with the correct spelling per context.
-- [x] **T61 Dialect annex.** `spec/14-14-mariadb-dialect.md`. Records what changes,
+- [x] **T61 Dialect annex.** `spec/14-mariadb-dialect.md`. Records what changes,
   what does not, and — where a PostgreSQL guarantee cannot be reproduced —
   says so rather than quietly dropping it. Status: proposed, not ratified.
 - [x] **T62 Canonical JSON.** The hash chain committed to PostgreSQL's `jsonb`
@@ -591,22 +487,25 @@ implementation, not new ground.
   erasable, so row lifetime cannot be ceded to the engine). `RETURNING` is
   wanted but belongs to T64.
 
-- [ ] **T64 Store layer.** The large one, and the reason this is not yet a
-  working MariaDB server: `store/src/lib.rs` and `search.rs` still speak
-  `tokio-postgres` with `$n` placeholders, `::jsonb`/`::timestamptz` casts,
-  advisory locks, `SET LOCAL` GUCs, and a staging-schema install. Swap to
-  `mysql_async`, `?` placeholders, `GET_LOCK`, `information_schema`.
-- [ ] **T65 Surrogate key computation.** T63 emits `key_hash BINARY(32)` on
-  `Ext`/`Deep` but nothing fills it; the store must compute it in Rust over the
-  canonically joined natural key.
+- [x] **T64 Store layer.** Done — see T74. The native store is
+  `store/src/mariadb.rs` (2,079 lines) plus `mariadb_search.rs` (618) on
+  `mysql_async`; the inherited `tokio-postgres` store this entry described
+  ("still speak `$n` placeholders, `::jsonb` casts, advisory locks") is
+  deleted, and `lib.rs` is 51 lines of shared vocabulary.
+- [x] **T65 Surrogate key computation.** Done: `surrogate_key`
+  (`mariadb.rs:683`) hashes the delimiter-joined natural key in Rust —
+  delimited, not concatenated, so `("ab","c")` and `("a","bc")` cannot
+  collide (unit test at `mariadb.rs:754`) — and the `Ext`/`Deep` inserts fill
+  `key_hash` (T74, M14.12).
 - [ ] **T66 Decimal sort columns.** `ColTy::Numeric` needs a derived
   `<name>_sort` companion in the generated map, following the pattern `date`
   and `dateTime` already use, so range search has something numeric to index.
   Touches the gen crate, which T63 did not. Until it lands, numeric and
   quantity range search is a known regression from PostgreSQL.
-- [ ] **T67 Wire the canonicalizer into the chain.** T62 built and tested it
-  but nothing calls it yet; `chain.rs`'s preimage still expects the database's
-  rendering.
+- [x] **T67 Wire the canonicalizer into the chain.** Done: the write path
+  computes the chain preimage from `canon::canonicalize` and stores the
+  canonical bytes, so what is read back is what was signed (`mariadb.rs:897`;
+  see T74).
 - [ ] **T68 Non-atomic install.** MariaDB DDL implicitly commits, so a staged
   install cannot be atomic. Needs the readiness-marker scheme and the operator
   documentation for an interrupted install.
@@ -639,9 +538,11 @@ implementation, not new ground.
   resource type rather than a sample. The TLS-only job is removed until the
   store speaks MariaDB, since the plaintext-refusal guard is store-layer
   behaviour; tracked rather than faked.
-  Where the store is not yet ported (T64), the store and server suites are still
-  invoked and log an explicit notice that they self-skip — a visible gap beats a
-  gap inferred from a job's absence.
+  The "store not yet ported (T64), suites self-skip" sentence this entry
+  ended on is stale: the native store has since landed (T64/T74) and the
+  store suites run for real against `mariadb:11.4`. Note also that in the
+  monorepo the per-port workflow files are inert — GitHub reads only the root
+  `.github/workflows/` (**F-49**).
 
 - [x] **T73 Reduced to an embeddable library.** Scope correction: this project
   is a library to embed, not an HTTP server and not a command-line tool.
@@ -697,23 +598,20 @@ transfers cheaply.
 
 - [ ] **Conditional create/delete, the HTTP-facing surface (`status`,
   `get_versioned`, `get_all`, `put_audited`, `delete_audited`,
-  `access_log_for`), `transact_audited`, `resign_history`, `upgrade`, decimal
+  `access_log_for`), `transact_audited`, `resign_history`, decimal
   sort columns.** See fhir-mysql's list for the reasoning; port when it lands
-  there.
+  there. (`upgrade` is no longer on this list — it landed, with
+  `backfill_norm`, at `mariadb.rs:298`/`:565`, live-verified by
+  `tests/upgrade.rs`; **F-15** closed here. See T90a.)
 - [ ] **Consider MariaDB's `RETURNING`** on INSERT/DELETE (10.5+), which has no
   MySQL equivalent and would avoid a round trip reading back `version_id`. The
   ports are free to diverge (M14.0a).
 
 ### Cross-cutting, all repos
 
-- [ ] **Git remotes are wrong.** Every database repo still has `origin` =
-  `git@github.com:fhirpg/fhirpg.git`, correct for at most one of them. Pushing
-  any `port/*` branch as-is would send that port to the upstream project. Set
-  each remote before pushing. Nothing has been pushed.
-- [ ] **Shared history.** All six database repos descend from `688641a` of the
-  original `fhirpg` project. Whether five separate products should keep that
-  history, be squashed, or be re-rooted is a decision to make deliberately
-  rather than discover after a push.
+- [x] **Git remotes — resolved (F-11).** The ports were merged into one
+  monorepo with a single remote; the ancestor-`origin` warning and the
+  `688641a` shared-history question that stood here are moot.
 - [x] **T90 Accent folding misses Nordic letters — fixed.** `fold` now expands
   the letters NFD cannot reach, following PostgreSQL's `unaccent` rules so a
   folded value means the same thing whichever engine stores it: `æ`→`ae`,
@@ -726,10 +624,13 @@ transfers cheaply.
   now assert it. What must never happen is transliteration — romanising
   Cyrillic would make "the same string" a policy rather than a property of the
   text — and there is a test for that too.
-- [ ] **T90a Backfill the `_norm` columns.** The fix changes stored folded
-  values, so any database written before it holds stale ones and will miss the
-  searches this repaired. fhir-postgresql has `backfill_norm` on its upgrade
-  path; the SQLite, MySQL and MariaDB stores have no `upgrade` yet, so for them
-  this is currently a re-load rather than a migration. **Deploying the new fold
-  against an existing database without backfilling is worse than not fixing it**,
-  because searches would then match neither spelling.
+- [x] **T90a Backfill the `_norm` columns — done.** The premise ("the SQLite,
+  MySQL and MariaDB stores have no `upgrade` yet") is stale: all three now
+  have `upgrade` + `backfill_norm`. Here they are `mariadb.rs:298`/`:565`,
+  live-verified by `tests/upgrade.rs` (8 tests — including that rows written
+  before the folded column existed are backfilled, that the backfill is
+  resumable, and that a second upgrade is a no-op). **F-15** is closed for
+  this port: a database written before the fold fix migrates rather than
+  reloads. The principle stands — deploying a new fold without backfilling is
+  worse than not fixing it, which is why the backfill runs *inside* `upgrade`
+  (M14.37).

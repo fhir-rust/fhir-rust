@@ -79,10 +79,15 @@ This project began as a fork of the sibling `fhir-mysql` port, but the two are
 - **M14.2** `shred.rs`, `reconstruct.rs`, `value.rs`, `fold.rs`, and `model.rs`
   MUST NOT change. They operate on Rust types and never emit SQL.
 - **M14.3** `chain.rs` MUST NOT change except as required by M14.16.
-- **M14.4** The transport-security surface carries over. Unlike the SQLite
-  port, MariaDB is a network server, so `SslPolicy`, the plaintext-refusal guard,
-  and the TLS-only CI job all remain meaningful and MUST be preserved (with
-  `PGSSLMODE` renamed and remapped onto MariaDB's `ssl-mode`).
+- **M14.4** The transport surface MUST stay encrypted and verifying by
+  default, in this port's own mechanism (amended 2026-08-06; **F-54**).
+  Unlike the SQLite port, MariaDB is a network server, so there is a link to
+  protect — but not with the PostgreSQL original's machinery: the store reads
+  `FHIR_MARIADB_SSL_MODE` in MariaDB's own `--ssl-mode` vocabulary (not
+  libpq's `sslmode`/`PGSSLMODE`) via `ssl::SslMode`, defaulting to
+  `VERIFY_IDENTITY`, live-verified by `tests/ssl_live.rs`. `SslPolicy` and
+  the plaintext-refusal bind guard do not exist here — a library binds no
+  socket — and the TLS-only CI job was removed (T72).
 
 ## Accent and case folding
 
