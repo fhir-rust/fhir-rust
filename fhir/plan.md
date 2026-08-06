@@ -45,19 +45,19 @@ Tracked as discrete tasks in [`tasks.md`](tasks.md); the plan-level view:
    `fhir-derive-macros` 1.2.0. None of this is model behaviour; all of it is
    the kind of confident-but-wrong text this repository's audits exist to
    catch.
-2. **The three unfinished halves of old phases**: typed `Reference<T>` fields
-   (generator emission from `targetProfile`, T11), typed `contained` (T47),
-   inherent temporal accessors if wanted (T12). Each is a deliberate-scope
-   decision first and codegen second — deciding *not* to do one and recording
-   why is an acceptable close.
+2. **The unfinished halves of old phases**: typed `Reference<T>` fields
+   (generator emission from `targetProfile`, T11) and inherent temporal
+   accessors if wanted (T12). Typed `contained` closed 2026-08-06 (T47,
+   breaking → 4.0). Each remaining item is a deliberate-scope decision first
+   and codegen second — deciding *not* to do one and recording why is an
+   acceptable close.
 3. **R4B** (spec 12 future work) — the only FHIR release published by HL7 and
    not modelled here. The generator and the adding-a-release procedure
    (`doc/adding-a-release.md`) are proven by five releases; R4B is a
    turn-the-crank exercise plus a name decision (`fhir-release-4b` does not
    fit the numeric reservation scheme).
-4. **Proptest (T4/T48)** — or a recorded decision that the fuzz targets and
-   the 7,400-example corpus make it redundant.
-5. **mdBook deploy** (T46) — the book builds in CI and deploys nowhere.
+4. **mdBook deploy** (T46) — the book builds in CI and deploys nowhere.
+   (Proptest closed 2026-08-06, T48 — `tests/proptest_roundtrip.rs`.)
 
 ## Guiding constraints (unchanged where still true)
 

@@ -190,6 +190,7 @@ vec1 = { version = "1.12", features = ["serde"] } # Non-empty Vec for FHIR 1..* 
 # upstream refactor away from a build break.
 
 [dev-dependencies]
+proptest = "1" # Property-based round-trip tests (T4/T48).
 wiremock = "0.6" # Mock HTTP server for `client` unit tests.
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] } # Async runtime for tests.
 reqwest = { version = "0.12", features = ["json"] } # Used directly by the client integration test.

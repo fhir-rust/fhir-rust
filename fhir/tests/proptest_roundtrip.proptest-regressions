@@ -1,0 +1,9 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 34f162f2c3966500cf2c8dbff2ce1b91cb87b82da7ec6931652c35a7c91f6183 # shrinks to v = Object {"resourceType": String("Bundle"), "type": String("searchset")}
+cc 62ff7da29436a2b8c3803fd0431145e0f0812a56a6638e29ecac0afb74b66bb3 # shrinks to v = Object {"id": String("0"), "resourceType": String("Patient")}
+cc 13dab2c7e20810f257f443128f2530a1f16507c29f8dd5ce607dfcc967d3fc9b # shrinks to v = Object {"code": Object {"coding": Array [Object {"code": String("a"), "system": String("http://example.org/cs")}]}, "id": String("a"), "resourceType": String("Observation"), "status": String("registered")}

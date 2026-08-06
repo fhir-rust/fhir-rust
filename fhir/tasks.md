@@ -62,10 +62,10 @@ Conventions for the executing session:
 - **Accept:** dry-run green; no missing-file include warnings.
 - **Depends:** —
 
-### T4. Property-based round-trip tests — *open*
-- *Status:* no `proptest` anywhere in the tree — the one genuinely un-started
-  Phase 0 task. Fuzzing (T31) covers adversarial *input*, not the
-  populated-value round-trip property this asks for. See T48.
+### T4. Property-based round-trip tests — *done under T48 (2026-08-06)*
+- *Status:* `tests/proptest_roundtrip.rs`, five representative types with
+  randomized populated fields, exact `Value` round-trip equality. Was the
+  one genuinely un-started Phase 0 task until T48 closed it.
 - **Do:** dev-dep `proptest`. Arbitrary-ish generators for 5 representative
   types (Patient, Observation, Bundle, CodeableConcept, Timing) producing
   populated values; assert serde round-trip equality.
@@ -231,13 +231,12 @@ Conventions for the executing session:
 - **Accept:** doctests; `examples/extensions.rs`.
 - **Depends:** —
 
-### T18. Bundle utilities + typed `contained` — *partial*
-- *Status:* the `bundle_util` half is done (`iter_resources`,
-  `resources::<T>()`, `next_link`, transaction/batch builders). Typed
-  `contained` is **not**: it is still `Vec<serde_json::Value>` everywhere
-  (e.g. `fhir-release-5/src/resources/patient.rs`), and no recorded decision
-  reversed it — spec 04 R4.5 now *requires* the raw representation, which
-  contradicts this task rather than closing it. See T47.
+### T18. Bundle utilities + typed `contained` — *done*
+- *Status:* the `bundle_util` half was done first (`iter_resources`,
+  `resources::<T>()`, `next_link`, transaction/batch builders); typed
+  `contained` landed 2026-08-06 under T47 (`Vec<Resource>`, spec 04 R4.5
+  amended to match). The local-reference resolution helper remains a nicety
+  nobody has asked for.
 - **Do:** `Bundle::resources::<T>() -> impl Iterator<&T>`, transaction/batch
   builder, `next`-link paging helper; change `contained` fields to
   `Option<Vec<Resource>>` across resources (generator/agent fan-out) with
@@ -856,18 +855,50 @@ above.
 - **Do:** either deploy `book/` to GitHub Pages from the existing CI build,
   or record the decision not to and close T23.
 
-### T47. Typed `contained` (T18's unfinished half)
-- **Why:** T18 asked for `Option<Vec<Resource>>`; the tree kept
-  `Vec<serde_json::Value>`, and spec 04 R4.5 now mandates the raw
-  representation. The task and the spec contradict each other and no decision
-  is recorded.
-- **Do:** decide — most likely record R4.5 as the deliberate reversal and
-  close T18's second half — and make tasks.md and spec 04 agree.
+### T47. Typed `contained` (T18's unfinished half) — *done* (**breaking → 4.0**)
+- *Status (2026-08-06, owner-directed):* `contained` is now
+  `Vec<crate::<release>::resources::Resource>` in all five release models —
+  generator special-case in `codegen/plan.rs` (`.contained` only;
+  `Bundle.entry.resource` and `Parameters.parameter.resource` deliberately
+  stay raw), `Resource` gains generated `has_contained`/`meta` accessors,
+  and the derive's `dom-2`/`dom-4` checks read them instead of probing raw
+  JSON. R2/R3/R4/R6 regenerated; R5 hand-tree edited in lockstep
+  (`r5_drift` green). Spec 04 `R4.5` and spec 06 `R6.12` amended, dated.
+  Two behaviour changes worth knowing: contained resources now **validate**
+  with their container, and an *invalid* contained resource (e.g. an
+  Observation missing `status`) is now a deserialization error rather than
+  silently-carried JSON — the five `invariant_dom_2` fixtures had to become
+  valid resources, which is the type system doing its job. Wire form
+  unchanged (corpus green). CHANGELOG: Unreleased 4.0.0-dev.
+- **Why:** T18 asked for typed `contained`; the tree kept
+  `Vec<serde_json::Value>`, and spec 04 R4.5 mandated the raw
+  representation — the task and the spec contradicted each other with no
+  decision recorded.
 
-### T48. Property-based tests (T4)
-- **Do:** either add the proptest round-trip suite T4 describes, or record
-  the decision that the corpus gate (T28) plus fuzzing (T31) cover the
-  property and close T4.
+### T48. Property-based tests (T4) — *done*
+- *Status (2026-08-06):* `tests/proptest_roundtrip.rs` — five generators
+  (CodeableConcept, Timing, Patient, Observation incl. a typed `contained`
+  entry, Bundle) assembling schema-valid documents with randomized field
+  subsets, asserting exact `Value` round-trip equality (decimal lexemes
+  included, since `arbitrary_precision` is always on). Resources round-trip
+  through the `Resource` enum — the suite's first run caught exactly that:
+  a bare struct serializes without its `resourceType` tag. Closes T4.
+
+---
+
+### T49. `fhir-core`'s facade-facing doctests never run — **P2**
+- **Why (found running T47's gates):** `fhir-core`'s doctests are written
+  against the facade (`use fhir::r5::meta;`, `use fhir::util::last_word;`),
+  so `cargo test -p fhir-core --doc` cannot compile them — 13 fail — and no
+  CI job runs them any other way: the root `test` job's `--doc` covers the
+  root package only, and `release-crate-tests` covers the release crates
+  only. The examples are good documentation and are currently invisible to
+  every gate, the same shape as the gap the `release-crate-tests` job was
+  added to close.
+- **Do:** either rewrite them against `fhir_core::…` paths (compilable from
+  the crate itself) or add a CI invocation that runs them with the facade
+  linked (e.g. as facade doctests via `#[doc = include_str!…]`), and add
+  whichever gate keeps them running.
 
 ---
 
