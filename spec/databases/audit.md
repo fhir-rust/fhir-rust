@@ -10,6 +10,8 @@ it was rewritten, is the failure mode this file exists to prevent.
 
 **Audit date:** 2026-07-31. **Remediation pass:** 2026-07-31.
 **Documentation and publish-readiness pass:** 2026-08-01 (**F-30** to **F-34**).
+**Comprehensive re-audit:** 2026-08-06 (**F-73** to **F-84** — see [that
+pass's own section](#the-2026-08-06-pass) below).
 **Scope:** all six ports at the tree's current state. **Method:** cross-port diff
 of every shared file under a name-substituting normalization; read of every spec,
 README, `Cargo.toml`, CI config, and `col_sql` binding; a repo-wide markdown link
@@ -28,10 +30,10 @@ actually contains — into things a reader would download. The cross-family view
 lives in [`spec/publishing.md`](../publishing.md); only the six ports' share of
 it is recorded here.
 
-Of the original twenty-nine findings, **twenty-three are fixed and five remain
-open**; F-05 is
-recorded rather than fixable, because the requirements it concerns are retained
-deliberately. Eleven were found during the remediation pass rather than the
+Of the original twenty-nine findings, **all twenty-nine are now fixed, closed,
+or resolved** (measured 2026-08-06 against the summary table below; an earlier
+revision of this paragraph said "twenty-three fixed and five open" long after
+the five had closed — **F-73**). Eleven were found during the remediation pass rather than the
 original audit (F-17 to F-29), which is the more useful number: fixing the
 findings is what surfaced most of the rest.
 
@@ -67,20 +69,19 @@ crate, no `serve` binary, no REST suite. The first look found the MySQL
 contamination because that is what `fhir-mssql` was contaminated *with*; it took
 reading the clean port to notice that the fiction was older and shared.
 
-Of the six that remain, one is documentation — F-27, six files of it — and the
-rest are not: an Oracle DDL emitter and four owner decisions.
-
 **F-15 is closed everywhere it can be**, and so is **F-07**. SQLite, MySQL,
 MariaDB, and now MSSQL all have `upgrade` and `backfill_norm`, each verified
 against a live engine; `fhir-oracle` has a store (**F-68**) but no `upgrade`
 built on it yet, so that arrives with the next pass on that port. Closing F-07
-also emptied the shared-core gate's exemption list — **65 files identical
-across all six ports, nothing excused**.
+also emptied the shared-core gate's exemption list — **100 files identical
+across all six ports, nothing excused** (75→100 when the gate widened under
+**F-48**; an earlier revision of this paragraph said 65).
 
-What is left is `fhir-oracle`'s DDL emitter, which is that port's whole
-remaining job and needs an Oracle to verify against (**F-08**), and four
-decisions that are not the implementer's to make (**F-04**, **F-11**, **F-17**,
-and **F-27**'s central question).
+What is left open, as of 2026-08-06: **F-47** (a physical-schema migration),
+**F-49**'s second half (the per-family workflows are inert until consolidated
+into root ones), **F-51** (narrowed by **F-68**), **F-58** (`fhir-loco`'s five
+`SV` gaps), and **F-67** (the TLS advisory exposure in `fhir-mssql-store`,
+which is a risk-acceptance decision, not a code fix).
 
 ## Severity
 
@@ -142,7 +143,7 @@ and **F-27**'s central question).
 | [F-46](#f-46) | Medium | `U11` cannot reach the extension and deep tables: they have no columns in the map, and the cheaper workaround contradicts `U2b` | **fixed** 2026-08-02, verified live |
 | [F-47](#f-47) | Low | `path` and `v_kind` are bounded in practice but bound to unbounded types on mssql and oracle, so `U12` is unsatisfied; fixing it is a physical-schema migration for all six | open |
 | [F-48](#f-48) | Low | the shared-core gate did not watch `gen/tests/`, and could not while its normalization was line-based — rustfmt wraps by crate-name *length* | **fixed** 2026-08-02 — token-based verdict, 75→100 files |
-| [F-49](#f-49) | **High** | No workflow in this repository runs: all 20-odd sit under `<family>/.github/workflows/`, which GitHub does not read. Every "gated in CI" claim is unverified | open — root workflow added but inert until `scripts/` is committed; the other eight families' CI is an owner decision |
+| [F-49](#f-49) | **High** | No workflow in this repository runs: all 20-odd sit under `<family>/.github/workflows/`, which GitHub does not read. Every "gated in CI" claim is unverified | **half-fixed** — `scripts/` committed and the root gates run (`gates.yml`: shared-core + doc-examples); the eight families' own workflows remain inert, an owner decision |
 | [F-50](#f-50) | Medium | The `U2a` reference rule attached an adjunct to `c_url`, which no index uses, while every port indexes `(c_type, c_id)` — 453 of R5's 1,947 search targets unindexable on Oracle | **fixed** 2026-08-02 — all six; gaps now 0 |
 | [F-51](#f-51) | Medium | `fhir-oracle`'s DDL was executed by hand, not by a test, so `C0.9` keeps the port at Scaffold; a live test needs an Oracle driver decision | open |
 | [F-52](#f-52) | **High** | The repository's only live database test was flaky — its cleanup dropped tables before foreign keys and discarded the error, so failures were misattributed to a correct `CREATE TABLE` | **fixed** 2026-08-03 — 5/5 runs green |
@@ -158,16 +159,40 @@ and **F-27**'s central question).
 | [F-62](#f-62) | **High** | Every port's `CHANGELOG.md` is `fhir-postgresql`'s; the two scaffolds announce a TLS security fix for a connector they do not have | **partly fixed** 2026-08-03 — banners + the security entry annotated in place; per-port history is an owner decision |
 | [F-63](#f-63) | Medium | Status text in `doc/faq.md`, `doc/choosing-an-engine.md` and `AGENTS/release.md` had decayed — incl. "is this a FHIR server? No" and a fixed finding cited as blocking | **fixed** 2026-08-03 |
 | [F-64](#f-64) | **High** | Every non-PostgreSQL `doc/benchmarks.md` presented `fhir-postgresql`'s measured numbers as its own, incl. a live round trip and bulk-load benchmark for the two ports with no store at all | **fixed** 2026-08-03 — corrected in all five; real harness for sqlite/mysql/mariadb is a recorded gap |
+| [F-65](#f-65) | **High** | `fhir-mssql` gained a real store, live-verified; running it found five real defects, incl. a torn read (`R4.5`) and `verify_audit` never checking the keyed tag | **fixed** 2026-08-04 — all five; the port is Store level, 33 live tests, 0 ignored |
+| [F-66](#f-66) | — | Scope note: `fhir-oracle`'s store was written with no Instant Client on the host and had never connected to a database | **superseded** by **F-68** — the store has now run live |
+| [F-67](#f-67) | **High** | Four TLS advisories `deny.toml` excused as dev-dependency-only now reach the shipping `fhir-mssql-store`; `native-tls` fails the handshake on this host | **open** — a standing risk needing an owner decision |
+| [F-68](#f-68) | — | `fhir-oracle` connected live and reached Store level; four real defects found and fixed doing it; `R4.5` regressed from "believed addressable" to a confirmed open gap | **recorded** 2026-08-04 — defects fixed; `R4.5` remains open (`M14.19` needs a new answer) |
+| [F-69](#f-69) | Medium | `scripts/db.sh up` silently exited 1 with zero output on a fresh checkout, in all six ports | **fixed** 2026-08-04 |
+| [F-70](#f-70) | Medium | `fhir-store`'s `ChainKey`/`KeyRing::from_env` hardcoded `FHIR_SQLITE_*` names, so five ports' documented chain-key variables silently did nothing | **fixed** 2026-08-04 — `from_env(prefix)`, live-verified on PostgreSQL 18; docs corrected in all six |
+| [F-71](#f-71) | **High** | `fhir-sqlite`: `active=true` token search silently matched zero rows — TEXT/INTEGER affinity never converts the word `"true"` | **fixed** 2026-08-04 — `bool_token_as_bind`, regression test added |
+| [F-72](#f-72) | Medium | Root `CLAUDE.md` described `fhir-store/` as the HTTP surface, carried an obsolete nested-repo warning, and said both former scaffolds "have no store" | **fixed** 2026-08-04 |
+| [F-73](#f-73) | Medium | This register and its intro fell behind their own findings: no summary rows for F-65–F-72, "what remains" listed five closed findings as open, counts stale | **fixed** 2026-08-06 |
+| [F-74](#f-74) | Medium | Conformance-matrix cells stale: `put_audited` conflation, "no store" notes for two Store-level ports, the CI-gate note, `W16.15`, two contradictory mssql test counts | **fixed** 2026-08-06 |
+| [F-75](#f-75) | **High** | `fhir-mssql`/`fhir-oracle` `CHANGELOG.md` still open "no store and no driver" and point readers to an *Unreleased* section that claims a `serve` binary, a CLI, and live PostgreSQL 18 | **fixed** 2026-08-06 |
+| [F-76](#f-76) | Medium | Four crates.io-facing `Cargo.toml` descriptions still say "SCAFFOLD"/"emits MySQL"; `spec/publishing.md` P-1 rests on the same dead premise | **fixed** 2026-08-06 |
+| [F-77](#f-77) | Medium | `spec/databases/` sections still describe the pre-Store world (index "DDL only, no store"/"scaffold only"; §3's Oracle `⚠` table; §16's `W16.x` "currently" claims; citations naming fixed findings as open) | **fixed** 2026-08-06 |
+| [F-78](#f-78) | **High** | `fhir-mysql`/`fhir-mariadb` `tasks.md` tick `T33`/`T34` — conditional-op atomicity and the audited-write envelope — for operations that do not exist in either crate | **fixed** 2026-08-06 — unticked, restated |
+| [F-79](#f-79) | Medium | Closed findings not propagated: `upgrade`/`backfill_norm` still narrated as missing in three ports' docs (F-15), `Prefer` TLS default still narrated (F-17), oracle's "eleven `#[ignore]`d tests" (F-08), `fhir-loco`'s "two scaffolds" | **fixed** 2026-08-06 |
+| [F-80](#f-80) | Medium | F-27's class-1 disposition — delete the misattributed REST/CLI entries — was recorded 2026-08-03 and never executed; class-3 residue also survived in all four store ports' `tasks.md` | **fixed** 2026-08-06 — executed |
+| [F-81](#f-81) | Medium | Six ports' `plan.md` decision entries are status-bearing and wrong — worst: `fhir-oracle` D18 asserts `R4.5` is handled by a mechanism Oracle rejects (`ORA-01466`), and D20 asserts TLS neither former scaffold has | **fixed** 2026-08-06 |
+| [F-82](#f-82) | Medium | `fhir-loco/tasks.md` predated the crate's own spec: zero `SV` ids, shipped features omitted, three provably-obsolete open items (git remotes, shared history, the fixed T70 fold) | **fixed** 2026-08-06 — replaced |
+| [F-83](#f-83) | Low | `fhir-oracle`'s book lacks the F-56 banner that root `CLAUDE.md` says all six books carry | **fixed** 2026-08-06 |
+| [F-84](#f-84) | Medium | `fhir-mssql`/`fhir-oracle` `publish.yml`/`release.yml` iterate a `fhir-<engine>-server` crate and build a `fhir-<engine>` binary — neither exists; the workflows are inert (F-49) but assert the F-27 fiction in CI config | open — resolve with F-49's consolidation |
 
 ## What remains, and why
 
+*Rewritten 2026-08-06 (**F-73**): the previous revision of this table listed
+F-04, F-08, F-15, F-17, and F-27 as open with rationales that predated their
+own closures — every one of them contradicted the summary table above.*
+
 | Finding | Why it is not fixed here |
 | --- | --- |
-| **F-08** | Writing an Oracle DDL emitter. Two of its three blockers cleared this pass. The `VARCHAR2`/`CLOB` boundary — which `M14.9` said MUST be settled *before* `ddl.rs` is written — is now settled by [unbounded string search](unbounded-string-search-must-have-bounded-adjunct-and-checksum-adjunct.md) (`U1`–`U10`, `P6.9`), and an arm64 Oracle image is confirmed to exist and pull (`M14.23`). What remains is the order of work: the adjunct columns are a **map** change in `model.rs` and `gen/src`, which are shared verbatim across all six ports (`X15.1`), so that lands before any Oracle DDL. And an Oracle has still never been *started* here — it needs more memory than a default Podman machine has. |
-| **F-15** | Done for `fhir-sqlite`. MySQL and MariaDB each need an `upgrade` plus a resumable `_norm` backfill (`L14`), and both first need `init` to start recording the map asset — like SQLite, they store only `map_checksum`. Each needs that engine live. `fhir-mssql` and `fhir-oracle` have no store to hang an upgrade on, so theirs arrive with **F-08** and the store work. |
-| **F-17** | Changing the default from `Prefer` to `Require` is one line and is **breaking** for any deployment relying on the libpq-compatible default. That is the owner's call; the departure is recorded (`M14.27`) and the README now says to set `verify-full`. |
-| **F-04** | Whether to restore §7 or amend the citing requirements is an owner decision. Reconstructing retired requirement text from its citations was considered and rejected: text nobody wrote would carry ratified authority in the section that maps to regulation. |
-| **F-27** | Six `tasks.md` rewrites of ~800 lines each. Unlike the annexes (F-16) there is no correct sibling to adapt — the REST milestone is fiction in the reference port too — and the central question is the owner's: are these libraries that will grow a server, or libraries that will not? That decides whether the REST tasks are unticked, deleted, or moved out. A planning exercise, not an editing one. Each file now carries a header naming what in it is untrue, so the misleading is stopped while the rewrite waits. |
+| **F-47** | `path` and `v_kind` bounded-type fix is a physical-schema migration for all six ports — sequenced work, not a one-pass edit. |
+| **F-49** | The root gates (`gates.yml`) now run — `scripts/` is committed and the shared-core and doc-example checks execute on push. What remains is the other half: the eight families' workflows still sit under `<family>/.github/workflows/`, which GitHub does not read, so every per-port "CI provisions the engine" claim describes an inert file. Consolidating those into root workflows is an owner decision about CI cost and layout. |
+| **F-51** | `fhir-oracle`'s store tests now install and exercise a schema live (**F-68**), which narrows this finding; what has not been re-run test-driven is the full-R5 install the finding originally concerned. |
+| **F-58** | `fhir-loco`'s five named gaps (`SV2.14`, `SV2.15`, `SV3.11`, `SV4.2`, `SV4.3`) are feature work in a crate with its own spec. |
+| **F-67** | The TLS advisory exposure in `fhir-mssql-store` has no good fix available on this host — `native-tls` fails the handshake — so it is a standing risk only the owner can accept, mitigate, or re-platform away. |
 
 ---
 
@@ -2886,16 +2911,14 @@ cross-cutting:
 Verified locally that both exit 0 on a clean tree and non-zero on an introduced
 defect.
 
-**It will not do anything until the repository catches up.** `scripts/` is
-itself **untracked** — as are `doc/`, `LICENSE.md`, `index.md`,
-`spec/publishing.md`, and 81 files in total, against 224 modified and 8 deleted.
-A workflow that invokes a script absent from the checkout fails on its first
-run, which is at least loud; but the honest statement today is that `W16.6` is
-**not** satisfied for `X15.1` either — only that the mechanism is in place and
-waiting on a commit.
-
-That is the same shape as **P-10**: a gate whose inputs are not in the
-repository is a gate that exists only on the machine that wrote it.
+**It will not do anything until the repository catches up** — that was true
+when written, and stopped being true with commit `60bfcbe` ("Commit the
+repository gates, so they can run"): `scripts/`, `doc/`, `LICENSE.md`,
+`index.md`, and `spec/publishing.md` are all tracked now, the tree is clean,
+and `gates.yml` runs the shared-core and doc-example checks on every push and
+pull request. `W16.6` is satisfied for `X15.1`. *(Disposition updated
+2026-08-06, **F-73** — the paragraph above described the pre-commit state in
+the present tense long after it had changed.)*
 
 **Not fixed: the other eight families' workflows.** Consolidating them is a
 design decision rather than a correction — it needs path filters so a change to
@@ -4502,6 +4525,257 @@ rule against maintaining the same fact in two places.
 user's request, expecting a routine README check and instead finding the
 crate's own name was actively misleading relative to the repository's most
 important orientation file.*
+
+---
+
+## The 2026-08-06 pass
+
+A comprehensive re-audit of the whole tree — four parallel read-only sweeps
+(the six ports' `plan.md`/`tasks.md`, the `spec/` tree itself, `fhir-loco`
+and `fhir-store`, and the `fhir/` model family) plus mechanical gates
+(`check-shared-core.sh`: 100 files identical, 0 exempt; a full relative-link
+check over 289 markdown files: two real breakages, both in `doc/benchmarks.md`
+files). The model family's findings are recorded in **`fhir/tasks.md`**
+(Phase B) rather than here — a different family, its own register.
+
+The pattern of this pass inverts the original audit's. The 2026-07-31 findings
+were mostly *over*-claims — documentation asserting work that did not exist.
+This pass's are mostly **closure-propagation failures in both directions**:
+the two newest ports' docs still deny stores that exist (F-75, F-76, F-77,
+F-79), the registers that closed those findings were themselves never brought
+forward (F-73, F-74), and one recorded disposition — F-27's class 1 — was
+written down and then not executed (F-80). The one finding class that is
+neither: two ticked store-layer *guarantees* for code that was never written
+(F-78), which is the original audit's failure mode, found in the two files it
+had partially cleaned.
+
+## F-73
+
+**This register fell behind its own findings.** Severity: **Medium** — the
+file exists to be the one place a reader can trust, and it disagreed with
+itself. The summary table stopped at F-64 while detail sections ran to F-72;
+the intro said "twenty-three fixed and five remain open" of the original
+twenty-nine when all twenty-nine had closed; "What remains, and why" gave
+paragraph-length rationales for not fixing F-04, F-08, F-15, F-17, and F-27 —
+all five closed, four of them with dates, in the summary table above it; the
+"65 files identical" count predated the gate's widening to 100 (F-48); and
+F-49's row and disposition still said `scripts/` was untracked after commit
+`60bfcbe` committed it and made the root gates live. **Fixed** in this
+revision — every item above corrected in place, each with a note naming this
+finding where the stale text was load-bearing.
+
+## F-74
+
+**The conformance matrix — the document this repository tells readers to
+trust over every README — carried nine stale or self-contradictory cells.**
+Severity: **Medium**. Verified against code, not against other documents:
+
+1. The `put`/`put_audited` and `delete`/`delete_audited` rows showed `•` for
+   all six ports, but the `_audited` variants exist **only** in
+   `fhir-postgresql` and `fhir-sqlite` (zero grep hits in the other four) —
+   the same file's own port paragraphs say so; the row conflated two
+   operations and reported the union.
+2. Four notes still said the former scaffolds have no store (`U6`/`U7`
+   "neither scaffold has a store", `P6.4a` "awaits a store", `U4a`, `O10.7`
+   "Oracle (no store)") — `fhir-oracle-store` is 2,598 lines with a search
+   builder, `fhir-mssql-store` 3,296, and the matrix's own level rows call
+   both Store.
+3. `X15.1`'s note: "**Not** gated in CI — no workflow in this repository runs
+   at all" — `gates.yml` runs `check-shared-core.sh --diff` on every push,
+   and the same table's `W16.6` row already said so.
+4. `W16.15` showed `!` citing F-11, which the same file's sources record as
+   resolved (`origin` is `git@github.com:fhir-rust/fhir-rust.git`).
+5. `T11.2` said mssql "23 of 23" while the level row says 33 — 23 is the
+   pre-`upgrade.rs`/`ssl_live.rs` count. 33 verified per file.
+6. `fhir-postgresql`'s basis said "8 test files"; there are 10
+   (`chain_portability.rs`, `live.rs`, `m2_semantics.rs`,
+   `search_semantics.rs`, `ssl_default.rs` were unlisted).
+7. The header said "Measured 2026-07-31" over a body measuring through
+   2026-08-04.
+8. The closing "What would move `fhir-postgresql` up" bullet said the TLS
+   default was still an open owner decision (F-17) while the `O10.7` row said
+   the default verifies "since F-17".
+9. One challenge did **not** survive verification, recorded because the
+   audit itself made it: `search_page`'s pg `•` was suspected offset-only,
+   but the function takes `after_id: Option<&str>` — a keyset cursor — so
+   the cell stands; the port's `tasks.md`, which listed cursor paging as
+   remaining, was the stale document.
+
+Also stale in the same direction: test-count units mixed whole-port and
+store-crate numbers with nothing saying which. **Fixed** 2026-08-06 in the
+matrix revision accompanying this one.
+
+## F-75
+
+**`fhir-mssql/CHANGELOG.md` and `fhir-oracle/CHANGELOG.md` still opened with
+"This port has no store and no driver", and directed readers to the one
+section claimed to be true of the port — *Unreleased* — which is unmodified
+`fhir-postgresql` text claiming a `fhir-<engine> serve` REST server, a CLI,
+7,399 live corpus round-trips, and "live PostgreSQL 18".** Severity:
+**High** — the banner's whole function was to separate inherited fiction from
+port truth, and it pointed at fiction as the truth. Line 6 ("no store and no
+driver") and line 32 ("Nothing here has ever *written* a chain, having no
+store") have been false since **F-65**/**F-68**; line 17 says what is true "is
+at the top of the file under *Unreleased*" while that heading sits at line
+325, the bottom. The same "no store and no driver" framing survived at
+`doc/benchmarks.md:5` in both ports, alongside a broken link
+(`../spec/databases/audit.md` — resolves inside the port's own `spec/`; the
+register is two levels up). **Fixed** 2026-08-06: banners and framing
+corrected to date the store work, the *Unreleased* sections retitled as
+inherited 2.0.0-dev notes with their server/CLI bullets struck, benchmarks
+framing and links repaired. The per-port-history restructure remains F-62's
+owner decision.
+
+## F-76
+
+**Four crates.io-facing `description` fields still call their crates
+scaffolds.** Severity: **Medium** — `description` is the string a registry
+renders. `fhir-oracle-map`: "the DDL emitter still emits MySQL, not Oracle"
+(false since **F-08**, 2026-08-03); `fhir-oracle-gen`: "the DDL it emits is
+MySQL"; `fhir-mssql-gen`: "no store exists to consume it" (false since
+**F-65**); `fhir-mssql-map`: "T-SQL DDL emitted but never run against a green
+CI gate" (`tests/upgrade.rs` runs it live). `spec/publishing.md` compounds it:
+its P-1 section ("The scaffold ports ship a store that does not exist"),
+its description table, a dangling "P-8" citation with no P-8 section, and a
+2026-08-01 assessment date all predate the store work. **Fixed** 2026-08-06 —
+descriptions rewritten, publishing.md P-1 restated as resolved with the
+current gaps named.
+
+## F-77
+
+**The specification tree still describes the pre-Store world in six places.**
+Severity: **Medium**. `spec/databases/index.md:131-132` — mssql "DDL only, no
+store", oracle "scaffold only". `03-storage-model.md:366-383` — the Oracle
+column all `⚠`, "verbatim copy of MySQL's", "the port is Scaffold level",
+and "`fhir-postgresql` still derives the chain pre-image with
+`(($1::text)::jsonb)::text`" (F-07 fixed; the same passage says so eight lines
+later). `13-compliance-mapping.md:72` — "the Oracle scaffold".
+`15-portability-and-dialects.md:150-152` — `X15.12` "Nothing in the current
+tree tests `X15.1`…" (the shared-core gate exists and runs in CI).
+`16-repository-and-release.md` — the layout diagram misplaces the core at
+`spec/`, and `W16.3`/`W16.4`/`W16.6`/`W16.8`/`W16.9`/`W16.15` all state their
+fixed defects in the present tense ("Six store crates currently describe
+themselves as…"). `00-conformance.md`, `10-operations.md`, and
+`11-conformance-testing.md` cite F-04, F-05, and F-06 as if open. Also
+`index.md`'s Contents jumps §13 → §15 with no note that §14 is per-port.
+**Fixed** 2026-08-06 in the section revisions accompanying this finding.
+
+## F-78
+
+**`fhir-mysql/tasks.md` and `fhir-mariadb/tasks.md` tick two store-layer
+guarantees for code that does not exist.** Severity: **High** — unlike the
+class-1 REST fiction (F-27), nothing about these is misattributed to another
+crate; they are claims about *this* store's data-safety surface, `[x]`, with
+acceptance text citing tests. `T33` (atomic conditional-op interactions "via
+`pg_advisory_xact_lock`") — neither port has `conditional_create` or
+`conditional_delete` in any form; the matrix row is `—`. `T34` (audit
+envelope "threaded through `put_audited`/`delete_audited`/`transact_audited`/
+`conditional_*_audited`") — none of the four functions exists in either crate
+(zero grep hits; the plain `put`/`delete` do write audit rows and chain
+links, which is what made the tick look plausible). **Fixed** 2026-08-06:
+both entries unticked in both files and restated to what the code does.
+
+## F-79
+
+**Five closed findings were never propagated to the documents that cite
+them.** Severity: **Medium**, both directions of wrong. (1) **F-15 closed**:
+`upgrade` + `backfill_norm` exist and are live-verified in sqlite, mysql, and
+mariadb (`sqlite.rs:390/632`, `mysql.rs:298/565`, `mariadb.rs:298/565`, eight
+`tests/upgrade.rs` tests each in sqlite/mysql/mariadb, nine in mssql) — yet
+`fhir-sqlite/tasks.md` listed `init --upgrade` as remaining twice while its
+own T90a recorded it done; mysql and mariadb `tasks.md` and `README.md` said
+the same; `fhir-sqlite/spec/index.md` still said "Unmet: `O10.4a` (no
+`upgrade`)". (2) **F-17 closed**: `fhir-postgresql/tasks.md` and
+`fhir-postgresql/spec/index.md` still said the default is `Prefer`.
+(3) **F-08 closed**: `fhir-oracle/README.md:58` and
+`fhir-oracle-store/README.md:48` still said "eleven `#[ignore]`d MySQL tests
+still need replacing" — zero `#[ignore]` attributes exist in the port; the
+replacement is recorded in `ddl.rs`'s own doc comment. (4) **F-65/F-68**:
+`fhir-loco/README.md:14` still said "the two scaffolds". (5) **F-54 closed**:
+`fhir-mysql/spec/14-mysql-dialect.md:69-70` still mandated preserving
+`SslPolicy` and a plaintext-refusal guard this port deliberately replaced
+with `SslMode`. **Fixed** 2026-08-06 across the named files.
+
+## F-80
+
+**F-27's class-1 disposition was recorded and never executed.** Severity:
+**Medium** — the register said "deleting them is right… Each store port's
+`M4` section now says where the server is", and the M4 sections were indeed
+rewritten; but the several dozen individual `[x]` entries asserting a
+`fhir-<engine> serve` binary, CLI flags, admin endpoints, Prometheus
+histograms, and REST test suites remained in all four store ports'
+`tasks.md`, ticked. Class-3 residue survived alongside it: "the chain is
+computed in SQL" (T42, all four files, contradicting F-07 and each file's own
+later entries), a ~40-line PostgreSQL search-tuning entry (T43: `_norm` SQL
+functions, `text_pattern_ops`, `plan_cache_mode`, and `fhir-postgresql`'s own
+`search_semantics.rs` cited as this port's evidence), `REPEATABLE READ READ
+ONLY` and `pg_advisory_xact_lock` in ports without them, citations of test
+files that exist nowhere (`audit_async.rs`, `edge_limits.rs`,
+`validate_tests`), a claimed top-level `assets/` (real location:
+`crates/<port>-map/assets/`), a twice-repeated broken annex path
+(`spec/14-14-<engine>-dialect.md`), and the obsolete git-remote/`688641a`
+blocks (F-11). **Fixed** 2026-08-06: class-1 entries replaced with one-line
+tombstones naming this finding and `fhir-loco`, class-3 entries rewritten in
+each port's own vocabulary, dead references corrected — in
+`fhir-postgresql`, `fhir-sqlite`, `fhir-mysql`, and `fhir-mariadb`
+`tasks.md`. `fhir-sqlite` also gained the missing task entry for **F-71**.
+
+## F-81
+
+**Every port's `plan.md` carries inherited decision entries that are
+status-bearing and false, under a banner that only licenses them as
+history.** Severity: **Medium**, with one High-adjacent instance:
+`fhir-oracle/plan.md` D18 asserted `R4.5` is satisfied by "`REPEATABLE READ
+READ ONLY`" in the port where `R4.5` is a *confirmed open gap* — the
+mechanism Oracle actually offers failed live with `ORA-01466` and was removed
+(**F-68**). Also: D20 claimed rustls/`sslmode`/a startup bind guard in ports
+with no such machinery (mssql's real TLS state is **F-67**, a standing risk;
+oracle's is undecided, `M14.22`); oracle D5 said "no driver yet" (the
+`oracle` ODPI-C crate is the driver — a substitution artifact nobody
+re-read); D11 claimed ETag optimistic concurrency that contradicts each
+port's own `tasks.md`; D6 assigned axum to ports that have no HTTP; pg's D15/
+D16 claimed trusted-proxy principal extraction and audit-mode flags that
+exist nowhere; R7 kept PostgreSQL `unaccent` mitigations under a disclaimer
+saying they do not apply; R9/M1 kept `vacuum` and "live-PG" wording.
+**Fixed** 2026-08-06 across all six `plan.md` files.
+
+## F-82
+
+**`fhir-loco/tasks.md` predated the crate's own specification and
+contradicted the tree in both directions.** Severity: **Medium**. Written
+2026-07-31; the spec (`SV1`–`SV4`, 45 requirements) landed 2026-08-03 and the
+file cited no `SV` id. It omitted the CapabilityStatement endpoint and the
+entire PASETO auth layer — both shipped and tested — while keeping three
+provably-obsolete open items: "Git remotes are wrong" (F-11, resolved), the
+shared-history/`688641a` note, and "T70 accent folding misses Nordic
+letters" — fixed in `fold.rs` (`'æ' => "ae"`, with `fold("Ærø") == "aero"`
+asserted by test, in the shared core of all six ports). Its port-status note
+("MySQL and MariaDB have native stores now") understated reality by four
+ports. **Fixed** 2026-08-06 — replaced with an SV-cited list of what is
+served, the four genuine HTTP gaps, and the multi-port wiring picture.
+
+## F-83
+
+**`fhir-oracle/book/src/introduction.md` has no banner, while root
+`CLAUDE.md` (F-56) says every book opens with one.** Severity: **Low** — the
+chapter's own prose is honest (it names the library/server split and
+`fhir-loco`), so this is a broken promise about form, not content. The other
+five books carry the banner, including `fhir-sqlite`'s (an earlier draft of
+this finding wrongly counted sqlite as missing too — its banner is titled
+"About this book"). **Fixed** 2026-08-06 — banner added, matching the
+sibling books' wording.
+
+## F-84
+
+**`fhir-mssql`'s and `fhir-oracle`'s `publish.yml` iterate a
+`fhir-<engine>-server` crate, and their `release.yml` build a `fhir-<engine>`
+binary — neither of which exists, as each port's own `tasks.md` and `plan.md`
+correctly state.** Severity: **Medium**, tempered by the fact that these
+workflows are inert (F-49: GitHub does not read `<family>/.github/workflows/`)
+— the fiction cannot currently execute, but the F-27 class-1 cleanup missed
+CI config, and the moment F-49's consolidation copies these files rootward,
+publishing would fail on a nonexistent crate. **Open** — fold into F-49's
+consolidation rather than patching inert files piecemeal.
 
 ---
 
