@@ -1,7 +1,13 @@
 # Documentation
 
-Learning material for fhir-databases. The [specification](../spec/index.md)
-decides what must be true; these pages explain how it works and how to use it.
+Learning material for the six **database ports**. The
+[specification](../spec/databases/index.md) decides what must be true; these
+pages explain how it works and how to use it.
+
+The repository's other two families are documented elsewhere: the model crate in
+[`fhir/`](../fhir/README.md), the HTTP surface in
+[`fhir-store/`](../fhir-store/README.md). [`spec/index.md`](../spec/index.md)
+routes between all three.
 
 ## Tutorials
 
@@ -37,11 +43,11 @@ Read in order the first time; each builds on the last.
 
 ## Status, before you rely on anything
 
-- **[Conformance matrix](../spec/conformance-matrix.md)** — what each port
+- **[Conformance matrix](../spec/databases/conformance-matrix.md)** — what each port
   satisfies, requirement by requirement. Four of the six ports have `?` against
   the concurrency and audit guarantees, which means the code is shared from a
   port where they are tested and nothing tests them there.
-- **[Audit findings](../spec/audit.md)** — every known divergence between spec,
+- **[Audit findings](../spec/databases/audit.md)** — every known divergence between spec,
   docs, and code, with evidence.
 
 The per-port `README.md` files were rewritten on 2026-07-31 and should now agree
@@ -70,9 +76,12 @@ Where a port differs materially, the page says so.
 
 ## Conventions in these pages
 
-- Code is Rust against the crates as they exist. If an example does not compile,
-  that is a bug in the page (`W16.9`) — no example here describes a CLI or a
-  server, because neither exists.
+- Code is Rust against the crates as they exist, and
+  `scripts/check-doc-examples.sh` compiles every one of them (**F-60**). If an
+  example does not compile, that is a bug in the page (`W16.9`). No example here
+  describes a CLI, because none exists; the REST server does exist, as the
+  separate crate [`fhir-loco`](../fhir-loco/), and these pages are about the
+  storage libraries rather than about it.
 - Requirement ids appear inline — `(M3.4a)` — so you can get from an explanation
   to the decision behind it.
 - Limitations are stated next to capabilities, not in a footnote.

@@ -79,11 +79,26 @@
   evidence for a conformance level (`C0.9`). Where a port's live suite requires
   a DSN that its own pipeline never sets, that suite is not a gate, and the
   [conformance matrix](conformance-matrix.md) MUST record the requirement as
-  unverified rather than as passing. Tracked as [`audit.md`](audit.md) **F-06**.
+  unverified rather than as passing. Originating defect **F-06**, fixed.
 - **T11.14** A test disabled with `#[ignore]` because it asserts another
   engine's behaviour MUST be accompanied by an entry in the port's `tasks.md`
   and in the [conformance matrix](conformance-matrix.md). An ignored test is a
   known gap; an ignored test nobody tracks is a forgotten one.
+- **T11.15** A test MUST be **deterministic**: the same tree against the same
+  engine MUST produce the same verdict. A test that passes intermittently is not
+  weaker evidence than a failing one — it is worse, because the habit it teaches
+  is to run it again, and a re-run is indistinguishable from a fix.
+
+  This applies with most force to a test that sets up shared state. Where a live
+  test clears a database before installing, the teardown MUST fail loudly on
+  error and the test MUST assert the state is actually clean before proceeding.
+  A discarded teardown error does not vanish; it reappears later as a failure
+  attributed to correct code. That is exactly what **F-52** did — a broken
+  cleanup surfaced as a rejected `CREATE TABLE` eight statements downstream, and
+  the statement it blamed was fine.
+
+  A test whose flakiness is suspected but not yet understood MUST be recorded in
+  [`audit.md`](audit.md) rather than retried until green.
 
 ---
 

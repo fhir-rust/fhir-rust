@@ -36,17 +36,31 @@ Installing them takes about 9.5 seconds on PostgreSQL 18.
 
 ## Is this a FHIR server?
 
-**No.** These are libraries. Every workspace contains three crates — `-map`,
-`-gen`, `-store` — and there is no server crate and no CLI crate in any of them.
+**The database ports are not; the repository has one.**
 
-Sections 7 (REST API) and 8 (CLI) of the specification are retired for that
-reason (`C0.15`).
+Each port is a library. Every port workspace contains three crates — `-map`,
+`-gen`, `-store` — with no server crate and no CLI crate (`C0.17`, `C0.18`).
+Sections 7 (REST API) and 8 (CLI) of the database specification are retired for
+that reason (`C0.15`): they are out of scope *for the ports*.
 
-Every per-port README documented `fhir-<engine> serve` and
+The REST server is [`fhir-loco`](../fhir-loco/) — Loco.rs, Axum, Tokio, Hyper —
+a separate crate that mounts a FHIR API over a store. It serves `metadata`,
+search, create, read, update, delete, `_history` and `vread`, and requires a
+PASETO v4.public token on every request.
+
+That split is deliberate: a program that wants FHIR storage should not also
+acquire a web framework.
+
+**This answer used to be a flat "No."** It was written when nothing here served
+HTTP, and it stayed that way after `fhir-loco` arrived — so a reader asking the
+title question about *the repository* got the wrong answer. Corrected under
+[audit](../spec/databases/audit.md) **F-63**.
+
+Historical note: every per-port README documented `fhir-<engine> serve` and
 `cargo install --path crates/fhir-<engine>` until 2026-07-31. Neither ever
-worked; the crate does not exist. That was [audit finding](../spec/audit.md)
-**F-01**, now fixed — but the per-port `book/` directories still describe the
-REST API, so this FAQ entry stays.
+worked — that crate has never existed in any port (**F-01**, fixed). The books
+described the same fiction until 2026-08-03 (**F-56**, fixed); they now
+attribute every endpoint to `fhir-loco`.
 
 ## Can I use it in production?
 
@@ -55,13 +69,17 @@ live PostgreSQL 18 in CI, and its measured results are its own. It has one open
 high-severity defect (**F-07**, chain portability) that does not affect
 correctness within the port.
 
-`fhir-sqlite`, `fhir-mysql`, `fhir-mariadb`: working stores, but their
-concurrency, redaction, and audit tests do not exist yet. The
-[conformance matrix](../spec/conformance-matrix.md) marks those requirements `?`
-— plausibly satisfied by shared code, unproven here. Whether that is acceptable
-depends on what you are storing.
+`fhir-sqlite`, `fhir-mysql`, `fhir-mariadb`: working stores, and their
+concurrency, redaction, and round-trip suites now exist and run green against
+live engines (an earlier revision of this answer predated them — writing
+those suites found five real defects, **F-20**–**F-24**). The remaining `?`
+cells are narrower — see the
+[conformance matrix](../spec/databases/conformance-matrix.md).
 
-`fhir-mssql`, `fhir-oracle`: no. Neither has a store.
+`fhir-mssql`: a working store, live-verified (**F-65**) — weigh the TLS
+advisory risk (**F-67**) first. `fhir-oracle`: a working store (**F-68**),
+but `R4.5` snapshot reads are a confirmed open gap and it has no concurrency
+or redaction tests — not yet, for patient data.
 
 In every case you also need the perimeter — authentication, authorization,
 consent, TLS. See [the trust boundary](trust-boundary.md).
@@ -187,7 +205,7 @@ They were inherited from the PostgreSQL reference by text substitution, in ports
 where the claims were never measured — including two with no store at all. Three
 were even titled "FHIR in PostgreSQL" while targeting SQLite, MySQL, and
 MariaDB. That was **F-01**, the most serious finding in the
-[audit register](../spec/audit.md), and all six were rewritten on 2026-07-31.
+[audit register](../spec/databases/audit.md), and all six were rewritten on 2026-07-31.
 
 The same substitution produced an Oracle DDL emitter that emits MySQL types
 (**F-08**, still open) and two dialect annexes titled "14. MySQL dialect" in

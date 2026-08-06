@@ -3,7 +3,7 @@
 What a FHIR resource actually becomes. This is the idea everything else rests
 on; once it clicks, the SQL, the search, and the porting all follow.
 
-Normative reference: [`spec/03-storage-model.md`](../spec/03-storage-model.md).
+Normative reference: [`spec/03-storage-model.md`](../spec/databases/03-storage-model.md).
 
 ## The rule in one sentence
 
@@ -135,7 +135,7 @@ table, with `ON DELETE CASCADE`, so rewriting a resource clears its rows.
 
 Every string search target gets a `_norm` companion holding the folded value
 (`P6.6`) — see [tutorial 1](tutorial-01-getting-started.md#step-5--search) and
-the [folding spec](../spec/locale-accent-folding.md).
+the [folding spec](../spec/databases/locale-accent-folding.md).
 
 The column is declared with a **binary, NO PAD** collation (`M3.6b`), which
 matters twice: `:exact` matching and primary-key identity both need `'Smith'` to
@@ -220,5 +220,5 @@ full path — and records the mapping, so two paths can never collide silently
 
 - [Tutorial 3 — querying with SQL](tutorial-03-querying-sql.md)
 - [Storage model reference](storage-model.md) for looking things up
-- [`spec/03-storage-model.md`](../spec/03-storage-model.md) for the normative
+- [`spec/03-storage-model.md`](../spec/databases/03-storage-model.md) for the normative
   text

@@ -5,7 +5,7 @@
 	import Footer from '$lib/lily/components/Footer.svelte';
 	import ThemePicker from '$lib/lily/helpers/ThemePicker.svelte';
 	import TextSizePicker from '$lib/lily/helpers/TextSizePicker.svelte';
-	import { REPO_DATABASES, SITE_NAME, THEMES, THEME_LABELS } from '$lib/site.js';
+	import { REPOSITORY, SITE_NAME, THEMES, THEME_LABELS } from '$lib/site.js';
 	import '../styles/site.css';
 
 	let { children } = $props();
@@ -13,6 +13,8 @@
 	const links = [
 		{ href: '/overview/', label: 'Overview' },
 		{ href: '/docs/', label: 'Docs' },
+		{ href: '/examples/', label: 'Examples' },
+		{ href: '/model/', label: 'Model' },
 		{ href: '/spec/', label: 'Spec' },
 		{ href: '/conformance/', label: 'Conformance' }
 	];
@@ -32,7 +34,7 @@
 			{#each links as link (link.href)}
 				<a href={link.href} aria-current={current(link.href)}>{link.label}</a>
 			{/each}
-			<a href={REPO_DATABASES}>GitHub</a>
+			<a href={REPOSITORY}>GitHub</a>
 		</nav>
 		<div class="site-tools">
 			<TextSizePicker
@@ -65,7 +67,7 @@
 			<a href="https://github.com/LilyDesignSystem">Lily Design System</a>.
 		</p>
 		<div class="site-footer-links">
-			<a href={REPO_DATABASES}>GitHub</a>
+			<a href={REPOSITORY}>GitHub</a>
 			<a href="/spec/">Specification</a>
 			<a href="/spec/audit/">Audit findings</a>
 			<a href="/sitemap.xml">Sitemap</a>

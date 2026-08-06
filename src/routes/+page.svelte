@@ -1,14 +1,7 @@
 <script>
 	import Card from '$lib/lily/components/Card.svelte';
 	import SectionHeading from '$lib/lily/components/SectionHeading.svelte';
-	import {
-		REPO_CRATE,
-		REPO_DATABASES,
-		REPO_STORE,
-		SITE_NAME,
-		SITE_TAGLINE,
-		SITE_URL
-	} from '$lib/site.js';
+	import { REPOSITORY, SITE_NAME, SITE_TAGLINE, SITE_URL } from '$lib/site.js';
 
 	let { data } = $props();
 
@@ -16,10 +9,12 @@
 	const guides = $derived(data.guides.filter((guide) => guide.route !== '/docs/guides/'));
 
 	// The six ports and their conformance levels, as stated by the project
-	// README. These are levels defined in spec/00-conformance.md: what has been
-	// *verified for that port*, not what its code contains. The conformance
-	// matrix breaks them down requirement by requirement and is the document to
-	// trust — which is why every row below links to it rather than restating it.
+	// README (revised 2026-08-06 after the comprehensive audit brought both
+	// former scaffolds to Store level). These are levels defined in
+	// spec/databases/00-conformance.md: what has been *verified for that
+	// port*, not what its code contains. The conformance matrix breaks them
+	// down requirement by requirement and is the document to trust — which is
+	// why every row below links to it rather than restating it.
 	const ports = [
 		{
 			name: 'fhir-postgresql',
@@ -38,19 +33,19 @@
 		{
 			name: 'fhir-mssql',
 			engine: 'SQL Server',
-			level: 'Scaffold',
-			note: 'DDL only, no store'
+			level: 'Store',
+			note: 'live-verified; a standing TLS advisory risk (F-67)'
 		},
 		{
 			name: 'fhir-oracle',
 			engine: 'Oracle Database',
-			level: 'Scaffold',
-			note: 'DDL is still MySQL’s'
+			level: 'Store',
+			note: 'live-verified; no upgrade path yet, snapshot reads open'
 		}
 	];
 
 	const description =
-		'Store FHIR resources in a SQL database as real relational tables — typed columns, child tables, foreign keys, check constraints — not JSON blobs. Get them back losslessly.';
+		'FHIR in Rust: the complete R2–R6 data model as typed, serde-serializable Rust, and six database libraries that store resources as real relational tables — not JSON blobs — and give them back losslessly.';
 </script>
 
 <svelte:head>
@@ -66,32 +61,51 @@
 <div class="home-hero">
 	<h1>FHIR in Rust</h1>
 	<p class="home-hero-lead">
-		Store <a href="https://hl7.org/fhir/" rel="noopener noreferrer">FHIR</a> resources in a SQL
-		database as <strong>real relational tables</strong> — typed columns, child tables, foreign keys,
-		check constraints — not JSON blobs. Get them back losslessly.
+		Model <a href="https://hl7.org/fhir/" rel="noopener noreferrer">FHIR</a> in typed Rust —
+		five releases, R2 through R6 — and store it in a SQL database as
+		<strong>real relational tables</strong> — typed columns, child tables, foreign keys, check
+		constraints — not JSON blobs. Get it back losslessly.
 	</p>
 	<p class="home-hero-actions">
 		<a class="button-primary" href="/docs/tutorial-01-getting-started/">Start the tutorial</a>
-		<a class="button-secondary" href="/docs/choosing-an-engine/">Choose an engine</a>
+		<a class="button-secondary" href="/examples/">Run the examples</a>
 	</p>
 	<p class="home-hero-note">
-		<strong>Pre-release.</strong> Each port is described at its own conformance level. The
-		<a href="/conformance/">conformance matrix</a> is the status document to trust, and the
-		<a href="/spec/audit/">audit findings</a> list what is currently broken, with evidence.
+		<strong>Pre-release.</strong> Each database port is described at its own conformance level.
+		The <a href="/conformance/">conformance matrix</a> is the status document to trust, and the
+		<a href="/spec/audit/">audit findings</a> list every known divergence, with evidence.
 	</p>
 </div>
 
 <section class="home-section">
 	<SectionHeading
-		heading="Three projects"
+		heading="Four families, one repository"
 		eyebrow="What is here"
-		subtitle="One data model, one storage engine, one HTTP surface — deliberately separate."
+		subtitle="A data model, six storage libraries, a shared persistence core, and an HTTP surface — deliberately separate, composing in one direction."
 	/>
 	<div class="card-grid">
-		<Card heading="fhir-databases" href={REPO_DATABASES} headingLevel={3} class="home-card">
+		<Card heading="fhir — the model" href="/model/" headingLevel={3} class="home-card">
 			<p>
-				Six FHIR-to-relational libraries, one specification, one engine. Schemas are generated from
-				the FHIR specification; the pure-Rust core is identical across all six ports.
+				The complete HL7 FHIR data model as Rust types — five releases (R2–R6) as separate
+				crates, generated from the official specification, with validation, builders, choice
+				enums, an XML bridge, a REST client, and cross-release conversion with a loss report.
+			</p>
+			<p class="card-links">
+				<a href="/model/">Overview</a> · <a href="/model/spec/">Specification</a> ·
+				<a href="/examples/">Examples</a>
+			</p>
+		</Card>
+
+		<Card
+			heading="fhir-&lt;engine&gt; — the databases"
+			href="/spec/"
+			headingLevel={3}
+			class="home-card"
+		>
+			<p>
+				Six FHIR-to-relational libraries — PostgreSQL, SQLite, MySQL, MariaDB, SQL Server,
+				Oracle — one specification, one shared pure-Rust core, identical across all six and
+				gated in CI. Schemas are generated from the FHIR specification packages.
 			</p>
 			<p class="card-links">
 				<a href="/overview/">Overview</a> · <a href="/conformance/">Conformance</a> ·
@@ -99,23 +113,31 @@
 			</p>
 		</Card>
 
-		<Card heading="fhir-rust-crate" href={REPO_CRATE} headingLevel={3} class="home-card">
+		<Card
+			heading="fhir-store — the persistence core"
+			href="/store/"
+			headingLevel={3}
+			class="home-card"
+		>
 			<p>
-				The HL7 FHIR data model in Rust, plus the generator that produces it from the official
-				specification JSON. Three releases are modelled: R5, R4 and R3 (STU3).
+				The engine-agnostic half of persistence, shared by every port: the tamper-evident audit
+				chain (SHA-256 + SHA3-256, optional HMAC), attribution, and the result types. No driver,
+				no socket, no HTTP.
 			</p>
 			<p class="card-links">
-				<a href={REPO_CRATE} rel="noopener noreferrer">Read the crate on GitHub</a>
+				<a href="/store/">Overview</a> ·
+				<a href="/spec/12-trust-principal-and-audit/">Trust &amp; audit spec</a>
 			</p>
 		</Card>
 
-		<Card heading="fhir-store" href={REPO_STORE} headingLevel={3} class="home-card">
+		<Card heading="fhir-loco — the server" href="/server/" headingLevel={3} class="home-card">
 			<p>
-				A FHIR RESTful API server — Rust, Axum and Loco — over the storage libraries. The split is
-				the point: storage guarantees live in the library, HTTP lives here.
+				A FHIR RESTful API — Rust, Loco, Axum — mounted over a store. CRUD, vread, history,
+				search, CapabilityStatement, PASETO authentication. The split is the point: storage
+				guarantees live in the libraries, HTTP lives here.
 			</p>
 			<p class="card-links">
-				<a href={REPO_STORE} rel="noopener noreferrer">Read the server on GitHub</a>
+				<a href="/server/">Overview</a> · <a href="/server/spec/">Specification</a>
 			</p>
 		</Card>
 	</div>
@@ -124,7 +146,7 @@
 <section class="home-section">
 	<SectionHeading
 		heading="Six ports"
-		eyebrow="fhir-databases"
+		eyebrow="The databases"
 		subtitle="Conformance levels, not feature lists: what has been verified for that port."
 	/>
 	<table class="port-table">
@@ -170,18 +192,63 @@
 
 <section class="home-section">
 	<SectionHeading
-		heading="The specification"
-		eyebrow="Implement or audit it"
-		subtitle="One copy, shared by all six ports. Requirement ids are permanent."
+		heading="Examples"
+		eyebrow="Run it"
+		subtitle="Complete programs from the model crate — each one a tutorial in its header comment."
 	/>
 	<ul class="link-list link-list-columns">
-		{#each data.spec as section (section.route)}
-			<li><a href={section.route}>{section.title}</a></li>
+		{#each data.examples as example (example.route)}
+			<li><a href={example.route}>{example.title}</a></li>
 		{/each}
 	</ul>
 	<p class="section-footnote">
-		Non-normative companions: <a href="/conformance/">conformance matrix</a> ·
-		<a href="/spec/audit/">audit findings</a> ·
-		<a href="/spec/locale-accent-folding/">locale and accent folding</a>.
+		Run one from a checkout with <code>cargo run --example &lt;name&gt;</code> — see the
+		<a href="/examples/">examples index</a>.
+	</p>
+</section>
+
+<section class="home-section">
+	<SectionHeading
+		heading="The specifications"
+		eyebrow="Implement or audit it"
+		subtitle="Four families, four bodies of requirements. Requirement ids are permanent."
+	/>
+	<div class="card-grid">
+		<Card heading="Database core" href="/spec/" headingLevel={3} class="home-card">
+			<ul class="link-list">
+				{#each data.spec as section (section.route)}
+					<li><a href={section.route}>{section.title}</a></li>
+				{/each}
+			</ul>
+		</Card>
+		<Card heading="Model" href="/model/spec/" headingLevel={3} class="home-card">
+			<ul class="link-list">
+				{#each data.model as section (section.route)}
+					<li><a href={section.route}>{section.title}</a></li>
+				{/each}
+			</ul>
+		</Card>
+	</div>
+	<p class="section-footnote">
+		The <a href="/specs/">specification root</a> says which spec governs which code and how the
+		requirement-id namespaces relate. Non-normative companions:
+		<a href="/conformance/">conformance matrix</a> · <a href="/spec/audit/">audit findings</a> ·
+		<a href="/spec/locale-accent-folding/">locale and accent folding</a> ·
+		<a href="/specs/publishing/">publishing readiness</a>. The
+		<a href="/server/spec/">server specification</a> covers the HTTP surface.
+	</p>
+</section>
+
+<section class="home-section">
+	<SectionHeading
+		heading="On crates.io, and in one repository"
+		eyebrow="Use it"
+		subtitle="The model family is published; the database ports are pre-release."
+	/>
+	<p>
+		The model is <code>fhir = "3"</code> — five releases behind cargo features, <code>r5</code> on
+		by default. The database ports and the server are pre-release in
+		<a href={REPOSITORY}>the fhir-rust repository</a>, each at the conformance level the matrix
+		states.
 	</p>
 </section>

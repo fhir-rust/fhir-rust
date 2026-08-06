@@ -32,17 +32,47 @@ export function routeFor(path) {
 		// doc/index.md is the narrower "learning material" index, one level in.
 		case 'doc/index.md':
 			return '/docs/guides/';
+		// The four-family specification root: which spec governs which code.
 		case 'spec/index.md':
+			return '/specs/';
+		case 'spec/publishing.md':
+			return '/specs/publishing/';
+		// The database core keeps the routes it always had: /spec/… predates
+		// the monorepo merge and is linked from outside this site.
+		case 'spec/databases/index.md':
 			return '/spec/';
 		// The status document to trust. It earns a top-level route because it
 		// is the thing a reader choosing a port actually needs.
-		case 'spec/conformance-matrix.md':
+		case 'spec/databases/conformance-matrix.md':
 			return '/conformance/';
+		// The model family: the crate README is the landing page, its spec a
+		// tree below it.
+		case 'fhir/README.md':
+			return '/model/';
+		case 'fhir/spec/index.md':
+			return '/model/spec/';
+		case 'fhir/spec/README.md':
+			return '/model/spec/about/';
+		// The HTTP surface and the shared persistence core.
+		case 'fhir-loco/README.md':
+			return '/server/';
+		case 'fhir-loco/spec/index.md':
+			return '/server/spec/';
+		case 'fhir-store/README.md':
+			return '/store/';
+		case 'examples/index.md':
+			return '/examples/';
 	}
 	const doc = /^doc\/([\w.-]+)\.md$/.exec(path);
 	if (doc) return `/docs/${doc[1]}/`;
-	const spec = /^spec\/([\w.-]+)\.md$/.exec(path);
+	const spec = /^spec\/databases\/([\w.-]+)\.md$/.exec(path);
 	if (spec) return `/spec/${spec[1]}/`;
+	const model = /^fhir\/spec\/([\w.-]+)\.md$/.exec(path);
+	if (model) return `/model/spec/${model[1]}/`;
+	const server = /^fhir-loco\/spec\/([\w.-]+)\.md$/.exec(path);
+	if (server) return `/server/spec/${server[1]}/`;
+	const example = /^examples\/([\w.-]+)\.md$/.exec(path);
+	if (example) return `/examples/${example[1]}/`;
 	return null;
 }
 

@@ -51,7 +51,7 @@ the `Audit` value that carries the identity — is in force today.
 
 **An identity, deliberately.** There is no default attribution (`PR12.3a`):
 
-```rust
+```text
 Audit::principal("dr.jones@clinic.example", "header:X-Fhir-Principal")
 Audit::cli()
 Audit::unattributed()
@@ -116,7 +116,7 @@ the checkpoint closes that gap, and only if it lands off-box.
 
 The table above describes what the specification requires. What each port has
 *verified* is narrower — see the
-[conformance matrix](../spec/conformance-matrix.md):
+[conformance matrix](../spec/databases/conformance-matrix.md):
 
 - The audit, redaction, and concurrency tests exist only in `fhir-postgresql`.
   Four ports carry `?` on those rows.
@@ -124,3 +124,28 @@ The table above describes what the specification requires. What each port has
   not portable (**F-07**).
 - `fhir-mssql` and `fhir-oracle` have no store, so none of this applies to them
   yet.
+
+## Where authentication actually happens
+
+The six database libraries do not authenticate, and that has not changed: they
+take an `Audit` value and record it. What changed is that this repository now
+ships a service which supplies one.
+
+`fhir-loco` verifies a **PASETO v4.public** token on every request. There is no
+unauthenticated mode and no header fallback — the process refuses to boot
+without an issuer public key, and a request without a valid token is `401`
+before any handler runs (`PR12.9`).
+
+So the row that reads "Authentication — your deployment must provide" is true
+of the libraries and of any service you write yourself. If you run `fhir-loco`,
+authentication is provided; **authorization** — scopes, compartments, consent —
+still is not, and remains yours.
+
+Why a token rather than the trusted header the libraries' `Audit` was designed
+around: a header is only as trustworthy as the guarantee that nothing else can
+reach the port, and that guarantee lives in network configuration the service
+cannot see, cannot verify, and cannot fail loudly about. `PR12.2` requires the
+header be honoured only from a configured trusted proxy; `fhir-loco` never
+implemented that check, so under `PR12.2` its header should have been ignored
+rather than trusted. A signature it can verify itself is a property of the
+request, not an assumption about the topology.

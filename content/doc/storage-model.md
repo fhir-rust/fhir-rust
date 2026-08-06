@@ -3,7 +3,7 @@
 Lookup reference for the schema. [Tutorial 2](tutorial-02-storage-model.md) is
 the version to read through; this is the version to come back to.
 
-Normative text: [`spec/03-storage-model.md`](../spec/03-storage-model.md).
+Normative text: [`spec/03-storage-model.md`](../spec/databases/03-storage-model.md).
 
 ## Table kinds
 

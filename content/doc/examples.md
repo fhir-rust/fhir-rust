@@ -13,15 +13,15 @@ use std::sync::Arc;
 use fhir_sqlite_map::model::RelMap;
 use fhir_sqlite_store::sqlite::SqliteStore;
 
-let bytes = std::fs::read("fhir-sqlite/assets/fhir-sqlite-relmap-r5.json.gz")?;
-let map   = Arc::new(RelMap::from_gz_bytes(&bytes)?);
+let map   = Arc::new(RelMap::bundled("r5")?);   // compiled in (feature `r5`)
 let store = SqliteStore::open("clinic.sqlite", map).await?;
 store.init("r5-baseline").await?;
 ```
 
 PostgreSQL:
 
-```rust
+<!-- not compiled: This one is `fhir-postgresql`, not `fhir-sqlite` like the rest of the page — a different crate and a different connect signature. -->
+```rust,ignore
 use fhir_postgresql_store::{Store, pg_config};
 
 let cfg   = pg_config(Some("host=localhost user=you dbname=clinic"))?;
@@ -79,7 +79,8 @@ away.
 Shred and reconstruct are pure functions over the map, so you can check fidelity
 with no store at all:
 
-```rust
+<!-- not compiled: Continues the previous block; `resource` and `recon_in` come from there. -->
+```rust,ignore
 use fhir_sqlite_map::{shred, reconstruct};
 use fhir_sqlite_map::reconstruct::ReconIn;
 
@@ -96,11 +97,27 @@ way to check that a resource shape survives before involving an engine.
 ## Inspect what a resource shreds into
 
 ```rust
-let out = shred(map.resource("Patient").unwrap(), &patient)?;
-for (table_idx, rows) in out.tables.iter().enumerate() {
-    if rows.is_empty() { continue; }
-    println!("{} — {} rows", map.tables[table_idx].name, rows.len());
+// `RelMap` has no `resource()` accessor and no `tables` field — the tables
+// belong to each `ResourceMap`, which is what the shredder walks.
+let rm = map.resources.get("Patient").expect("Patient is in the map");
+let out = shred(rm, &patient)?;
+
+// `ShredOut` is a flat `rows: Vec<Row>`, each row naming its table by index —
+// not a per-table grouping. Extensions, deep spills and contained resources
+// are separate vectors beside it.
+let mut per_table = std::collections::BTreeMap::<u32, usize>::new();
+for row in &out.rows {
+    *per_table.entry(row.table).or_default() += 1;
 }
+for (table_idx, n) in per_table {
+    println!("{} — {n} rows", rm.tables[table_idx as usize].name);
+}
+println!(
+    "{} extension, {} deep, {} contained",
+    out.ext.len(),
+    out.deep.len(),
+    out.contained.len()
+);
 ```
 
 Useful when a round-trip fails: the residue reported by reconstruction
@@ -118,7 +135,10 @@ updated["active"] = serde_json::json!(false);
 
 match store.put_audited(&updated, Some(current), &audit).await {
     Ok(out) => println!("now v{}", out.version_id),
-    Err(e) if e.is_conflict() => println!("someone else wrote first"),
+    // There is no `is_conflict()`; the variant is matched directly.
+    Err(StoreError::Conflict { expected, found }) => {
+        println!("someone else wrote first: expected v{expected}, found v{found}");
+    }
     Err(e) => return Err(e.into()),
 }
 ```
@@ -132,10 +152,16 @@ one success and N−1 conflicts (`T11.6`).
 use fhir_sqlite_store::CondCreate;
 
 let criteria = [("identifier".to_string(), "http://acme.org/mrn|12345".to_string())];
-match store.conditional_create_audited(&patient, &criteria, &audit).await? {
-    CondCreate::Created(id) => println!("created {id}"),
+// The resource type is its own argument, and `Created` carries the whole
+// `PutOutcome` rather than an id. The "too many matches" variant is
+// `Multiple`, and it carries nothing — the count is not part of the 412.
+match store
+    .conditional_create_audited("Patient", &criteria, &patient, &audit)
+    .await?
+{
+    CondCreate::Created(out) => println!("created {} at v{}", out.id, out.version_id),
     CondCreate::Existing(id) => println!("already there: {id}"),
-    CondCreate::Ambiguous(n) => println!("{n} matches — refusing"),
+    CondCreate::Multiple => println!("criteria match more than one — refusing"),
 }
 ```
 
@@ -186,8 +212,14 @@ as a forgery burns an incident response.
 
 ## Emit a checkpoint
 
-```rust
-let witness = store.chain_witness().await?;   // fhir-postgresql today
+> **`fhir-postgresql` only.** `chain_witness` exists on that port and no other
+> — the [conformance matrix](../spec/databases/conformance-matrix.md) row says
+> `• — — — — —`. On the other five this does not compile; `fhir-sqlite` emits
+> checkpoints but has no witness (`M3.16c`).
+
+```rust,ignore
+// fhir-postgresql only — see the note above.
+let witness = store.chain_witness().await?;
 println!("{witness}");
 ```
 
@@ -197,7 +229,9 @@ most recent version verifies perfectly — only an off-box value catches that.
 ## Erasure
 
 ```rust
-store.purge("Patient", "example", &audit, "GDPR Art.17 request #4711").await?;
+// The reason travels on the Audit, not as a separate argument.
+let audit = Audit::cli().with_reason(Some("GDPR Art.17 request #4711".into()));
+store.purge("Patient", "example", &audit).await?;
 ```
 
 Removes history rows and leaves a tombstone recording who, what, when, why, and
@@ -208,9 +242,8 @@ it is what separates a recorded intentional removal from the unrecorded kind.
 
 ```rust
 async fn open(version: &str) -> anyhow::Result<SqliteStore> {
-    let bytes = std::fs::read(
-        format!("fhir-sqlite/assets/fhir-sqlite-relmap-{version}.json.gz"))?;
-    let map = Arc::new(RelMap::from_gz_bytes(&bytes)?);
+    // The map for each version ships inside the crate behind its own feature.
+    let map = Arc::new(RelMap::bundled(version)?);
     let store = SqliteStore::open(format!("clinic-{version}.sqlite"), map).await?;
     store.init(&format!("{version}-baseline")).await?;
     Ok(store)

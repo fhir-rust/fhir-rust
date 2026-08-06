@@ -33,8 +33,7 @@ so nothing here needs the FHIR specification packages or a network (`G2.1`).
 use std::sync::Arc;
 use fhir_sqlite_map::model::RelMap;
 
-let bytes = std::fs::read("fhir-sqlite/assets/fhir-sqlite-relmap-r5.json.gz")?;
-let map = Arc::new(RelMap::from_gz_bytes(&bytes)?);
+let map = Arc::new(RelMap::bundled("r5")?);   // compiled in
 ```
 
 Three versions are available — `r5`, `r4`, `r3` — and they are independent
@@ -94,7 +93,7 @@ the database holds the document you passed in.
 **You had to say who did it.** `Audit::cli()` is one of three deliberate
 choices:
 
-```rust
+```text
 Audit::principal(actor, source)  // an authenticated identity, from your perimeter
 Audit::cli()                     // a local operator ran this
 Audit::unattributed()            // nobody did, and the record will say so

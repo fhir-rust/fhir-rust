@@ -22,12 +22,28 @@ a regulation to a numbered requirement to a test.
 
 ~~Struck~~ identifiers belong to retired sections (`C0.16`). Their rows are
 **unsatisfied as written**, not satisfied by something else, and the strike is
-there so a reviewer does not read a retired citation as a met obligation. Three
-of these rows — transmission security at a service edge, FHIR conformance
-statement, and Bulk Data — depend on a service layer this monorepo does not
-contain, and the corresponding evidence cells ("Inferno run", "live TLS smoke
-test") describe runs that cannot happen against a library. Tracked as
-[`audit.md`](audit.md) **F-04**.
+there so a reviewer does not read a retired citation as a met obligation.
+
+**Corrected 2026-08-03.** This paragraph said those three rows "depend on a
+service layer this monorepo does not contain". It does contain one:
+[`fhir-loco`](../../fhir-loco/), a Loco/Axum FHIR REST API. The evidence cells
+therefore describe runs that *can* happen — against `fhir-loco`, not against a
+port — and the honest status per row is:
+
+| Row | Against `fhir-loco` |
+| --- | --- |
+| HIPAA §164.312(e) transmission security (~~`A7.8`~~) | **not met.** Plain HTTP; TLS is expected from a proxy the deployment supplies, and no requirement currently states that (**F-58**, **F-59**) |
+| ONC/HTI FHIR conformance (~~`A7.12`~~) | **partly.** A CapabilityStatement is served and was corrected under **F-57**; no Inferno run has been performed |
+| ONC/HTI Bulk Data (~~`M8`~~) | **not met.** No `$export` |
+
+The strikes stay, because a retired id is retired however live the behaviour it
+describes. Since 2026-08-03 each is **restated** in
+[`fhir-loco/spec/`](../../fhir-loco/spec/index.md) under an `SV` id — `A7.8` as
+`SV3.11`, `A7.12` as `SV2.8`–`SV2.11`, `M8` as `SV2.15` — so these three rows
+now map to requirements that can be cited and audited rather than to struck
+identifiers. `C0.16` carries the full correspondence.
+
+What each row still needs to be *satisfied* is unchanged and stated above.
 
 ## Deliberate gaps
 
@@ -53,8 +69,10 @@ Stated rather than papered over:
 3. Follow the evidence column into the test suite.
 4. Check the [conformance matrix](conformance-matrix.md) for the port you are
    actually deploying. A requirement satisfied by the PostgreSQL reference is
-   not thereby satisfied by the Oracle scaffold, and the matrix is the only
-   document in this tree that distinguishes them.
+   not thereby satisfied by another port — `fhir-oracle` is Store level now
+   (**F-68**), and its matrix row still differs from the reference on `R4.5`,
+   `O10.7`, and every concurrency cell — and the matrix is the only document
+   in this tree that distinguishes them.
 
 Step 4 is the one that gets skipped, and it is the one that matters: five of the
 six ports currently sit below Reference level (`C0.8`).

@@ -2,10 +2,10 @@
 
 What it takes to add a seventh engine, in the order that works, with the steps
 that get skipped called out — because two of the six existing ports skipped them
-and the results are in the [audit register](../spec/audit.md).
+and the results are in the [audit register](../spec/databases/audit.md).
 
 Normative reference:
-[`spec/15-portability-and-dialects.md`](../spec/15-portability-and-dialects.md).
+[`spec/15-portability-and-dialects.md`](../spec/databases/15-portability-and-dialects.md).
 
 ## What you are actually porting
 
@@ -194,7 +194,7 @@ State the port's conformance level (`C0.8`) and do not claim above it
 
 ## Step 9 — the matrix
 
-Add a column to [`spec/conformance-matrix.md`](../spec/conformance-matrix.md).
+Add a column to [`spec/conformance-matrix.md`](../spec/databases/conformance-matrix.md).
 Use `?`, honestly, for everything your test suite does not demonstrate. `?` is
 not a soft `•` — it means "plausibly satisfied by shared code, and nothing here
 proves it".

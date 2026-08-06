@@ -4,7 +4,7 @@ FHIR search parameters compile to SQL predicates over the normalized columns.
 No query engine, no interpreter — the generator turns each parameter into a
 predicate template at build time, and search binds values into it.
 
-Normative reference: [`spec/06-search.md`](../spec/06-search.md).
+Normative reference: [`spec/06-search.md`](../spec/databases/06-search.md).
 
 ## The call
 
@@ -42,7 +42,7 @@ measured on `fhir-postgresql`.
 
 Default is **case- and accent-insensitive prefix match**:
 
-```rust
+```text
 ("name", "smi")      // matches Smith, Smythe-Jones, ŚMIGŁY
 ("name", "aero")     // matches Ærø
 ("name", "munoz")    // matches Muñoz
@@ -50,7 +50,7 @@ Default is **case- and accent-insensitive prefix match**:
 
 Two modifiers change it:
 
-```rust
+```text
 ("name:exact",    "Ærø")   // literal string — compares the stored column
 ("name:contains", "mit")   // unanchored — folds both sides, and scans
 ```
@@ -95,7 +95,7 @@ Unicode version (`X15.4`).
 
 FHIR prefixes, with precision-aware ranges (`P6.2`):
 
-```rust
+```text
 ("birthdate", "1974")          // eq — the whole year
 ("birthdate", "ge1974-12")     // ge — from 1974-12-01 onward
 ("date",      "sa2026-01-01")  // sa — starts after
@@ -107,7 +107,7 @@ range over the year, not equality against a padded date.
 
 ## Token search
 
-```rust
+```text
 ("identifier", "http://acme.org/mrn|12345")  // system and code
 ("identifier", "|12345")                     // code, no system
 ("identifier", "12345")                      // code, any system
@@ -118,7 +118,7 @@ Indexed on `(system, code)` pairs (`P6.4`).
 
 ## Reference search
 
-```rust
+```text
 ("subject", "Patient/123")   // type and id
 ("subject", "123")           // id, any type
 ```
@@ -127,7 +127,7 @@ Indexed on `(ref_type, ref_id)`.
 
 ## Result parameters
 
-```rust
+```text
 ("_count", "100")           // default 50, max 1000
 ("_sort",  "birthdate")     // any searchable parameter
 ("_id",    "example")
@@ -196,5 +196,5 @@ under load, never as a wrong answer.
 ## Next
 
 - [Tutorial 5 — history and audit](tutorial-05-history-and-audit.md)
-- [The folding specification](../spec/locale-accent-folding.md) — normative, and
+- [The folding specification](../spec/databases/locale-accent-folding.md) — normative, and
   worth reading before changing anything about matching

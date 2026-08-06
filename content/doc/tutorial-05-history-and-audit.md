@@ -4,9 +4,9 @@ Everything in this tutorial exists because the data is protected health
 information, and because "the perimeter handles security" is not an answer to
 "who looked at this patient".
 
-Normative references: [`spec/05`](../spec/05-versioning-and-history.md),
-[`spec/03` M3.15–M3.18](../spec/03-storage-model.md),
-[`spec/12`](../spec/12-trust-principal-and-audit.md).
+Normative references: [`spec/05`](../spec/databases/05-versioning-and-history.md),
+[`spec/03` M3.15–M3.18](../spec/databases/03-storage-model.md),
+[`spec/12`](../spec/databases/12-trust-principal-and-audit.md).
 
 ## Versions
 
@@ -34,7 +34,7 @@ runtime check (`H5.3`).
 
 There is no default attribution, deliberately (`PR12.3a`):
 
-```rust
+```text
 Audit::principal("dr.jones@clinic.example", "header:X-Fhir-Principal")
 Audit::cli()
 Audit::unattributed()
@@ -65,7 +65,8 @@ Regulators audit reads before writes. A store that records only mutations cannot
 answer "who looked at this patient", so every read appends an access record
 (`PR12.5`):
 
-```rust
+<!-- not compiled: `AccessRecord`'s fields are elided with `/* … */`; see the struct for the seven it needs. -->
+```rust,ignore
 store.log_access(&AccessRecord { /* … */ }).await?;
 ```
 
@@ -167,8 +168,12 @@ A MAC proves a row was not rewritten. It says nothing about a row that is
 **gone** — and a chain missing its most recent version verifies perfectly,
 because nothing left behind refers to what was removed.
 
-```rust
-let checkpoint = store.chain_witness().await?;   // PostgreSQL today
+> **`fhir-postgresql` only**, and this tutorial's other examples are written
+> against `fhir-sqlite`. On any port but PostgreSQL the line below does not
+> compile.
+
+```rust,ignore
+let checkpoint = store.chain_witness().await?;
 ```
 
 One value covering every chain head in the namespace, such that it changes if
@@ -207,7 +212,11 @@ and the point is defence that survives an application bug.
 GDPR Art. 17 is the one sanctioned deletion, and it is explicit (`M3.18`):
 
 ```rust
-store.purge("Patient", "example", &audit, "GDPR Art.17 request #4711").await?;
+// The reason travels on the Audit, not as a separate argument: it is recorded
+// on the tombstone the same way it is recorded on every other write, so an
+// erasure cannot be attributed differently from a normal change.
+let audit = Audit::cli().with_reason(Some("GDPR Art.17 request #4711".into()));
+store.purge("Patient", "example", &audit).await?;
 ```
 
 History rows are removed and replaced by a **tombstone** recording who purged
@@ -231,12 +240,12 @@ unrecorded kind.
 `fhir-mssql` and `fhir-oracle` have no store at all. And the audit **tests** —
 `audit.rs`, `redaction.rs`, `concurrency.rs` — exist only in
 `fhir-postgresql`, so the guarantees on this page are `?` rather than `•`
-elsewhere in the [conformance matrix](../spec/conformance-matrix.md). Shared
+elsewhere in the [conformance matrix](../spec/databases/conformance-matrix.md). Shared
 code is not evidence that this port runs it.
 
 One further caveat specific to PostgreSQL: it still derives its chain pre-image
 in SQL (`(($1::text)::jsonb)::text`), so a PostgreSQL chain cannot be verified
-by any other port ([`audit.md`](../spec/audit.md) **F-07**).
+by any other port ([`audit.md`](../spec/databases/audit.md) **F-07**).
 
 ## Next
 
