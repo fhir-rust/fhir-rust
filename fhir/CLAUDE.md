@@ -37,7 +37,7 @@ This is a workspace, not a single crate:
 | `fhir-core` | Everything release-independent: `Decimal`, `Validate`, `Coded<E>`, builders, temporal parsing, XML, the REST client |
 | `fhir-release-2` … `fhir-release-6` | One FHIR release each, ~90k–240k generated lines |
 | `fhir` | The facade: re-exports the above behind features `r2`…`r6` |
-| `fhir-release-1`, `fhir-release-7` … `fhir-release-10` | Name reservations at `0.0.0`. No such specifications exist (or, for R1/DSTU1, none is modelled); they contain no model |
+| `fhir-release-1`, `fhir-release-7` … `fhir-release-10` | Name reservations at `0.0.1`. No such specifications exist (or, for R1/DSTU1, none is modelled); they contain no model |
 | `fhir-derive-macros` | `#[derive(Validate)]`, `Builder`, `FhirChoice` |
 
 The models are separate crates so that compiling all of them is several

@@ -10,10 +10,10 @@ you are working with:
 
 | | `crate::codegen` | `crate::r5::parse` |
 | --- | --- | --- |
-| Releases | any (`Version::R3`, `R4`, `R5`) | R5 only |
+| Releases | any (`Version::R2` … `R6`) | R5 only |
 | Emits | the **finished** module tree | a rough **starting point** |
-| Output | `src/<release>/…` | `tmp/out/*.rs` |
-| Used for | all of `fhir-release-3/src` and `fhir-release-4/src` | the original authoring of `fhir-release-5/src` |
+| Output | `fhir-release-N/src/…` | `tmp/out/*.rs` |
+| Used for | all of `fhir-release-2/-3/-4/-6/src` | the original authoring of `fhir-release-5/src` |
 
 New work belongs in `codegen`. `r5::parse` is kept because the shipped R5 model
 was authored through it and its splicing generators are still how R5 is edited

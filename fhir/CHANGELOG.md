@@ -5,13 +5,23 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [fhir-derive-macros 1.2.0] - 2026-08-06 (retroactive entry)
+
+Published without a changelog entry — recorded here after the 2026-08-06
+audit found the gap (T41). 1.1.0 → 1.2.0 carried the derive-macro side of
+the 3.0.0 model work (the `Validate`/`FhirChoice`/`Builder` derives as the
+release crates now consume them); the publish-match gate
+(`scripts/check-published-match.sh`) is what caught the 206-line divergence
+that forced the bump (F-35, in the database family's register).
+
 ## [3.0.0] - 2026-08-01
 
 `fhir`, `fhir-core` and `fhir-release-2` … `fhir-release-6` all move to 3.0.0
 together. The whole family takes the major bump because the breaking change is
 in a type every one of them re-exports, so a version that merely *looked*
-unaffected would still break its dependents. `fhir-derive-macros` is untouched
-at 1.1.0, and the reservation crates stay at 0.0.0.
+unaffected would still break its dependents. `fhir-derive-macros` moved to
+1.2.0 (entry above — this paragraph originally said "untouched at 1.1.0"),
+and the reservation crates sit at 0.0.1 (originally written as 0.0.0).
 
 ### Added — cross-release conversion with a loss report (`fhir::convert`)
 

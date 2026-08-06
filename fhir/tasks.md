@@ -767,8 +767,12 @@ above.
   `fhir.md`, 22 MB duplicated in git — should exist as a separate file at
   all.
 
-### T39. `#![forbid(unsafe_code)]` in all 13 crates — **P1**
-- **Why:** R13.14 is currently met by 1 of 13 crates — only the facade
+### T39. `#![forbid(unsafe_code)]` in all 13 crates — **P1** — *done*
+- *Status (2026-08-06):* the attribute is in all 13 crate roots; a
+  full-feature `cargo check --workspace --features "r2 r3 r4 r6 xml client"`
+  compiles clean (the tree has no `unsafe` outside string literals). Spec
+  13's R13.14 status updated to match.
+- **Why:** R13.14 was met by 1 of 13 crates — only the facade
   (`src/lib.rs`) declares it. `fhir-core`, which carries the REST client and
   the XML reader — the network and parsing surface — does not; neither do
   `fhir-derive-macros` or any release crate.
@@ -776,7 +780,11 @@ above.
   `lib.rs` is hand-maintained, so this is twelve one-line edits), and note it
   in spec 13's R13.14 status when done.
 
-### T40. Sweep AGENTS.md + AGENTS/ for release-count and path drift — **P1**
+### T40. Sweep AGENTS.md + AGENTS/ for release-count and path drift — **P1** — *done*
+- *Status (2026-08-06):* AGENTS.md now says five releases (R2 row added),
+  R6 published-by-necessity (R12.14a), reservations -1/-7..-10 at 0.0.1,
+  tmp/out/ untracked, and "the other four are generated"; architecture,
+  conventions, glossary and code-generation updated to `fhir-release-N/src`.
 - **Why (all verified):** AGENTS.md says "Four releases are modelled" and its
   table omits R2; it calls R6 "unpublished" and annotates it `publish =
   false` (no crate sets `publish`, and R6 *must* be published — R12.14a); its
@@ -787,7 +795,11 @@ above.
   ground truth as this audit (five releases, `fhir-release-N/src` paths, all
   five release crates published).
 
-### T41. CHANGELOG and identity-string drift — **P2**
+### T41. CHANGELOG and identity-string drift — **P2** — *done*
+- *Status (2026-08-06):* retroactive `fhir-derive-macros 1.2.0` entry added;
+  the 3.0.0 entry's "untouched at 1.1.0"/"0.0.0" corrected (CLAUDE.md too);
+  README says stable (3.0), five models; lib.rs says five releases and
+  `fhir = "3"`; the package description now names R2-R6 and `convert`.
 - **Why (all verified):** CHANGELOG has no `fhir-derive-macros` 1.2.0 entry,
   and its 3.0.0 entry says derive-macros is "untouched at 1.1.0" (it is
   1.2.0) and "the reservation crates stay at 0.0.0" (they are 0.0.1).
@@ -798,7 +810,9 @@ above.
   README, `src/lib.rs` and the package description up to five releases at
   3.0.0.
 
-### T42. Remove the committed profdata — **P2**
+### T42. Remove the committed profdata — **P2** — *done*
+- *Status (2026-08-06):* untracked (`git rm --cached`), deleted from the
+  working tree, and added to `.gitignore`.
 - **Why:** T32's remaining item: `fhir-specifications-parser.profdata` is
   tracked at the repository root. It does not ship, but it does not belong in
   git.
@@ -812,14 +826,18 @@ above.
 - **Do:** write `search_response.rs` and a dedicated `convert` example now;
   `typed_references.rs` when T11 completes.
 
-### T44. `main.rs` usage text is stale — **P2**
+### T44. `main.rs` usage text is stale — **P2** — *done*
+- *Status (2026-08-06):* USAGE now lists r2-r6 (and the alias/version
+  spellings) and the real `fhir-release-N/src` default; `cargo check` clean.
 - **Why:** the USAGE string says the release argument is "r3, r4, or r5" and
   that `--out` defaults to `src/<release>`. The parser accepts `r2` through
   `r6`, and the default output is `fhir-release-N/src`.
 - **Do:** make the USAGE string match `codegen::Version::parse` and
   `source_dir()`.
 
-### T45. Relabel `tasks-roundtrip-failures.md` as historical — **P2**
+### T45. Relabel `tasks-roundtrip-failures.md` as historical — **P2** — *done*
+- *Status (2026-08-06):* header rewritten — historical burn-down record,
+  pointing at the in-test allowlists and the real test targets.
 - **Why:** its regenerate command names the dead
   `roundtrip_official_examples` test target, and the operative allowlists now
   live in the roundtrip test files themselves (T28). The document is the

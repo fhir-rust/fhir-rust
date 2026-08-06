@@ -125,11 +125,12 @@ A tuple newtype serializes transparently as its inner value. Details in
 
 ## Module wiring
 
-- Each datatype is `src/<release>/types/<snake>.rs`, declared in
-  `src/<release>/types.rs` with both `pub mod <snake>;` and
+- Each datatype is `fhir-release-N/src/types/<snake>.rs`, declared in
+  `fhir-release-N/src/types.rs` with both `pub mod <snake>;` and
   `pub use <snake>::<Pascal>;`.
-- Each resource is `src/<release>/resources/<snake>.rs`, declared the same way
-  in `src/<release>/resources.rs`, which also defines the `Resource` enum.
+- Each resource is `fhir-release-N/src/resources/<snake>.rs`, declared the same
+  way in `fhir-release-N/src/resources.rs`, which also defines the `Resource`
+  enum.
 - The module is named after the definition's `name`, not its `type`. A profile
   such as `MoneyQuantity` has `type: "Quantity"` but lives in
   `money_quantity.rs` as `struct MoneyQuantity`.

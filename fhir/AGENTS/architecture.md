@@ -20,7 +20,9 @@ where this describes *code layout*, the specs describe *required behaviour*.
 fhir-core           release-independent: the traits, the wrappers, the shared types
   ├── r5            the FHIR R5 model (feature `r5`, default)
   ├── r4            the FHIR R4 model (feature `r4`)
-  └── r3            the FHIR R3/STU3 model (feature `r3`)
+  ├── r3            the FHIR R3/STU3 model (feature `r3`)
+  ├── r2            the FHIR R2/DSTU2 model (feature `r2`)
+  └── r6            the FHIR R6 ballot-draft model (feature `r6`)
 ```
 
 **A release module owns only what the specification made release-specific**: the
@@ -151,7 +153,7 @@ codegen::codes_gen::plan   ──┐   (the enum names field typing depends on)
 codegen::plan::plan_type ──▶ break_type_cycles ──▶ resolve_defaults
         │
         ▼  codegen::render / primitives / codes_gen / meta_gen / extension_ext_gen
-src/<release>/{types,resources,codes.rs,extension_ext.rs,meta/generated.rs}
+fhir-release-N/src/{types,resources,codes.rs,extension_ext.rs,meta/generated.rs}
 ```
 
 `Version` is the only thing that knows a release apart: which bundles to read,

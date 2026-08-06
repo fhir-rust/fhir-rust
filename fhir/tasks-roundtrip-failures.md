@@ -1,15 +1,20 @@
-# Round-trip failures — official FHIR R5 examples
+# Round-trip failures — historical burn-down record (T2/T28)
 
-Burn-down list produced by task **T2** (`tasks.md`). It records every official
-FHIR R5 example file that does **not** survive a JSON round-trip through
-`fhir::r5::resources::Resource` today.
-
-Regenerate with:
+**Historical, not operative** (relabelled 2026-08-06, T45). This was the
+burn-down list produced by task **T2**; the *operative* allowlists now live
+in the test files themselves — `KNOWN_FAILURES`/`KNOWN_CLASSES` in
+`tests/roundtrip_r5_examples.rs`, `_r4_`, and `_r3_` — and the corpus runs
+as a hard CI gate (T28). The regenerate command this file used to give
+(`cargo test --test roundtrip_official_examples`) names a test target that
+no longer exists; the current run is:
 
 ```sh
 bin/fetch-examples
-cargo test --test roundtrip_official_examples -- --ignored --nocapture
+cargo test --test roundtrip_r5_examples   # and _r4_, _r3_
 ```
+
+The narrative below — the failure categories and why each was fixed — is
+kept as the record of how the corpus went green.
 
 ## Summary
 

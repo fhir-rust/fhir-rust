@@ -2,9 +2,10 @@
 //!
 //! `fhir` is a Rust implementation of the **HL7 FHIR®** data model, together
 //! with a code generator that produces it from the official FHIR specification
-//! JSON files. Three releases are modelled: **R5** (5.0.0) under [`r5`],
-//! **R4** (4.0.1) under [`r4`], and **R3** (3.0.2, also called STU3) under
-//! [`r3`].
+//! JSON files. Five releases are modelled: **R5** (5.0.0) under [`r5`],
+//! **R4** (4.0.1) under [`r4`], **R3** (3.0.2, also called STU3) under
+//! [`r3`], **R2** (1.0.2, also called DSTU2) under `r2`, and the **R6**
+//! ballot draft (6.0.0-ballot3) under `r6`.
 //!
 //! Fast Healthcare Interoperability Resources (FHIR) is the HL7 standard for
 //! exchanging electronic health records. For each release this crate gives you:
@@ -35,9 +36,9 @@
 //!
 //! ```toml
 //! [dependencies]
-//! fhir = "1"                                                # R5 only
-//! # fhir = { version = "1", features = ["r3", "r4"] }       # every release
-//! # fhir = { version = "1", default-features = false, features = ["r3"] }  # R3 only
+//! fhir = "3"                                                # R5 only
+//! # fhir = { version = "3", features = ["r2", "r3", "r4", "r6"] }  # every release
+//! # fhir = { version = "3", default-features = false, features = ["r3"] }  # R3 only
 //! serde_json = "1" # or any other serde data format
 //! ```
 //!

@@ -56,7 +56,7 @@ all use terms the same way.
 - **The model** — a release's Rust types under `<release>::{types, resources,
   codes}`.
 - **The generator** — `crate::codegen`, which turns a release's spec JSON into
-  its finished `src/<release>` tree (`cargo run -- r3`, `cargo run -- r4`).
+  its finished `fhir-release-N/src` tree (`cargo run -- r2` … `cargo run -- r6`).
 - **The legacy parse layer** — `r5::parse`, the original R5-only generator,
   which emits a rough starting point to `tmp/out/*.rs`, plus the splicing
   generators that edit `fhir-release-5/src` in place.

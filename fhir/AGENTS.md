@@ -12,18 +12,24 @@ derives that model from the official FHIR specification JSON files. FHIR (Fast
 Healthcare Interoperability Resources) is the HL7 standard for exchanging
 electronic health records.
 
-**Four releases are modelled**, each complete and independent:
+**Five releases are modelled**, each complete and independent:
 
 | Release | Module | Feature | Primitives | Datatypes | Resources | Code enums |
 | --- | --- | --- | --- | --- | --- | --- |
 | R5 (5.0.0) | `fhir::r5` | `r5` (default) | 21 | 50 | 158 | 442 |
 | R4 (4.0.1) | `fhir::r4` | `r4` | 20 | 43 | 146 | 486 |
 | R3 (3.0.2, STU3) | `fhir::r3` | `r3` | 18 | 36 | 117 | 386 |
+| R2 (1.0.2, DSTU2) | `fhir::r2` | `r2` | 18 | 28 | 94 | 265 |
 | R6 (6.0.0-ballot3) | `fhir::r6` | `r6` | 21 | 51 | 161 | 459 |
 
-R6 is a **ballot draft**: unpublished, off by default, outside the semver
-promise. `fhir-release-7`, `fhir-release-8` and `fhir-release-9` are name reservations only — no
-such specifications exist and those crates contain no model.
+R6 is a **ballot draft**: off by default and outside the semver promise —
+but **published**, necessarily: the facade's optional dependency on it needs
+a registry version (`R12.14a`; an earlier revision of this paragraph said
+"unpublished", which was never something a workspace member of a published
+facade could be). `fhir-release-1`, `fhir-release-7` through
+`fhir-release-10` are name reservations only (0.0.1) — no such
+specifications exist (or, for R1/DSTU1, none is modelled) and those crates
+contain no model.
 
 Each release adds `value[x]` **choice enums**, **`Coded<E>`** for
 required-binding codes, generated **builders**, a **prelude**, extension
@@ -36,7 +42,7 @@ and a type standing for both would let those differences pass silently. Code
 that genuinely does not care about the release belongs in `fhir-core` (see
 below).
 
-## R5 is hand-tended; R4 is generated
+## R5 is hand-tended; the other four are generated
 
 This distinction governs how you edit each one:
 
@@ -44,11 +50,12 @@ This distinction governs how you edit each one:
   shapes. Never blind-regenerate it. Change it with the metadata-driven splicing
   generators described in [`AGENTS/code-generation.md`](AGENTS/code-generation.md),
   or by hand. `cargo run -- r5` refuses to write there for this reason.
-- **`fhir-release-3/src/` and `fhir-release-4/src/` are entirely generated** by `cargo run -- r3` /
-  `cargo run -- r4`. Do not hand-edit them; change the generator and
-  regenerate. (Their few hand-written support modules — `validate.rs`,
-  `choice.rs`, `bundle_util.rs`, `prelude.rs`, … — are not generated and are
-  edited normally.)
+- **`fhir-release-2/src/`, `fhir-release-3/src/`, `fhir-release-4/src/` and
+  `fhir-release-6/src/` are entirely generated** by `cargo run -- r2` … `-- r6`.
+  Do not hand-edit them; change the generator and regenerate. (Their few
+  hand-written support modules — `validate.rs`, `choice.rs`,
+  `bundle_util.rs`, `prelude.rs`, … — are not generated and are edited
+  normally.)
 
 ## Repository shape
 
@@ -84,14 +91,15 @@ fhir-release-5/src/          # R5: hand-tended prose over generated shapes
   meta/generated.rs   # the generated element table
 fhir-release-4/src/          # R4: fully generated. 146 resources, 486 code enums
 fhir-release-3/src/          # R3 (STU3): fully generated. 117 resources, 386 code enums
+fhir-release-2/src/          # R2 (DSTU2): fully generated. 94 resources, 265 code enums
 fhir-release-6/src/          # R6: generated from 6.0.0-ballot3. 161 resources, 459 enums
-                      #     publish = false; outside the semver promise
-fhir-release-7/, fhir-release-8/, fhir-release-9/   # name reservations; no specification exists
+                      #     outside the semver promise (published — R12.14a)
+fhir-release-1/, fhir-release-7/ … fhir-release-10/   # name reservations (0.0.1); no model
 fhir-derive-macros/   # proc-macro crate: #[derive(Validate, FhirChoice, Builder)]
 
 doc/fhir-specifications/<release>/fhir-definitions-json/  # the official spec JSON
 doc/adding-a-release.md  # the procedure for adding one, written from doing R6
-tmp/out/              # legacy R5 generator scratch output (tracked)
+tmp/out/              # legacy R5 generator scratch output (untracked)
 spec/                 # the living specifications — the source of truth (read these)
 AGENTS/               # operational guidance for agents (this folder)
 ```
@@ -189,7 +197,8 @@ mdBook build, and the proc-macro publish dry-run.
   extras stay optional: `reqwest`/`tokio` (`client`), `quick-xml` (`xml`).
 - Never commit to the default branch; branch first. End commit messages with
   the `Co-Authored-By` trailer if you are an agent.
-- `tmp/out/` and `fhir-release-4/src/` are generator output — regenerate them, do not
+- `tmp/out/` (untracked scratch) and the generated release trees
+  (`fhir-release-2/-3/-4/-6/src/`) are generator output — regenerate them, do not
   hand-edit them. `fhir-release-5/src/` is hand-tended and must not be regenerated over.
 - When adding a FHIR release, everything release-specific must be reachable from
   `codegen::Version`; if you find yourself adding a `match` on the release

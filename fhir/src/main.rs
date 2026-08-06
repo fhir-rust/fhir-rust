@@ -50,8 +50,9 @@ fn main() -> ExitCode {
 const USAGE: &str = "\
 Usage: cargo run -- <release> [--out <dir>]
 
-  <release>     r3, r4, or r5
-  --out <dir>   where to write the model (default: src/<release>)
+  <release>     r2, r3, r4, r5, or r6 (also accepts dstu2/stu3 and
+                version numbers like 1.0.2, 6.0.0-ballot3)
+  --out <dir>   where to write the model (default: fhir-release-N/src)
 
 R5 has no default output directory: the shipped fhir-release-5/src modules carry
 hand-written documentation that regeneration would overwrite, so an explicit

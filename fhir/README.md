@@ -14,7 +14,7 @@ Fast Healthcare Interoperability Resources (FHIR, pronounced "fire") is the HL7
 standard for exchanging electronic health records. This crate lets you build,
 parse, validate, and round-trip FHIR resources in idiomatic Rust with `serde`.
 
-> **Status:** stable (1.0). All three data models (resources, datatypes,
+> **Status:** stable (3.0). All five release models (resources, datatypes,
 > primitives, code systems, validation) are implemented and green, and the API
 > follows semantic versioning.
 
