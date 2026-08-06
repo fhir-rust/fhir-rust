@@ -319,7 +319,8 @@ Conventions for the executing session:
 - *Status:* `bin/check-llms` checks the real module roots and passes (27
   modules); `llms.json` says 3.0.0, five releases, 442 R5 enums, and
   mentions `r2`/`r6`/`convert`. Still open: `llms.txt` is byte-identical to
-  `fhir.md` (22 MB duplicated in git) — see T38's remaining decision.
+  `fhir.md` — deliberate, per T38's owner decision: the two files serve
+  different audiences and will diverge.
 - **Do:** Author AI-readable crate summaries (crate purpose, module map, key
   types, examples index); restore them to `Cargo.toml` `include`; add a CI
   check that they mention every top-level module.
@@ -749,7 +750,7 @@ above.
   `rust-version` (one grep in CI), so a stray edit like this one cannot
   land silently again.
 
-### T38. Repair `bin/check-llms` and regenerate the llms artifacts — **P0** — *done except the llms.txt decision*
+### T38. Repair `bin/check-llms` and regenerate the llms artifacts — **P0** — *done*
 - **Why:** `bin/check-llms` collected module names from `src/r3.rs`,
   `src/r4.rs` and `src/r5.rs`, which no longer exist, and exited 1 — so the
   `llms` CI job could not pass. `llms.json` was stale: version 1.1.0, "419"
@@ -763,9 +764,12 @@ above.
   enums corrected to 442, `r2`/`r6`/`convert` module entries added.
   `./bin/check-llms` → `OK: llms.txt and llms.json mention all 27 modules`,
   exit 0.
-- **Remaining (owner decision):** whether `llms.txt` — byte-identical to
-  `fhir.md`, 22 MB duplicated in git — should exist as a separate file at
-  all.
+- **Owner decision (2026-08-06): the duplication is correct.** `llms.txt`
+  and `fhir.md` are byte-identical *today*, but they serve different
+  audiences and will diverge — `llms.txt` follows the llms.txt convention
+  for AI consumers, `fhir.md` is the repository's generated transcript — so
+  they stay separate files rather than one being a symlink or deleted.
+  T38 is fully closed.
 
 ### T39. `#![forbid(unsafe_code)]` in all 13 crates — **P1** — *done*
 - *Status (2026-08-06):* the attribute is in all 13 crate roots; a
