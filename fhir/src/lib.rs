@@ -227,10 +227,12 @@
 //! cargo run --example build_patient
 //! cargo run --example validate_resource
 //! cargo run --example read_bundle
+//! cargo run --example search_response
 //! cargo run --example primitive_extensions
 //! cargo run --example operation_outcome
 //! cargo run --example extensions
 //! cargo run --example transaction_bundle
+//! cargo run --example convert_release --features "r4 r5"
 //! ```
 //!
 //! ## Crate layout

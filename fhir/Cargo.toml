@@ -135,6 +135,10 @@ name = "read_bundle"
 required-features = ["r5"]
 
 [[example]]
+name = "search_response"
+required-features = ["r5"]
+
+[[example]]
 name = "transaction_bundle"
 required-features = ["r5"]
 
@@ -156,6 +160,10 @@ required-features = ["r4"]
 
 [[example]]
 name = "r4_and_r5_side_by_side"
+required-features = ["r4", "r5"]
+
+[[example]]
+name = "convert_release"
 required-features = ["r4", "r5"]
 
 [dependencies]

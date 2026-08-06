@@ -304,9 +304,10 @@ Conventions for the executing session:
 - **Accept:** `mdbook build` green in CI; linked from README.
 - **Depends:** T1 (CI); content updated at the end of each phase
 
-### T24. Example set expansion — *mostly done*
-- *Status:* 13 examples are wired; `search_response.rs` and
-  `typed_references.rs` (blocked on T11) were never written. See T43.
+### T24. Example set expansion — *done except `typed_references.rs`*
+- *Status:* 15 examples are wired; `search_response.rs` and
+  `convert_release.rs` landed under T43 (2026-08-06). `typed_references.rs`
+  stays blocked on T11.
 - **Do (rolling):** `extensions.rs` (T17), `primitive_extensions.rs` (T7),
   `transaction_bundle.rs` + `search_response.rs` (T18),
   `operation_outcome.rs` (T15), `typed_references.rs` (T11),
@@ -819,12 +820,18 @@ above.
 - **Do:** `git rm --cached fhir-specifications-parser.profdata` and add it
   (or `*.profdata`) to `.gitignore`.
 
-### T43. The never-written examples, plus one for `convert` — **P2**
+### T43. The never-written examples, plus one for `convert` — **P2** — *done except the T11-blocked one*
+- *Status (2026-08-06):* `examples/search_response.rs` (searchset paging:
+  typed extraction via `Bundle::resources`, `total`, a `next_link` walk over
+  canned pages, offline) and `examples/convert_release.rs` (the 3.0.0
+  headline: `convert::between::<R5, R4>` on the wire form — one lossless
+  conversion asserted lossless, one carrying R5's `Observation.triggeredBy`
+  so the `LossReport` has something to say). Both registered in `Cargo.toml`,
+  listed in README and the `lib.rs` guide, run clean, clippy-pedantic clean.
 - **Why:** T24 left `search_response.rs` unwritten, and `typed_references.rs`
   is blocked on T11. Meanwhile 3.0.0's headline feature — cross-release
-  conversion (spec 14) — has no standalone example at all.
-- **Do:** write `search_response.rs` and a dedicated `convert` example now;
-  `typed_references.rs` when T11 completes.
+  conversion (spec 14) — had no standalone example at all.
+- **Remaining:** `typed_references.rs`, when T11 completes.
 
 ### T44. `main.rs` usage text is stale — **P2** — *done*
 - *Status (2026-08-06):* USAGE now lists r2-r6 (and the alias/version

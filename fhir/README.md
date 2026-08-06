@@ -268,6 +268,7 @@ cargo run --example tutorial           # the guide's end-to-end walkthrough
 cargo run --example build_patient      # build a resource and print its JSON
 cargo run --example validate_resource  # recursive validation and issue paths
 cargo run --example read_bundle        # dispatch on each entry's resourceType
+cargo run --example search_response    # searchset: typed entries, total, paging
 cargo run --example code_systems       # code-system enums
 cargo run --example primitive_extensions  # _field primitive extensions
 cargo run --example operation_outcome     # validation → OperationOutcome
@@ -278,6 +279,7 @@ cargo run --example client_crud --features client  # REST CRUD vs HAPI
 cargo run --example r4_patient --features r4              # the same, in R4
 cargo run --example r3_patient --features r3              # the same, in R3
 cargo run --example r4_and_r5_side_by_side --features "r4 r5"  # two at once
+cargo run --example convert_release --features "r4 r5"  # convert + loss report
 ```
 
 The R5 examples all work for R4 or R3 by changing `r5` in the imports.
