@@ -56,8 +56,10 @@ Tracked as discrete tasks in [`tasks.md`](tasks.md); the plan-level view:
    (`doc/adding-a-release.md`) are proven by five releases; R4B is a
    turn-the-crank exercise plus a name decision (`fhir-release-4b` does not
    fit the numeric reservation scheme).
-4. **mdBook deploy** (T46) — the book builds in CI and deploys nowhere.
-   (Proptest closed 2026-08-06, T48 — `tests/proptest_roundtrip.rs`.)
+4. ~~mdBook deploy~~ — closed by decision (T46, 2026-08-06): the website is
+   the published documentation surface; the book stays a CI-checked,
+   read-from-checkout artifact. (Proptest closed the same day, T48 —
+   `tests/proptest_roundtrip.rs`.)
 
 ## Guiding constraints (unchanged where still true)
 

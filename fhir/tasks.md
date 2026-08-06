@@ -293,9 +293,11 @@ Conventions for the executing session:
 
 ## Documentation / tutorials / examples track (interleave; one per phase)
 
-### T23. mdBook guide — *done, one half open*
-- *Status:* `book/` is written and built in CI's `book` job; the GitHub Pages
-  deploy half never happened. See T46.
+### T23. mdBook guide — *done*
+- *Status:* `book/` is written and built in CI's `book` job. The GitHub
+  Pages deploy half was closed by decision under T46 (2026-08-06): the
+  website is the published surface; the book is a CI-checked,
+  read-from-checkout artifact.
 - **Do:** `book/` with chapters: Getting started; Model mapping; JSON
   serialization deep-dive (incl. `_field` once T7 lands); Validation;
   Terminology & codes; Extensions; Bundles; Code generator internals. CI job
@@ -855,9 +857,16 @@ above.
 - **Do:** add a header saying so, pointing at the allowlists in
   `tests/roundtrip_r{3,4,5}_examples.rs`.
 
-### T46. mdBook GitHub Pages deploy (T23's unfinished half)
-- **Do:** either deploy `book/` to GitHub Pages from the existing CI build,
-  or record the decision not to and close T23.
+### T46. mdBook GitHub Pages deploy (T23's unfinished half) — *closed by decision*
+- **Owner decision (2026-08-06): do not deploy.** The published
+  documentation surface is the website —
+  [fhir-rust.github.io](https://fhir-rust.github.io) renders the monorepo's
+  own Markdown, including this family's README, all fourteen spec sections,
+  and every example program — and a second published surface would be a
+  second thing that can drift. The book stays what it is today: a
+  CI-checked artifact (`mdbook build` fails the `book` job when a chapter
+  breaks) that a reader gets from a checkout with `mdbook serve book/`.
+  T23 is fully closed.
 
 ### T47. Typed `contained` (T18's unfinished half) — *done* (**breaking → 4.0**)
 - *Status (2026-08-06, owner-directed):* `contained` is now
