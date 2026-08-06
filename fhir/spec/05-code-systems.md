@@ -7,9 +7,11 @@ Applies to every modelled release.
 
 | Release | Code-system enums |
 | --- | --- |
+| R6 | 459 |
 | R5 | 442 |
 | R4 | 486 |
 | R3 | 386 |
+| R2 | 265 |
 
 The counts do not track release age: they follow how many `complete` code
 systems each release's `valuesets.json` happens to publish. R5 moved several to

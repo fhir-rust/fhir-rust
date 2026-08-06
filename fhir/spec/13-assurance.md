@@ -136,25 +136,37 @@ exists because a test in this repository was found in exactly that state.
 
 ### Release evidence
 
-- **R13.13** CI MUST run `cargo deny` (advisories, licenses, sources, bans) and
-  `cargo audit`, and a release MUST publish a CycloneDX SBOM. A crate that
-  handles patient data is a component in someone's IEC 62304 file; the evidence
-  is cheap to produce continuously and expensive to reconstruct later. The
-  `cargo deny` run MUST use `--all-features`: the default feature set omits
-  `client`, `xml`, `r3`, `r4`, and `precise-decimal`, so a default-features
-  scan is silent about the network and parsing dependencies a deployment is
-  most exposed through.
-- **R13.14** The crate MUST declare `#![forbid(unsafe_code)]`.
+- **R13.13** CI MUST run `cargo deny` (advisories, licenses, sources, bans) as
+  the RUSTSEC advisory gate, and a release MUST publish a CycloneDX SBOM. A
+  crate that handles patient data is a component in someone's IEC 62304 file;
+  the evidence is cheap to produce continuously and expensive to reconstruct
+  later. The `cargo deny` run MUST use `--all-features`: the default feature
+  set omits `client`, `xml`, and the non-default releases, so a
+  default-features scan is silent about the network and parsing dependencies a
+  deployment is most exposed through.
+
+  An earlier revision of this requirement also demanded `cargo audit`. That was
+  deliberately dropped as redundant: cargo-deny's advisory check draws on the
+  same RUSTSEC database and additionally honours the `[advisories] ignore`
+  policy in `deny.toml`, so it is the single gate — the rationale is recorded
+  in `security.yml` itself.
+- **R13.14** The crate MUST declare `#![forbid(unsafe_code)]`. *Status:* met by
+  1 of the 13 workspace crates. Only the `fhir` facade declares it
+  (`src/lib.rs`); `fhir-core` — which carries the REST client and the XML
+  reader — `fhir-derive-macros`, and the release crates do not. This is an open
+  gap, tracked as T39 in `tasks.md`.
 - **R13.15** The published package MUST contain only what a consumer compiles
-  against. `llms.txt` is 22 MB and is currently in the `include` list; large
-  generated documentation artifacts belong in the repository or a release
-  asset, not in every downstream `cargo vendor` and CI cache.
+  against. `llms.txt` is 22 MB and was in the `include` list when this
+  requirement was written; it was removed under T32, so the requirement is now
+  met. Large generated documentation artifacts belong in the repository or a
+  release asset, not in every downstream `cargo vendor` and CI cache.
 - **R13.16** A published release MUST be installable in every documented
-  feature combination. `fhir` 1.2.0's `r3`/`r4` features fail to compile for
-  downstream users (they build from this repository), which blocked fhirpg's
-  `--validate` on those releases. Feature-combination builds MUST be a release
-  gate, and a fix MUST be published promptly rather than waiting for the next
-  feature release.
+  feature combination. The motivating defect: `fhir` 1.2.0's `r3`/`r4`
+  features failed to compile for downstream users (they built from this
+  repository), which blocked fhirpg's `--validate` on those releases. Fixed by
+  T30 (published as 1.2.1); the workspace is now at 3.0.0 and CI's `features`
+  and `publish-dry-run` jobs build the documented feature combinations as a
+  release gate.
 
 ## Rationale
 
@@ -186,6 +198,7 @@ for a v1 client and disqualifying for a mission-critical one.
    error within the configured budget, not a hang.
 5. A client test asserts that `id = "../Patient/other"` does not produce a
    request to a different resource.
-6. `cargo deny check` and `cargo audit` pass in CI; a release publishes an SBOM.
+6. `cargo deny --all-features check` passes in CI as the single advisory gate
+   (R13.13); a release publishes an SBOM.
 7. The published `.crate` for the current version is under 10 MB and contains
    no `llms.txt`.

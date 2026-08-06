@@ -6,10 +6,11 @@
 `serde`-serializable Rust, together with a spec-driven code generator that
 derives that model from the official FHIR specification JSON.
 
-Three releases are modelled, each complete and independent: **R5 (5.0.0)**
-under `fhir::r5`, **R4 (4.0.1)** under `fhir::r4`, and **R3 (3.0.2, also
-published as STU3)** under `fhir::r3`. How they coexist — and why they
-are separate types rather than one — is defined in
+Five releases are modelled, each complete and independent: **R6
+(6.0.0-ballot3, a draft)** under `fhir::r6`, **R5 (5.0.0)** under `fhir::r5`,
+**R4 (4.0.1)** under `fhir::r4`, **R3 (3.0.2, also published as STU3)** under
+`fhir::r3`, and **R2 (DSTU2, 1.0.2)** under `fhir::r2`. How they coexist — and
+why they are separate types rather than one — is defined in
 [spec 12](12-fhir-releases.md). Every other spec in this directory applies to
 each release in turn; where they say "R5" for concreteness, read "the release".
 
@@ -69,7 +70,11 @@ Out of scope (for now; see each spec's Future work):
 ## Crate identity
 
 - Package and crate name: **`fhir`**. Import as `use fhir::…`.
-- Cargo **workspace** with one extra member, `fhir-derive-macros` (proc-macros).
+- Cargo **workspace**: the `fhir` facade, `fhir-core` (release-independent
+  machinery), one `fhir-release-N` crate per modelled release (2–6),
+  `fhir-derive-macros` (proc-macros), and the name-reservation crates
+  (`fhir-release-1`, `fhir-release-7` … `fhir-release-10`). See spec 12,
+  R12.1a.
 - Library **and** binary: the library is the model + generator API; the binary
   runs the generator. A library target is required so doctests execute.
 - Each modelled release is a cargo feature (spec 12); `r5` is the default.

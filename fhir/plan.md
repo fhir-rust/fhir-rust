@@ -1,208 +1,98 @@
-# Improvement Plan — `fhir` (FHIR R5 for Rust)
+# Improvement plan — `fhir` (FHIR in Rust)
 
-Status: proposed. Companion file: `tasks.md` (discrete, executable tasks with
-acceptance criteria). Intended to be executed incrementally by Claude
-(Opus) sessions; each phase is independently shippable.
+Status: **rewritten 2026-08-06**. The previous revision was the original
+2026-07-11 plan, kept unchanged while the work it planned shipped; by the time
+it was retired, every present-tense statement in it was false — it described a
+single unpublished 0.1 crate at `src/r5/` with 419 code enums, no CI, no XML,
+no client, and R5 only. Companion file: [`tasks.md`](tasks.md) — T1–T36 record
+how each planned task actually resolved, and Phase B (T37–T48) is the current
+work list. The specification ([`spec/index.md`](spec/index.md)) is the source
+of truth for what the crate is; this file only says where it is going.
 
-## Vision
+## Where the plan landed
 
-Make this crate the best-in-class Rust implementation of HL7 FHIR R5:
-faithful to the specification's JSON representation, type-safe where the spec
-allows it, pleasant to use, deeply documented, and verifiable against the
-official specification artifacts — then extend outward (client, XML,
-multi-version).
+The 2026-07-11 plan ran to completion or was overtaken, phase by phase:
 
-## Current state (baseline as of 2026-07-11, commit `c83f96c`)
+| Phase | Planned | Outcome |
+| --- | --- | --- |
+| 0 — infrastructure | CI, examples oracle, publish hygiene, proptest | Done, exceeded — 16-job CI incl. fuzzing, SBOM, package-size, corpus gate (7,400 examples, hard gate); published. **Proptest (T4) was never done** — the one unfinished Phase 0 item. |
+| 1 — primitive extensions | `_field` siblings | Done — shipped as `_ext` fields serde-renamed to `_<name>`, generator-emitted. |
+| 2 — type safety | choice enums, coded enums, typed refs, value APIs | Choice enums and `Coded<E>` done. **Typed `Reference<T>`: machinery only** — the type exists with `cast`/`resolve`, but zero fields are typed (T11). **Temporal APIs live in `fhir-core::temporal`**, not as inherent methods on the newtypes (T12). |
+| 3 — validation | cardinality, invariants, OperationOutcome | Done, exceeded — 8 invariant classes vs the planned 3, `vec1::Vec1` for `1..*`, corpus-tested. |
+| 4 — ergonomics | builders, prelude, bundle utils, typed `contained` | Done **except typed `contained`** — still `Vec<serde_json::Value>` (T18, not a recorded reversal). |
+| 5 — interop | client, XML, summary | Done, hardened past the plan (timeouts, percent-encoding, size caps, fuzzing — T29/T31 found and fixed a remote DoS in the XML reader). |
+| 6 — multi-version | "R4B under `src/r4b/`" | Exceeded in substance, obsolete in form: **five releases (R2–R6) shipped as separate crates** — the workspace split is what made compiling them tractable (peak memory 12.9 GB → 5.0 GB). R4B itself remains future work (spec 12). |
+| A — assurance | (added later) | T26–T36 all done: lexical `Decimal`, full-corpus CI gate, client hardening, fuzzing, supply chain, R5 drift audit, cross-release conversion (`fhir::convert`, the 3.0.0 headline). |
 
-Done and green (build, 646 unit tests, 241 doctests, clippy pedantic, rustdoc
-zero warnings):
+The current tree: `fhir` 3.0.0 (facade, features `r2`–`r6`/`client`/`xml`),
+`fhir-core` 3.0.0, `fhir-release-2`…`-6` 3.0.0, `fhir-derive-macros` 1.2.0,
+and five reservation crates at 0.0.1 — 13 crates, all published.
 
-- 158 R5 resources (`src/r5/resources/`), 50 complex datatypes + 21 primitive
-  newtypes (`src/r5/types/`), 419 code-system enums (`src/r5/codes.rs`).
-- Polymorphic `Resource` enum tagged by `resourceType`.
-- Recursive `#[derive(Validate)]` (proc-macro crate `fhir-derive-macros/`) +
-  primitive format constraints (`src/r5/validate.rs`).
-- Comprehensive rustdoc: crate guide with tutorials in `lib.rs`, per-field
-  docs, `# Examples` doctests on every datatype/resource; README front page;
-  4 runnable `examples/`.
-- Code generator (`src/r5/parse/`) over the bundled spec JSON
-  (`doc/fhir-specifications/r5/fhir-definitions-json/`).
+## What remains
 
-Known gaps (from `AGENTS.md` idea list + this plan's analysis): primitive
-extensions, choice-type enums, coded-enum fields, typed references, real
-date/time value types, deeper validation, no integration tests, no CI, no
-XML, single version (R5 only), no client.
+Tracked as discrete tasks in [`tasks.md`](tasks.md); the plan-level view:
 
-## Guiding constraints
+1. **Drift found by the 2026-08-06 audit (Phase B, T37–T45).** The tree is in
+   better shape than its own metadata: the facade's `rust-version` (1.97)
+   contradicts the other 12 crates and the CI job (1.88); `bin/check-llms`
+   greps files deleted by the crate split and currently exits 1, so the `llms`
+   CI job cannot pass; `llms.json`/`llms.txt` describe version 1.1.0 with no
+   `r2`, `r6`, or `convert` — and `llms.txt` is a 22 MB byte-identical
+   duplicate of `fhir.md` in git; `#![forbid(unsafe_code)]` covers 1 of 13
+   crates while spec 13 `R13.14` requires it of the crate that owns the HTTP
+   client and XML reader; `AGENTS.md`/`AGENTS/` still describe four releases
+   and dead `src/<release>/` paths; the CHANGELOG never recorded
+   `fhir-derive-macros` 1.2.0. None of this is model behaviour; all of it is
+   the kind of confident-but-wrong text this repository's audits exist to
+   catch.
+2. **The three unfinished halves of old phases**: typed `Reference<T>` fields
+   (generator emission from `targetProfile`, T11), typed `contained` (T47),
+   inherent temporal accessors if wanted (T12). Each is a deliberate-scope
+   decision first and codegen second — deciding *not* to do one and recording
+   why is an acceptable close.
+3. **R4B** (spec 12 future work) — the only FHIR release published by HL7 and
+   not modelled here. The generator and the adding-a-release procedure
+   (`doc/adding-a-release.md`) are proven by five releases; R4B is a
+   turn-the-crank exercise plus a name decision (`fhir-release-4b` does not
+   fit the numeric reservation scheme).
+4. **Proptest (T4/T48)** — or a recorded decision that the fuzz targets and
+   the 7,400-example corpus make it redundant.
+5. **mdBook deploy** (T46) — the book builds in CI and deploys nowhere.
 
-1. **Round-trip fidelity is sacred.** Any representation change must preserve
-   byte-level JSON round-trip for canonical FHIR JSON. The official spec
-   examples are the oracle (Phase 1 makes them a test suite).
-2. **Breaking changes are batched per minor version** (0.2, 0.3, …) since the
-   crate is pre-1.0. Each phase below names its target version.
-3. **Generator-first where possible.** Mass model changes (208+ structs)
-   should be produced by the code generator or by scripted/agent fan-out —
-   never by hand-editing 200 files ad hoc.
+## Guiding constraints (unchanged where still true)
+
+1. **Round-trip fidelity is sacred.** The corpus gate (7,400 examples, three
+   releases, counted failure classes) is a hard CI gate; any representation
+   change goes through it.
+2. **Semver is real now.** The crate is 3.0.0 with published dependents;
+   breaking changes are majors, batched, with migration notes. (The old
+   "breaking changes are batched per minor since the crate is pre-1.0" is
+   history.)
+3. **Generator-first.** Mass model changes are made in `src/codegen/` and
+   regenerated — `fhir-release-2/-3/-4/-6/src` are generated trees;
+   `fhir-release-5/src` is hand-documented, protected by `tests/r5_drift.rs`
+   (generate-and-compare with a sanctioned-differences table), and must never
+   be blindly regenerated.
 4. **Operational lesson (hard-won):** when fanning out parallel agents that
    edit files in the shared working tree, give them Read+Edit ONLY (no Bash);
    commit a protected baseline first. See
    `~/.claude/.../memory/parallel-file-edit-agents-no-bash.md`.
 
-## Phases
-
-### Phase 0 — Infrastructure & trust (target: 0.1.x patch releases)
-
-Goal: make correctness observable and regressions impossible to miss.
-No API changes.
-
-- **CI (GitHub Actions):** build, test (unit + doc), clippy pedantic
-  `--all-targets`, `cargo doc` warnings-as-errors, `cargo publish --dry-run`
-  for both crates, MSRV check. Badge in README.
-- **Official-examples round-trip suite:** download the FHIR R5
-  `examples-json.zip` (once, as a dev asset or fetched in CI), and add
-  `tests/roundtrip_official_examples.rs`: for every example JSON, deserialize
-  into `Resource`, re-serialize, and compare as `serde_json::Value` equality.
-  This is the single highest-value correctness investment available: it will
-  surface every field-name, cardinality, and choice-type mismatch at once.
-  Expect an initial failure list → burn it down file by file.
-- **Publish readiness:** fix `Cargo.toml` `include` (currently lists
-  `llms.txt`/`llms.json` which don't exist — either create them or remove);
-  add `CHANGELOG.md`, `CONTRIBUTING.md`; docs.rs metadata
-  (`[package.metadata.docs.rs]`); publish `fhir-derive-macros` first, then
-  `fhir` (registry resolves the versioned dep).
-- **Property tests:** proptest/arbitrary round-trip for a sample of types.
-
-### Phase 1 — JSON fidelity: primitive extensions (target: 0.2)
-
-FHIR JSON represents extensions on primitives as sibling `_field` objects
-(e.g. `"birthDate": "1970-01-01", "_birthDate": {"extension": [...]}`,
-including array alignment with `null`s). Today these are silently dropped.
-
-- Introduce a generic carrier, e.g. `Element<T>`/`FhirField<T>` holding
-  `value: Option<T>` + `id`/`extension`, OR add explicit
-  `pub _field: Option<types::Element>` siblings. **Decision required** —
-  prototype both on Patient; pick by ergonomics + round-trip cleanliness
-  (serde for split-field pairing likely needs a custom
-  `Deserialize`/`Serialize` on a wrapper, or generator-emitted `_field`
-  siblings with `skip_serializing_none`). The `_field` sibling approach is
-  mechanical, obvious in JSON terms, and derive-macro friendly; the wrapper
-  is more ergonomic but a much deeper serde surgery. Recommendation: start
-  with `_field` siblings (generator/agent fan-out, ~208 structs), reassess
-  wrapper for 0.5+.
-- Round-trip suite from Phase 0 gates the change (spec examples use `_field`
-  heavily).
-
-### Phase 2 — Type safety (target: 0.3)
-
-- **Choice types as enums.** Replace flattened `value_string`/`value_quantity`
-  `Option` fields with a generated
-  `#[serde(untagged)]`-style enum or (better) generator-emitted
-  `#[serde(flatten)]` + custom impls keyed by suffix. Guarantees "exactly one
-  of" at the type level. This is the largest breaking change; do it via the
-  generator + spec's `value[x]` element data, resource by resource, with the
-  round-trip suite green at every step.
-- **Coded fields use the code enums.** Where an element has a *required*
-  binding to a complete CodeSystem already generated in `codes.rs` (e.g.
-  `Patient.gender` → `AdministrativeGender`), change the field type from
-  `types::Code` to the enum. Needs a binding-strength extraction pass in the
-  generator, plus an `#[serde(other)]`-style escape variant for forward
-  compatibility (decide: closed enum vs `Code`-fallback variant).
-- **Typed references.** `Reference<T = AnyResource>` phantom-typed by
-  targetProfile (e.g. `subject: Option<Reference<Patient>>`), with untyped
-  fallback where targetProfile is multiple/any. Purely additive if the typed
-  form derefs to the untyped struct.
-- **Real value primitives.** `Date`, `DateTime`, `Instant`, `Time` currently
-  wrap `String`. Add parsed accessors (year/month/day precision model per
-  FHIR) without changing the stored representation (FHIR date precision does
-  not map cleanly onto `chrono` types; keep the string as source of truth,
-  offer `.parse_parts()`); `Decimal` precision audit (serde_json
-  `arbitrary_precision` feature flag).
-
-### Phase 3 — Validation depth (target: 0.4)
-
-- **Cardinality + required bindings:** generator emits per-struct metadata so
-  `Validate` can report missing 1..1 elements (currently unrepresentable —
-  they're plain `T`, so instead validate required *bindings* and non-empty
-  1..* Vecs) and value-set membership for required bindings.
-- **Invariant subset:** implement the most common FHIRPath constraint
-  patterns (exists/implies/xor on sibling fields) as generated checks; a full
-  FHIRPath engine is out of scope until Phase 6+ (track as stretch).
-- **`OperationOutcome` bridge:** `Vec<ValidationIssue>` →
-  `OperationOutcome` conversion for server-ish use.
-
-### Phase 4 — Ergonomics (target: 0.5)
-
-- **Builders:** `Patient::builder().family("Chalmers").given("Peter")…` —
-  generated, typed, with required-field enforcement where 1..1.
-- **Prelude:** `fhir::prelude::*` exporting the ~30 most-used items.
-- **Extension helpers:** `res.extension_by_url(url)`, `set_extension`,
-  modifier-extension guards.
-- **Bundle utilities:** typed entry iteration
-  (`bundle.resources::<Observation>()`), transaction/batch builder,
-  searchset paging (`next` link walk), `contained` resolution by local ref.
-- **Contained resources typed:** change `contained: Option<Vec<serde_json::Value>>`
-  to `Option<Vec<Resource>>` (depends on Resource enum having complete
-  coverage — it does; verify against examples suite).
-
-### Phase 5 — Interop (target: 0.6)
-
-- **REST client** (feature `client`, reqwest): typed CRUD
-  (`read/create/update/delete/search`), search-parameter builder generated
-  from `search-parameters.json` (already bundled), auth hooks, paging.
-- **XML** (feature `xml`): FHIR XML representation; likely a distinct
-  serializer (quick-xml) driven by the same generator metadata. Large; gate
-  behind milestone review.
-- **Summary serialization** (`_summary=true`): per-field `isSummary` metadata
-  from the spec → a `to_summary_value()` or serializer mode.
-
-### Phase 6 — Multi-version & advanced (target: 0.7+)
-
-- R4B under `src/r4b/` via the same generator pointed at R4B definitions;
-  shared primitive layer; version feature flags to control compile time.
-- Per-resource-domain feature flags if compile times demand it.
-- FHIRPath engine (stretch), $validate against StructureDefinition
-  snapshots (stretch), terminology service client (stretch).
-
-### Documentation / tutorials / examples track (continuous, every phase)
-
-- **mdBook guide** in `book/` (or extend `spec/`): chapters = Getting
-  started; Data model mapping; Serialization deep-dive (incl. `_field`);
-  Validation; Terminology & codes; Extensions; Bundles & servers; Using the
-  generator. CI-built.
-- **New examples** (one per phase feature as it lands):
-  `extensions.rs`, `transaction_bundle.rs`, `search_response.rs`,
-  `operation_outcome.rs`, `primitive_extensions.rs`, `typed_references.rs`,
-  `client_crud.rs` (feature-gated).
-- **Doctest per code enum family** and per builder.
-- Keep `llms.txt`/`llms.json` (AI-readable crate summary) in sync — generate
-  from rustdoc JSON if practical.
-
-## Sequencing & dependencies
-
-```
-Phase 0 (CI + examples oracle)  ──► gates everything after it
-Phase 1 (_field)                ──► needs Phase 0 oracle
-Phase 2 (choice enums, coded enums, refs) ──► needs Phase 1 landed (both touch every struct; avoid double churn — do Phase 1 & 2 generator work in one modeling epic if capacity allows)
-Phase 3 validation              ──► needs Phase 2 metadata plumbing in generator
-Phase 4 ergonomics              ──► mostly independent; contained-typing needs oracle
-Phase 5 client/XML              ──► independent of 2–4 except search builder
-Phase 6 multi-version           ──► after generator hardening in 1–3
-```
-
 ## Risks
 
 | Risk | Mitigation |
-|---|---|
-| Choice-enum change breaks every downstream user | Batch in 0.3, migration notes in CHANGELOG, keep old field names as `#[deprecated]` accessors where feasible |
-| `_field` serde pairing is fiddly | Prototype on 3 resources first; official-examples oracle decides |
-| Generator emits subtly wrong output at scale | Never regenerate + overwrite blindly; diff-review per bundle; oracle suite |
-| Mass agent edits clobber the tree | Read+Edit-only agents; commit baseline first (see memory note) |
-| Compile time balloons (choice enums, builders) | Measure per phase; feature-flag domains if >2× baseline |
-| crates.io name churn | Names settled: `fhir` (owned) + `fhir-derive-macros`; publish derive crate first |
+| --- | --- |
+| R5 hand-documented tree drifts from the generator again | `tests/r5_drift.rs` fails on any unsanctioned difference (T35/T36 closed the 18 that had accumulated) |
+| A generator fix lands in some release crates and not others | regeneration is per-release and cheap; the drift test covers R5; corpus gates cover all |
+| Metadata drift (the Phase B class) recurs | the audit pattern that caught it — verify every doc claim against the tree — is recorded in `tasks.md`; `bin/check-llms` (once repaired, T38) and `scripts/check-published-match.sh` are the mechanical share |
+| Compile time / memory regress with new releases | the crate-per-release split is the mitigation and is measured (12.9 → 5.0 GB); keep new releases in their own crates |
+| `unsafe` enters via dependencies or macros unguarded | T39 rolls `forbid(unsafe_code)` to all crates; `cargo-deny` + SBOM in CI |
 
 ## Verification standard (every task)
 
-`cargo build && cargo test && cargo test --doc && cargo clippy --all-targets`
-clean, `cargo doc --no-deps` zero warnings, and — once Phase 0 lands — the
-official-examples round-trip suite green. Nontrivial features also get a
-runnable example exercised end-to-end.
+Per [`CLAUDE.md`](CLAUDE.md): `cargo build --all-targets`, `cargo test`,
+`cargo clippy --all-targets -- -D warnings`, `RUSTDOCFLAGS="-D warnings"
+cargo doc --no-deps` — and, when the generator, derive macros, `fhir-core`,
+or any release crate is touched, the same with
+`--features "r2 r3 r4 r6 xml client"`. The corpus gate must stay green.
+Nontrivial features get a runnable example exercised end-to-end.

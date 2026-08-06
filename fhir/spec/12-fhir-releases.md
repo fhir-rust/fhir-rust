@@ -19,13 +19,14 @@ types or to model each release separately. This crate models them separately.
 ## Modelling one release per module
 
 - **R12.1** Each supported release MUST have its own top-level module named for
-  the release in lowercase: `fhir::r3`, `fhir::r4`, `fhir::r5`, `fhir::r6`.
+  the release in lowercase: `fhir::r2`, `fhir::r3`, `fhir::r4`, `fhir::r5`,
+  `fhir::r6`.
 - **R12.1a** Each release MUST live in its own crate named `fhir-release-N`
   (`fhir-release-2` … `fhir-release-6`), re-exported by the `fhir` facade at
   the module path R12.1 requires. The crate name spells `release` in full
   because `fhir-2` at version 2.x reads as a version of `fhir` rather than as
   FHIR Release 2. Names for releases that are not modelled — `fhir-release-1`,
-  and `fhir-release-7` through `fhir-release-9` — MUST be reserved and MUST
+  and `fhir-release-7` through `fhir-release-10` — MUST be reserved and MUST
   contain no types, so the family stays contiguous and an unrelated crate
   cannot occupy a name in the scheme. The public path is what callers depend on; which crate
   provides it is an implementation detail they MUST NOT have to know.
@@ -35,7 +36,7 @@ types or to model each release separately. This crate models them separately.
   `builder`, `temporal`, `summary`, `extension_ext`, `bundle_util`, `prelude`,
   and, under the matching features, `client` and `xml`.
 - **R12.3** Each release module MUST also export a marker type named for the
-  release (`R3`, `R4`, `R5`, `R6`) implementing
+  release (`R2`, `R3`, `R4`, `R5`, `R6`) implementing
   [`Release`](../fhir-core/src/release.rs), so that code can be written
   generically over a release without naming its types.
 - **R12.4** The releases MUST NOT share model types. An R3, R4 and R5 `Patient`
@@ -72,8 +73,8 @@ part of the contract rather than an extra.
 
 ## Compiling only what you use
 
-- **R12.5** Each release MUST be behind a cargo feature named for it (`r3`,
-  `r4`, `r5`, `r6`). A release that is not enabled MUST NOT be compiled, and
+- **R12.5** Each release MUST be behind a cargo feature named for it (`r2`,
+  `r3`, `r4`, `r5`, `r6`). A release that is not enabled MUST NOT be compiled, and
   MUST NOT be downloaded: the feature enables an optional dependency on that
   release's crate, so a consumer of one release does not vendor the others.
 - **R12.6** The default feature set MUST be `["r5"]`, so that callers who
@@ -142,9 +143,10 @@ alike.
   plainly. Its `Release::VERSION` MUST be the ballot identifier the
   specification gives itself (`6.0.0-ballot3`), never the release number it
   hopes to become: that string reaches `CapabilityStatement.fhirVersion`.
-- **R12.15** `fhir-release-3/src` and `fhir-release-4/src` MUST be fully generated and MUST NOT be
-  hand-edited. (Their hand-written support modules, which bind shared machinery
-  to the generated types, are exempt and listed in `src/<release>.rs`.)
+- **R12.15** `fhir-release-2/src`, `fhir-release-3/src`, `fhir-release-4/src`
+  and `fhir-release-6/src` MUST be fully generated and MUST NOT be hand-edited.
+  (Their hand-written support modules, which bind shared machinery to the
+  generated types, are exempt and listed in that crate's `src/lib.rs`.)
 - **R12.16** `fhir-release-5/src` carries hand-written documentation and MUST NOT be
   regenerated over. The generator MUST refuse to write there without an explicit
   output directory.
@@ -158,15 +160,15 @@ the two trees must be edited differently.
 1. `cargo build`, `cargo test`, and `cargo clippy --all-targets -- -D warnings`
    are clean for the default (`r5`), for every release enabled together, and for
    each release on its own (`--no-default-features --features r3`).
-2. `fhir::r3`, `fhir::r4` and `fhir::r5` each export every module listed in
-   R12.2.
+2. `fhir::r2`, `fhir::r3`, `fhir::r4`, `fhir::r5` and `fhir::r6` each export
+   every module listed in R12.2.
 3. Every release's `validate::Validate` resolves to the same trait (a generic
    function bounded on it accepts values of all of them).
 4. No release crate duplicates a `fhir-core` implementation rather than
    re-exporting it.
 5. `cargo run -- r5` without `--out` exits non-zero without writing to `fhir-release-5/src`.
-6. `cargo run -- r3` and `cargo run -- r4` are idempotent: running either twice
-   leaves `git status` clean.
+6. `cargo run -- r2`, `cargo run -- r3`, `cargo run -- r4` and `cargo run -- r6`
+   are idempotent: running any of them twice leaves `git status` clean.
 7. The curated official examples for every release round-trip exactly.
 
 ## Reading releases the specification spells differently
@@ -189,8 +191,10 @@ the two trees must be edited differently.
 
 ## Future work
 
-- R6 when it is published, and R4B, which the release table would accommodate
-  without structural change.
+- R4B, which the release table would accommodate without structural change.
+  (R6 is already modelled and published, generated from its ballot draft under
+  R12.14a; it will need regeneration, and promotion into the semver promise,
+  when the final specification is published.)
 - A `Release`-generic façade over the common resources, for callers that handle
   several releases and only need the elements they agree on.
 - Semantic remapping between releases, driven by the official cross-version

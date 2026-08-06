@@ -6,9 +6,11 @@ Applies to every modelled release, identically.
 
 | Release | Choice elements |
 | --- | --- |
+| R6 | 281 |
 | R5 | 261 |
 | R4 | 186 |
 | R3 | 133 |
+| R2 | 87 |
 
 ## Background: how FHIR JSON represents a choice element
 

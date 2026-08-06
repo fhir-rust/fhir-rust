@@ -7,9 +7,11 @@ stated here rather than in the code.
 
 | Release | Primitives |
 | --- | --- |
+| R6 | 21 |
 | R5 | 21 |
 | R4 | 20 (no `integer64`) |
 | R3 | 18 (no `integer64`, `canonical` or `url`) |
+| R2 | 18 (no `integer64`, `canonical` or `url`) |
 
 ## Background
 
@@ -29,7 +31,7 @@ FHIR JSON they serialize as bare scalars — a JSON string, number, or boolean �
   | `boolean` | `struct Boolean(pub bool)` |
   | `integer` | `struct Integer(pub i32)` |
   | `positiveInt`, `unsignedInt` | `struct X(pub u32)` |
-  | `integer64` (R5 only) | `struct Integer64(pub i64)` — serialized as a JSON **string** |
+  | `integer64` (R5/R6 only) | `struct Integer64(pub i64)` — serialized as a JSON **string** |
   | `decimal` | `struct Decimal` — lexical form preserved verbatim (R2.2) |
 
   `canonical` and `url` arrived in R4; `integer64` in R5. A release simply does
@@ -76,7 +78,7 @@ FHIR JSON they serialize as bare scalars — a JSON string, number, or boolean �
     silent and the default wrong.
 
   `Decimal` is consequently a hand-written wrapper (`crate::decimal`, shared by
-  every release rather than generated three times) presenting a lexical API —
+  every release rather than generated once per release) presenting a lexical API —
   `new`, `as_str`, `as_f64`, lexical `Eq`, numeric `PartialOrd` — over a
   precision-preserving `Number`.
 
@@ -95,8 +97,8 @@ FHIR JSON they serialize as bare scalars — a JSON string, number, or boolean �
   numbers are 64-bit floats). Implemented with `serde_with`'s `DisplayFromStr`.
 - **R2.4** Every primitive MUST derive `Debug, Default, Clone, PartialEq, Eq`
   and be `serde` (de)serializable. No primitive may contain `f64`/`f32`.
-- **R2.5** Each primitive lives in `src/<release>/types/<snake>.rs` and is
-  re-exported from `src/<release>/types.rs` as `pub use <snake>::<Pascal>;`.
+- **R2.5** Each primitive lives in `fhir-release-N/src/types/<snake>.rs` and is
+  re-exported from `fhir-release-N/src/types.rs` as `pub use <snake>::<Pascal>;`.
 - **R2.6** Each primitive MUST implement `Validate` (spec 07) with its FHIR
   format constraint where one exists (`code`, `id`, `oid`, `uuid`, `uri`,
   `canonical`, `url`); the rest are structurally valid by construction.
@@ -136,7 +138,7 @@ the wire form is identical to the bare scalar.
 2b. `Decimal("1.0") != Decimal("1.00")` (lexically distinct) while
    `Decimal("1.0").partial_cmp(&Decimal("1.00")) == Some(Ordering::Equal)`
    (numerically equal), per R2.2a.
-3. `Integer64` (R5) round-trips `9007199254740993` as the JSON string
+3. `Integer64` (R5/R6) round-trips `9007199254740993` as the JSON string
    `"9007199254740993"`.
 4. `Code("bad  code")` and `Id("bad id!")` are reported invalid by `Validate`.
 5. Every primitive module passes its generated round-trip test.

@@ -8,11 +8,14 @@ Conventions for the executing session:
 
 - **Verify** (every task): `cargo build && cargo test && cargo test --doc &&
   cargo clippy --all-targets` clean; `cargo doc --no-deps` zero warnings.
-  After T2 lands, also: `cargo test --test roundtrip_official_examples`.
+  The round-trip gates are `tests/roundtrip_r{3,4,5}_examples.rs` and
+  `tests/roundtrip_r2_spec.rs`, run in CI's `corpus` and `all-releases`
+  jobs (the `roundtrip_official_examples` name this line used to cite never
+  shipped; see T2/T28).
 - **Branch + commit** a baseline before any mass edit; commit again after
   verification. Never leave large uncommitted work while agents run.
-- **Mass edits across `src/r5/{types,resources}`** must use Read+Edit-only
-  agents (no Bash) or generator output — see memory note
+- **Mass edits across `fhir-release-N/src/{types,resources}`** must use
+  Read+Edit-only agents (no Bash) or generator output — see memory note
   `parallel-file-edit-agents-no-bash`.
 - Breaking changes land only in the phase's designated version bump.
 
@@ -20,7 +23,8 @@ Conventions for the executing session:
 
 ## Phase 0 — Infrastructure & trust
 
-### T1. GitHub Actions CI
+### T1. GitHub Actions CI — *done*
+- *Status:* `ci.yml` has grown to 16 jobs; the README badge is present.
 - **Do:** `.github/workflows/ci.yml`: jobs for (a) `cargo build --all-targets`,
   (b) `cargo test` + `cargo test --doc`, (c) `cargo clippy --all-targets -- -D warnings`,
   (d) `RUSTDOCFLAGS="-D warnings" cargo doc --no-deps`,
@@ -31,7 +35,10 @@ Conventions for the executing session:
 - **Accept:** workflow file lints (`act` optional); README badge present.
 - **Depends:** —
 
-### T2. Official-examples round-trip test suite  ⭐ highest value
+### T2. Official-examples round-trip test suite  ⭐ highest value — *done, superseded by T28*
+- *Status:* superseded by T28's full-corpus gate. A file named
+  `tests/roundtrip_official_examples.rs` never existed; the real suites are
+  `tests/roundtrip_r{3,4,5}_examples.rs` (plus `roundtrip_r2_spec.rs`).
 - **Do:** Fetch FHIR R5 `examples-json.zip`
   (https://hl7.org/fhir/R5/examples-json.zip) into
   `doc/fhir-specifications/r5/fhir-examples-json/` (git-LFS or a
@@ -45,7 +52,7 @@ Conventions for the executing session:
   `tasks-roundtrip-failures.md` (this becomes the Phase 1/2 burn-down list).
 - **Depends:** —
 
-### T3. Publish hygiene
+### T3. Publish hygiene — *done*
 - **Do:** Fix root `Cargo.toml` `include` (remove or create `llms.txt`,
   `llms.json`; keep `LICENSE.md`, README). Add `[package.metadata.docs.rs]`
   (all-features). Create `CHANGELOG.md` (0.1.0 entry summarizing current
@@ -55,14 +62,20 @@ Conventions for the executing session:
 - **Accept:** dry-run green; no missing-file include warnings.
 - **Depends:** —
 
-### T4. Property-based round-trip tests
+### T4. Property-based round-trip tests — *open*
+- *Status:* no `proptest` anywhere in the tree — the one genuinely un-started
+  Phase 0 task. Fuzzing (T31) covers adversarial *input*, not the
+  populated-value round-trip property this asks for. See T48.
 - **Do:** dev-dep `proptest`. Arbitrary-ish generators for 5 representative
   types (Patient, Observation, Bundle, CodeableConcept, Timing) producing
   populated values; assert serde round-trip equality.
 - **Accept:** `cargo test proptest_` passes, ≥5 types covered.
 - **Depends:** —
 
-### T5. MSRV + toolchain policy
+### T5. MSRV + toolchain policy — *done, with a live defect*
+- *Status:* the CI `msrv` job pins 1.88.0 and the 12 member crates declare
+  `rust-version = "1.88"` — but the facade's `Cargo.toml` now says `1.97`,
+  contradicting all of them, AGENTS.md and CONTRIBUTING.md. See T37.
 - **Do:** Determine minimum supported Rust (edition 2024 ⇒ likely 1.85+);
   set `rust-version` in both Cargo.tomls; add CI job on that toolchain.
 - **Accept:** CI green on MSRV.
@@ -72,7 +85,9 @@ Conventions for the executing session:
 
 ## Phase 1 — Primitive extensions (`_field`)  → version 0.2
 
-### T6. Prototype `_field` siblings on 3 resources  (decision task)
+### T6. Prototype `_field` siblings on 3 resources  (decision task) — *done*
+- *Status:* `tests/primitive_extensions_prototype.rs`; the decision is recorded
+  in `spec/09-primitive-extensions.md`.
 - **Do:** On Patient, Observation, Questionnaire: add
   `pub _birth_date: Option<types::Element>`-style siblings (serde rename
   `_birthDate`) for scalar primitives, and `Option<Vec<Option<Element>>>` for
@@ -83,7 +98,9 @@ Conventions for the executing session:
   decision; chosen prototype passes round-trip on `_field` examples.
 - **Depends:** T2
 
-### T7. EPIC: roll `_field` across the model
+### T7. EPIC: roll `_field` across the model — *done*
+- *Status:* shipped as generated `<name>_ext` fields serde-renamed to
+  `_<name>`, emitted by `src/codegen/extension_ext_gen.rs`.
 - **Do:** Apply the T6 decision to all ~208 structs. Preferred route:
   extend the generator to emit the siblings and use it to produce a
   mechanical edit list; else Read+Edit-only agent fan-out with an exact
@@ -98,7 +115,10 @@ Conventions for the executing session:
 
 ## Phase 2 — Type safety  → version 0.3
 
-### T8. Generator: extract element metadata (bindings, choice lists, targetProfiles)
+### T8. Generator: extract element metadata (bindings, choice lists, targetProfiles) — *done*
+- *Status:* lives as `ElementMeta`/`BindingMeta` in `fhir-core/src/meta.rs`,
+  with a generated table per release, rather than the `src/r5/meta.rs` named
+  below.
 - **Do:** In `src/r5/parse/`, surface per-element: binding strength +
   valueSet URL, `value[x]` type lists, reference targetProfiles, isSummary,
   cardinality. Emit as a queryable table (JSON in `tmp/out/` + a
@@ -108,7 +128,9 @@ Conventions for the executing session:
   Observation.subject targets Patient|Group|Device|Location…).
 - **Depends:** —
 
-### T9. EPIC: choice types as enums
+### T9. EPIC: choice types as enums — *done*
+- *Status:* shipped via `#[derive(FhirChoice)]` (e.g. `ObservationValue`);
+  spec 11.
 - **Do:** Generate `ObservationValue { Quantity(..), String(..), … }`-style
   enums (custom Serialize/Deserialize keyed by `value<Type>` field names, incl.
   paired `_value<Type>`), replace flattened fields. Keep
@@ -120,7 +142,9 @@ Conventions for the executing session:
   T9b apply to datatypes; T9c resources A–M; T9d resources N–Z;
   T9e docs/examples update (`examples/build_patient.rs` etc. compile).
 
-### T10. Coded fields use `codes::` enums (required bindings only)
+### T10. Coded fields use `codes::` enums (required bindings only) — *done*
+- *Status:* shipped as `Coded<E>` (spec 05), guarded by
+  `tests/coded_bindings.rs`.
 - **Do:** For elements with binding strength `required` whose CodeSystem enum
   exists in `codes.rs`: switch field type from `types::Code` to the enum.
   Add a fallback variant policy first (decision: add
@@ -130,7 +154,12 @@ Conventions for the executing session:
 - **Accept:** examples suite green; ≥100 fields migrated; docs updated.
 - **Depends:** T8, T9 (avoid double-churn on the same structs)
 
-### T11. Typed references
+### T11. Typed references — *partial*
+- *Status:* the machinery shipped
+  (`fhir-release-5/src/types/reference.rs`: `cast`/`into_any`/`resolve`) but
+  zero generated fields use it — `types::Reference<` does not appear in any
+  resource module. Generator emission of typed fields is recorded as Future
+  work in specs 04, 08 and 13.
 - **Do:** `Reference<T: ResourceType = Any>` newtype-with-phantom over the
   existing struct; generator picks `Reference<Patient>` where targetProfile
   is a single type, `Reference<Any>` otherwise. `Deref` to untyped;
@@ -138,7 +167,10 @@ Conventions for the executing session:
 - **Accept:** examples suite green; doctest showing typed resolve.
 - **Depends:** T8
 
-### T12. Primitive value APIs
+### T12. Primitive value APIs — *partial*
+- *Status:* precision parsing lives in `fhir-core::temporal`
+  (`DateParts::parse` and kin); the newtypes themselves gained no inherent
+  `parse_parts()` accessors. The `Decimal` half was superseded by T26.
 - **Do:** Keep `String` storage; add `Date::parse_parts() -> (year, Option<month>, Option<day>)`,
   ordering per FHIR precision rules, `DateTime`/`Instant`/`Time` equivalents;
   `Decimal` behind `serde_json/arbitrary_precision` audit (feature `precise-decimal`).
@@ -150,7 +182,9 @@ Conventions for the executing session:
 
 ## Phase 3 — Validation depth  → version 0.4
 
-### T13. Cardinality + required-binding validation
+### T13. Cardinality + required-binding validation — *done*
+- *Status:* `Coded<E>` covers required bindings; `1..*` is `vec1::Vec1`, so an
+  empty list is unrepresentable rather than merely reported.
 - **Do:** Using T8 metadata: `Validate` reports empty 1..* Vecs, and
   code-not-in-valueset for required bindings (via `codes.rs` enums / a
   generated membership set).
@@ -158,7 +192,9 @@ Conventions for the executing session:
   `CodeSystem.concept` (1..*) each yield a pathed issue.
 - **Depends:** T8, T10
 
-### T14. Common-invariant subset
+### T14. Common-invariant subset — *done, exceeded*
+- *Status:* 8 invariant classes enforced (the ask was ≥3); the committed
+  coverage report is `spec/10-invariants-coverage.md`.
 - **Do:** Generator recognizes ~5 recurring constraint shapes from
   ElementDefinition.constraint (e.g. "shall have value or children",
   xor-pairs) and emits checks; unrecognized constraints are listed (not
@@ -167,7 +203,9 @@ Conventions for the executing session:
   committed at `spec/10-invariants-coverage.md`.
 - **Depends:** T13
 
-### T15. `OperationOutcome` bridge
+### T15. `OperationOutcome` bridge — *done*
+- *Status:* `impl From<Vec<ValidationIssue>> for OperationOutcome` per release
+  (e.g. `fhir-release-5/src/validate.rs`).
 - **Do:** `impl From<Vec<ValidationIssue>> for OperationOutcome` + severity
   mapping; example `examples/operation_outcome.rs`.
 - **Accept:** doctest + example run.
@@ -177,7 +215,7 @@ Conventions for the executing session:
 
 ## Phase 4 — Ergonomics  → version 0.5
 
-### T16. Builders (generated)
+### T16. Builders (generated) — *done*
 - **Do:** `#[derive(Builder)]`-style generated builders (own proc-macro or
   generator-emitted `impl`), required 1..1 fields enforced at `build()`.
   Start: 10 most-used resources (Patient, Observation, Encounter, Condition,
@@ -186,14 +224,20 @@ Conventions for the executing session:
 - **Accept:** `examples/build_patient.rs` rewritten with builder; doctests.
 - **Depends:** T9 (builder API shaped by choice enums)
 
-### T17. Prelude + extension helpers
+### T17. Prelude + extension helpers — *done*
 - **Do:** `fhir::prelude` (Resource, top resources, common types, Validate,
   codes commonly used); `ExtensionExt` trait: `extension(url)`,
   `extensions(url)`, `set_extension`, modifier-extension accessor.
 - **Accept:** doctests; `examples/extensions.rs`.
 - **Depends:** —
 
-### T18. Bundle utilities + typed `contained`
+### T18. Bundle utilities + typed `contained` — *partial*
+- *Status:* the `bundle_util` half is done (`iter_resources`,
+  `resources::<T>()`, `next_link`, transaction/batch builders). Typed
+  `contained` is **not**: it is still `Vec<serde_json::Value>` everywhere
+  (e.g. `fhir-release-5/src/resources/patient.rs`), and no recorded decision
+  reversed it — spec 04 R4.5 now *requires* the raw representation, which
+  contradicts this task rather than closing it. See T47.
 - **Do:** `Bundle::resources::<T>() -> impl Iterator<&T>`, transaction/batch
   builder, `next`-link paging helper; change `contained` fields to
   `Option<Vec<Resource>>` across resources (generator/agent fan-out) with
@@ -206,7 +250,8 @@ Conventions for the executing session:
 
 ## Phase 5 — Interop  → version 0.6
 
-### T19. REST client (feature `client`)
+### T19. REST client (feature `client`) — *done*
+- *Status:* shipped, then hardened under T29.
 - **Do:** `fhir::client::Client` (reqwest, tokio): read/vread/create/update/
   delete/search + capability fetch; error → `OperationOutcome`; generated
   search-parameter builder from bundled `search-parameters.json` (typed
@@ -216,14 +261,16 @@ Conventions for the executing session:
   unit tests with a mock server (wiremock).
 - **Depends:** T8 (search params), T15
 
-### T20. Summary serialization
+### T20. Summary serialization — *done*
 - **Do:** isSummary metadata (T8) → `to_summary_value(&self)` or a serializer
   wrapper emitting only summary elements + mandatory ones.
 - **Accept:** Patient summary matches spec's `_summary` semantics on
   examples; doctest.
 - **Depends:** T8
 
-### T21. EPIC: XML support (feature `xml`)  — gate behind milestone review
+### T21. EPIC: XML support (feature `xml`) — *done*
+- *Status:* the `xml` feature shipped (with the `xml_depth` test and fuzz
+  targets from T31); the "gate behind milestone review" caveat is spent.
 - **Do:** quick-xml-based `to_xml`/`from_xml` driven by generator metadata;
   validate against official XML examples (`examples.zip` XML variant).
 - **Accept:** curated XML round-trip subset green.
@@ -233,7 +280,10 @@ Conventions for the executing session:
 
 ## Phase 6 — Multi-version (0.7+)
 
-### T22. EPIC: R4B model
+### T22. EPIC: R4B model — *obsolete, superseded*
+- *Status:* multi-release support shipped as R2–R6 in separate
+  `fhir-release-N` crates instead of `src/r4b/`. R4B itself remains future
+  work (spec 12).
 - **Do:** Point generator at R4B definitions → `src/r4b/`; feature flags
   `r5` (default) / `r4b`; shared primitives where identical.
 - **Accept:** R4B examples round-trip subset green; compile-time measured
@@ -244,7 +294,9 @@ Conventions for the executing session:
 
 ## Documentation / tutorials / examples track (interleave; one per phase)
 
-### T23. mdBook guide
+### T23. mdBook guide — *done, one half open*
+- *Status:* `book/` is written and built in CI's `book` job; the GitHub Pages
+  deploy half never happened. See T46.
 - **Do:** `book/` with chapters: Getting started; Model mapping; JSON
   serialization deep-dive (incl. `_field` once T7 lands); Validation;
   Terminology & codes; Extensions; Bundles; Code generator internals. CI job
@@ -252,7 +304,9 @@ Conventions for the executing session:
 - **Accept:** `mdbook build` green in CI; linked from README.
 - **Depends:** T1 (CI); content updated at the end of each phase
 
-### T24. Example set expansion
+### T24. Example set expansion — *mostly done*
+- *Status:* 13 examples are wired; `search_response.rs` and
+  `typed_references.rs` (blocked on T11) were never written. See T43.
 - **Do (rolling):** `extensions.rs` (T17), `primitive_extensions.rs` (T7),
   `transaction_bundle.rs` + `search_response.rs` (T18),
   `operation_outcome.rs` (T15), `typed_references.rs` (T11),
@@ -261,7 +315,11 @@ Conventions for the executing session:
   `lib.rs` "More examples".
 - **Accept:** `cargo build --examples` green; each prints sensible output.
 
-### T25. `llms.txt` / `llms.json`
+### T25. `llms.txt` / `llms.json` — *done, then rotted*
+- *Status:* `llms.json` still says version 1.1.0 and 419 enums and mentions
+  neither `r2`, `r6` nor `convert`; `bin/check-llms` greps module lists from
+  the dead `src/r3.rs`/`r4.rs`/`r5.rs` paths and currently exits 1; `llms.txt`
+  is byte-identical to `fhir.md` (22 MB duplicated in git). See T38.
 - **Do:** Author AI-readable crate summaries (crate purpose, module map, key
   types, examples index); restore them to `Cargo.toml` `include`; add a CI
   check that they mention every top-level module.
@@ -383,14 +441,14 @@ items are defects in shipped behaviour; P1 items are missing guarantees.
   disagreements.
 - **Remaining:** the committed `fhir-specifications-parser.profdata` at the
   repository root is still there — it is not in `include`, so it does not
-  ship, but it does not belong in git either.
+  ship, but it does not belong in git either. Tracked as T42.
 
 ### T33. Say what validation is (R13.11) — **P1, small** — *done*
 - **Done:** README's Validation section now states what is not checked —
   FHIRPath invariants (311 of 314 keys), profiles, terminology, reference
   resolution — and that a resource this crate calls valid may still be
-  rejected by a conformant server. *Remaining:* the same paragraph in
-  `lib.rs`'s crate guide.
+  rejected by a conformant server. The remaining half landed too:
+  `src/lib.rs`'s crate guide now carries the same caveat.
 
 ### T35. Audit `src/r5` for drift from the generator — **P0** — *done*
 - **Why, concretely:** `ConceptMap.group.element.target.product` was typed
@@ -660,7 +718,8 @@ items are defects in shipped behaviour; P1 items are missing guarantees.
   3. Cardinality was narrowed but never widened, so an element singular in the
      source and repeating in the target produced "invalid type: map, expected
      a sequence" from the target model.
-- **Accept met:** spec 14's six criteria. The load-bearing ones are that a
+- **Accept met:** spec 14's seven criteria (strict mode was added after this
+  entry was first written). The load-bearing ones are that a
   release converted to *itself* returns an equal document and an empty report
   (the walk's own oracle), and that every corpus document the target rejects
   was predicted by the report — with a guard asserting that check is not
@@ -670,7 +729,117 @@ items are defects in shipped behaviour; P1 items are missing guarantees.
 
 ---
 
-## Suggested execution order (first five sessions)
+## Phase B — Audit 2026-08-06 (drift between docs and tree)
+
+The tree moved faster than its documents: the workspace is thirteen crates at
+3.0.0 modelling five releases, and text all over the repository still
+describes three releases in one crate at 1.x. P0 items break a CI gate or
+contradict the build; P1 items are missing guarantees; P2 items are stale
+text and leftovers. Each fact below was verified against the tree on the date
+above.
+
+### T37. Reconcile the MSRV declaration — **P0**
+- **Why:** the facade's `Cargo.toml` says `rust-version = "1.97"` while the
+  12 member crates say `1.88`, the CI `msrv` job pins 1.88.0, and AGENTS.md
+  and CONTRIBUTING.md both document 1.88. The msrv job builds on 1.88 and
+  will refuse the facade.
+- **Do:** decide the real MSRV (likely revert the facade to 1.88) and add a
+  check that every workspace crate declares the same one.
+
+### T38. Repair `bin/check-llms` and regenerate the llms artifacts — **P0**
+- **Why:** `bin/check-llms` collects module names from `src/r3.rs`,
+  `src/r4.rs` and `src/r5.rs`, which no longer exist, and currently exits 1 —
+  so the `llms` CI job cannot pass. `llms.json` is stale: version 1.1.0,
+  "419" code enums, no mention of `r2`, `r6` or `convert`. `llms.txt` is
+  byte-identical to `fhir.md`, 22 MB duplicated in git.
+- **Do:** point the check at the real module roots (`src/lib.rs` and each
+  `fhir-release-N/src/lib.rs`); regenerate `llms.json` for 3.0.0; decide
+  whether `llms.txt` should exist in git at all when `fhir.md` is the same
+  bytes.
+
+### T39. `#![forbid(unsafe_code)]` in all 13 crates — **P1**
+- **Why:** R13.14 is currently met by 1 of 13 crates — only the facade
+  (`src/lib.rs`) declares it. `fhir-core`, which carries the REST client and
+  the XML reader — the network and parsing surface — does not; neither do
+  `fhir-derive-macros` or any release crate.
+- **Do:** add the attribute to every crate root (each release crate's
+  `lib.rs` is hand-maintained, so this is twelve one-line edits), and note it
+  in spec 13's R13.14 status when done.
+
+### T40. Sweep AGENTS.md + AGENTS/ for release-count and path drift — **P1**
+- **Why (all verified):** AGENTS.md says "Four releases are modelled" and its
+  table omits R2; it calls R6 "unpublished" and annotates it `publish =
+  false` (no crate sets `publish`, and R6 *must* be published — R12.14a); its
+  reservation list omits `fhir-release-1` and `fhir-release-10`; it claims
+  `tmp/out/` is tracked (it is not). `AGENTS/code-generation.md`,
+  `conventions.md` and `glossary.md` still use `src/<release>/` output paths.
+- **Do:** one consistency pass over AGENTS.md and AGENTS/, against the same
+  ground truth as this audit (five releases, `fhir-release-N/src` paths, all
+  five release crates published).
+
+### T41. CHANGELOG and identity-string drift — **P2**
+- **Why (all verified):** CHANGELOG has no `fhir-derive-macros` 1.2.0 entry,
+  and its 3.0.0 entry says derive-macros is "untouched at 1.1.0" (it is
+  1.2.0) and "the reservation crates stay at 0.0.0" (they are 0.0.1).
+  README says "stable (1.0). All three data models"; `src/lib.rs` opens with
+  "Three releases are modelled" and its install snippets say `fhir = "1"`;
+  the facade's `Cargo.toml` description names only R5, R4 and R3.
+- **Do:** add the missing CHANGELOG entry, correct the 3.0.0 entry, and bring
+  README, `src/lib.rs` and the package description up to five releases at
+  3.0.0.
+
+### T42. Remove the committed profdata — **P2**
+- **Why:** T32's remaining item: `fhir-specifications-parser.profdata` is
+  tracked at the repository root. It does not ship, but it does not belong in
+  git.
+- **Do:** `git rm --cached fhir-specifications-parser.profdata` and add it
+  (or `*.profdata`) to `.gitignore`.
+
+### T43. The never-written examples, plus one for `convert` — **P2**
+- **Why:** T24 left `search_response.rs` unwritten, and `typed_references.rs`
+  is blocked on T11. Meanwhile 3.0.0's headline feature — cross-release
+  conversion (spec 14) — has no standalone example at all.
+- **Do:** write `search_response.rs` and a dedicated `convert` example now;
+  `typed_references.rs` when T11 completes.
+
+### T44. `main.rs` usage text is stale — **P2**
+- **Why:** the USAGE string says the release argument is "r3, r4, or r5" and
+  that `--out` defaults to `src/<release>`. The parser accepts `r2` through
+  `r6`, and the default output is `fhir-release-N/src`.
+- **Do:** make the USAGE string match `codegen::Version::parse` and
+  `source_dir()`.
+
+### T45. Relabel `tasks-roundtrip-failures.md` as historical — **P2**
+- **Why:** its regenerate command names the dead
+  `roundtrip_official_examples` test target, and the operative allowlists now
+  live in the roundtrip test files themselves (T28). The document is the
+  burn-down record, not the current state.
+- **Do:** add a header saying so, pointing at the allowlists in
+  `tests/roundtrip_r{3,4,5}_examples.rs`.
+
+### T46. mdBook GitHub Pages deploy (T23's unfinished half)
+- **Do:** either deploy `book/` to GitHub Pages from the existing CI build,
+  or record the decision not to and close T23.
+
+### T47. Typed `contained` (T18's unfinished half)
+- **Why:** T18 asked for `Option<Vec<Resource>>`; the tree kept
+  `Vec<serde_json::Value>`, and spec 04 R4.5 now mandates the raw
+  representation. The task and the spec contradict each other and no decision
+  is recorded.
+- **Do:** decide — most likely record R4.5 as the deliberate reversal and
+  close T18's second half — and make tasks.md and spec 04 agree.
+
+### T48. Property-based tests (T4)
+- **Do:** either add the proptest round-trip suite T4 describes, or record
+  the decision that the corpus gate (T28) plus fuzzing (T31) cover the
+  property and close T4.
+
+---
+
+## Suggested execution order (first five sessions) — *historical*
+
+This block described the plan before any of it ran. It was executed; the
+workspace is now published at 3.0.0. Kept for the record:
 
 1. **T2** (examples oracle) + **T1** (CI) — everything else gets safer.
 2. **T3 + T5 + T25** (publish hygiene bundle) — then actually publish 0.1:

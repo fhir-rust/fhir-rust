@@ -7,9 +7,11 @@ Applies to every modelled release.
 
 | Release | Resources |
 | --- | --- |
+| R6 | 161 |
 | R5 | 158 |
 | R4 | 146 |
 | R3 | 117 |
+| R2 | 94 |
 
 ## Background
 
@@ -38,10 +40,10 @@ A resource is a top-level FHIR entity that can be exchanged on its own
   `Resource`/`DomainResource`, MUST be represented as `::serde_json::Value`.
   Such a slot may hold any resource at all, including one the release models
   differently, so it stays raw JSON.
-- **R4.6** Each resource lives in `src/<release>/resources/<snake>.rs`, declared
-  in `src/<release>/resources.rs` (`pub mod` + `pub use <Pascal>`).
-- **R4.7** `src/<release>/resources.rs` MUST define a **polymorphic `Resource`
-  enum**:
+- **R4.6** Each resource lives in `fhir-release-N/src/resources/<snake>.rs`,
+  declared in `fhir-release-N/src/resources.rs` (`pub mod` + `pub use <Pascal>`).
+- **R4.7** `fhir-release-N/src/resources.rs` MUST define a **polymorphic
+  `Resource` enum**:
 
   ```rust
   #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
@@ -62,8 +64,9 @@ A resource is a top-level FHIR entity that can be exchanged on its own
 
 ## Release differences
 
-The releases do not agree on the resource list, and it grew with each one: 117
-in R3, 146 in R4, 158 in R5. R4 has 20 resources R5 does not (`CatalogEntry`,
+The releases do not agree on the resource list, and it grew with each one: 94
+in R2, 117 in R3, 146 in R4, 158 in R5, 161 in R6. R4 has 20 resources R5 does
+not (`CatalogEntry`,
 `DeviceUseStatement`, `DocumentManifest`, `Media`, `RequestGroup`, the
 `MedicinalProduct*` family, …); R5 has 32 that R4 does not (`ActorDefinition`,
 `Citation`, `Ingredient`, `Permission`, `RequestOrchestration`,

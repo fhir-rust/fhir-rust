@@ -6,9 +6,11 @@ Applies to every modelled release.
 
 | Release | Complex datatypes |
 | --- | --- |
+| R6 | 51 |
 | R5 | 50 |
 | R4 | 43 |
 | R3 | 36 |
+| R2 | 28 |
 
 ## Background
 
@@ -35,8 +37,8 @@ FHIR.
   Nesting recurses to any depth. Each nested struct carries the full derive set
   and serde attributes.
 - **R3.5** Choice elements `[x]` MUST expand per spec 06 and spec 11.
-- **R3.6** Each datatype lives in `src/<release>/types/<snake>.rs`, declared in
-  `src/<release>/types.rs` (`pub mod` + `pub use <Pascal>`).
+- **R3.6** Each datatype lives in `fhir-release-N/src/types/<snake>.rs`, declared
+  in `fhir-release-N/src/types.rs` (`pub mod` + `pub use <Pascal>`).
 - **R3.7** A datatype that constrains another (a *profile*) MUST be named for
   itself, not for the type it constrains. `MoneyQuantity`, `SimpleQuantity`,
   `Age`, `Distance`, `Count` and `Duration` are all `type: "Quantity"` in the
@@ -54,19 +56,21 @@ FHIR.
 
 The general-purpose types (Address, Annotation, Attachment, CodeableConcept,
 Coding, ContactPoint, HumanName, Identifier, Period, Quantity, Range, Ratio,
-Reference, SampledData, Signature, Timing, …), the metadata types
-(ContactDetail, DataRequirement, Expression, ParameterDefinition,
-RelatedArtifact, TriggerDefinition, UsageContext, …) and the special-purpose
-types (Dosage, ElementDefinition, Extension, Meta, Narrative, …) exist in both
-releases.
+Reference, SampledData, Signature, Timing, …) and the core special-purpose
+types (ElementDefinition, Extension, Meta, Narrative, …) exist in every
+release. The metadata types (ContactDetail, DataRequirement, Expression,
+ParameterDefinition, RelatedArtifact, TriggerDefinition, UsageContext, …) and
+Dosage arrived with R3/R4 and do not exist in R2.
 
-R3's 36 datatypes are a strict subset of R4's 43, which is *not* a subset of
-R5's 50:
+R2's 28 datatypes are a strict subset of R3's 36, which is a strict subset of
+R4's 43, which is *not* a subset of R5's 50:
 
 | | Datatypes it adds over the previous release | Datatypes it drops |
 | --- | --- | --- |
+| R3 over R2 | `ContactDetail`, `Contributor`, `DataRequirement`, `Dosage`, `ParameterDefinition`, `RelatedArtifact`, `TriggerDefinition`, `UsageContext` | — |
 | R4 over R3 | `Expression`, `MarketingStatus`, `MoneyQuantity`, `Population`, `ProdCharacteristic`, `ProductShelfLife`, `SubstanceAmount` (and the `canonical`/`url` primitives) | — |
 | R5 over R4 | `Availability`, `CodeableReference`, `ExtendedContactDetail`, `MonetaryComponent`, `RatioRange`, `VirtualServiceDetail`, and the abstract bases `Base`, `DataType`, `PrimitiveType`, `BackboneType` (and the `integer64` primitive) | `Population`, `ProdCharacteristic`, `SubstanceAmount` |
+| R6 over R5 | `RelativeTime` | — |
 
 These differences are why a datatype from one release MUST NOT be used to model
 another (spec 12). Even where a datatype exists in every release its elements
