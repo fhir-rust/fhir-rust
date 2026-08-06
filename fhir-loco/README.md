@@ -10,8 +10,10 @@ engines are the six `fhir-<engine>` ports.
 This project is the HTTP surface for the FHIR database libraries in the same
 monorepo — not sibling repositories, which is what this line said until
 2026-08-03; all four families live in `fhir-rust/fhir-rust` (**F-11**). Those
-libraries — `fhir-sqlite`, `fhir-mysql`, `fhir-mariadb`, `fhir-postgresql`, and
-the two scaffolds — are deliberately embeddable and carry no server of their own
+libraries — `fhir-sqlite`, `fhir-mysql`, `fhir-mariadb`, `fhir-postgresql`,
+`fhir-mssql`, and `fhir-oracle` (all six at Store level or above since
+**F-65**/**F-68**; an earlier revision called the last two "the two
+scaffolds") — are deliberately embeddable and carry no server of their own
 (`C0.17`, `C0.18`), so that a program wanting FHIR storage does not also acquire
 a web framework. The split is the point: storage guarantees live in the library,
 HTTP lives here.

@@ -1,38 +1,63 @@
+# Tasks — fhir-loco
 
-## Remaining work (as of the port commit)
+An executable list. The crate's own [spec](spec/index.md) (`SV` ids,
+specified 2026-08-03) is normative for behaviour; the
+[conformance matrix](../spec/databases/conformance-matrix.md) governs the
+ports this service sits over.
 
-Read, vread, create, update, delete, search and history work against SQLite,
-verified end to end.
+## Done
 
-- [ ] **Conditional create/delete** (`If-None-Exist`). The SQLite store supports
-  it; only the HTTP wiring is missing.
-- [ ] **`_include` / `_revinclude`.** `refs_of` exists in the store.
-- [ ] **Transaction Bundles.** Blocked on the store: `transact_audited` returns
-  `Unsupported` deliberately, because a compensating implementation would claim
-  an atomicity it does not have.
-- [ ] **Type- and system-level `_history`.**
-- [ ] **Other backends.** Only SQLite is wired. MySQL and MariaDB have native
-  stores now, but not the HTTP-facing surface (`status`, `get_versioned`,
-  `get_all`, `put_audited`) this layer calls — see their task lists.
-- [ ] **`store::init` uses a process-global `OnceLock`**, which is why the tests
-  share one database and coexist by using distinct resource ids. If a second
-  backend is mounted this wants revisiting.
+- [x] **FHIR REST CRUD over `fhir-sqlite`.** read/vread/create/update/delete/
+  search/instance-history at `/{version}/{rtype}…`
+  (`src/controllers/fhir.rs`), verified end to end by 10 request tests
+  (`tests/requests/`), including `create_read_update_delete_round_trip`,
+  `history_shows_every_version_including_the_deletion`, and
+  `search_returns_a_bundle_and_respects_paging`.
+- [x] **CapabilityStatement.** `GET /{version}/metadata` (`SV2.8`–`SV2.11`),
+  with a mutation-verified agreement test between what it declares and what
+  the router serves (**F-57**).
+- [x] **Auth: PASETO v4.public** (`SV3.2`–`SV3.6`). Verifying key from
+  `FHIR_LOCO_PASETO_PUBLIC_KEY` (`src/auth.rs`); writes are refused without
+  a token (`a_write_without_a_token_is_refused`).
+- [x] **`If-Match`/ETag optimistic concurrency on update** (`SV2.5`), and
+  deleted-vs-never-existed as 410 vs 404 (`SV2.4`).
+- [x] **`config/production.yaml` is real configuration**, not the empty file
+  that refused to boot (**F-59**, three mutation-verified tests).
 
-### Cross-cutting, all repos
+## Open
 
-- [ ] **Git remotes are wrong.** Every database repo still has `origin` =
-  `git@github.com:fhirpg/fhirpg.git`, correct for at most one of them. Pushing
-  any `port/*` branch as-is would send that port to the upstream project. Set
-  each remote before pushing. Nothing has been pushed.
-- [ ] **Shared history.** All six database repos descend from `688641a` of the
-  original `fhirpg` project. Whether five separate products should keep that
-  history, be squashed, or be re-rooted is a decision to make deliberately
-  rather than discover after a push.
-- [ ] **T70 Accent folding misses Nordic letters.** `fold("Ærø")` is `"ærø"`, so
-  a search for `aero` misses it, while `Muñoz` → `munoz` works: `ñ` decomposes
-  into a base letter plus a combining mark under NFD, which the fold strips,
-  whereas `æ`/`ø`/`å` are distinct letters with nothing to strip. `fold.rs` is
-  byte-identical across all repos, so this affects every one, including
-  fhir-postgresql. It matters because the function's own doc comment cites Ærø
-  as the motivating example. Needs a scope decision (Nordic only, or a full
-  `unaccent` equivalent) and a `_norm` backfill.
+- [ ] **Conditional create over HTTP** (`SV2.14`). The store side exists —
+  `fhir-sqlite` implements `conditional_create_audited` and
+  `conditional_delete_audited` — but no route reads `If-None-Exist`. One of
+  **F-58**'s five named gaps.
+- [ ] **`_include` / `_revinclude`.** `refs_of` exists in the store; no HTTP
+  wiring.
+- [ ] **Transaction Bundles.** `fhir-sqlite`'s `transact_audited`
+  deliberately returns `Unsupported` — atomicity by compensation was
+  rejected because it would claim an atomicity it does not have. Needs a
+  store that can hold one transaction across the operations, or a
+  documented refusal.
+- [ ] **Type-level and system-level `_history`.** Only instance-level exists.
+- [ ] **`$export`** (`SV2.15`). Recorded as not provided; one of **F-58**'s
+  five gaps and one of the three §13 compliance rows that depends on this
+  crate.
+- [ ] **Listener TLS** (`SV3.11`). This service speaks plain HTTP and expects
+  a TLS-terminating proxy; no requirement yet obliges the listener's own
+  TLS — a §10 gap recorded under **F-58**. `SV4.4`'s loopback default is
+  the mitigation, and it is a weak one.
+- [ ] **`SV4.2` edge concurrency limits.** Body limit (`32mb`) and timeout
+  (`30s`) are set in production config; Loco 1.0.1 exposes neither a
+  concurrency limit nor an in-flight cap, so those two halves are unmet.
+  One of **F-58**'s five gaps.
+- [ ] **`SV4.3` admin plane.** One listener, no separate metrics/health bind
+  address, no `/metrics` at all. The last of **F-58**'s five gaps.
+- [ ] **Multi-port wiring.** Only `fhir-sqlite` is wired (`Cargo.toml`). All
+  six ports now have stores, but the HTTP-facing surface this crate calls —
+  `status`, `get_versioned`, `get_all`, `put_audited` — exists in full only
+  in `fhir-sqlite`; `fhir-postgresql` has all but `get_versioned`, and
+  mysql/mariadb/mssql/oracle have none of the four. `store::init` also
+  still holds the stores in a process-global `OnceLock` (`src/store.rs`),
+  which wants revisiting when a second backend is mounted.
+
+The [conformance matrix](../spec/databases/conformance-matrix.md) is the status
+document to trust. This file is a plan; it is not evidence (`C0.9`).
