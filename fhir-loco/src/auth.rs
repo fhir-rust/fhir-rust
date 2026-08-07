@@ -206,6 +206,31 @@ fn verify_v4_public(key: &AsymmetricPublicKey<V4>, token: &str) -> Result<String
     Ok(sub.to_string())
 }
 
+/// The listener's transport posture (`SV3.11`).
+///
+/// This service speaks plain HTTP. A loopback bind keeps that inside the
+/// host; a non-loopback bind puts PHI on a network in the clear unless a
+/// TLS-terminating proxy sits in front — and only the deployment knows
+/// whether one does. So a non-loopback bind MUST be accompanied by the
+/// explicit acknowledgement `FHIR_LOCO_TLS_TERMINATED_UPSTREAM=true`, or the
+/// boot refuses: PHI in the clear must be a choice someone made, not a
+/// default nobody noticed. The same shape as `O10.7`'s database-side rule.
+pub fn listener_posture(binding: &str, tls_terminated_upstream: bool) -> Result<(), String> {
+    let loopback = binding == "localhost"
+        || binding
+            .parse::<std::net::IpAddr>()
+            .is_ok_and(|ip| ip.is_loopback());
+    if loopback || tls_terminated_upstream {
+        return Ok(());
+    }
+    Err(format!(
+        "refusing to bind {binding}: this listener speaks plain HTTP and the \
+         bind is not loopback. Either terminate TLS in front and set \
+         FHIR_LOCO_TLS_TERMINATED_UPSTREAM=true to say so, or bind loopback \
+         (SV3.11)."
+    ))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -290,5 +315,29 @@ mod tests {
         assert!(bad.is_err());
         let short = AsymmetricPublicKey::<V4>::from(&[0u8; 8]);
         assert!(short.is_err(), "an 8-byte key must not be accepted");
+    }
+
+    #[test]
+    fn loopback_binds_need_no_acknowledgement() {
+        assert!(listener_posture("127.0.0.1", false).is_ok());
+        assert!(listener_posture("::1", false).is_ok());
+        assert!(listener_posture("localhost", false).is_ok());
+    }
+
+    #[test]
+    fn a_non_loopback_plaintext_bind_refuses_without_the_acknowledgement() {
+        let e = listener_posture("0.0.0.0", false).expect_err("must refuse");
+        assert!(
+            e.contains("SV3.11"),
+            "the refusal names its requirement: {e}"
+        );
+        assert!(
+            e.contains("FHIR_LOCO_TLS_TERMINATED_UPSTREAM"),
+            "the refusal says how to fix it: {e}"
+        );
+        // With the acknowledgement, the deployment has made the choice.
+        assert!(listener_posture("0.0.0.0", true).is_ok());
+        // A hostname is not provably loopback; it needs the acknowledgement too.
+        assert!(listener_posture("fhir.internal", false).is_err());
     }
 }

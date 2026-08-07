@@ -25,9 +25,10 @@ server:
   # every interface the host has, and that must be a deliberate act by whoever
   # deploys it — not something inherited from a config file they did not read.
   #
-  # Put a TLS-terminating proxy in front. This service speaks plain HTTP:
-  # `O10.7` covers the *database* link, and nothing in the specification yet
-  # states a requirement for the listener's own TLS (F-58).
+  # Put a TLS-terminating proxy in front. This service speaks plain HTTP, and
+  # SV3.11 enforces the posture: a non-loopback binding refuses to boot
+  # unless FHIR_LOCO_TLS_TERMINATED_UPSTREAM=true acknowledges that TLS
+  # terminates upstream.
   binding: 127.0.0.1
   host: http://localhost
 

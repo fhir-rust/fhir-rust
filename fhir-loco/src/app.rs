@@ -50,7 +50,17 @@ impl Hooks for App {
     ///
     /// Configured by environment rather than by feature flag, so a deployment
     /// can point at a different database without a rebuild.
-    async fn before_run(_ctx: &AppContext) -> Result<()> {
+    async fn before_run(ctx: &AppContext) -> Result<()> {
+        // The listener's transport posture first (SV3.11): a non-loopback
+        // bind of this plain-HTTP listener needs the deployment's explicit
+        // acknowledgement that TLS terminates upstream. Refusing here, before
+        // anything is served, is the point — the same
+        // decide-deliberately-or-not-at-all shape as O10.7's database rule.
+        let acknowledged = std::env::var("FHIR_LOCO_TLS_TERMINATED_UPSTREAM")
+            .is_ok_and(|v| v == "true" || v == "1");
+        if let Err(e) = crate::auth::listener_posture(&ctx.config.server.binding, acknowledged) {
+            return Err(loco_rs::Error::Message(e));
+        }
         // Establish how principals are proven, before anything can be written.
         //
         // This fails the boot when the key is missing or unusable, and that is

@@ -47,10 +47,16 @@ ports this service sits over.
 - [ ] **`$export`** (`SV2.15`). Recorded as not provided; one of **F-58**'s
   five gaps and one of the three §13 compliance rows that depends on this
   crate.
-- [ ] **Listener TLS** (`SV3.11`). This service speaks plain HTTP and expects
-  a TLS-terminating proxy; no requirement yet obliges the listener's own
-  TLS — a §10 gap recorded under **F-58**. `SV4.4`'s loopback default is
-  the mitigation, and it is a weak one.
+- [x] **Listener TLS posture** (`SV3.11`) — *stated and enforced 2026-08-07*.
+  The requirement now lives in this crate's own spec (service obligations
+  moved here with the `SV` restatement, not §10): loopback bind, or TLS
+  terminated upstream and acknowledged via
+  `FHIR_LOCO_TLS_TERMINATED_UPSTREAM=true` — a non-loopback plaintext bind
+  **refuses to boot** (`auth::listener_posture`, checked in `before_run`).
+  Tests: `loopback_binds_need_no_acknowledgement`,
+  `a_non_loopback_plaintext_bind_refuses_without_the_acknowledgement`.
+  In-process TLS termination (rustls on this listener) remains unbuilt and
+  undemanded; the requirement obliges the posture decision, not a stack.
 - [ ] **`SV4.2` edge concurrency limits.** Body limit (`32mb`) and timeout
   (`30s`) are set in production config; Loco 1.0.1 exposes neither a
   concurrency limit nor an in-flight cap, so those two halves are unmet.
