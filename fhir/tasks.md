@@ -167,10 +167,17 @@ Conventions for the executing session:
 - **Accept:** examples suite green; doctest showing typed resolve.
 - **Depends:** T8
 
-### T12. Primitive value APIs — *partial*
-- *Status:* precision parsing lives in `fhir-core::temporal`
-  (`DateParts::parse` and kin); the newtypes themselves gained no inherent
-  `parse_parts()` accessors. The `Decimal` half was superseded by T26.
+### T12. Primitive value APIs — *done*
+- *Status:* precision parsing lives in `fhir-core::temporal`, and every
+  release's hand-maintained `temporal.rs` attaches it to the newtypes as
+  inherent accessors — `Date::parse_parts`, `Time::parse_parts`,
+  `DateTime::date_parts`, `Instant::date_parts`, all four in all five
+  releases. The `Decimal` half was superseded by T26. *(The 2026-08-06
+  audit briefly recorded this task as partial — "the newtypes gained no
+  inherent accessors" — because it checked `types/date.rs`, where the
+  structs live, not `temporal.rs`, where the impls do. Corrected
+  2026-08-07; the same judging-by-filename error the conformance matrix's
+  own "A correction" section describes.)*
 - **Do:** Keep `String` storage; add `Date::parse_parts() -> (year, Option<month>, Option<day>)`,
   ordering per FHIR precision rules, `DateTime`/`Instant`/`Time` equivalents;
   `Decimal` behind `serde_json/arbitrary_precision` audit (feature `precise-decimal`).

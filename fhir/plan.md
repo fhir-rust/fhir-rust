@@ -17,7 +17,7 @@ The 2026-07-11 plan ran to completion or was overtaken, phase by phase:
 | --- | --- | --- |
 | 0 — infrastructure | CI, examples oracle, publish hygiene, proptest | Done, exceeded — 16-job CI incl. fuzzing, SBOM, package-size, corpus gate (7,400 examples, hard gate); published. **Proptest (T4) was never done** — the one unfinished Phase 0 item. |
 | 1 — primitive extensions | `_field` siblings | Done — shipped as `_ext` fields serde-renamed to `_<name>`, generator-emitted. |
-| 2 — type safety | choice enums, coded enums, typed refs, value APIs | Choice enums and `Coded<E>` done. **Typed `Reference<T>`: machinery only** — the type exists with `cast`/`resolve`, but zero fields are typed (T11). **Temporal APIs live in `fhir-core::temporal`**, not as inherent methods on the newtypes (T12). |
+| 2 — type safety | choice enums, coded enums, typed refs, value APIs | Choice enums, `Coded<E>`, and the temporal accessors done (T12 — inherent `parse_parts`/`date_parts` in every release's `temporal.rs`; the audit briefly mis-recorded this by checking the wrong file). **Typed `Reference<T>`: machinery only** — the type exists with `cast`/`resolve`, but zero fields are typed (T11). |
 | 3 — validation | cardinality, invariants, OperationOutcome | Done, exceeded — 8 invariant classes vs the planned 3, `vec1::Vec1` for `1..*`, corpus-tested. |
 | 4 — ergonomics | builders, prelude, bundle utils, typed `contained` | Done **except typed `contained`** — still `Vec<serde_json::Value>` (T18, not a recorded reversal). |
 | 5 — interop | client, XML, summary | Done, hardened past the plan (timeouts, percent-encoding, size caps, fuzzing — T29/T31 found and fixed a remote DoS in the XML reader). |
@@ -45,12 +45,12 @@ Tracked as discrete tasks in [`tasks.md`](tasks.md); the plan-level view:
    `fhir-derive-macros` 1.2.0. None of this is model behaviour; all of it is
    the kind of confident-but-wrong text this repository's audits exist to
    catch.
-2. **The unfinished halves of old phases**: typed `Reference<T>` fields
-   (generator emission from `targetProfile`, T11) and inherent temporal
-   accessors if wanted (T12). Typed `contained` closed 2026-08-06 (T47,
-   breaking → 4.0). Each remaining item is a deliberate-scope decision first
-   and codegen second — deciding *not* to do one and recording why is an
-   acceptable close.
+2. **The one unfinished half of an old phase**: typed `Reference<T>` fields
+   (generator emission from `targetProfile`, T11). Typed `contained` closed
+   2026-08-06 (T47, breaking → 4.0); the temporal accessors turned out to
+   have been done all along (T12 — the audit had checked the wrong file).
+   T11 is a deliberate-scope decision first and codegen second — deciding
+   *not* to do it and recording why is an acceptable close.
 3. **R4B** (spec 12 future work) — the only FHIR release published by HL7 and
    not modelled here. The generator and the adding-a-release procedure
    (`doc/adding-a-release.md`) are proven by five releases; R4B is a
