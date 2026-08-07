@@ -71,6 +71,8 @@ required-features = []
 # The request tests mint tokens for a throwaway keypair, because there is no
 # unauthenticated path left to test through.
 pasetors = { version = "0.8", default-features = false, features = ["v4", "std"] }
+# Drives the admin Router directly (SV4.3 tests) — already in the tree via axum.
+tower = { version = "0.5", features = ["util"] }
 hex = "0.4"
 fhir-sqlite-map = { path = "../fhir-sqlite/crates/fhir-sqlite-map", version = "0.4.0" }
 fhir-sqlite-store = { path = "../fhir-sqlite/crates/fhir-sqlite-store", version = "0.4.0" }

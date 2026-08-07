@@ -35,7 +35,16 @@
   same network as clinical data. Latency MUST be reported as a histogram, not a
   running total, so p99 is answerable. Restates `O10.9`.
 
-  **Unmet.** There is one listener, and no `/metrics` at all.
+  **Met** (served since 2026-08-07; until then there was one listener and no
+  `/metrics` at all — **F-58**). `FHIR_LOCO_ADMIN_BIND` names the admin
+  socket; unset, no second listener exists, which is the same
+  deliberate-exposure posture as `SV4.4`. It serves `/health` (liveness),
+  `/ready` (readiness — a mounted store; the two are separate endpoints
+  because liveness green over a dead store was this crate's original boot
+  bug), and `/metrics` (Prometheus text: request counts by status class, and
+  request duration as a fixed-bucket histogram). The admin router carries no
+  FHIR route and MUST never grow one: nothing on this listener reads a
+  resource.
 
 ## Binding
 

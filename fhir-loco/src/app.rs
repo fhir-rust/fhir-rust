@@ -72,6 +72,12 @@ impl Hooks for App {
             Ok(v) => tracing::info!(db = %db, versions = ?v.mounted(), "FHIR stores mounted"),
             Err(e) => return Err(loco_rs::Error::Message(format!("opening FHIR store: {e}"))),
         }
+
+        // The admin plane — /health, /ready, /metrics — on its own listener
+        // (SV4.3): operational endpoints must be exposable to an operations
+        // network without exposing the FHIR API's PHI to it. Off unless
+        // FHIR_LOCO_ADMIN_BIND is set.
+        crate::admin::spawn_if_configured();
         Ok(())
     }
 
@@ -83,6 +89,11 @@ impl Hooks for App {
         AppRoutes::with_default_routes() // controller routes below
             .add_route(controllers::home::routes())
             .add_route(controllers::fhir::routes())
+    }
+
+    /// Time every request into the admin plane's latency histogram (SV4.3).
+    async fn after_routes(router: axum::Router, _ctx: &AppContext) -> Result<axum::Router> {
+        Ok(router.layer(axum::middleware::from_fn(crate::admin::record)))
     }
     async fn connect_workers(_ctx: &AppContext, _queue: &Queue) -> Result<()> {
         Ok(())

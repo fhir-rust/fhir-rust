@@ -55,8 +55,16 @@ ports this service sits over.
   (`30s`) are set in production config; Loco 1.0.1 exposes neither a
   concurrency limit nor an in-flight cap, so those two halves are unmet.
   One of **F-58**'s five gaps.
-- [ ] **`SV4.3` admin plane.** One listener, no separate metrics/health bind
-  address, no `/metrics` at all. The last of **F-58**'s five gaps.
+- [x] **`SV4.3` admin plane** — *done 2026-08-07*. A second listener
+  (`FHIR_LOCO_ADMIN_BIND`; off unless set) serves `/health`, `/ready` (a
+  mounted store — separate from liveness because liveness-green-over-a-dead-
+  store was this crate's original boot bug), and `/metrics` (Prometheus text:
+  status-class counters and a fixed-bucket latency histogram, so p99 is
+  answerable — no metrics crate, atomics on the request path). Every FHIR
+  request is timed by an `after_routes` middleware layer. `src/admin.rs`;
+  tests: the four `admin::tests` incl.
+  `ready_refuses_without_a_mounted_store` and
+  `buckets_are_cumulative_and_p99_answerable`.
 - [ ] **Multi-port wiring.** Only `fhir-sqlite` is wired (`Cargo.toml`). All
   six ports now have stores, but the HTTP-facing surface this crate calls —
   `status`, `get_versioned`, `get_all`, `put_audited` — exists in full only
