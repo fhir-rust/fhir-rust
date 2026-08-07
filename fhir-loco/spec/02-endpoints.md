@@ -40,7 +40,7 @@
   | `401` | no acceptable credential (`SV3`) | `403`, which this crate does not issue: it does not authorize |
   | `404` | never existed | `410` |
   | `410` | existed and was deleted | `404` — **the sharpest of these**. A client resolving a dangling reference needs to know the resource was deleted rather than mistyped, and a `404` invites a retry that will never succeed |
-  | `412` | `If-Match` did not match the stored version | `409` |
+  | `412` | `If-Match` did not match the stored version, or `If-None-Exist` criteria matched more than one resource (`SV2.14`) | `409` |
   | `500` | this server's fault | `400` |
   | `503` | the store is unreachable | `500` — one is retryable, the other is not |
 
@@ -103,11 +103,31 @@
   naming the parameter, rather than silently ignored. A filter that is dropped
   returns **more** results than asked for, and the caller cannot tell.
 
-## Not implemented
+## Conditional create
 
-- **SV2.14** `If-None-Exist` conditional create is **not served**, and the
-  capability exists: the store implements `conditional_create_audited`. This is
-  a route away from working. Restates `A7.10` (`C0.16`); tracked as **F-58**.
+- **SV2.14** `POST /{version}/{rtype}` carrying an `If-None-Exist` header MUST
+  be served as FHIR conditional create (restates `A7.10`, `C0.16`). The header
+  value is search criteria in query-string form. The store's
+  `conditional_create_audited` makes the search-then-create indivisible with
+  respect to other writers — the HTTP layer MUST NOT search and create in two
+  calls — and each of its three outcomes MUST be preserved:
+
+  | Store outcome | Status | Body |
+  | --- | --- | --- |
+  | no match — created | `201`, with `Location` and `ETag` | the created resource |
+  | exactly one match | `200`, with `ETag` | the existing resource, unchanged |
+  | more than one match | `412` | `OperationOutcome`: the criteria are not selective enough |
+
+  A header that is present but empty or unparseable MUST be a `400` rather
+  than ignored, for `SV2.5`'s reason: silently dropping the precondition turns
+  a conditional create into an unconditional one, which is the
+  duplicate-writing failure the header exists to prevent. The
+  CapabilityStatement declares `conditionalCreate` (`SV2.9`).
+
+  *Served since 2026-08-07. Until then this requirement recorded the gap —
+  the store capability existed with no route to it (**F-58**).*
+
+## Not implemented
 
 - **SV2.15** `$export` (Bulk Data) is **not served**. Restates `M8` (`C0.16`),
   and it is one of the three §13 compliance rows that depends on this crate.

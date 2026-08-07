@@ -24,10 +24,11 @@ there — `410` versus `404` is `SV2.4`, `If-Match` is `SV2.5`, the
 CapabilityStatement is `SV2.8`–`SV2.11`, PASETO is `SV3.2`–`SV3.6`.
 
 What this crate does **not** do is recorded at its own id rather than in a list
-that drifts: no conditional create (`SV2.14`), no `$export` (`SV2.15`), no
+that drifts: no `$export` (`SV2.15`), no
 concurrency limit or admin plane (`SV4.2`, `SV4.3`), and **no requirement
 anywhere yet states an obligation for this listener's own TLS** (`SV3.11`) —
-put a TLS-terminating proxy in front.
+put a TLS-terminating proxy in front. (Conditional create, formerly on this
+list, is served since 2026-08-07 — `SV2.14`.)
 
 ## What belongs where
 

@@ -36,6 +36,9 @@ serde = { version = "1", features = ["derive"] }
 # way out of the HTTP layer. `preserve_order` keeps object key order stable,
 # which matters for readable diffs and for byte-comparable responses.
 serde_json = { version = "1", features = ["arbitrary_precision", "preserve_order"] }
+# Parses the If-None-Exist header's query-string criteria (SV2.14). Already in
+# the dependency tree via axum; declared so the controller can name it.
+serde_urlencoded = "0.7"
 
 # The FHIR database crates. Path dependencies to the sibling repos: these are
 # libraries by design (each of those projects dropped its own server and CLI),

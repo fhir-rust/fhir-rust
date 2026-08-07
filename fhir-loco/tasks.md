@@ -26,10 +26,16 @@ ports this service sits over.
 
 ## Open
 
-- [ ] **Conditional create over HTTP** (`SV2.14`). The store side exists —
-  `fhir-sqlite` implements `conditional_create_audited` and
-  `conditional_delete_audited` — but no route reads `If-None-Exist`. One of
-  **F-58**'s five named gaps.
+- [x] **Conditional create over HTTP** (`SV2.14`) — *done 2026-08-07*.
+  `POST` with `If-None-Exist` calls the store's `conditional_create_audited`
+  (search-then-create indivisible under the write gate); all four outcomes
+  preserved at the HTTP boundary — created `201`, one match returned
+  unchanged `200`, ambiguous `412`, unreadable header `400` — and the
+  CapabilityStatement declares `conditionalCreate`. Tests:
+  `conditional_create_serves_all_four_outcomes`,
+  `metadata_declares_conditional_create`. Closes one of **F-58**'s five
+  named gaps; `conditional_delete_audited` still has no HTTP verb (a DELETE
+  with criteria is a separate spec decision, not part of `SV2.14`).
 - [ ] **`_include` / `_revinclude`.** `refs_of` exists in the store; no HTTP
   wiring.
 - [ ] **Transaction Bundles.** `fhir-sqlite`'s `transact_audited`

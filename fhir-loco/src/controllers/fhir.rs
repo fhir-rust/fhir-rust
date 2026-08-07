@@ -237,6 +237,9 @@ async fn metadata(Path(version): Path<String>) -> AxumResponse {
                     { "code": "update" },
                     { "code": "delete" },
                 ],
+                // If-None-Exist is served (SV2.14); a conformance-driven
+                // client discovers it here rather than by trying it.
+                "conditionalCreate": true,
             })
         })
         .collect();
@@ -424,25 +427,114 @@ async fn create(
     if let Some(obj) = resource.as_object_mut() {
         obj.insert("id".to_string(), serde_json::json!(id));
     }
+
+    // `If-None-Exist` makes this a conditional create (SV2.14). The store's
+    // `conditional_create_audited` holds its write gate across the
+    // search-then-create, so the sequence is indivisible with respect to
+    // other writers — searching here and then calling `put_audited` would be
+    // the same race with extra steps.
+    if let Some(raw) = headers.get("if-none-exist") {
+        // Present-but-unreadable must be an error, not an unconditional
+        // create: dropping the precondition silently is the duplicate-writing
+        // failure the header exists to prevent (SV2.14, SV2.5's reason).
+        let criteria: Vec<(String, String)> = match raw
+            .to_str()
+            .ok()
+            .filter(|s| !s.trim().is_empty())
+            .and_then(|s| serde_urlencoded::from_str(s).ok())
+        {
+            Some(c) => c,
+            None => {
+                return outcome(
+                    StatusCode::BAD_REQUEST,
+                    "error",
+                    "invalid",
+                    "the If-None-Exist header is not readable as search criteria",
+                );
+            }
+        };
+        return match store
+            .conditional_create_audited(&rtype, &criteria, &resource, &audit)
+            .await
+        {
+            Ok(fhir_sqlite_store::CondCreate::Created(out)) => {
+                created_response(&version, &rtype, &out, &resource)
+            }
+            // Exactly one match: FHIR says return it unchanged. The read goes
+            // through the same disclosure logging as `GET` — a returned
+            // resource is a disclosure whichever verb carried it.
+            Ok(fhir_sqlite_store::CondCreate::Existing(existing_id)) => {
+                match store.get(&rtype, &existing_id).await {
+                    Ok(Some(mut body)) => {
+                        let v = match store.status(&rtype, &existing_id).await {
+                            Ok(fhir_sqlite_store::ResourceStatus::Active(v)) => Some(v),
+                            _ => None,
+                        };
+                        if let (Some(v), Some(obj)) = (v, body.as_object_mut()) {
+                            obj.insert(
+                                "meta".to_string(),
+                                serde_json::json!({ "versionId": v.to_string() }),
+                            );
+                        }
+                        disclose(
+                            store,
+                            &headers,
+                            "conditional-create",
+                            Some(&rtype),
+                            Some(&existing_id),
+                            v,
+                            "existing",
+                            Some(1),
+                        )
+                        .await;
+                        fhir_json(StatusCode::OK, &body, v)
+                    }
+                    Ok(None) => outcome(
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        "error",
+                        "exception",
+                        "the matched resource could not be read back",
+                    ),
+                    Err(e) => store_error(e),
+                }
+            }
+            Ok(fhir_sqlite_store::CondCreate::Multiple) => outcome(
+                StatusCode::PRECONDITION_FAILED,
+                "error",
+                "multiple-matches",
+                "If-None-Exist matched more than one resource; the criteria are not selective enough",
+            ),
+            Err(e) => store_error(e),
+        };
+    }
+
     match store.put_audited(&resource, None, &audit).await {
-        Ok(out) => {
-            let mut headers = HeaderMap::new();
-            headers.insert(header::CONTENT_TYPE, FHIR_JSON.parse().expect("static"));
-            if let Ok(loc) = format!("/{version}/{rtype}/{}", out.id).parse() {
-                headers.insert(header::LOCATION, loc);
-            }
-            if let Ok(tag) = format!("W/\"{}\"", out.version_id).parse() {
-                headers.insert(header::ETAG, tag);
-            }
-            (
-                StatusCode::CREATED,
-                headers,
-                serde_json::to_string(&resource).unwrap_or_default(),
-            )
-                .into_response()
-        }
+        Ok(out) => created_response(&version, &rtype, &out, &resource),
         Err(e) => store_error(e),
     }
+}
+
+/// The `201 Created` response both the plain and conditional create share.
+fn created_response(
+    version: &str,
+    rtype: &str,
+    out: &fhir_sqlite_store::PutOutcome,
+    resource: &serde_json::Value,
+) -> AxumResponse {
+    let mut headers = HeaderMap::new();
+    headers.insert(header::CONTENT_TYPE, FHIR_JSON.parse().expect("static"));
+    if let Ok(loc) = format!("/{version}/{rtype}/{}", out.id).parse() {
+        headers.insert(header::LOCATION, loc);
+    }
+    if let Ok(tag) = format!("W/\"{}\"", out.version_id).parse() {
+        headers.insert(header::ETAG, tag);
+    }
+    (
+        StatusCode::CREATED,
+        headers,
+        serde_json::to_string(resource).unwrap_or_default(),
+    )
+        .into_response()
 }
 
 /// `PUT /{version}/{type}/{id}` — update, or create at a client-chosen id.

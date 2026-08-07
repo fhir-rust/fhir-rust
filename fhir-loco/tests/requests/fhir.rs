@@ -535,3 +535,139 @@ async fn a_write_without_a_token_is_refused() {
     })
     .await;
 }
+
+/// SV2.14: `If-None-Exist` conditional create — all four outcomes the spec
+/// table names. The store makes search-then-create indivisible; these assert
+/// the HTTP layer preserves each verdict rather than flattening them.
+#[tokio::test]
+#[serial]
+async fn conditional_create_serves_all_four_outcomes() {
+    store_ready().await;
+    request::<App, _, _>(|request, _ctx| async move {
+        let patient = |family: &str| {
+            serde_json::json!({
+                "resourceType": "Patient",
+                "identifier": [{ "system": "urn:cc", "value": "one" }],
+                "name": [{ "family": family }]
+            })
+        };
+
+        // No match: created, exactly like a plain POST.
+        let res = request
+            .post("/r5/Patient")
+            .add_header("content-type", FHIR_JSON)
+            .add_header("authorization", &bearer("dr-who"))
+            .add_header("if-none-exist", "identifier=urn:cc|one")
+            .json(&patient("First"))
+            .await;
+        assert_eq!(
+            res.status_code(),
+            201,
+            "no match must create: {}",
+            res.text()
+        );
+        let first_id = res
+            .headers()
+            .get("location")
+            .expect("Location header")
+            .to_str()
+            .expect("utf-8")
+            .rsplit('/')
+            .next()
+            .expect("id")
+            .to_string();
+
+        // Exactly one match: the existing resource comes back unchanged —
+        // same id, still version 1, and the submitted body is NOT written.
+        let res = request
+            .post("/r5/Patient")
+            .add_header("content-type", FHIR_JSON)
+            .add_header("authorization", &bearer("dr-who"))
+            .add_header("if-none-exist", "identifier=urn:cc|one")
+            .json(&patient("Second"))
+            .await;
+        assert_eq!(
+            res.status_code(),
+            200,
+            "one match must return it: {}",
+            res.text()
+        );
+        let body = body_of(&res.text());
+        assert_eq!(body["id"], serde_json::json!(first_id));
+        assert_eq!(
+            body["meta"]["versionId"], "1",
+            "the match must be unchanged"
+        );
+        assert_eq!(
+            body["name"][0]["family"], "First",
+            "the submitted body must not overwrite the match"
+        );
+
+        // A second resource with the same identifier (plain POST bypasses the
+        // precondition), then the same conditional create: ambiguous, 412.
+        let res = request
+            .post("/r5/Patient")
+            .add_header("content-type", FHIR_JSON)
+            .add_header("authorization", &bearer("dr-who"))
+            .json(&patient("Rival"))
+            .await;
+        assert_eq!(res.status_code(), 201);
+        let res = request
+            .post("/r5/Patient")
+            .add_header("content-type", FHIR_JSON)
+            .add_header("authorization", &bearer("dr-who"))
+            .add_header("if-none-exist", "identifier=urn:cc|one")
+            .json(&patient("Third"))
+            .await;
+        assert_eq!(
+            res.status_code(),
+            412,
+            "more than one match must refuse: {}",
+            res.text()
+        );
+        let body = body_of(&res.text());
+        assert_eq!(body["resourceType"], "OperationOutcome");
+
+        // Present-but-empty is an error, never an unconditional create
+        // (SV2.14): dropping the precondition silently is the duplicate the
+        // header exists to prevent.
+        let res = request
+            .post("/r5/Patient")
+            .add_header("content-type", FHIR_JSON)
+            .add_header("authorization", &bearer("dr-who"))
+            .add_header("if-none-exist", "   ")
+            .json(&patient("Fourth"))
+            .await;
+        assert_eq!(
+            res.status_code(),
+            400,
+            "an unreadable precondition must be refused: {}",
+            res.text()
+        );
+    })
+    .await;
+}
+
+/// SV2.9/SV2.14: the CapabilityStatement declares conditional create, so a
+/// conformance-driven client discovers it rather than trying it.
+#[tokio::test]
+#[serial]
+async fn metadata_declares_conditional_create() {
+    store_ready().await;
+    request::<App, _, _>(|request, _ctx| async move {
+        let res = request.get("/r5/metadata").await;
+        assert_eq!(res.status_code(), 200);
+        let body = body_of(&res.text());
+        let resources = body["rest"][0]["resource"]
+            .as_array()
+            .expect("rest.resource array");
+        assert!(!resources.is_empty());
+        assert!(
+            resources
+                .iter()
+                .all(|r| r["conditionalCreate"] == serde_json::json!(true)),
+            "every resource type must declare conditionalCreate (SV2.14)"
+        );
+    })
+    .await;
+}
