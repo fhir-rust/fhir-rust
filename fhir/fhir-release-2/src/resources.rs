@@ -515,3 +515,482 @@ impl Resource {
         }
     }
 }
+
+// The typed-reference target markers (T11): `types::Reference<Patient>`
+// points at this module's `Patient`. See `types::reference::ResourceType`.
+impl crate::r2::types::reference::ResourceType for account::Account {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("Account")
+    }
+}
+impl crate::r2::types::reference::ResourceType for allergy_intolerance::AllergyIntolerance {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("AllergyIntolerance")
+    }
+}
+impl crate::r2::types::reference::ResourceType for appointment::Appointment {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("Appointment")
+    }
+}
+impl crate::r2::types::reference::ResourceType for appointment_response::AppointmentResponse {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("AppointmentResponse")
+    }
+}
+impl crate::r2::types::reference::ResourceType for audit_event::AuditEvent {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("AuditEvent")
+    }
+}
+impl crate::r2::types::reference::ResourceType for basic::Basic {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("Basic")
+    }
+}
+impl crate::r2::types::reference::ResourceType for binary::Binary {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("Binary")
+    }
+}
+impl crate::r2::types::reference::ResourceType for body_site::BodySite {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("BodySite")
+    }
+}
+impl crate::r2::types::reference::ResourceType for bundle::Bundle {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("Bundle")
+    }
+}
+impl crate::r2::types::reference::ResourceType for care_plan::CarePlan {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("CarePlan")
+    }
+}
+impl crate::r2::types::reference::ResourceType for claim::Claim {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("Claim")
+    }
+}
+impl crate::r2::types::reference::ResourceType for claim_response::ClaimResponse {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("ClaimResponse")
+    }
+}
+impl crate::r2::types::reference::ResourceType for clinical_impression::ClinicalImpression {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("ClinicalImpression")
+    }
+}
+impl crate::r2::types::reference::ResourceType for communication::Communication {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("Communication")
+    }
+}
+impl crate::r2::types::reference::ResourceType for communication_request::CommunicationRequest {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("CommunicationRequest")
+    }
+}
+impl crate::r2::types::reference::ResourceType for composition::Composition {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("Composition")
+    }
+}
+impl crate::r2::types::reference::ResourceType for concept_map::ConceptMap {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("ConceptMap")
+    }
+}
+impl crate::r2::types::reference::ResourceType for condition::Condition {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("Condition")
+    }
+}
+impl crate::r2::types::reference::ResourceType for conformance::Conformance {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("Conformance")
+    }
+}
+impl crate::r2::types::reference::ResourceType for contract::Contract {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("Contract")
+    }
+}
+impl crate::r2::types::reference::ResourceType for coverage::Coverage {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("Coverage")
+    }
+}
+impl crate::r2::types::reference::ResourceType for data_element::DataElement {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("DataElement")
+    }
+}
+impl crate::r2::types::reference::ResourceType for detected_issue::DetectedIssue {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("DetectedIssue")
+    }
+}
+impl crate::r2::types::reference::ResourceType for device::Device {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("Device")
+    }
+}
+impl crate::r2::types::reference::ResourceType for device_component::DeviceComponent {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("DeviceComponent")
+    }
+}
+impl crate::r2::types::reference::ResourceType for device_metric::DeviceMetric {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("DeviceMetric")
+    }
+}
+impl crate::r2::types::reference::ResourceType for device_use_request::DeviceUseRequest {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("DeviceUseRequest")
+    }
+}
+impl crate::r2::types::reference::ResourceType for device_use_statement::DeviceUseStatement {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("DeviceUseStatement")
+    }
+}
+impl crate::r2::types::reference::ResourceType for diagnostic_order::DiagnosticOrder {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("DiagnosticOrder")
+    }
+}
+impl crate::r2::types::reference::ResourceType for diagnostic_report::DiagnosticReport {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("DiagnosticReport")
+    }
+}
+impl crate::r2::types::reference::ResourceType for document_manifest::DocumentManifest {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("DocumentManifest")
+    }
+}
+impl crate::r2::types::reference::ResourceType for document_reference::DocumentReference {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("DocumentReference")
+    }
+}
+impl crate::r2::types::reference::ResourceType for eligibility_request::EligibilityRequest {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("EligibilityRequest")
+    }
+}
+impl crate::r2::types::reference::ResourceType for eligibility_response::EligibilityResponse {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("EligibilityResponse")
+    }
+}
+impl crate::r2::types::reference::ResourceType for encounter::Encounter {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("Encounter")
+    }
+}
+impl crate::r2::types::reference::ResourceType for enrollment_request::EnrollmentRequest {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("EnrollmentRequest")
+    }
+}
+impl crate::r2::types::reference::ResourceType for enrollment_response::EnrollmentResponse {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("EnrollmentResponse")
+    }
+}
+impl crate::r2::types::reference::ResourceType for episode_of_care::EpisodeOfCare {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("EpisodeOfCare")
+    }
+}
+impl crate::r2::types::reference::ResourceType for explanation_of_benefit::ExplanationOfBenefit {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("ExplanationOfBenefit")
+    }
+}
+impl crate::r2::types::reference::ResourceType for family_member_history::FamilyMemberHistory {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("FamilyMemberHistory")
+    }
+}
+impl crate::r2::types::reference::ResourceType for flag::Flag {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("Flag")
+    }
+}
+impl crate::r2::types::reference::ResourceType for goal::Goal {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("Goal")
+    }
+}
+impl crate::r2::types::reference::ResourceType for group::Group {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("Group")
+    }
+}
+impl crate::r2::types::reference::ResourceType for healthcare_service::HealthcareService {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("HealthcareService")
+    }
+}
+impl crate::r2::types::reference::ResourceType
+    for imaging_object_selection::ImagingObjectSelection
+{
+    fn resource_type_name() -> Option<&'static str> {
+        Some("ImagingObjectSelection")
+    }
+}
+impl crate::r2::types::reference::ResourceType for imaging_study::ImagingStudy {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("ImagingStudy")
+    }
+}
+impl crate::r2::types::reference::ResourceType for immunization::Immunization {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("Immunization")
+    }
+}
+impl crate::r2::types::reference::ResourceType
+    for immunization_recommendation::ImmunizationRecommendation
+{
+    fn resource_type_name() -> Option<&'static str> {
+        Some("ImmunizationRecommendation")
+    }
+}
+impl crate::r2::types::reference::ResourceType for implementation_guide::ImplementationGuide {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("ImplementationGuide")
+    }
+}
+impl crate::r2::types::reference::ResourceType for list::List {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("List")
+    }
+}
+impl crate::r2::types::reference::ResourceType for location::Location {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("Location")
+    }
+}
+impl crate::r2::types::reference::ResourceType for media::Media {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("Media")
+    }
+}
+impl crate::r2::types::reference::ResourceType for medication::Medication {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("Medication")
+    }
+}
+impl crate::r2::types::reference::ResourceType
+    for medication_administration::MedicationAdministration
+{
+    fn resource_type_name() -> Option<&'static str> {
+        Some("MedicationAdministration")
+    }
+}
+impl crate::r2::types::reference::ResourceType for medication_dispense::MedicationDispense {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("MedicationDispense")
+    }
+}
+impl crate::r2::types::reference::ResourceType for medication_order::MedicationOrder {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("MedicationOrder")
+    }
+}
+impl crate::r2::types::reference::ResourceType for medication_statement::MedicationStatement {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("MedicationStatement")
+    }
+}
+impl crate::r2::types::reference::ResourceType for message_header::MessageHeader {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("MessageHeader")
+    }
+}
+impl crate::r2::types::reference::ResourceType for naming_system::NamingSystem {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("NamingSystem")
+    }
+}
+impl crate::r2::types::reference::ResourceType for nutrition_order::NutritionOrder {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("NutritionOrder")
+    }
+}
+impl crate::r2::types::reference::ResourceType for observation::Observation {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("Observation")
+    }
+}
+impl crate::r2::types::reference::ResourceType for operation_definition::OperationDefinition {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("OperationDefinition")
+    }
+}
+impl crate::r2::types::reference::ResourceType for operation_outcome::OperationOutcome {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("OperationOutcome")
+    }
+}
+impl crate::r2::types::reference::ResourceType for order::Order {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("Order")
+    }
+}
+impl crate::r2::types::reference::ResourceType for order_response::OrderResponse {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("OrderResponse")
+    }
+}
+impl crate::r2::types::reference::ResourceType for organization::Organization {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("Organization")
+    }
+}
+impl crate::r2::types::reference::ResourceType for parameters::Parameters {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("Parameters")
+    }
+}
+impl crate::r2::types::reference::ResourceType for patient::Patient {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("Patient")
+    }
+}
+impl crate::r2::types::reference::ResourceType for payment_notice::PaymentNotice {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("PaymentNotice")
+    }
+}
+impl crate::r2::types::reference::ResourceType for payment_reconciliation::PaymentReconciliation {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("PaymentReconciliation")
+    }
+}
+impl crate::r2::types::reference::ResourceType for person::Person {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("Person")
+    }
+}
+impl crate::r2::types::reference::ResourceType for practitioner::Practitioner {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("Practitioner")
+    }
+}
+impl crate::r2::types::reference::ResourceType for procedure::Procedure {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("Procedure")
+    }
+}
+impl crate::r2::types::reference::ResourceType for procedure_request::ProcedureRequest {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("ProcedureRequest")
+    }
+}
+impl crate::r2::types::reference::ResourceType for process_request::ProcessRequest {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("ProcessRequest")
+    }
+}
+impl crate::r2::types::reference::ResourceType for process_response::ProcessResponse {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("ProcessResponse")
+    }
+}
+impl crate::r2::types::reference::ResourceType for provenance::Provenance {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("Provenance")
+    }
+}
+impl crate::r2::types::reference::ResourceType for questionnaire::Questionnaire {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("Questionnaire")
+    }
+}
+impl crate::r2::types::reference::ResourceType for questionnaire_response::QuestionnaireResponse {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("QuestionnaireResponse")
+    }
+}
+impl crate::r2::types::reference::ResourceType for referral_request::ReferralRequest {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("ReferralRequest")
+    }
+}
+impl crate::r2::types::reference::ResourceType for related_person::RelatedPerson {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("RelatedPerson")
+    }
+}
+impl crate::r2::types::reference::ResourceType for risk_assessment::RiskAssessment {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("RiskAssessment")
+    }
+}
+impl crate::r2::types::reference::ResourceType for schedule::Schedule {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("Schedule")
+    }
+}
+impl crate::r2::types::reference::ResourceType for search_parameter::SearchParameter {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("SearchParameter")
+    }
+}
+impl crate::r2::types::reference::ResourceType for slot::Slot {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("Slot")
+    }
+}
+impl crate::r2::types::reference::ResourceType for specimen::Specimen {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("Specimen")
+    }
+}
+impl crate::r2::types::reference::ResourceType for structure_definition::StructureDefinition {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("StructureDefinition")
+    }
+}
+impl crate::r2::types::reference::ResourceType for subscription::Subscription {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("Subscription")
+    }
+}
+impl crate::r2::types::reference::ResourceType for substance::Substance {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("Substance")
+    }
+}
+impl crate::r2::types::reference::ResourceType for supply_delivery::SupplyDelivery {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("SupplyDelivery")
+    }
+}
+impl crate::r2::types::reference::ResourceType for supply_request::SupplyRequest {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("SupplyRequest")
+    }
+}
+impl crate::r2::types::reference::ResourceType for test_script::TestScript {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("TestScript")
+    }
+}
+impl crate::r2::types::reference::ResourceType for value_set::ValueSet {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("ValueSet")
+    }
+}
+impl crate::r2::types::reference::ResourceType for vision_prescription::VisionPrescription {
+    fn resource_type_name() -> Option<&'static str> {
+        Some("VisionPrescription")
+    }
+}

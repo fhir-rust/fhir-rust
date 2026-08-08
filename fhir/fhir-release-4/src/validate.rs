@@ -296,14 +296,16 @@ mod tests {
             // The fixture must be a *valid* Observation now that `contained`
             // is typed (T47) — the raw-JSON version could hold one missing
             // its required `status` and `code`; the typed one cannot.
-            contained: vec![serde_json::from_value(serde_json::json!({
-                "resourceType": "Observation",
-                "id": "o1",
-                "status": "final",
-                "code": { "text": "x" },
-                "contained": [{ "resourceType": "Patient", "id": "nested" }]
-            }))
-            .expect("a valid contained resource")],
+            contained: vec![
+                serde_json::from_value(serde_json::json!({
+                    "resourceType": "Observation",
+                    "id": "o1",
+                    "status": "final",
+                    "code": { "text": "x" },
+                    "contained": [{ "resourceType": "Patient", "id": "nested" }]
+                }))
+                .expect("a valid contained resource"),
+            ],
             ..Default::default()
         };
         assert!(

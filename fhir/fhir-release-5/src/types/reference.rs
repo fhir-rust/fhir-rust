@@ -103,12 +103,6 @@ impl ResourceType for Any {
     }
 }
 
-impl ResourceType for crate::r5::resources::Patient {
-    fn resource_type_name() -> Option<&'static str> {
-        Some("Patient")
-    }
-}
-
 impl<T> Reference<T> {
     /// Re-interpret the compile-time target type. The wire form is identical for
     /// every `T`, so this only changes the phantom marker.

@@ -315,14 +315,16 @@ mod tests {
             // The fixture must be a *valid* Observation now that `contained`
             // is typed (T47) — the raw-JSON version could hold one missing
             // its required `status` and `code`; the typed one cannot.
-            contained: vec![serde_json::from_value(serde_json::json!({
-                "resourceType": "Observation",
-                "id": "o1",
-                "status": "final",
-                "code": { "text": "x" },
-                "contained": [{ "resourceType": "Patient", "id": "nested" }]
-            }))
-            .expect("a valid contained resource")],
+            contained: vec![
+                serde_json::from_value(serde_json::json!({
+                    "resourceType": "Observation",
+                    "id": "o1",
+                    "status": "final",
+                    "code": { "text": "x" },
+                    "contained": [{ "resourceType": "Patient", "id": "nested" }]
+                }))
+                .expect("a valid contained resource"),
+            ],
             ..Default::default()
         };
         assert!(
@@ -336,9 +338,8 @@ mod tests {
     // ele-1 — an element must carry a value or a child that is not its id.
     #[test]
     fn invariant_ele_1() {
-        let flagged = |i: &[crate::validate::ValidationIssue]| {
-            i.iter().any(|x| x.message.contains("ele-1"))
-        };
+        let flagged =
+            |i: &[crate::validate::ValidationIssue]| i.iter().any(|x| x.message.contains("ele-1"));
 
         // Nothing at all.
         assert!(flagged(&types::Coding::default().validate()));
@@ -357,7 +358,10 @@ mod tests {
             id: Some(types::String("x".to_string())),
             ..Default::default()
         };
-        assert!(flagged(&id_only.validate()), "id alone is not a child for ele-1");
+        assert!(
+            flagged(&id_only.validate()),
+            "id alone is not a child for ele-1"
+        );
 
         // An extension is a child.
         let with_ext = types::Element {
@@ -381,13 +385,17 @@ mod tests {
     // att-1 — bytes with no media type cannot be interpreted by a receiver.
     #[test]
     fn invariant_att_1() {
-        let flagged = |a: &types::Attachment| a.validate().iter().any(|i| i.message.contains("att-1"));
+        let flagged =
+            |a: &types::Attachment| a.validate().iter().any(|i| i.message.contains("att-1"));
 
         let data_only = types::Attachment {
             data: Some(types::Base64Binary("aGk=".to_string())),
             ..Default::default()
         };
-        assert!(flagged(&data_only), "data without contentType violates att-1");
+        assert!(
+            flagged(&data_only),
+            "data without contentType violates att-1"
+        );
 
         let with_type = types::Attachment {
             data: Some(types::Base64Binary("aGk=".to_string())),
@@ -404,7 +412,8 @@ mod tests {
     // qty-3 — a unit code means nothing without the system that defines it.
     #[test]
     fn invariant_qty_3() {
-        let flagged = |q: &types::Quantity| q.validate().iter().any(|i| i.message.contains("qty-3"));
+        let flagged =
+            |q: &types::Quantity| q.validate().iter().any(|i| i.message.contains("qty-3"));
 
         let code_only = types::Quantity {
             code: Some(types::Code("mg".to_string())),
@@ -431,7 +440,12 @@ mod tests {
             code: Some(types::Code("final".to_string())),
             ..Default::default()
         };
-        assert!(!coding.validate().iter().any(|i| i.message.contains("qty-3")));
+        assert!(
+            !coding
+                .validate()
+                .iter()
+                .any(|i| i.message.contains("qty-3"))
+        );
     }
 
     // drq-1 — exactly one of path and searchParam, so both and neither are
@@ -440,10 +454,14 @@ mod tests {
     fn invariant_drq_1() {
         use crate::r5::types::data_requirement::DataRequirementCodeFilter;
 
-        let flagged =
-            |f: &DataRequirementCodeFilter| f.validate().iter().any(|i| i.message.contains("drq-1"));
+        let flagged = |f: &DataRequirementCodeFilter| {
+            f.validate().iter().any(|i| i.message.contains("drq-1"))
+        };
 
-        assert!(flagged(&DataRequirementCodeFilter::default()), "neither is a violation");
+        assert!(
+            flagged(&DataRequirementCodeFilter::default()),
+            "neither is a violation"
+        );
 
         let both = DataRequirementCodeFilter {
             path: Some(types::String("Observation.code".to_string())),
@@ -472,7 +490,10 @@ mod tests {
         let value = || ParametersParameterValue::Boolean(Primitive::new(types::Boolean(true)));
 
         // Nothing at all.
-        assert!(flagged(&ParametersParameter { name: name(), ..Default::default() }));
+        assert!(flagged(&ParametersParameter {
+            name: name(),
+            ..Default::default()
+        }));
 
         // Exactly a value.
         let value_only = ParametersParameter {

@@ -20,7 +20,7 @@ use ::serde::Serialize;
 use ::serde::de::DeserializeOwned;
 use ::serde_json::{Map, Value};
 
-use crate::meta::{is_datatype, resolve as element_meta, ElementMeta};
+use crate::meta::{ElementMeta, is_datatype, resolve as element_meta};
 
 const FHIR_NS: &str = "http://hl7.org/fhir";
 
@@ -361,7 +361,6 @@ fn insert_child(
         }
     }
 }
-
 
 /// Coerce a FHIR XML `value` attribute (always a string) into the JSON type the
 /// element's primitive type implies.

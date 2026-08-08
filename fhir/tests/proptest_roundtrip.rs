@@ -23,7 +23,7 @@
 #![cfg(feature = "r5")]
 
 use proptest::prelude::*;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 /// Round-trip `json` through `T`, requiring exact `Value` equality.
 fn assert_roundtrip<T>(v: &Value)
@@ -60,7 +60,12 @@ fn decimal() -> impl Strategy<Value = Value> {
             mantissa.to_string()
         } else {
             let d = 10i64.pow(u32::from(scale));
-            format!("{}.{:0width$}", mantissa / d, mantissa % d, width = scale as usize)
+            format!(
+                "{}.{:0width$}",
+                mantissa / d,
+                mantissa % d,
+                width = scale as usize
+            )
         };
         serde_json::from_str::<Value>(&s).unwrap()
     })
@@ -68,12 +73,10 @@ fn decimal() -> impl Strategy<Value = Value> {
 
 /// A date at one of FHIR's three precisions.
 fn date() -> impl Strategy<Value = String> {
-    (1900u32..2100, 1u32..13, 1u32..29, 0u8..3u8).prop_map(|(y, m, d, precision)| {
-        match precision {
-            0 => format!("{y:04}"),
-            1 => format!("{y:04}-{m:02}"),
-            _ => format!("{y:04}-{m:02}-{d:02}"),
-        }
+    (1900u32..2100, 1u32..13, 1u32..29, 0u8..3u8).prop_map(|(y, m, d, precision)| match precision {
+        0 => format!("{y:04}"),
+        1 => format!("{y:04}-{m:02}"),
+        _ => format!("{y:04}-{m:02}-{d:02}"),
     })
 }
 
@@ -203,10 +206,7 @@ fn observation() -> impl Strategy<Value = Value> {
 /// A searchset `Bundle` of Patients and Observations.
 fn bundle() -> impl Strategy<Value = Value> {
     (
-        proptest::collection::vec(
-            prop_oneof![patient(), observation()],
-            0..=4,
-        ),
+        proptest::collection::vec(prop_oneof![patient(), observation()], 0..=4),
         proptest::option::of(0u32..1000),
     )
         .prop_map(|(resources, total)| {
@@ -215,10 +215,12 @@ fn bundle() -> impl Strategy<Value = Value> {
                 o["total"] = json!(t);
             }
             if !resources.is_empty() {
-                o["entry"] = json!(resources
-                    .into_iter()
-                    .map(|r| json!({ "resource": r }))
-                    .collect::<Vec<_>>());
+                o["entry"] = json!(
+                    resources
+                        .into_iter()
+                        .map(|r| json!({ "resource": r }))
+                        .collect::<Vec<_>>()
+                );
             }
             o
         })

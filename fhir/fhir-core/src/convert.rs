@@ -270,7 +270,11 @@ fn convert_resource(
         .and_then(Value::as_str);
     let Some(type_name) = type_name else {
         losses.push(Loss {
-            path: if path.is_empty() { "(root)".to_string() } else { path.to_string() },
+            path: if path.is_empty() {
+                "(root)".to_string()
+            } else {
+                path.to_string()
+            },
             kind: LossKind::NotAResource,
             detail: "no resourceType; serialize the release's Resource enum, \
                      which carries the tag, rather than the resource struct"
@@ -346,10 +350,18 @@ impl Ctx<'_> {
             let base = key.strip_prefix('_').unwrap_or(key);
             let here = format!("{path}.{key}");
 
-            let src_meta = meta::resolve(self.source, &format!("{src_context}.{base}"), src_context, base);
-            let Some(tgt_meta) =
-                meta::resolve(self.target, &format!("{tgt_context}.{base}"), tgt_context, base)
-            else {
+            let src_meta = meta::resolve(
+                self.source,
+                &format!("{src_context}.{base}"),
+                src_context,
+                base,
+            );
+            let Some(tgt_meta) = meta::resolve(
+                self.target,
+                &format!("{tgt_context}.{base}"),
+                tgt_context,
+                base,
+            ) else {
                 // Report a dropped `_field` only when its element is not present
                 // to be reported in its own right, so one removal is one loss.
                 if !sibling || !obj.contains_key(base) {
@@ -539,7 +551,8 @@ impl Ctx<'_> {
             }
             let present = if el.is_choice() {
                 let base = name.trim_end_matches("[x]");
-                out.keys().any(|k| meta::choice_suffix(el, k).is_some() && k.starts_with(base))
+                out.keys()
+                    .any(|k| meta::choice_suffix(el, k).is_some() && k.starts_with(base))
             } else {
                 out.contains_key(name)
             };
@@ -706,7 +719,11 @@ mod tests {
     #[test]
     fn reports_a_required_element_it_cannot_invent() {
         let out = convert(r#"{"resourceType":"Thing","kept":"y"}"#);
-        let loss = out.report.of_kind(LossKind::RequiredMissing).next().unwrap();
+        let loss = out
+            .report
+            .of_kind(LossKind::RequiredMissing)
+            .next()
+            .unwrap();
         assert_eq!(loss.path, "Thing.needed");
         assert!(
             !loss.kind.discards_data(),
@@ -721,7 +738,10 @@ mod tests {
         // empty report would be a silent failure.
         let out = resource(SRC, TGT, &::serde_json::json!({"kept": "y"}));
         assert_eq!(out.value, Value::Null);
-        assert!(!out.report.is_lossless(), "a null result needs an explanation");
+        assert!(
+            !out.report.is_lossless(),
+            "a null result needs an explanation"
+        );
         assert_eq!(out.report.of_kind(LossKind::NotAResource).count(), 1);
     }
 

@@ -59,6 +59,12 @@ pub fn render_type(plan: &TypePlan, version: Version) -> String {
         out.push('\n');
         out.push_str(&render_tests(&root.name));
     }
+
+    // `Reference` alone gains the typed-target machinery (T11): the generic
+    // marker, the `ResourceType` trait, and `cast`/`into_any`/`resolve`.
+    if plan.type_name == "Reference" {
+        out = super::reference_gen::augment(out, plan, version);
+    }
     out
 }
 

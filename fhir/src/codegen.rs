@@ -43,6 +43,7 @@ pub mod meta_gen;
 pub mod naming;
 pub mod plan;
 pub mod primitives;
+pub mod reference_gen;
 pub mod render;
 pub mod spec;
 pub mod version;
@@ -440,6 +441,30 @@ fn render_resources_module(plans: &[plan::TypePlan], version: Version) -> String
          \x20   }}\n\
          }}\n"
     );
+
+    out.push_str(&render_reference_targets(plans, module));
+    out
+}
+
+/// The compile-time reference-target markers (T11): `Reference<Patient>`
+/// names this module's `Patient`. One impl per resource, emitted beside the
+/// enum because this is the one place that knows every type.
+fn render_reference_targets(plans: &[plan::TypePlan], module: &str) -> String {
+    let mut out = String::from(
+        "\n// The typed-reference target markers (T11): `types::Reference<Patient>`\n\
+         // points at this module's `Patient`. See `types::reference::ResourceType`.\n",
+    );
+    for plan in plans {
+        let _ = write!(
+            out,
+            "impl crate::{module}::types::reference::ResourceType for {}::{} {{\n\
+             \x20   fn resource_type_name() -> Option<&'static str> {{\n\
+             \x20       Some(\"{}\")\n\
+             \x20   }}\n\
+             }}\n",
+            plan.module, plan.type_name, plan.type_name
+        );
+    }
     out
 }
 

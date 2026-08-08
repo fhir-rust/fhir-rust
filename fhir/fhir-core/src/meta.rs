@@ -174,14 +174,20 @@ pub fn resolve(
         return Some(e);
     }
     let prefix = format!("{context}.");
-    table.iter().filter(|e| e.path.starts_with(&prefix)).find(|e| {
-        e.path.ends_with("[x]") && {
-            let base = &e.path[context.len() + 1..e.path.len() - 3];
-            name.len() > base.len()
-                && name.starts_with(base)
-                && name[base.len()..].chars().next().is_some_and(char::is_uppercase)
-        }
-    })
+    table
+        .iter()
+        .filter(|e| e.path.starts_with(&prefix))
+        .find(|e| {
+            e.path.ends_with("[x]") && {
+                let base = &e.path[context.len() + 1..e.path.len() - 3];
+                name.len() > base.len()
+                    && name.starts_with(base)
+                    && name[base.len()..]
+                        .chars()
+                        .next()
+                        .is_some_and(char::is_uppercase)
+            }
+        })
 }
 
 /// The type-name suffix of a choice key, e.g. `"Quantity"` for `valueQuantity`
@@ -192,7 +198,10 @@ pub fn resolve(
 pub fn choice_suffix<'a>(choice: &ElementMeta, name: &'a str) -> Option<&'a str> {
     let base = choice.path.rsplit('.').next()?.strip_suffix("[x]")?;
     let rest = name.strip_prefix(base)?;
-    rest.chars().next().is_some_and(char::is_uppercase).then_some(rest)
+    rest.chars()
+        .next()
+        .is_some_and(char::is_uppercase)
+        .then_some(rest)
 }
 
 /// The JSON shape a FHIR type code takes on the wire.

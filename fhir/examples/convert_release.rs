@@ -38,7 +38,11 @@ fn main() {
 
     // R5 -> R4, on a shape the two releases agree about.
     let down = convert::between::<R5, R4>(&stable);
-    assert!(down.report.is_lossless(), "unexpected loss:\n{}", down.report);
+    assert!(
+        down.report.is_lossless(),
+        "unexpected loss:\n{}",
+        down.report
+    );
     println!("stable Observation: converted losslessly");
 
     // The result is ready for the target release's model.

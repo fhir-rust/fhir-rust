@@ -154,12 +154,26 @@ Conventions for the executing session:
 - **Accept:** examples suite green; ≥100 fields migrated; docs updated.
 - **Depends:** T8, T9 (avoid double-churn on the same structs)
 
-### T11. Typed references — *partial*
-- *Status:* the machinery shipped
-  (`fhir-release-5/src/types/reference.rs`: `cast`/`into_any`/`resolve`) but
-  zero generated fields use it — `types::Reference<` does not appear in any
-  resource module. Generator emission of typed fields is recorded as Future
-  work in specs 04, 08 and 13.
+### T11. Typed references — *machinery generated everywhere (2026-08-08); field emission remains*
+- *Status:* phase 1 done. The generator now emits the full typed-`Reference<T>`
+  machinery for every release (`codegen/reference_gen.rs` post-processes the
+  rendered struct: generic parameter defaulting to `Any`, zero-sized marker,
+  `ResourceType` trait, per-release `cast`/`into_any`/`resolve`), and
+  `resources.rs` gains one `ResourceType` impl per resource beside the enum —
+  R5's hand-written prototype (which had exactly one impl, `Patient`) is now
+  the everywhere-shape, and `r5_drift`'s `Reference::*` sanctioned entry is
+  **gone**: the trees genuinely converged, down to the one recorded
+  cycle-break difference (`Reference::identifier` vs `Identifier::assigner` —
+  one `Box` either way, at opposite edges; both entries now say so).
+  Additive: the `Any` default keeps every existing `types::Reference` meaning
+  what it did. One deliberate removal: generated `Reference` no longer
+  derives `Builder` (it does not survive the generic parameter, and R5
+  dropped it when the marker landed).
+- *Remaining — phase 2:* generator picks `Reference<Patient>` where the
+  element's `targetProfile` names a single modelled resource (`Any`
+  otherwise) — the data is already in `ElementMeta.types[].target_profiles` —
+  plus the R5 field splice and the choice-variant question. Breaking for
+  code naming field types; belongs in the open 4.0 window.
 - **Do:** `Reference<T: ResourceType = Any>` newtype-with-phantom over the
   existing struct; generator picks `Reference<Patient>` where targetProfile
   is a single type, `Reference<Any>` otherwise. `Deref` to untyped;

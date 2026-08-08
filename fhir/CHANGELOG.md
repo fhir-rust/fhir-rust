@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased - 4.0.0-dev
 
+### Added - the typed-`Reference<T>` machinery in every release (T11, phase 1)
+
+The generator now emits what R5's hand-written prototype carried alone: the
+generic `Reference<T = Any>` with its zero-sized target marker, the
+`ResourceType` trait with one impl per resource (beside each release's
+`Resource` enum — the prototype had implemented exactly one, `Patient`), and
+`cast`/`into_any`/`resolve`. Additive: the `Any` default keeps a bare
+`types::Reference` meaning what it always did, and the wire form is
+unchanged. The `r5_drift` gate's `Reference::*` sanctioned entry is gone —
+the trees genuinely converged, down to the one recorded cycle-break
+difference (`Reference::identifier` vs `Identifier::assigner`; one `Box`
+either way, at opposite edges). **Breaking, narrowly**: generated
+`Reference` no longer derives `Builder` (the derive does not survive the
+generic parameter; R5 dropped it when the marker landed). Field emission —
+`Reference<Patient>` where `targetProfile` names one resource — is phase 2.
+
 ### Changed - **breaking**: `contained` is typed (T47)
 
 Every DomainResource's `contained` field is now

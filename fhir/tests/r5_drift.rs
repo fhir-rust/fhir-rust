@@ -2,8 +2,9 @@
 //!
 //! R3 and R4 are regenerated wholesale, so they inherit every generator fix
 //! automatically. R5 is hand-documented and never regenerated — `cargo run --
-//! r5` refuses without `--out` precisely because it carries prose and the
-//! typed `Reference<T>` that the generator cannot produce. The cost of that
+//! r5` refuses without `--out` precisely because it carries prose the
+//! generator cannot produce. (The typed `Reference<T>` used to be a second
+//! reason; the generator learned to emit it under T11.) The cost of that
 //! protection is that R5 silently inherits *no* generator fix either, and the
 //! release that ships by default was the one carrying the risk.
 //!
@@ -33,11 +34,6 @@ struct Sanctioned {
 
 const SANCTIONED: &[Sanctioned] = &[
     Sanctioned {
-        what: "Reference::*",
-        why: "hand-written typed `Reference<T>` with a PhantomData marker; the \
-              generator emits the untyped form (tasks.md T11)",
-    },
-    Sanctioned {
         what: "Task::intent",
         why: "`TaskIntent` generates with a single `Unknown` variant, so \
               `Coded<E>` would turn every real value into Unknown while \
@@ -61,7 +57,16 @@ const SANCTIONED: &[Sanctioned] = &[
     },
     Sanctioned {
         what: "Identifier::assigner",
-        why: "the generator boxes this to break the Reference/Identifier type               cycle; src/r5's typed `Reference<T>` does not need the box",
+        why: "the Reference/Identifier type cycle needs one Box; the generator \
+              breaks it here, src/r5 breaks it at Reference::identifier — one \
+              Box either way, at opposite edges (see that entry)",
+    },
+    Sanctioned {
+        what: "Reference::identifier",
+        why: "src/r5's half of the cycle break: it boxes this edge and leaves \
+              Identifier::assigner unboxed, the mirror image of the \
+              generator's choice. Converging would touch every constructor of \
+              either type for zero wire or size difference",
     },
 ];
 

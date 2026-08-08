@@ -23,11 +23,13 @@ use fhir::convert::{self, LossKind};
 use fhir::r3::R3;
 use fhir::r4::R4;
 use fhir::r5::R5;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 /// Every JSON file in a committed curated example directory.
 fn examples(dir: &str) -> Vec<Value> {
-    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/data").join(dir);
+    let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/data")
+        .join(dir);
     let mut out = Vec::new();
     for entry in std::fs::read_dir(&path).expect("example dir") {
         let file = entry.expect("dir entry").path();
@@ -42,7 +44,10 @@ fn examples(dir: &str) -> Vec<Value> {
 
 /// The `resourceType` of a document, for failure messages.
 fn type_of(value: &Value) -> &str {
-    value.get("resourceType").and_then(Value::as_str).unwrap_or("?")
+    value
+        .get("resourceType")
+        .and_then(Value::as_str)
+        .unwrap_or("?")
 }
 
 #[test]
@@ -56,8 +61,14 @@ fn an_element_r4_removed_is_dropped_and_named() {
 
     let out = convert::between::<R3, R4>(&r3_patient);
 
-    assert_eq!(out.value["active"], true, "the rest of the resource survives");
-    assert!(out.value.get("animal").is_none(), "animal has no home in R4");
+    assert_eq!(
+        out.value["active"], true,
+        "the rest of the resource survives"
+    );
+    assert!(
+        out.value.get("animal").is_none(),
+        "animal has no home in R4"
+    );
     let loss = out
         .report
         .of_kind(LossKind::ElementRemoved)
@@ -133,8 +144,12 @@ fn converting_a_release_to_itself_never_discards_data() {
 /// [`LossKind::RequiredMissing`] for the very field the target complained
 /// about. Anything else is a silent loss, which is the failure mode the whole
 /// module exists to prevent.
-fn assert_report_predicts_parse_failures<Parse>(dir: &str, convert: impl Fn(&Value) -> fhir::convert::Converted, parse: Parse, label: &str)
-where
+fn assert_report_predicts_parse_failures<Parse>(
+    dir: &str,
+    convert: impl Fn(&Value) -> fhir::convert::Converted,
+    parse: Parse,
+    label: &str,
+) where
     Parse: Fn(Value) -> Result<(), String>,
 {
     let mut checked = 0usize;
@@ -165,7 +180,11 @@ where
             // Not a missing-field error: a code the target's value set rejects
             // is the other way a converted document can fail, and the report
             // flags those as a changed binding.
-            None => out.report.of_kind(LossKind::BindingChanged).next().is_some(),
+            None => out
+                .report
+                .of_kind(LossKind::BindingChanged)
+                .next()
+                .is_some(),
         };
 
         if foreseen {
@@ -238,20 +257,32 @@ fn strict_mode_refuses_exactly_what_the_report_objects_to() {
         match convert::strict::<R4, R5>(&example) {
             Ok(value) => {
                 accepted += 1;
-                assert!(report_is_clean, "strict accepted a {} the report faulted", type_of(&example));
+                assert!(
+                    report_is_clean,
+                    "strict accepted a {} the report faulted",
+                    type_of(&example)
+                );
                 // Anything strict accepts must be usable in the target.
-                serde_json::from_value::<fhir::r5::resources::Resource>(value)
-                    .unwrap_or_else(|e| panic!("strict accepted an unparsable {}: {e}", type_of(&example)));
+                serde_json::from_value::<fhir::r5::resources::Resource>(value).unwrap_or_else(
+                    |e| panic!("strict accepted an unparsable {}: {e}", type_of(&example)),
+                );
             }
             Err(report) => {
                 refused += 1;
-                assert!(!report_is_clean, "strict refused a clean {}", type_of(&example));
+                assert!(
+                    !report_is_clean,
+                    "strict refused a clean {}",
+                    type_of(&example)
+                );
                 assert!(!report.is_lossless());
             }
         }
     }
 
-    assert!(accepted > 0 && refused > 0, "expected both outcomes in the corpus");
+    assert!(
+        accepted > 0 && refused > 0,
+        "expected both outcomes in the corpus"
+    );
 }
 
 #[test]
@@ -260,6 +291,9 @@ fn a_resource_the_target_release_lacks_is_reported_not_silently_emptied() {
     let r3 = json!({ "resourceType": "DeviceComponent", "type": { "text": "x" } });
     let out = convert::between::<R3, R5>(&r3);
 
-    assert!(out.value.is_null(), "an unconvertible resource is null, not {{}}");
+    assert!(
+        out.value.is_null(),
+        "an unconvertible resource is null, not {{}}"
+    );
     assert_eq!(out.report.of_kind(LossKind::ResourceRemoved).count(), 1);
 }
