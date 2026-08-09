@@ -457,9 +457,12 @@ Stated explicitly, because `X15.6` treats silence as a defect rather than as
   this port claims Schema level.
 
 - **M14.37** **`path` binds to `NVARCHAR(path_bound)`; the conversion is one
-  transactional upgrade.** Decided 2026-08-09 (`U12a`, **F-47** step 2);
-  the code lands with F-47 steps 3–4, and until it does the current
-  `NVARCHAR(MAX)` stands and this port does not claim `U12` for `path`.
+  transactional upgrade.** Decided 2026-08-09 (`U12a`, **F-47** step 2).
+  Step 3 landed 2026-08-10: `create_table` reads the asset's `path_bound`,
+  so a **fresh** install is bounded (`NVARCHAR(384)` on R5). An **existing**
+  install keeps `NVARCHAR(MAX)` until step 4's upgrade converts it, and
+  until then this port does not claim `U12` for `path` on upgraded-in-place
+  deployments.
 
   Today `create_table` hardcodes `path` as `NVARCHAR(MAX)`, which cannot
   be part of an index key (`M14.15`). (Corrected 2026-08-10: an earlier

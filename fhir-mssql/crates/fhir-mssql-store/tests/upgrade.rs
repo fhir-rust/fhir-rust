@@ -336,9 +336,7 @@ async fn an_install_without_a_stored_map_asset_says_so() {
     // Simulate the older install: schema present, asset absent. `exec_raw` is
     // this store's own escape hatch for exactly this — see its doc comment.
     store
-        .exec_raw(
-            "DELETE FROM [fhir_mssql_up_noasset].[fhir_mssql_meta] WHERE [key] = 'map_asset'",
-        )
+        .exec_raw("DELETE FROM [fhir_mssql_up_noasset].[fhir_mssql_meta] WHERE [key] = 'map_asset'")
         .await
         .expect("delete asset");
 

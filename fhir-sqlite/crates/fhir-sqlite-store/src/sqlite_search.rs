@@ -372,7 +372,11 @@ fn target_pred(
             let code_is_bool = col_is_bool(cols, code);
             match value.split_once('|') {
                 None => {
-                    let v = if code_is_bool { bool_token_as_bind(value) } else { value };
+                    let v = if code_is_bool {
+                        bool_token_as_bind(value)
+                    } else {
+                        value
+                    };
                     Ok(format!("{code_c} = {}", b(binds, v)))
                 }
                 Some((sys, cv)) => {

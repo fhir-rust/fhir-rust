@@ -396,7 +396,14 @@ impl MsSqlStore {
             .await
             .map_err(db_err)?;
         let result = self
-            .upgrade_in_tx(&mut conn, &schema_name, &meta, checksum, &adds, &destructive)
+            .upgrade_in_tx(
+                &mut conn,
+                &schema_name,
+                &meta,
+                checksum,
+                &adds,
+                &destructive,
+            )
             .await;
         match result {
             Ok(()) => {
@@ -464,7 +471,9 @@ impl MsSqlStore {
             .collect();
         for rm in self.map.resources.values() {
             if let Some((_, hist)) = rm.find_table(fhir_mssql_map::model::TableKind::History) {
-                let have_cols = self.installed_columns(conn, schema_name, &hist.name).await?;
+                let have_cols = self
+                    .installed_columns(conn, schema_name, &hist.name)
+                    .await?;
                 reconcile.extend(
                     fhir_mssql_map::ddl::history_audit_columns(schema_name, &hist.name)
                         .into_iter()

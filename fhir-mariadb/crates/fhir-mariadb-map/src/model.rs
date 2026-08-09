@@ -36,6 +36,17 @@ pub struct ResourceMap {
     /// SearchParameter definitions.
     #[serde(default)]
     pub search: Vec<SearchDef>,
+    /// Longest attach path this map can produce, in ASCII characters —
+    /// rounded up to the next multiple of 64, floor 128, with recursion
+    /// cycles walked at most eight deep (`U12a`). One value per release,
+    /// recorded on every resource so `shred` and `create_table`, which see
+    /// one resource at a time, can read it without new plumbing. `0` means
+    /// a pre-`U12a` asset: unbounded emission and no shred-time check,
+    /// which is exactly what such a schema has. A declared *capacity
+    /// limit*: a shred whose attach path would exceed it fails loudly
+    /// rather than truncating (**F-47**).
+    #[serde(default)]
+    pub path_bound: u32,
 }
 
 /// One search parameter, compiled against this resource's tables.
@@ -415,6 +426,18 @@ fn bundled_r5() -> Result<RelMap, BundledError> {
 }
 
 impl RelMap {
+    /// The release-level `path_bound` (`U12a`). The per-resource copies are
+    /// generated identical, so this is their maximum; `0` means a
+    /// pre-`U12a` asset.
+    #[must_use]
+    pub fn path_bound(&self) -> u32 {
+        self.resources
+            .values()
+            .map(|rm| rm.path_bound)
+            .max()
+            .unwrap_or(0)
+    }
+
     pub fn to_gz_bytes(&self) -> Result<Vec<u8>, serde_json::Error> {
         use flate2::{Compression, write::GzEncoder};
         use std::io::Write as _;

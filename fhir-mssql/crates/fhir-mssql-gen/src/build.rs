@@ -136,6 +136,9 @@ impl<'s> ResourceBuilder<'s> {
             nodes: self.nodes,
             root,
             search: Vec::new(),
+            // U12a: recorded by `record_path_bound` once the release's whole
+            // map exists — the bound is release-wide, not per resource.
+            path_bound: 0,
         })
     }
 
@@ -746,5 +749,64 @@ fn fixed_shape_cols(kind: TableKind) -> Vec<Column> {
         // history table is addressed by id and version, never by content.
         TableKind::Contained | TableKind::History => Vec::new(),
         TableKind::Base | TableKind::Elem => Vec::new(),
+    }
+}
+
+/// Record `U12a`'s `path_bound` on every resource map: the longest attach
+/// path reachable anywhere in the release — walking each recursion cycle at
+/// most [`CYCLE_CAP`] times, so the walk terminates and at least that many
+/// levels of cyclic nesting are guaranteed to fit — rounded up to the next
+/// multiple of 64, never below 128. One value per release, copied onto
+/// every resource (`model.rs` says why), so the bound is a fact of the
+/// asset (`G2.2`) rather than of whichever generator build happens to run.
+pub fn record_path_bound(map: &mut RelMap) {
+    let mut longest = 0usize;
+    for rm in map.resources.values() {
+        let mut on_stack = vec![0u8; rm.nodes.len()];
+        longest = longest.max(longest_path(rm, rm.root, 0, &mut on_stack));
+    }
+    let rounded = longest.div_ceil(64) * 64;
+    let bound = u32::try_from(rounded.max(128)).expect("path_bound fits u32");
+    for rm in map.resources.values_mut() {
+        rm.path_bound = bound;
+    }
+}
+
+/// How many times one recursion cycle contributes to the bound (`U12a`).
+const CYCLE_CAP: u8 = 8;
+
+fn longest_path(rm: &ResourceMap, node: u32, jlen: usize, on_stack: &mut [u8]) -> usize {
+    let n = node as usize;
+    if on_stack[n] >= CYCLE_CAP {
+        return jlen;
+    }
+    on_stack[n] += 1;
+    let mut max = jlen;
+    for elem in &rm.nodes[n].elems {
+        max = max.max(longest_elem(rm, elem, jlen, on_stack));
+    }
+    on_stack[n] -= 1;
+    max
+}
+
+/// The longest attach path under one element. A `Choice` contributes each
+/// variant's full JSON name (`valueBoolean`, never the bare `value`),
+/// mirroring the `epath` the shredder builds; a `Group` recurses.
+fn longest_elem(rm: &ResourceMap, elem: &Elem, jlen: usize, on_stack: &mut [u8]) -> usize {
+    if let ElemKind::Choice(variants) = &elem.kind {
+        return variants
+            .iter()
+            .map(|v| longest_elem(rm, v, jlen, on_stack))
+            .max()
+            .unwrap_or(jlen);
+    }
+    let elen = if jlen == 0 {
+        elem.json.len()
+    } else {
+        jlen + 1 + elem.json.len()
+    };
+    match &elem.kind {
+        ElemKind::Group(child) => longest_path(rm, *child, elen, on_stack),
+        _ => elen,
     }
 }

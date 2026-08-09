@@ -140,7 +140,7 @@ not a code fix).
 | [F-44](#f-44) | Medium | `check-shared-core.sh` aborted under `set -u` on the empty `EXEMPT` array — only reachable once a file diverged | **fixed** |
 | [F-45](#f-45) | Medium | The shared-core gate stopped at the store; `chain.rs` was 618 identical lines duplicated six times, unwatched | **fixed** — extracted to `fhir-store`, all six rewired |
 | [F-46](#f-46) | Medium | `U11` cannot reach the extension and deep tables: they have no columns in the map, and the cheaper workaround contradicts `U2b` | **fixed** 2026-08-02, verified live |
-| [F-47](#f-47) | Low | `path` is bound to unbounded types on mssql and oracle, so `U12` is unsatisfied; fixing it is a physical-schema migration for all six (the `v_kind` half proved moot, 2026-08-10) | open — **migration scheduled 2026-08-09**, six sequenced steps in the entry; steps 1–2 **done 2026-08-09** (oracle's `upgrade`; the `U12a` bound decision) |
+| [F-47](#f-47) | Low | `path` is bound to unbounded types on mssql and oracle, so `U12` is unsatisfied; fixing it is a physical-schema migration for all six (the `v_kind` half proved moot, 2026-08-10) | open — **migration scheduled 2026-08-09**, six sequenced steps in the entry; steps 1–3 done (oracle's `upgrade` 2026-08-09; the `U12a` bound decision; the six-port shared-core change 2026-08-10 — fresh installs bounded, existing ones await steps 4–5) |
 | [F-48](#f-48) | Low | the shared-core gate did not watch `gen/tests/`, and could not while its normalization was line-based — rustfmt wraps by crate-name *length* | **fixed** 2026-08-02 — token-based verdict, 75→100 files |
 | [F-49](#f-49) | **High** | No workflow in this repository runs: all 20-odd sit under `<family>/.github/workflows/`, which GitHub does not read. Every "gated in CI" claim is unverified | **fixed** 2026-08-06 — root gates first (`gates.yml`), then every family's CI consolidated to root files with paths filters and working-directory defaults; first hosted run pending a push |
 | [F-50](#f-50) | Medium | The `U2a` reference rule attached an adjunct to `c_url`, which no index uses, while every port indexes `(c_type, c_id)` — 453 of R5's 1,947 search targets unindexable on Oracle | **fixed** 2026-08-02 — all six; gaps now 0 |
@@ -2829,6 +2829,22 @@ is live-verified:
    (`CLOB` → `VARCHAR2(bound CHAR)`; the `v_kind` conversion listed here
    earlier is moot, 2026-08-10 correction); the other four keep `TEXT`
    and carry only the asset-version diff through `upgrade`.
+   **Done 2026-08-10**: `ResourceMap.path_bound` (serde-defaulted, so old
+   stored assets decode as `0` = legacy), `record_path_bound` in the
+   shared gen (cycle cap 8, round-to-64, floor 128), shred refuses an
+   over-bound attach path by name ("declared capacity"), and mssql/oracle
+   `create_table` emit `NVARCHAR(path_bound)`/`VARCHAR2(path_bound CHAR)`
+   when the asset records a bound, the legacy types when it does not
+   (`G2.2`: the schema follows the asset). Assets regenerated in all six:
+   the recorded bounds are **192 (R3), 192 (R4), 384 (R5)** — R5's deeper
+   cyclic structures cost the extra step. Verified: shared core identical
+   (105 files), every port's workspace green including the full 7,399-
+   example corpus round-trips (no real example is refused), the new shared
+   `path_bound.rs` suite in all six (bound shape + eight-levels-fit +
+   loud over-bound refusal), oracle's live suite 80/80 with fresh installs
+   now `VARCHAR2(384 CHAR)`, and `fhir-loco` green over the new sqlite
+   asset. Fresh installs on mssql/oracle are bounded as of this step;
+   converting *existing* installs is exactly steps 4–5.
 4. **`fhir-mssql` upgrade path, live-verified**: pre-check
    `MAX(LEN(path))` against the bound, `ALTER COLUMN` inside the
    transactional upgrade (`M14.35`). (The "add the index / drop the

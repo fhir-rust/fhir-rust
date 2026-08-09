@@ -744,9 +744,12 @@ Three requirements are this engine's own:
 
 - **M14.38** **`path` binds to `VARCHAR2(path_bound CHAR)`; the
   conversion cannot be in-place.** Decided 2026-08-09 (`U12a`, **F-47**
-  step 2), corrected 2026-08-10; the code lands with F-47 steps 3 and 5,
-  and until it does the current `CLOB` stands and this port does not claim
-  `U12` for `path`.
+  step 2), corrected 2026-08-10. Step 3 landed the same day:
+  `create_table` reads the asset's `path_bound`, so a **fresh** install is
+  bounded (`VARCHAR2(384 CHAR)` on R5, live-verified). An **existing**
+  install keeps its `CLOB` until step 5's add-copy-drop-rename converts
+  it, and until then this port does not claim `U12` for `path` on
+  upgraded-in-place deployments.
 
   (The correction: this requirement first said `v_kind` was also a `CLOB`
   needing `VARCHAR2(1 CHAR)` — repeating F-47's table instead of reading

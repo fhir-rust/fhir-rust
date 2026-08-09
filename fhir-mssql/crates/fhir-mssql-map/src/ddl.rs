@@ -446,8 +446,21 @@ fn index_name(table: &str, cols: &[&str]) -> String {
     format!("{keep}_{hex}")
 }
 
+/// `path`'s type on the ext and deep tables: bounded when the asset
+/// records `U12a`'s `path_bound` (`M14.37`), the legacy `NVARCHAR(MAX)`
+/// for a pre-`U12a` asset — the emitted schema follows the asset it was
+/// handed (`G2.2`).
+fn path_type(rm: &ResourceMap) -> String {
+    if rm.path_bound > 0 {
+        format!("NVARCHAR({})", rm.path_bound)
+    } else {
+        "NVARCHAR(MAX)".to_string()
+    }
+}
+
 pub fn create_table(schema: &str, rm: &ResourceMap, t: &Table) -> String {
     let base = &rm.base_table().name;
+    let path_ty = path_type(rm);
     let mut sql = format!("CREATE TABLE [{schema}].[{}] (\n", t.name);
     match t.kind {
         TableKind::Base => {
@@ -484,7 +497,7 @@ pub fn create_table(schema: &str, rm: &ResourceMap, t: &Table) -> String {
                 sql,
                 "  [key_hash] BINARY(32) NOT NULL PRIMARY KEY,\n\
                  \x20 [rid] {ID_COL} NOT NULL,\n\
-                 \x20 [path] NVARCHAR(MAX) NOT NULL,\n\
+                 \x20 [path] {path_ty} NOT NULL,\n\
                  \x20 [ords] VARBINARY(255) NOT NULL,\n\
                  \x20 [modifier] BIT NOT NULL,\n\
                  \x20 [ext_ord] SMALLINT NOT NULL,\n\
@@ -509,7 +522,7 @@ pub fn create_table(schema: &str, rm: &ResourceMap, t: &Table) -> String {
                 sql,
                 "  [key_hash] BINARY(32) NOT NULL PRIMARY KEY,\n\
                  \x20 [rid] {ID_COL} NOT NULL,\n\
-                 \x20 [path] NVARCHAR(MAX) NOT NULL,\n\
+                 \x20 [path] {path_ty} NOT NULL,\n\
                  \x20 [ords] VARBINARY(255) NOT NULL,\n\
                  \x20 [leaf] NVARCHAR(MAX) NOT NULL,\n\
                  \x20 [v_kind] CHAR(1) NOT NULL,\n\
@@ -657,6 +670,43 @@ mod tests {
         // A native JSON column re-normalizes on write, so the bytes read back
         // would not be the bytes the hash chain committed to.
         assert!(col_sql(ColTy::Jsonb).starts_with("NVARCHAR(MAX)"));
+    }
+
+    /// `M14.37`/`U12a`: an asset that records `path_bound` gets a bounded,
+    /// indexable `path`; a pre-`U12a` asset (bound 0) keeps the legacy
+    /// `NVARCHAR(MAX)`, so reinstalling an old asset reproduces the old
+    /// schema (`G2.2`).
+    #[test]
+    fn a_recorded_path_bound_narrows_path_and_a_legacy_asset_keeps_max() {
+        use crate::model::ResourceMap;
+        let mut rm = ResourceMap {
+            name: "T".into(),
+            tables: vec![Table {
+                name: "t_ext".into(),
+                kind: TableKind::Ext,
+                path: String::new(),
+                cols: Vec::new(),
+                norm_cols: Vec::new(),
+                adjunct_cols: Vec::new(),
+            }],
+            nodes: Vec::new(),
+            root: 0,
+            search: Vec::new(),
+            path_bound: 192,
+        };
+        let sql = create_table("r5", &rm, &rm.tables[0]);
+        assert!(
+            sql.contains("[path] NVARCHAR(192) NOT NULL"),
+            "recorded bound not applied:\n{sql}"
+        );
+        assert!(!sql.contains("[path] NVARCHAR(MAX)"));
+
+        rm.path_bound = 0;
+        let sql = create_table("r5", &rm, &rm.tables[0]);
+        assert!(
+            sql.contains("[path] NVARCHAR(MAX) NOT NULL"),
+            "legacy asset must keep NVARCHAR(MAX):\n{sql}"
+        );
     }
 
     #[test]

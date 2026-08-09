@@ -98,6 +98,30 @@ pub fn shred(rm: &ResourceMap, v: &Value) -> Result<ShredOut, ShredError> {
     fill_norm_cols(rm, &mut sh.rows);
     // U3: derived, written here, never read back by reconstruct.
     fill_adjunct_cols(rm, &mut sh.rows);
+    // U12a: the map's declared capacity limit on attach paths. `0` is a
+    // pre-`U12a` asset — no check, matching the unbounded columns such a
+    // schema has. Refusal, never truncation: a truncated path would
+    // reconstruct the wrong resource shape (L4).
+    if rm.path_bound > 0 {
+        let bound = rm.path_bound as usize;
+        let over = sh
+            .ext
+            .iter()
+            .map(|e| e.path.as_str())
+            .chain(sh.deep.iter().map(|d| d.path.as_str()))
+            .find(|p| p.len() > bound);
+        if let Some(p) = over {
+            return Err(ShredError::at(
+                p,
+                format!(
+                    "attach path is {} characters, over this map's declared \
+                     capacity of {bound} (U12a): the resource nests deeper \
+                     than the schema was sized for",
+                    p.len()
+                ),
+            ));
+        }
+    }
     Ok(ShredOut {
         id: sh.id,
         rows: sh.rows,

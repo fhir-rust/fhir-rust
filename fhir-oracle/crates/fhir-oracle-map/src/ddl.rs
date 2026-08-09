@@ -680,8 +680,22 @@ fn index_name(table: &str, cols: &[&str]) -> String {
 
 /// One `CREATE TABLE`. Indexes are **not** included: Oracle has no inline index
 /// clause, so `ddl_in` emits them separately (`M14.30`).
+/// `path`'s type on the ext and deep tables: bounded when the asset
+/// records `U12a`'s `path_bound` (`M14.38`), the legacy `CLOB` for a
+/// pre-`U12a` asset — the emitted schema follows the asset it was handed
+/// (`G2.2`). `VARCHAR2`, never `CHAR`: the values vary in length, which
+/// is where PAD SPACE would bite (`M3.6b`).
+fn path_type(rm: &ResourceMap) -> String {
+    if rm.path_bound > 0 {
+        format!("VARCHAR2({} CHAR)", rm.path_bound)
+    } else {
+        "CLOB".to_string()
+    }
+}
+
 pub fn create_table(schema: &str, rm: &ResourceMap, t: &Table) -> String {
     let base = &rm.base_table().name;
+    let path_ty = path_type(rm);
     let mut sql = format!("CREATE TABLE \"{schema}\".\"{}\" (\n", t.name);
     match t.kind {
         TableKind::Base => {
@@ -720,7 +734,7 @@ pub fn create_table(schema: &str, rm: &ResourceMap, t: &Table) -> String {
                 sql,
                 "  \"key_hash\" RAW(32) NOT NULL PRIMARY KEY,\n\
                  \x20 \"rid\" {ID_COL} NOT NULL,\n\
-                 \x20 \"path\" CLOB NOT NULL,\n\
+                 \x20 \"path\" {path_ty} NOT NULL,\n\
                  \x20 \"ords\" RAW(255) NOT NULL,\n\
                  \x20 \"modifier\" NUMBER(1) NOT NULL,\n\
                  \x20 \"ext_ord\" NUMBER(5) NOT NULL,\n\
@@ -744,7 +758,7 @@ pub fn create_table(schema: &str, rm: &ResourceMap, t: &Table) -> String {
                 sql,
                 "  \"key_hash\" RAW(32) NOT NULL PRIMARY KEY,\n\
                  \x20 \"rid\" {ID_COL} NOT NULL,\n\
-                 \x20 \"path\" CLOB NOT NULL,\n\
+                 \x20 \"path\" {path_ty} NOT NULL,\n\
                  \x20 \"ords\" RAW(255) NOT NULL,\n\
                  \x20 \"leaf\" CLOB NOT NULL,\n\
                  \x20 \"v_kind\" CHAR(1 CHAR) NOT NULL,\n\
@@ -1080,6 +1094,7 @@ mod tests {
             nodes: Vec::new(),
             root: 0,
             search: Vec::new(),
+            path_bound: 0,
         };
         let sql = create_table("r5", &rm, &rm.tables[0]);
         for c in ["modifier", "v_bool"] {
@@ -1090,6 +1105,44 @@ mod tests {
         }
         // And it must be table-level, not inside the type.
         assert!(!sql.contains("NUMBER(1) CHECK"), "ORA-02438: see M14.23e");
+    }
+
+    /// `M14.38`/`U12a`: an asset that records `path_bound` gets a bounded,
+    /// comparable `path`; a pre-`U12a` asset (bound 0) keeps the legacy
+    /// `CLOB`, so reinstalling an old asset reproduces the old schema
+    /// (`G2.2`). `VARCHAR2`, never `CHAR` — the values vary in length,
+    /// which is where PAD SPACE bites (`M3.6b`).
+    #[test]
+    fn a_recorded_path_bound_narrows_path_and_a_legacy_asset_keeps_clob() {
+        use crate::model::ResourceMap;
+        let mut rm = ResourceMap {
+            name: "T".into(),
+            tables: vec![Table {
+                name: "t_ext".into(),
+                kind: TableKind::Ext,
+                path: String::new(),
+                cols: Vec::new(),
+                norm_cols: Vec::new(),
+                adjunct_cols: Vec::new(),
+            }],
+            nodes: Vec::new(),
+            root: 0,
+            search: Vec::new(),
+            path_bound: 192,
+        };
+        let sql = create_table("r5", &rm, &rm.tables[0]);
+        assert!(
+            sql.contains("\"path\" VARCHAR2(192 CHAR) NOT NULL"),
+            "recorded bound not applied:\n{sql}"
+        );
+        assert!(!sql.contains("\"path\" CLOB"));
+
+        rm.path_bound = 0;
+        let sql = create_table("r5", &rm, &rm.tables[0]);
+        assert!(
+            sql.contains("\"path\" CLOB NOT NULL"),
+            "legacy asset must keep CLOB:\n{sql}"
+        );
     }
 
     #[test]

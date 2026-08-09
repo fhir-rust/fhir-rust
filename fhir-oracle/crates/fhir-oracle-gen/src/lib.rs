@@ -29,5 +29,7 @@ pub fn generate(definitions_dir: &Path, schema: &str) -> Result<RelMap, GenError
     search::add_norm_columns(&mut map);
     // U1/U9: after the fold columns, and only where the dialect needs them.
     search::add_adjunct_columns(&mut map);
+    // U12a: last, so the bound is a fact of the finished map.
+    build::record_path_bound(&mut map);
     Ok(map)
 }

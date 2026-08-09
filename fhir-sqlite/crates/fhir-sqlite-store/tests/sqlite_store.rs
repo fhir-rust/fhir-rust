@@ -850,7 +850,11 @@ async fn boolean_token_search_finds_a_true_value() {
         .search_full("Patient", &p("active", "true"), 10, 0, &[], false)
         .await
         .expect("search");
-    assert_eq!(r.ids, vec!["example"], "active=true must match a true value");
+    assert_eq!(
+        r.ids,
+        vec!["example"],
+        "active=true must match a true value"
+    );
 
     let r = store
         .search_full("Patient", &p("active", "false"), 10, 0, &[], false)
