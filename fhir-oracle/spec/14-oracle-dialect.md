@@ -740,20 +740,27 @@ Three requirements are this engine's own:
   cause), so writing it would leave `dst` NULL and the row eligible on
   every pass, forever.
 
-## The `path` and `v_kind` bindings — decided (2026-08-09)
+## The `path` binding — decided (2026-08-09, corrected 2026-08-10)
 
-- **M14.38** **`path` binds to `VARCHAR2(path_bound CHAR)` and `v_kind` to
-  `VARCHAR2(1 CHAR)`; the conversion cannot be in-place.** Decided
-  2026-08-09 (`U12a`, **F-47** step 2); the code lands with F-47 steps 3
-  and 5, and until it does the current `CLOB`s stand and this port does not
-  claim `U12` for either column.
+- **M14.38** **`path` binds to `VARCHAR2(path_bound CHAR)`; the
+  conversion cannot be in-place.** Decided 2026-08-09 (`U12a`, **F-47**
+  step 2), corrected 2026-08-10; the code lands with F-47 steps 3 and 5,
+  and until it does the current `CLOB` stands and this port does not claim
+  `U12` for `path`.
 
-  Both are `CLOB` today — the binding `M14.23f` already argued against,
+  (The correction: this requirement first said `v_kind` was also a `CLOB`
+  needing `VARCHAR2(1 CHAR)` — repeating F-47's table instead of reading
+  the emitted DDL. `ddl.rs` has emitted `v_kind` as `CHAR(1 CHAR)` since
+  F-08's rebuild: one character, indexable, and `M3.6b`'s PAD SPACE
+  hazard does not bite a length-one column compared against length-one
+  values. `v_kind` needs no conversion and is out of this migration.)
+
+  `path` is `CLOB` today — the binding `M14.23f` already argued against,
   since a `CLOB` compares with nothing (`ORA-22848`) and `path` is a
-  structural locator the store filters by exact value. The decided types
-  read the map's recorded bound (`U12a`) rather than a constant, and
-  `VARCHAR2`, never `CHAR`, which pads (`M3.6b`, as `M14.23f`'s table
-  already states for `v_kind`).
+  structural locator the store filters by exact value. The decided type
+  reads the map's recorded bound (`U12a`) rather than a constant —
+  `VARCHAR2(path_bound CHAR)`, `VARCHAR2` rather than `CHAR` because the
+  values vary in length, which is where padding *would* bite (`M3.6b`).
 
   Oracle cannot `ALTER TABLE … MODIFY` a `CLOB` into a `VARCHAR2`. The
   conversion is add-column, copy, drop, rename — four statements, each

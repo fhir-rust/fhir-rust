@@ -75,9 +75,10 @@ Not "planned and unstarted" — **absent**.
 - [ ] **`conditional_create_audited`, `put_audited`, `transact_audited`.** No
   optimistic concurrency, no conditional operations, no atomic Bundles.
 - [ ] **`path` to `NVARCHAR(path_bound)`** (`M14.37`, `U12a`) — decided
-  2026-08-09, lands with **F-47** steps 3–4: pre-check `MAX(LEN)`, `ALTER
-  COLUMN` inside the transactional upgrade, add the index, drop `path`'s
-  adjuncts. Until then `NVARCHAR(MAX)` stands and `U12` is not claimed.
+  2026-08-09, corrected 2026-08-10 (`path` has no adjuncts to drop; the
+  index MAY wait until a search filters `path`), lands with **F-47** steps
+  3–4: pre-check `MAX(LEN)`, then `ALTER COLUMN` inside the transactional
+  upgrade. Until then `NVARCHAR(MAX)` stands and `U12` is not claimed.
 - [ ] **Verification against full SQL Server.** Only `azure-sql-edge`
   (`M14.31`) — an arm64 subset of the product.
 - [ ] **`O10.7`.** The mechanism is confirmed live (`tests/ssl_live.rs`):

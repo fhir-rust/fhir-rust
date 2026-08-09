@@ -236,20 +236,31 @@ rather than in `ddl.rs`. This section is that conclusion made normative.
 - **U12a** **`path`'s bound is the map's to compute and record** (decided
   2026-08-09, **F-47** step 2; the physical adoption is F-47 steps 3–5).
 
-  `path` is bounded because of how it is produced, and by nothing else: an
-  attach path is a chain of JSON property names the map already knows, the
-  chain is finite because type recursion spills to a `Deep` table rather
-  than extending the path, and a nested extension grows the `leaf` column,
-  never `path`. So the longest `path` a conformant shred can write is a
-  fact of the release map, computable at generation time — and not large:
-  measured across the bundled maps, the longest fully qualified element
-  path (a `StructureDefinition.differential…` chain) is 131 characters in
-  R4/R5 and 121 in R3, and the attach form the shredder actually writes is
-  shorter still.
+  `path` is *almost* bounded by construction: an attach path is a chain of
+  JSON property names the map already knows, a nested extension grows the
+  `leaf` column rather than `path`, and datatype recursion spills to a
+  `Deep` table. The exception — found by measurement on 2026-08-10, one
+  day after this requirement was first written claiming the chain finite —
+  is **cyclic contentReference recursion**: a `Group` element that
+  recurses into an ancestor node extends the attach path one segment per
+  nesting level (shredding a `QuestionnaireResponse` with items nested
+  five deep stores `path = "item.item.item.item.item"`), and FHIR places
+  no depth limit on such nesting. So `path_bound` is not a fact the map
+  merely reports; it is a **capacity limit the map declares**, of a kind
+  the storage model already carries — `ords` refuses arrays past `i16`
+  (32,767 entries), and `fhir-oracle`'s `RAW(255)` ords image (`M14.13`)
+  already caps nesting depth physically on that port. Outside the cycles
+  it is not large: measured across the bundled maps, the longest fully
+  qualified element path (a `StructureDefinition.differential…` chain) is
+  131 characters in R4/R5 and 121 in R3, and the attach form the shredder
+  actually writes is shorter still.
 
   Each release map MUST therefore record a **`path_bound`**: the length in
-  characters of the longest attach path reachable in that map, rounded up
-  to the next multiple of 64, and never below 128. Attach paths are ASCII —
+  characters of the longest attach path reachable in that map **with each
+  recursion cycle traversed at most eight times** — a walk that terminates
+  because the cycle count is capped, and a bound that guarantees at least
+  eight levels of any cyclic nesting fit — rounded up to the next multiple
+  of 64, and never below 128. Attach paths are ASCII —
   JSON property names from the FHIR specification — so characters, bytes,
   and UTF-16 code units agree, and each dialect may read the one recorded
   number in its own unit.
@@ -272,7 +283,10 @@ rather than in `ddl.rs`. This section is that conclusion made normative.
     than the recorded bound MUST fail loudly rather than leave the outcome
     to the engine — one engine would truncate and another reject, and a
     truncated `path` reconstructs the wrong resource shape, an `L4`
-    violation arriving through a column nobody searches.
+    violation arriving through a column nobody searches. A resource
+    refused here is one nested deeper than the declared capacity: the same
+    kind of refusal as the 32,767-entry array limit, loud and at the write
+    boundary, never a truncation.
 
   Which *type* the bound produces stays per-dialect (`U9`): an engine whose
   unbounded text type indexes and compares fine MAY keep it — the four
@@ -280,12 +294,16 @@ rather than in `ddl.rs`. This section is that conclusion made normative.
   `NVARCHAR(path_bound)` (`M14.37` in its annex) and `fhir-oracle`
   `VARCHAR2(path_bound CHAR)` (`M14.38` in its annex).
 
-  **`v_kind` needs no map field.** Its values are exactly the four kind
-  characters the shared core writes (`z`, `b`, `n`, `s` —
-  `value.rs`, `LeafVal::cols`), so it binds to a one-character type on
-  every port. Only `fhir-oracle`'s `CLOB` violates that today; the decided
-  binding there is `VARCHAR2(1 CHAR)` — never `CHAR`, which pads
-  (`M3.6b`).
+  **`v_kind` needs no map field, and — corrected 2026-08-10 — no port
+  needs fixing.** Its values are exactly the four kind characters the
+  shared core writes (`z`, `b`, `n`, `s` — `value.rs`, `LeafVal::cols`),
+  and reading the emitted DDL rather than F-47's table shows every port
+  already bounded or indexable: `char(1)`/`CHAR(1)` on postgresql, mysql,
+  mariadb and mssql; `CHAR(1 CHAR)` on oracle — the `CLOB` F-47's table
+  records was already fixed by F-08's rebuild; `TEXT` on sqlite, where
+  `TEXT` indexes and compares fine. `M3.6b`'s PAD SPACE hazard does not
+  bite a length-one column compared against length-one values. The
+  `v_kind` half of F-47 is moot: no migration, on any port.
 
 - **U13** A column holding **opaque bytes** — `Attachment.data` and its kin —
   MUST NOT be given a bounded adjunct.

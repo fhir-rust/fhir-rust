@@ -58,11 +58,13 @@ Not "planned and unstarted" — **absent**.
   via `SELECT … FOR UPDATE`, but no test races concurrent writers against it
   the way `fhir-mssql`'s and `fhir-mysql`'s `concurrency.rs` do.
 - [ ] **A redaction test**, or benchmarks.
-- [ ] **`path`/`v_kind` to bounded types** (`M14.38`, `U12a`) — decided
-  2026-08-09, lands with **F-47** steps 3 and 5: `CLOB` →
-  `VARCHAR2(path_bound CHAR)` / `VARCHAR2(1 CHAR)` via
-  add-column–copy–drop–rename, each statement autocommitting and rerun-safe
-  (`M14.35`'s rule). Until then the `CLOB`s stand and `U12` is not claimed.
+- [ ] **`path` to `VARCHAR2(path_bound CHAR)`** (`M14.38`, `U12a`) —
+  decided 2026-08-09, corrected 2026-08-10 (`v_kind` is already
+  `CHAR(1 CHAR)` and out of the migration), lands with **F-47** steps 3
+  and 5: `CLOB` → `VARCHAR2(path_bound CHAR)` via
+  add-column–copy–drop–rename, each statement autocommitting and
+  rerun-safe (`M14.35`'s rule). Until then the `CLOB` stands and `U12` is
+  not claimed.
 - [x] **`upgrade` / `backfill_norm`** — *done 2026-08-09* (**F-15**'s last
   port, **F-47** step 1). Diffs the stored map asset, applies resumable DDL
   (`M14.35`), chunks the meta asset past `ORA-01461` (`M14.36`), backfills

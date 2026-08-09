@@ -461,17 +461,22 @@ Stated explicitly, because `X15.6` treats silence as a defect rather than as
   the code lands with F-47 steps 3–4, and until it does the current
   `NVARCHAR(MAX)` stands and this port does not claim `U12` for `path`.
 
-  Today `create_table` hardcodes `path` as `NVARCHAR(MAX)`, which cannot be
-  part of an index key (`M14.15`) and therefore drags adjunct columns `U12`
-  says a bounded column should not need. The decided binding reads the
+  Today `create_table` hardcodes `path` as `NVARCHAR(MAX)`, which cannot
+  be part of an index key (`M14.15`). (Corrected 2026-08-10: an earlier
+  revision said the `MAX` binding "drags adjunct columns" — it does not.
+  `path` has never had adjuncts on any port; the ext/deep adjunct set is
+  `url`, `v_text`, `leaf`, and the U-file itself says "path is
+  deliberately not in this set". The cost of `MAX` is unindexability and
+  the unsatisfied `U12`, nothing more.) The decided binding reads the
   map's recorded `path_bound` (`U12a`) instead of a constant, so the DDL
   follows the asset (`G2.2`).
 
   The conversion, in order, inside the transactional upgrade (`M14.35`):
   pre-check `MAX(LEN("path"))` against the bound and refuse with the count
-  and maximum if any row exceeds it; `ALTER COLUMN`; add the index the
-  narrowing exists to allow; drop `path`'s adjunct columns through the
-  destructive-acknowledged path. A failed step rolls the whole upgrade
+  and maximum if any row exceeds it; then `ALTER COLUMN`. The index the
+  narrowing makes possible MAY follow when a search first filters on
+  `path` — none does today, so the narrowing buys `U12` and an honest
+  schema now, indexability later. A failed step rolls the whole upgrade
   back — this engine's advantage over the sibling Oracle port, whose
   conversion cannot be atomic (`M14.38` there).
 

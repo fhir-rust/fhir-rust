@@ -140,7 +140,7 @@ not a code fix).
 | [F-44](#f-44) | Medium | `check-shared-core.sh` aborted under `set -u` on the empty `EXEMPT` array — only reachable once a file diverged | **fixed** |
 | [F-45](#f-45) | Medium | The shared-core gate stopped at the store; `chain.rs` was 618 identical lines duplicated six times, unwatched | **fixed** — extracted to `fhir-store`, all six rewired |
 | [F-46](#f-46) | Medium | `U11` cannot reach the extension and deep tables: they have no columns in the map, and the cheaper workaround contradicts `U2b` | **fixed** 2026-08-02, verified live |
-| [F-47](#f-47) | Low | `path` and `v_kind` are bounded in practice but bound to unbounded types on mssql and oracle, so `U12` is unsatisfied; fixing it is a physical-schema migration for all six | open — **migration scheduled 2026-08-09**, six sequenced steps in the entry; steps 1–2 **done 2026-08-09** (oracle's `upgrade`; the `U12a` bound decision) |
+| [F-47](#f-47) | Low | `path` is bound to unbounded types on mssql and oracle, so `U12` is unsatisfied; fixing it is a physical-schema migration for all six (the `v_kind` half proved moot, 2026-08-10) | open — **migration scheduled 2026-08-09**, six sequenced steps in the entry; steps 1–2 **done 2026-08-09** (oracle's `upgrade`; the `U12a` bound decision) |
 | [F-48](#f-48) | Low | the shared-core gate did not watch `gen/tests/`, and could not while its normalization was line-based — rustfmt wraps by crate-name *length* | **fixed** 2026-08-02 — token-based verdict, 75→100 files |
 | [F-49](#f-49) | **High** | No workflow in this repository runs: all 20-odd sit under `<family>/.github/workflows/`, which GitHub does not read. Every "gated in CI" claim is unverified | **fixed** 2026-08-06 — root gates first (`gates.yml`), then every family's CI consolidated to root files with paths filters and working-directory defaults; first hosted run pending a push |
 | [F-50](#f-50) | Medium | The `U2a` reference rule attached an adjunct to `c_url`, which no index uses, while every port indexes `(c_type, c_id)` — 453 of R5's 1,947 search targets unindexable on Oracle | **fixed** 2026-08-02 — all six; gaps now 0 |
@@ -2749,6 +2749,28 @@ Two columns of the extension and deep tables fail that on `fhir-mssql` and
 | `path` | `NVARCHAR(MAX)` / `CLOB` | the longest FHIR element path, which the generator knows at build time |
 | `v_kind` | `CHAR(1)` on mssql | already bounded — the defect is oracle's, where it is a `CLOB` |
 
+**Corrections (2026-08-10, found preparing step 3 by reading the emitted DDL
+and shredder rather than this table).** Three claims above and in the schedule
+are stale or wrong:
+
+- **`v_kind` is bounded everywhere already** — `char(1)`/`CHAR(1)` on
+  postgresql/mysql/mariadb/mssql, `CHAR(1 CHAR)` on oracle (fixed by
+  **F-08**'s rebuild after this table was written), `TEXT` on sqlite where
+  `TEXT` indexes fine. The `v_kind` half of this finding is moot; no port
+  converts anything.
+- **`path` has no adjunct columns on any port** (the ext/deep adjunct set is
+  `url`/`v_text`/`leaf`), so step 4's "drop `path`'s adjunct columns" has
+  nothing to drop.
+- **`path` is not statically bounded.** The attach path accumulates through
+  cyclic contentReference recursion — measured: shredding a
+  `QuestionnaireResponse` with items nested five deep stores an ext row with
+  `path = "item.item.item.item.item"`, one segment per level, no FHIR depth
+  limit. `U12a` was amended same day: `path_bound` is a **declared capacity
+  limit** (computed with each cycle traversed at most eight times, enforced
+  loudly at shred time), precedented by the model's own 32,767-entry `ords`
+  limit and oracle's `RAW(255)` ords image (`M14.13`). The finding's real
+  surface is exactly `path` on mssql and oracle.
+
 `create_table` hardcodes them, so fixing this means making those arms map-driven
 — and **that changes the physical schema**: `path` from unbounded to bounded is
 a data migration under `L12`/`O10.4a`, which the four ports with stores would
@@ -2793,18 +2815,26 @@ is live-verified:
    add-copy-drop-rename with the half-applied story stated). Grounding:
    the longest fully qualified element path measured across the bundled
    maps is 131 chars (R4/R5), 121 (R3).
+   **Amended 2026-08-10** (see the corrections block above): the bound is
+   a declared capacity limit — cyclic contentReference recursion grows
+   `path` per nesting level, so `U12a` now computes with cycles capped at
+   eight traversals and shred refuses past the bound; `v_kind` is out of
+   the migration entirely (bounded everywhere already); there are no
+   `path` adjuncts to drop in step 4.
 3. **The shared-core change, all six ports in one commit** (`X15.1`):
    `model.rs` carries the bound, `gen` computes it, `create_table`'s
    hardcoded `path`/`v_kind` arms become map-driven; assets regenerated in
    all six (`regen-assets`, content-compared per F-41). Physical DDL
    changes only on mssql (`NVARCHAR(MAX)` → `NVARCHAR(bound)`) and oracle
-   (`CLOB` → `VARCHAR2(bound CHAR)`, `CLOB` → `CHAR(1)`); the other four
-   keep `TEXT` and carry only the asset-version diff through `upgrade`.
+   (`CLOB` → `VARCHAR2(bound CHAR)`; the `v_kind` conversion listed here
+   earlier is moot, 2026-08-10 correction); the other four keep `TEXT`
+   and carry only the asset-version diff through `upgrade`.
 4. **`fhir-mssql` upgrade path, live-verified**: pre-check
    `MAX(LEN(path))` against the bound, `ALTER COLUMN` inside the
-   transactional upgrade (`M14.35`), then add the index the narrowing
-   exists to allow, then drop `path`'s adjunct columns (`U12`: bounded
-   beats adjuncts) via the destructive-acknowledged path.
+   transactional upgrade (`M14.35`). (The "add the index / drop the
+   adjuncts" tail this step first carried is amended, 2026-08-10: no
+   search filters `path` yet so the index MAY wait, and `path` never had
+   adjuncts to drop.)
 5. **`fhir-oracle` conversion path, live-verified**: Oracle cannot alter
    `CLOB` to `VARCHAR2` in place — add-column, copy, drop, rename, each
    statement autocommitting (no transactional DDL, `M14`), with the
