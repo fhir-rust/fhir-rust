@@ -141,7 +141,7 @@ not a code fix).
 | [F-44](#f-44) | Medium | `check-shared-core.sh` aborted under `set -u` on the empty `EXEMPT` array — only reachable once a file diverged | **fixed** |
 | [F-45](#f-45) | Medium | The shared-core gate stopped at the store; `chain.rs` was 618 identical lines duplicated six times, unwatched | **fixed** — extracted to `fhir-store`, all six rewired |
 | [F-46](#f-46) | Medium | `U11` cannot reach the extension and deep tables: they have no columns in the map, and the cheaper workaround contradicts `U2b` | **fixed** 2026-08-02, verified live |
-| [F-47](#f-47) | Low | `path` and `v_kind` are bounded in practice but bound to unbounded types on mssql and oracle, so `U12` is unsatisfied; fixing it is a physical-schema migration for all six | open |
+| [F-47](#f-47) | Low | `path` and `v_kind` are bounded in practice but bound to unbounded types on mssql and oracle, so `U12` is unsatisfied; fixing it is a physical-schema migration for all six | open — **migration scheduled 2026-08-09**, six sequenced steps in the entry; step 1 is oracle's missing `upgrade` (the F-15 remainder) |
 | [F-48](#f-48) | Low | the shared-core gate did not watch `gen/tests/`, and could not while its normalization was line-based — rustfmt wraps by crate-name *length* | **fixed** 2026-08-02 — token-based verdict, 75→100 files |
 | [F-49](#f-49) | **High** | No workflow in this repository runs: all 20-odd sit under `<family>/.github/workflows/`, which GitHub does not read. Every "gated in CI" claim is unverified | **fixed** 2026-08-06 — root gates first (`gates.yml`), then every family's CI consolidated to root files with paths filters and working-directory defaults; first hosted run pending a push |
 | [F-50](#f-50) | Medium | The `U2a` reference rule attached an adjunct to `c_url`, which no index uses, while every port indexes `(c_type, c_id)` — 453 of R5's 1,947 search targets unindexable on Oracle | **fixed** 2026-08-02 — all six; gaps now 0 |
@@ -188,7 +188,7 @@ own closures — every one of them contradicted the summary table above.*
 
 | Finding | Why it is not fixed here |
 | --- | --- |
-| **F-47** | `path` and `v_kind` bounded-type fix is a physical-schema migration for all six ports — sequenced work, not a one-pass edit. |
+| **F-47** | The migration is now **scheduled** (six steps, in the entry); it stays open because steps 1, 4 and 5 need live engines and the sequence starts with oracle's missing `upgrade`. |
 | ~~F-49~~ | Closed 2026-08-06: every family's CI now lives at the repository root — `fhir-ci.yml`, `fhir-security.yml`, one `<port>-ci.yml` per port, `fhir-loco-ci.yml` (rewritten: the old file was loco-rs template boilerplate provisioning Redis/PostgreSQL this app never used), and a new `fhir-store-ci.yml` for the one family that never had CI anywhere. Each carries a paths filter and a `working-directory` default; artifact paths were re-rooted. The inert per-family CI files are deleted. Deliberately **not** consolidated: the six ports' `publish.yml` (publishing is owner-gated; their fictional crate lists are fixed, F-84) and `fhir/release.yml` (cargo-dist manages it; moot until a release is cut). Honesty note: no hosted run has executed yet — this host cannot run GitHub Actions — so the matrix keeps `~` until the first push turns them green. |
 | **F-51** | `fhir-oracle`'s store tests now install and exercise a schema live (**F-68**), which narrows this finding; what has not been re-run test-driven is the full-R5 install the finding originally concerned. |
 | ~~F-58~~ | Closed 2026-08-09: `SV2.14`, `SV3.11`, `SV4.3` (2026-08-07) and `SV2.15` `$export` (2026-08-09) are all served; `SV4.2`'s concurrency-limit halves stay recorded in `fhir-loco/spec/04` as a framework limit, which is a constraint, not a gap this register tracks. |
@@ -2747,6 +2747,44 @@ Resolving it needs the migration story first — specifically, what
 `fhir-postgresql` does with an existing `patient_ext` when `path` narrows, and
 whether the generator's known maximum path length is a *bound* or merely the
 longest one seen in R3–R5.
+
+**Migration schedule (2026-08-09, owner-directed).** Sequenced; each step is
+one session-sized commit, and nothing later starts before the step before it
+is live-verified:
+
+1. **Prerequisite: `fhir-oracle` gains `upgrade`/`backfill_norm`** — the
+   F-15 remainder. Every later step assumes a working upgrade path on all
+   six ports, and oracle is the port with the harder half of this migration.
+2. **The bound decision, as spec text.** The generator's maximum path length
+   is the longest seen in R3–R6, not a bound; the migration needs a *bound*.
+   Amend `U12` (and `M14` annexes where the type is named): `path` binds to
+   a map-level `path_bound` — the longest path in that release's map,
+   rounded up with headroom and **recorded in the map asset**, so `G2.2`
+   determinism holds and a future release cannot silently shrink it.
+   `v_kind` binds to one character everywhere (only oracle's `CLOB` is
+   wrong today).
+3. **The shared-core change, all six ports in one commit** (`X15.1`):
+   `model.rs` carries the bound, `gen` computes it, `create_table`'s
+   hardcoded `path`/`v_kind` arms become map-driven; assets regenerated in
+   all six (`regen-assets`, content-compared per F-41). Physical DDL
+   changes only on mssql (`NVARCHAR(MAX)` → `NVARCHAR(bound)`) and oracle
+   (`CLOB` → `VARCHAR2(bound CHAR)`, `CLOB` → `CHAR(1)`); the other four
+   keep `TEXT` and carry only the asset-version diff through `upgrade`.
+4. **`fhir-mssql` upgrade path, live-verified**: pre-check
+   `MAX(LEN(path))` against the bound, `ALTER COLUMN` inside the
+   transactional upgrade (`M14.35`), then add the index the narrowing
+   exists to allow, then drop `path`'s adjunct columns (`U12`: bounded
+   beats adjuncts) via the destructive-acknowledged path.
+5. **`fhir-oracle` conversion path, live-verified**: Oracle cannot alter
+   `CLOB` to `VARCHAR2` in place — add-column, copy, drop, rename, each
+   statement autocommitting (no transactional DDL, `M14`), with the
+   half-applied-upgrade story the annex must state before the code exists.
+6. **Close**: `U12` cells flip in the matrix, per-port `tasks.md` entries
+   tick with their live evidence, this finding closes.
+
+Steps 1, 4 and 5 need live engines; 2 and 3 do not. The four stores that
+never had the defect carry only step 3's asset bump — the price `X15.1`
+sets for moving all six together.
 
 ---
 
