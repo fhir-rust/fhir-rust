@@ -140,7 +140,7 @@ not a code fix).
 | [F-44](#f-44) | Medium | `check-shared-core.sh` aborted under `set -u` on the empty `EXEMPT` array — only reachable once a file diverged | **fixed** |
 | [F-45](#f-45) | Medium | The shared-core gate stopped at the store; `chain.rs` was 618 identical lines duplicated six times, unwatched | **fixed** — extracted to `fhir-store`, all six rewired |
 | [F-46](#f-46) | Medium | `U11` cannot reach the extension and deep tables: they have no columns in the map, and the cheaper workaround contradicts `U2b` | **fixed** 2026-08-02, verified live |
-| [F-47](#f-47) | Low | `path` and `v_kind` are bounded in practice but bound to unbounded types on mssql and oracle, so `U12` is unsatisfied; fixing it is a physical-schema migration for all six | open — **migration scheduled 2026-08-09**, six sequenced steps in the entry; step 1 (oracle's `upgrade`, the F-15 remainder) **done 2026-08-09** |
+| [F-47](#f-47) | Low | `path` and `v_kind` are bounded in practice but bound to unbounded types on mssql and oracle, so `U12` is unsatisfied; fixing it is a physical-schema migration for all six | open — **migration scheduled 2026-08-09**, six sequenced steps in the entry; steps 1–2 **done 2026-08-09** (oracle's `upgrade`; the `U12a` bound decision) |
 | [F-48](#f-48) | Low | the shared-core gate did not watch `gen/tests/`, and could not while its normalization was line-based — rustfmt wraps by crate-name *length* | **fixed** 2026-08-02 — token-based verdict, 75→100 files |
 | [F-49](#f-49) | **High** | No workflow in this repository runs: all 20-odd sit under `<family>/.github/workflows/`, which GitHub does not read. Every "gated in CI" claim is unverified | **fixed** 2026-08-06 — root gates first (`gates.yml`), then every family's CI consolidated to root files with paths filters and working-directory defaults; first hosted run pending a push |
 | [F-50](#f-50) | Medium | The `U2a` reference rule attached an adjunct to `c_url`, which no index uses, while every port indexes `(c_type, c_id)` — 453 of R5's 1,947 search targets unindexable on Oracle | **fixed** 2026-08-02 — all six; gaps now 0 |
@@ -2763,7 +2763,9 @@ therefore cannot claim.
 Resolving it needs the migration story first — specifically, what
 `fhir-postgresql` does with an existing `patient_ext` when `path` narrows, and
 whether the generator's known maximum path length is a *bound* or merely the
-longest one seen in R3–R5.
+longest one seen in R3–R5. (The second question is answered as of step 2:
+it is the longest seen, made a bound by `U12a` — recorded in the asset with
+64-char-step headroom, enforced at shred time, never narrowed by `upgrade`.)
 
 **Migration schedule (2026-08-09, owner-directed).** Sequenced; each step is
 one session-sized commit, and nothing later starts before the step before it
@@ -2782,6 +2784,15 @@ is live-verified:
    determinism holds and a future release cannot silently shrink it.
    `v_kind` binds to one character everywhere (only oracle's `CLOB` is
    wrong today).
+   **Done 2026-08-09**: `U12a` defines `path_bound` — longest attach path
+   in the release map, rounded up to the next multiple of 64, floor 128,
+   recorded in the asset; widening additive, narrowing refused, an
+   over-bound shred fails loudly — and fixes `v_kind` at one character
+   (`z`/`b`/`n`/`s` are the only values the core writes). Target bindings:
+   `M14.37` (mssql, one transactional conversion) and `M14.38` (oracle,
+   add-copy-drop-rename with the half-applied story stated). Grounding:
+   the longest fully qualified element path measured across the bundled
+   maps is 131 chars (R4/R5), 121 (R3).
 3. **The shared-core change, all six ports in one commit** (`X15.1`):
    `model.rs` carries the bound, `gen` computes it, `create_table`'s
    hardcoded `path`/`v_kind` arms become map-driven; assets regenerated in

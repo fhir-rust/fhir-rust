@@ -740,6 +740,32 @@ Three requirements are this engine's own:
   cause), so writing it would leave `dst` NULL and the row eligible on
   every pass, forever.
 
+## The `path` and `v_kind` bindings — decided (2026-08-09)
+
+- **M14.38** **`path` binds to `VARCHAR2(path_bound CHAR)` and `v_kind` to
+  `VARCHAR2(1 CHAR)`; the conversion cannot be in-place.** Decided
+  2026-08-09 (`U12a`, **F-47** step 2); the code lands with F-47 steps 3
+  and 5, and until it does the current `CLOB`s stand and this port does not
+  claim `U12` for either column.
+
+  Both are `CLOB` today — the binding `M14.23f` already argued against,
+  since a `CLOB` compares with nothing (`ORA-22848`) and `path` is a
+  structural locator the store filters by exact value. The decided types
+  read the map's recorded bound (`U12a`) rather than a constant, and
+  `VARCHAR2`, never `CHAR`, which pads (`M3.6b`, as `M14.23f`'s table
+  already states for `v_kind`).
+
+  Oracle cannot `ALTER TABLE … MODIFY` a `CLOB` into a `VARCHAR2`. The
+  conversion is add-column, copy, drop, rename — four statements, each
+  implicitly committing, because there is no transactional DDL (`M14.35`).
+  So the half-applied story is stated here before the code exists, as the
+  migration schedule requires: every step MUST tolerate having already run
+  or already been superseded, the same rule as `M14.35`, so that the
+  recovery for an upgrade interrupted anywhere in the sequence is running
+  `upgrade` again; and the copy MUST fail loudly on any row whose `path`
+  exceeds the bound rather than truncate — a truncated `path`
+  reconstructs the wrong resource shape (`L4`, via `U12a`).
+
 ---
 
 Part of the [fhir-oracle specification](index.md), which is part of the

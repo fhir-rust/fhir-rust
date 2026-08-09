@@ -456,6 +456,27 @@ Stated explicitly, because `X15.6` treats silence as a defect rather than as
   conformance claim. Verification against full SQL Server is required before
   this port claims Schema level.
 
+- **M14.37** **`path` binds to `NVARCHAR(path_bound)`; the conversion is one
+  transactional upgrade.** Decided 2026-08-09 (`U12a`, **F-47** step 2);
+  the code lands with F-47 steps 3–4, and until it does the current
+  `NVARCHAR(MAX)` stands and this port does not claim `U12` for `path`.
+
+  Today `create_table` hardcodes `path` as `NVARCHAR(MAX)`, which cannot be
+  part of an index key (`M14.15`) and therefore drags adjunct columns `U12`
+  says a bounded column should not need. The decided binding reads the
+  map's recorded `path_bound` (`U12a`) instead of a constant, so the DDL
+  follows the asset (`G2.2`).
+
+  The conversion, in order, inside the transactional upgrade (`M14.35`):
+  pre-check `MAX(LEN("path"))` against the bound and refuse with the count
+  and maximum if any row exceeds it; `ALTER COLUMN`; add the index the
+  narrowing exists to allow; drop `path`'s adjunct columns through the
+  destructive-acknowledged path. A failed step rolls the whole upgrade
+  back — this engine's advantage over the sibling Oracle port, whose
+  conversion cannot be atomic (`M14.38` there).
+
+  `v_kind` is already `CHAR(1)` on this port; nothing changes for it.
+
 ---
 
 Part of the [fhir-mssql specification](index.md), which is part of the

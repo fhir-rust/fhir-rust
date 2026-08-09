@@ -233,6 +233,60 @@ rather than in `ddl.rs`. This section is that conclusion made normative.
   Recording that judgement is `U10`'s job: a port states which columns got
   adjuncts and why the others did not need them.
 
+- **U12a** **`path`'s bound is the map's to compute and record** (decided
+  2026-08-09, **F-47** step 2; the physical adoption is F-47 steps 3–5).
+
+  `path` is bounded because of how it is produced, and by nothing else: an
+  attach path is a chain of JSON property names the map already knows, the
+  chain is finite because type recursion spills to a `Deep` table rather
+  than extending the path, and a nested extension grows the `leaf` column,
+  never `path`. So the longest `path` a conformant shred can write is a
+  fact of the release map, computable at generation time — and not large:
+  measured across the bundled maps, the longest fully qualified element
+  path (a `StructureDefinition.differential…` chain) is 131 characters in
+  R4/R5 and 121 in R3, and the attach form the shredder actually writes is
+  shorter still.
+
+  Each release map MUST therefore record a **`path_bound`**: the length in
+  characters of the longest attach path reachable in that map, rounded up
+  to the next multiple of 64, and never below 128. Attach paths are ASCII —
+  JSON property names from the FHIR specification — so characters, bytes,
+  and UTF-16 code units agree, and each dialect may read the one recorded
+  number in its own unit.
+
+  Three consequences, each the reason for a clause:
+
+  - **Recorded in the asset, not recomputed at the point of use** (`G2.2`):
+    the DDL a port emits follows the asset it was handed, so two builds of
+    one asset agree, and a future generator bug cannot silently narrow a
+    deployed column — a wrong bound is visible in the asset diff before it
+    is a schema change.
+  - **Rounded with headroom**: the bound outlives releases. Rounding to a
+    64-character step means a release whose longest path grows by a few
+    characters changes nothing physically; only growth past the next step
+    is a schema change at all — and that change is a *widening*, which an
+    `upgrade` MAY apply additively. An `upgrade` MUST refuse to *narrow*
+    `path` — a smaller recorded bound is a manual migration, the same
+    refusal as any other type change.
+  - **Enforced at the write path**: a shred that produces a path longer
+    than the recorded bound MUST fail loudly rather than leave the outcome
+    to the engine — one engine would truncate and another reject, and a
+    truncated `path` reconstructs the wrong resource shape, an `L4`
+    violation arriving through a column nobody searches.
+
+  Which *type* the bound produces stays per-dialect (`U9`): an engine whose
+  unbounded text type indexes and compares fine MAY keep it — the four
+  ports on `TEXT` satisfy `U12` for `path` already. `fhir-mssql` binds
+  `NVARCHAR(path_bound)` (`M14.37` in its annex) and `fhir-oracle`
+  `VARCHAR2(path_bound CHAR)` (`M14.38` in its annex).
+
+  **`v_kind` needs no map field.** Its values are exactly the four kind
+  characters the shared core writes (`z`, `b`, `n`, `s` —
+  `value.rs`, `LeafVal::cols`), so it binds to a one-character type on
+  every port. Only `fhir-oracle`'s `CLOB` violates that today; the decided
+  binding there is `VARCHAR2(1 CHAR)` — never `CHAR`, which pads
+  (`M3.6b`).
+
 - **U13** A column holding **opaque bytes** — `Attachment.data` and its kin —
   MUST NOT be given a bounded adjunct.
 
