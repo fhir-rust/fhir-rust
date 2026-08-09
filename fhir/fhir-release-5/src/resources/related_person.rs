@@ -111,7 +111,7 @@ pub struct RelatedPerson {
     pub active_ext: Option<types::Element>,
 
     /// Required reference to the patient this person is related to, anchoring the record to a single patient
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r5::resources::Patient>,
 
     /// Coded nature of the relationship to the patient, such as parent, spouse, guardian, or emergency contact
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

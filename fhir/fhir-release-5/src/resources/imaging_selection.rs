@@ -143,7 +143,7 @@ pub struct ImagingSelection {
 
     /// The network service providing retrieval for the images referenced in the imaging selection
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub endpoint: Vec<types::Reference>,
+    pub endpoint: Vec<types::Reference<crate::r5::resources::Endpoint>>,
 
     /// DICOM Series Instance UID
     pub series_uid: Option<types::Id>,
@@ -168,7 +168,7 @@ pub struct ImagingSelection {
 
     /// Related resource that is the focus for the imaging selection
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub focus: Vec<types::Reference>,
+    pub focus: Vec<types::Reference<crate::r5::resources::ImagingSelection>>,
 
     /// The selected instances
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

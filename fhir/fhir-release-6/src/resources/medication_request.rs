@@ -90,7 +90,7 @@ pub struct MedicationRequest {
 
     /// Reference to an order/prescription that is being replaced by this
     /// MedicationRequest
-    pub prior_prescription: Option<types::Reference>,
+    pub prior_prescription: Option<types::Reference<crate::r6::resources::MedicationRequest>>,
 
     /// Composite request this is part of
     pub group_identifier: Option<types::Identifier>,
@@ -152,7 +152,7 @@ pub struct MedicationRequest {
     pub information_source: Vec<types::Reference>,
 
     /// Encounter created as part of encounter/admission/stay
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r6::resources::Encounter>>,
 
     /// Information to support fulfilling of the medication
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -226,7 +226,7 @@ pub struct MedicationRequest {
 
     /// A list of events of interest in the lifecycle
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub event_history: Vec<types::Reference>,
+    pub event_history: Vec<types::Reference<crate::r6::resources::Provenance>>,
 }
 
 /// Indicates the specific details for the dispense or medication supply part
@@ -292,7 +292,7 @@ pub struct MedicationRequestDispenseRequest {
     pub expected_supply_duration: Option<types::Duration>,
 
     /// Intended performer of dispense
-    pub dispenser: Option<types::Reference>,
+    pub dispenser: Option<types::Reference<crate::r6::resources::Organization>>,
 
     /// Additional information for the dispenser
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

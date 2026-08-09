@@ -113,7 +113,7 @@ pub struct Account {
     pub coverage: Vec<AccountCoverage>,
 
     /// Who is responsible?
-    pub owner: Option<types::Reference>,
+    pub owner: Option<types::Reference<crate::r3::resources::Organization>>,
 
     /// Explanation of purpose/use
     pub description: Option<types::String>,
@@ -165,7 +165,7 @@ pub struct AccountCoverage {
 
     /// The party(s) that are responsible for covering the payment of this
     /// account
-    pub coverage: types::Reference,
+    pub coverage: types::Reference<crate::r3::resources::Coverage>,
 
     /// The priority of the coverage in the context of this account
     pub priority: Option<types::PositiveInt>,

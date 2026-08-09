@@ -93,13 +93,13 @@ pub struct EligibilityResponse {
     pub created_ext: Option<types::Element>,
 
     /// Responsible practitioner
-    pub request_provider: Option<types::Reference>,
+    pub request_provider: Option<types::Reference<crate::r3::resources::Practitioner>>,
 
     /// Responsible organization
-    pub request_organization: Option<types::Reference>,
+    pub request_organization: Option<types::Reference<crate::r3::resources::Organization>>,
 
     /// Eligibility reference
-    pub request: Option<types::Reference>,
+    pub request: Option<types::Reference<crate::r3::resources::EligibilityRequest>>,
 
     /// complete | error | partial
     pub outcome: Option<types::CodeableConcept>,
@@ -112,7 +112,7 @@ pub struct EligibilityResponse {
     pub disposition_ext: Option<types::Element>,
 
     /// Insurer issuing the coverage
-    pub insurer: Option<types::Reference>,
+    pub insurer: Option<types::Reference<crate::r3::resources::Organization>>,
 
     /// Coverage inforce indicator
     pub inforce: Option<types::Boolean>,
@@ -209,10 +209,10 @@ pub struct EligibilityResponseInsurance {
     pub modifier_extension: Vec<types::Extension>,
 
     /// Updated Coverage details
-    pub coverage: Option<types::Reference>,
+    pub coverage: Option<types::Reference<crate::r3::resources::Coverage>>,
 
     /// Contract details
-    pub contract: Option<types::Reference>,
+    pub contract: Option<types::Reference<crate::r3::resources::Contract>>,
 
     /// Benefits by Category
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

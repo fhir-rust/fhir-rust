@@ -127,7 +127,7 @@ pub struct PaymentReconciliation {
     pub payment_issuer: Option<types::Reference>,
 
     /// Reference to requesting resource
-    pub request: Option<types::Reference>,
+    pub request: Option<types::Reference<crate::r5::resources::Task>>,
 
     /// Responsible practitioner
     pub requestor: Option<types::Reference>,
@@ -151,7 +151,7 @@ pub struct PaymentReconciliation {
     pub date_ext: Option<types::Element>,
 
     /// Where payment collected
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r5::resources::Location>>,
 
     /// Payment instrument
     pub method: Option<types::CodeableConcept>,
@@ -264,10 +264,10 @@ pub struct PaymentReconciliationAllocation {
     pub target_item: Option<PaymentReconciliationAllocationTargetItem>,
 
     /// Applied-to encounter
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r5::resources::Encounter>>,
 
     /// Applied-to account
-    pub account: Option<types::Reference>,
+    pub account: Option<types::Reference<crate::r5::resources::Account>>,
 
     /// Category of payment
     pub r#type: Option<types::CodeableConcept>,
@@ -276,7 +276,7 @@ pub struct PaymentReconciliationAllocation {
     pub submitter: Option<types::Reference>,
 
     /// Response committing to a payment
-    pub response: Option<types::Reference>,
+    pub response: Option<types::Reference<crate::r5::resources::ClaimResponse>>,
 
     /// Date of commitment to pay
     pub date: Option<types::Date>,
@@ -285,7 +285,7 @@ pub struct PaymentReconciliationAllocation {
     pub date_ext: Option<types::Element>,
 
     /// Contact for the response
-    pub responsible: Option<types::Reference>,
+    pub responsible: Option<types::Reference<crate::r5::resources::PractitionerRole>>,
 
     /// Recipient of the payment
     pub payee: Option<types::Reference>,

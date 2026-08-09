@@ -99,13 +99,13 @@ pub struct Claim {
     pub created_ext: Option<types::Element>,
 
     /// Insurer
-    pub target: Option<types::Reference>,
+    pub target: Option<types::Reference<crate::r2::resources::Organization>>,
 
     /// Responsible provider
-    pub provider: Option<types::Reference>,
+    pub provider: Option<types::Reference<crate::r2::resources::Practitioner>>,
 
     /// Responsible organization
-    pub organization: Option<types::Reference>,
+    pub organization: Option<types::Reference<crate::r2::resources::Organization>>,
 
     /// complete | proposed | exploratory | other
     pub r#use: Option<crate::coded::Coded<crate::r2::codes::ClaimUseLink>>,
@@ -121,22 +121,22 @@ pub struct Claim {
     pub funds_reserve: Option<types::Coding>,
 
     /// Author
-    pub enterer: Option<types::Reference>,
+    pub enterer: Option<types::Reference<crate::r2::resources::Practitioner>>,
 
     /// Servicing Facility
-    pub facility: Option<types::Reference>,
+    pub facility: Option<types::Reference<crate::r2::resources::Location>>,
 
     /// Prescription
     pub prescription: Option<types::Reference>,
 
     /// Original Prescription
-    pub original_prescription: Option<types::Reference>,
+    pub original_prescription: Option<types::Reference<crate::r2::resources::MedicationOrder>>,
 
     /// Payee
     pub payee: Option<ClaimPayee>,
 
     /// Treatment Referral
-    pub referral: Option<types::Reference>,
+    pub referral: Option<types::Reference<crate::r2::resources::ReferralRequest>>,
 
     /// Diagnosis
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -147,7 +147,7 @@ pub struct Claim {
     pub condition: Vec<types::Coding>,
 
     /// The subject of the Products and Services
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r2::resources::Patient>,
 
     /// Insurance or medical plan
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -241,7 +241,7 @@ pub struct ClaimCoverage {
     pub focal_ext: Option<types::Element>,
 
     /// Insurance information
-    pub coverage: types::Reference,
+    pub coverage: types::Reference<crate::r2::resources::Coverage>,
 
     /// Business agreement
     pub business_arrangement: Option<types::String>,
@@ -263,7 +263,7 @@ pub struct ClaimCoverage {
     pub pre_auth_ref_ext: Vec<Option<types::Element>>,
 
     /// Adjudication results
-    pub claim_response: Option<types::Reference>,
+    pub claim_response: Option<types::Reference<crate::r2::resources::ClaimResponse>>,
 
     /// Original version
     pub original_ruleset: Option<types::Coding>,
@@ -361,7 +361,7 @@ pub struct ClaimItem {
     pub r#type: types::Coding,
 
     /// Responsible practitioner
-    pub provider: Option<types::Reference>,
+    pub provider: Option<types::Reference<crate::r2::resources::Practitioner>>,
 
     /// Diagnosis Link
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -723,13 +723,13 @@ pub struct ClaimPayee {
     pub r#type: Option<types::Coding>,
 
     /// Provider who is the payee
-    pub provider: Option<types::Reference>,
+    pub provider: Option<types::Reference<crate::r2::resources::Practitioner>>,
 
     /// Organization who is the payee
-    pub organization: Option<types::Reference>,
+    pub organization: Option<types::Reference<crate::r2::resources::Organization>>,
 
     /// Other person who is the payee
-    pub person: Option<types::Reference>,
+    pub person: Option<types::Reference<crate::r2::resources::Patient>>,
 }
 
 #[cfg(test)]

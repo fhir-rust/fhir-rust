@@ -117,7 +117,7 @@ pub struct Procedure {
     pub focus: Option<types::Reference>,
 
     /// The Encounter during which this Procedure was created
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r6::resources::Encounter>>,
 
     /// When the procedure occurred or is occurring
     /// The `Procedure.occurrence[x]` choice element (0..1); see [`ProcedureOccurrence`].
@@ -144,7 +144,7 @@ pub struct Procedure {
     pub performer: Vec<ProcedurePerformer>,
 
     /// Where the procedure happened
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r6::resources::Location>>,
 
     /// The justification that the procedure was performed
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -156,7 +156,7 @@ pub struct Procedure {
 
     /// Target body structure
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub body_structure: Vec<types::Reference>,
+    pub body_structure: Vec<types::Reference<crate::r6::resources::BodyStructure>>,
 
     /// The result of procedure
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -232,7 +232,7 @@ pub struct ProcedureFocalDevice {
     pub action: Option<types::CodeableConcept>,
 
     /// Device that was changed
-    pub manipulated: types::Reference,
+    pub manipulated: types::Reference<crate::r6::resources::Device>,
 }
 
 /// Indicates who or what performed the procedure and how they were involved.
@@ -277,7 +277,7 @@ pub struct ProcedurePerformer {
     pub actor: types::Reference,
 
     /// Organization the device or practitioner was acting for
-    pub on_behalf_of: Option<types::Reference>,
+    pub on_behalf_of: Option<types::Reference<crate::r6::resources::Organization>>,
 
     /// When the performer performed the procedure
     pub period: Option<types::Period>,

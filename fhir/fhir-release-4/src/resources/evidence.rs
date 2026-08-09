@@ -217,15 +217,15 @@ pub struct Evidence {
     pub related_artifact: Vec<types::RelatedArtifact>,
 
     /// What population?
-    pub exposure_background: types::Reference,
+    pub exposure_background: types::Reference<crate::r4::resources::EvidenceVariable>,
 
     /// What exposure?
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub exposure_variant: Vec<types::Reference>,
+    pub exposure_variant: Vec<types::Reference<crate::r4::resources::EvidenceVariable>>,
 
     /// What outcome?
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub outcome: Vec<types::Reference>,
+    pub outcome: Vec<types::Reference<crate::r4::resources::EvidenceVariable>>,
 }
 
 #[cfg(test)]

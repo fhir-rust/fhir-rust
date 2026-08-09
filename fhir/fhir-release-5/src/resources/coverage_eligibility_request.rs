@@ -111,7 +111,7 @@ pub struct CoverageEligibilityRequest {
     pub purpose_ext: Vec<Option<types::Element>>,
 
     /// Reference to the [`Patient`](crate::r5::resources::patient::Patient) who is the subject of the eligibility check
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r5::resources::Patient>,
 
     /// Event information
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -134,10 +134,10 @@ pub struct CoverageEligibilityRequest {
     pub provider: Option<types::Reference>,
 
     /// Reference to the insurer organization that will process this request
-    pub insurer: types::Reference,
+    pub insurer: types::Reference<crate::r5::resources::Organization>,
 
     /// Servicing facility
-    pub facility: Option<types::Reference>,
+    pub facility: Option<types::Reference<crate::r5::resources::Location>>,
 
     /// Supporting information
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -286,7 +286,7 @@ pub struct CoverageEligibilityRequestInsurance {
     pub focal_ext: Option<types::Element>,
 
     /// Insurance information
-    pub coverage: types::Reference,
+    pub coverage: types::Reference<crate::r5::resources::Coverage>,
 
     /// Additional provider contract number
     pub business_arrangement: Option<types::String>,

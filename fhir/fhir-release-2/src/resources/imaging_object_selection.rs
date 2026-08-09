@@ -75,7 +75,7 @@ pub struct ImagingObjectSelection {
     pub uid_ext: Option<types::Element>,
 
     /// Patient of the selected objects
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r2::resources::Patient>,
 
     /// Reason for selection
     pub title: types::CodeableConcept,
@@ -145,7 +145,7 @@ pub struct ImagingObjectSelectionStudy {
     pub url_ext: Option<types::Element>,
 
     /// Reference to ImagingStudy
-    pub imaging_study: Option<types::Reference>,
+    pub imaging_study: Option<types::Reference<crate::r2::resources::ImagingStudy>>,
 
     /// Series identity of the selected instances
     pub series: ::vec1::Vec1<ImagingObjectSelectionStudySeries>,

@@ -434,7 +434,7 @@ pub struct TestScriptMetadataCapability {
     pub link_ext: Vec<Option<types::Element>>,
 
     /// Required Capability Statement
-    pub capabilities: types::Reference,
+    pub capabilities: types::Reference<crate::r3::resources::CapabilityStatement>,
 }
 
 /// A link to the FHIR specification that this test is covering.

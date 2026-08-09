@@ -329,7 +329,7 @@ pub struct VerificationResultValidator {
     pub modifier_extension: Vec<types::Extension>,
 
     /// Reference to the organization validating information
-    pub organization: types::Reference,
+    pub organization: types::Reference<crate::r5::resources::Organization>,
 
     /// A digital identity certificate associated with the validator
     pub identity_certificate: Option<types::String>,

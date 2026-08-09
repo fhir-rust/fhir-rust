@@ -171,7 +171,7 @@ pub struct IngredientManufacturer {
     pub role_ext: Option<types::Element>,
 
     /// An organization that manufactures this ingredient
-    pub manufacturer: types::Reference,
+    pub manufacturer: types::Reference<crate::r6::resources::Organization>,
 }
 
 /// The substance that comprises this ingredient.

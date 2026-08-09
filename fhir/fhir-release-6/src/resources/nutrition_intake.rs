@@ -115,7 +115,7 @@ pub struct NutritionIntake {
     pub subject: types::Reference,
 
     /// Encounter associated with NutritionIntake
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r6::resources::Encounter>>,
 
     /// The date/time or interval when the food (i.e. solid and/or liquid)
     /// is/was consumed
@@ -145,7 +145,7 @@ pub struct NutritionIntake {
     pub performer: Vec<NutritionIntakePerformer>,
 
     /// Where the intake occurred
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r6::resources::Location>>,
 
     /// Additional supporting information
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

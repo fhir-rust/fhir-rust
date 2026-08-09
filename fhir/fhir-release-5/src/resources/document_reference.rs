@@ -170,7 +170,7 @@ pub struct DocumentReference {
     pub attester: Vec<DocumentReferenceAttester>,
 
     /// Organization which maintains the document
-    pub custodian: Option<types::Reference>,
+    pub custodian: Option<types::Reference<crate::r5::resources::Organization>>,
 
     /// Relationships this document has to other documents, such as replaces or transforms
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -273,7 +273,7 @@ pub struct DocumentReferenceRelatesTo {
     pub code: types::CodeableConcept,
 
     /// Target of the relationship
-    pub target: types::Reference,
+    pub target: types::Reference<crate::r5::resources::DocumentReference>,
 }
 
 /// Document referenced.

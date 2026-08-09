@@ -391,6 +391,7 @@ mod tests {
                 .map(str::to_string)
                 .collect(),
             code_enums: std::collections::BTreeSet::new(),
+            resources: std::collections::BTreeSet::new(),
             module: "r4".to_string(),
         }
     }

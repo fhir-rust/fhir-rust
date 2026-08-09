@@ -209,16 +209,16 @@ pub struct EffectEvidenceSynthesis {
     pub study_type: Option<types::CodeableConcept>,
 
     /// What population?
-    pub population: types::Reference,
+    pub population: types::Reference<crate::r4::resources::EvidenceVariable>,
 
     /// What exposure?
-    pub exposure: types::Reference,
+    pub exposure: types::Reference<crate::r4::resources::EvidenceVariable>,
 
     /// What comparison exposure?
-    pub exposure_alternative: types::Reference,
+    pub exposure_alternative: types::Reference<crate::r4::resources::EvidenceVariable>,
 
     /// What outcome?
-    pub outcome: types::Reference,
+    pub outcome: types::Reference<crate::r4::resources::EvidenceVariable>,
 
     /// What sample size was involved?
     pub sample_size: Option<EffectEvidenceSynthesisSampleSize>,
@@ -508,7 +508,7 @@ pub struct EffectEvidenceSynthesisResultsByExposure {
     pub variant_state: Option<types::CodeableConcept>,
 
     /// Risk evidence synthesis
-    pub risk_evidence_synthesis: types::Reference,
+    pub risk_evidence_synthesis: types::Reference<crate::r4::resources::RiskEvidenceSynthesis>,
 }
 
 /// A description of the size of the sample involved in the synthesis.

@@ -86,6 +86,10 @@ pub fn generate_into(version: Version, out_root: &Path) -> std::io::Result<Summa
             .filter(|e| e.variants.len() > 1)
             .map(|e| e.name.clone())
             .collect(),
+        resources: resource_definitions
+            .iter()
+            .map(|sd| naming::pascal(sd.type_name()))
+            .collect(),
         module: version.module().to_string(),
     };
 

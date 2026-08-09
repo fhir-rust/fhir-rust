@@ -162,7 +162,7 @@ pub struct DocumentReference {
     pub attester: Vec<DocumentReferenceAttester>,
 
     /// Organization which maintains the document
-    pub custodian: Option<types::Reference>,
+    pub custodian: Option<types::Reference<crate::r6::resources::Organization>>,
 
     /// Relationships to other documents
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -360,7 +360,7 @@ pub struct DocumentReferenceRelatesTo {
     pub code: types::CodeableConcept,
 
     /// Target of the relationship
-    pub target: types::Reference,
+    pub target: types::Reference<crate::r6::resources::DocumentReference>,
 }
 
 /// The `DocumentReference.content.profile.value[x]` choice element (see `spec/11-choice-types.md`).

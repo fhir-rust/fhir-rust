@@ -93,7 +93,7 @@ pub struct ProcessResponse {
     pub created_ext: Option<types::Element>,
 
     /// Authoring Organization
-    pub organization: Option<types::Reference>,
+    pub organization: Option<types::Reference<crate::r3::resources::Organization>>,
 
     /// Request reference
     pub request: Option<types::Reference>,
@@ -109,10 +109,10 @@ pub struct ProcessResponse {
     pub disposition_ext: Option<types::Element>,
 
     /// Responsible Practitioner
-    pub request_provider: Option<types::Reference>,
+    pub request_provider: Option<types::Reference<crate::r3::resources::Practitioner>>,
 
     /// Responsible organization
-    pub request_organization: Option<types::Reference>,
+    pub request_organization: Option<types::Reference<crate::r3::resources::Organization>>,
 
     /// Printed Form Identifier
     pub form: Option<types::CodeableConcept>,
@@ -127,7 +127,7 @@ pub struct ProcessResponse {
 
     /// Request for additional information
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub communication_request: Vec<types::Reference>,
+    pub communication_request: Vec<types::Reference<crate::r3::resources::CommunicationRequest>>,
 }
 
 /// Suite of processing notes or additional requirements if the processing has

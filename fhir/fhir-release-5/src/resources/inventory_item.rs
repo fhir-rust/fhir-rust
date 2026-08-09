@@ -240,7 +240,7 @@ pub struct InventoryItemResponsibleOrganization {
     pub role: types::CodeableConcept,
 
     /// An organization that is associated with the item
-    pub organization: types::Reference,
+    pub organization: types::Reference<crate::r5::resources::Organization>,
 }
 
 /// Descriptive characteristics of the item.
@@ -426,7 +426,7 @@ pub struct InventoryItemInstance {
     pub subject: Option<types::Reference>,
 
     /// The location that the item is associated with
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r5::resources::Location>>,
 }
 
 #[cfg(test)]

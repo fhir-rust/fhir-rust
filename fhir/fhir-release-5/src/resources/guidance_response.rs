@@ -120,7 +120,7 @@ pub struct GuidanceResponse {
     pub subject: Option<types::Reference>,
 
     /// Encounter during which the response was returned
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r5::resources::Encounter>>,
 
     /// When the guidance response was processed
     pub occurrence_date_time: Option<types::DateTime>,
@@ -129,7 +129,7 @@ pub struct GuidanceResponse {
     pub occurrence_date_time_ext: Option<types::Element>,
 
     /// Device returning the guidance
-    pub performer: Option<types::Reference>,
+    pub performer: Option<types::Reference<crate::r5::resources::Device>>,
 
     /// Why guidance is needed
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -140,10 +140,10 @@ pub struct GuidanceResponse {
     pub note: Vec<types::Annotation>,
 
     /// Reference to an OperationOutcome containing messages resulting from the evaluation of the artifact or artifacts
-    pub evaluation_message: Option<types::Reference>,
+    pub evaluation_message: Option<types::Reference<crate::r5::resources::OperationOutcome>>,
 
     /// Reference to a Parameters resource containing the output parameters of the evaluation, if any
-    pub output_parameters: Option<types::Reference>,
+    pub output_parameters: Option<types::Reference<crate::r5::resources::Parameters>>,
 
     /// Proposed actions resulting from the evaluation, such as RequestGroup resources, if any
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

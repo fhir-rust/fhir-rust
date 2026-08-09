@@ -115,20 +115,22 @@ pub struct MedicinalProduct {
 
     /// Pharmaceutical aspects of product
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub pharmaceutical_product: Vec<types::Reference>,
+    pub pharmaceutical_product:
+        Vec<types::Reference<crate::r4::resources::MedicinalProductPharmaceutical>>,
 
     /// Package representation for the product
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub packaged_medicinal_product: Vec<types::Reference>,
+    pub packaged_medicinal_product:
+        Vec<types::Reference<crate::r4::resources::MedicinalProductPackaged>>,
 
     /// Supporting documentation, typically for regulatory submission
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub attached_document: Vec<types::Reference>,
+    pub attached_document: Vec<types::Reference<crate::r4::resources::DocumentReference>>,
 
     /// A master file for to the medicinal product (e.g. Pharmacovigilance
     /// System Master File)
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub master_file: Vec<types::Reference>,
+    pub master_file: Vec<types::Reference<crate::r4::resources::DocumentReference>>,
 
     /// A product specific contact, person (in a role), or an organization
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -136,7 +138,7 @@ pub struct MedicinalProduct {
 
     /// Clinical trials or studies that this product is involved in
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub clinical_trial: Vec<types::Reference>,
+    pub clinical_trial: Vec<types::Reference<crate::r4::resources::ResearchStudy>>,
 
     /// The product's name, including full name and possibly coded parts
     pub name: ::vec1::Vec1<MedicinalProductName>,
@@ -211,10 +213,10 @@ pub struct MedicinalProductManufacturingBusinessOperation {
 
     /// The manufacturer or establishment associated with the process
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub manufacturer: Vec<types::Reference>,
+    pub manufacturer: Vec<types::Reference<crate::r4::resources::Organization>>,
 
     /// A regulator which oversees the operation
-    pub regulator: Option<types::Reference>,
+    pub regulator: Option<types::Reference<crate::r4::resources::Organization>>,
 }
 
 /// The product's name, including full name and possibly coded parts.

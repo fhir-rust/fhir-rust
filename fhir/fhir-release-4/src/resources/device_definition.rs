@@ -143,7 +143,7 @@ pub struct DeviceDefinition {
     pub property: Vec<DeviceDefinitionProperty>,
 
     /// Organization responsible for device
-    pub owner: Option<types::Reference>,
+    pub owner: Option<types::Reference<crate::r4::resources::Organization>>,
 
     /// Details for human/organization for support
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -173,7 +173,7 @@ pub struct DeviceDefinition {
     pub quantity: Option<types::Quantity>,
 
     /// The parent device it can be part of
-    pub parent_device: Option<types::Reference>,
+    pub parent_device: Option<types::Reference<crate::r4::resources::DeviceDefinition>>,
 
     /// A substance used to create the material(s) of which the device is made
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

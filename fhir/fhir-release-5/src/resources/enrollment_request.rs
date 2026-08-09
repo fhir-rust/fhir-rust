@@ -109,16 +109,16 @@ pub struct EnrollmentRequest {
     pub created_ext: Option<types::Element>,
 
     /// The insurer that is to be notified and expected to act on this enrollment request.
-    pub insurer: Option<types::Reference>,
+    pub insurer: Option<types::Reference<crate::r5::resources::Organization>>,
 
     /// The practitioner or organization who is responsible for submitting the request.
     pub provider: Option<types::Reference>,
 
     /// A reference to the subject (typically a [`Patient`](crate::r5::resources::patient::Patient)) to be enrolled.
-    pub candidate: Option<types::Reference>,
+    pub candidate: Option<types::Reference<crate::r5::resources::Patient>>,
 
     /// A reference to the specific coverage under which enrollment is to be applied.
-    pub coverage: Option<types::Reference>,
+    pub coverage: Option<types::Reference<crate::r5::resources::Coverage>>,
 }
 
 #[cfg(test)]

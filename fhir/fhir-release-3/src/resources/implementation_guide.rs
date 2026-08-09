@@ -277,7 +277,7 @@ pub struct ImplementationGuideGlobal {
     pub type_ext: Option<types::Element>,
 
     /// Profile that all resources must conform to
-    pub profile: types::Reference,
+    pub profile: types::Reference<crate::r3::resources::StructureDefinition>,
 }
 
 /// A logical group of resources. Logical groups can be used when building
@@ -399,7 +399,7 @@ pub struct ImplementationGuidePackageResource {
     pub source: Option<ImplementationGuidePackageResourceSource>,
 
     /// Resource this is an example of (if applicable)
-    pub example_for: Option<types::Reference>,
+    pub example_for: Option<types::Reference<crate::r3::resources::StructureDefinition>>,
 }
 
 /// A page / section in the implementation guide. The root page is the

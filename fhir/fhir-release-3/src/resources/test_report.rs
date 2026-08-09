@@ -93,7 +93,7 @@ pub struct TestReport {
 
     /// Reference to the version-specific TestScript that was executed to
     /// produce this TestReport
-    pub test_script: types::Reference,
+    pub test_script: types::Reference<crate::r3::resources::TestScript>,
 
     /// pass | fail | pending
     pub result: crate::coded::Coded<crate::r3::codes::ReportResultCodes>,

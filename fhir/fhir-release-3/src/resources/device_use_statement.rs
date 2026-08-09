@@ -107,7 +107,7 @@ pub struct DeviceUseStatement {
     pub source: Option<types::Reference>,
 
     /// Reference to device used
-    pub device: types::Reference,
+    pub device: types::Reference<crate::r3::resources::Device>,
 
     /// Why device was used
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

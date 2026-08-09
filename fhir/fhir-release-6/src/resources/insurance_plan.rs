@@ -83,15 +83,15 @@ pub struct InsurancePlan {
     pub r#type: Option<types::CodeableConcept>,
 
     /// The product that this plan is available under
-    pub product: Option<types::Reference>,
+    pub product: Option<types::Reference<crate::r6::resources::InsuranceProduct>>,
 
     /// Where product-plan applies
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub coverage_area: Vec<types::Reference>,
+    pub coverage_area: Vec<types::Reference<crate::r6::resources::Location>>,
 
     /// What networks provide coverage
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub network: Vec<types::Reference>,
+    pub network: Vec<types::Reference<crate::r6::resources::Organization>>,
 
     /// Overall costs
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

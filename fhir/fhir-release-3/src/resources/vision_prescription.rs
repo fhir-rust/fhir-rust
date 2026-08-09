@@ -86,10 +86,10 @@ pub struct VisionPrescription {
     pub status_ext: Option<types::Element>,
 
     /// Who prescription is for
-    pub patient: Option<types::Reference>,
+    pub patient: Option<types::Reference<crate::r3::resources::Patient>>,
 
     /// Created during encounter / admission / stay
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r3::resources::Encounter>>,
 
     /// When prescription was authorized
     pub date_written: Option<types::DateTime>,
@@ -99,7 +99,7 @@ pub struct VisionPrescription {
     pub date_written_ext: Option<types::Element>,
 
     /// Who authorizes the vision product
-    pub prescriber: Option<types::Reference>,
+    pub prescriber: Option<types::Reference<crate::r3::resources::Practitioner>>,
 
     /// Reason or indication for writing the prescription
     /// The `VisionPrescription.reason[x]` choice element (0..1); see [`VisionPrescriptionReason`].

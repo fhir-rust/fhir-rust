@@ -75,7 +75,7 @@ pub struct BodySite {
     pub modifier_extension: Vec<types::Extension>,
 
     /// Patient
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r2::resources::Patient>,
 
     /// Bodysite identifier
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

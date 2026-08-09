@@ -87,11 +87,11 @@ pub struct ResearchStudy {
 
     /// Steps followed in executing study
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub protocol: Vec<types::Reference>,
+    pub protocol: Vec<types::Reference<crate::r3::resources::PlanDefinition>>,
 
     /// Part of larger study
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub part_of: Vec<types::Reference>,
+    pub part_of: Vec<types::Reference<crate::r3::resources::ResearchStudy>>,
 
     /// draft | in-progress | suspended | stopped | completed |
     /// entered-in-error
@@ -134,20 +134,20 @@ pub struct ResearchStudy {
 
     /// Inclusion & exclusion criteria
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub enrollment: Vec<types::Reference>,
+    pub enrollment: Vec<types::Reference<crate::r3::resources::Group>>,
 
     /// When the study began and ended
     pub period: Option<types::Period>,
 
     /// Organization responsible for the study
-    pub sponsor: Option<types::Reference>,
+    pub sponsor: Option<types::Reference<crate::r3::resources::Organization>>,
 
     /// The individual responsible for the study
-    pub principal_investigator: Option<types::Reference>,
+    pub principal_investigator: Option<types::Reference<crate::r3::resources::Practitioner>>,
 
     /// Location involved in study execution
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub site: Vec<types::Reference>,
+    pub site: Vec<types::Reference<crate::r3::resources::Location>>,
 
     /// Reason for terminating study early
     pub reason_stopped: Option<types::CodeableConcept>,

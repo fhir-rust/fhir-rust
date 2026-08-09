@@ -138,7 +138,7 @@ pub struct RequestGroup {
     pub subject: Option<types::Reference>,
 
     /// Created as part of
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r4::resources::Encounter>>,
 
     /// When the request group was authored
     pub authored_on: Option<types::DateTime>,

@@ -110,7 +110,7 @@ pub struct Observation {
     pub focus: Vec<types::Reference>,
 
     /// Healthcare event during which this observation is made
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r4::resources::Encounter>>,
 
     /// Clinically relevant time/time-period for observation
     /// The `Observation.effective[x]` choice element (0..1); see [`ObservationEffective`].
@@ -151,7 +151,7 @@ pub struct Observation {
     pub method: Option<types::CodeableConcept>,
 
     /// Specimen used for this observation
-    pub specimen: Option<types::Reference>,
+    pub specimen: Option<types::Reference<crate::r4::resources::Specimen>>,
 
     /// (Measurement) Device
     pub device: Option<types::Reference>,

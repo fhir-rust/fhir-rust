@@ -173,11 +173,11 @@ pub struct MedicinalProductDefinition {
 
     /// Additional documentation about the medicinal product
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub attached_document: Vec<types::Reference>,
+    pub attached_document: Vec<types::Reference<crate::r5::resources::DocumentReference>>,
 
     /// A master file for the medicinal product (e.g. Pharmacovigilance System Master File)
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub master_file: Vec<types::Reference>,
+    pub master_file: Vec<types::Reference<crate::r5::resources::DocumentReference>>,
 
     /// A product specific contact, person (in a role), or an organization
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -185,7 +185,7 @@ pub struct MedicinalProductDefinition {
 
     /// Clinical trials or studies that this product is involved in
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub clinical_trial: Vec<types::Reference>,
+    pub clinical_trial: Vec<types::Reference<crate::r5::resources::ResearchStudy>>,
 
     /// A code that this product is known by, within some formal terminology
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -477,7 +477,7 @@ pub struct MedicinalProductDefinitionOperation {
 
     /// The organization responsible for the particular process, e.g. the manufacturer or importer
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub organization: Vec<types::Reference>,
+    pub organization: Vec<types::Reference<crate::r5::resources::Organization>>,
 
     /// Specifies whether this process is considered proprietary or confidential
     pub confidentiality_indicator: Option<types::CodeableConcept>,

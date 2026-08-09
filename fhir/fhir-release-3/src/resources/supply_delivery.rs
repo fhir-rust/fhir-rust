@@ -79,7 +79,7 @@ pub struct SupplyDelivery {
 
     /// Fulfills plan, proposal or order
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub based_on: Vec<types::Reference>,
+    pub based_on: Vec<types::Reference<crate::r3::resources::SupplyRequest>>,
 
     /// Part of referenced event
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -93,7 +93,7 @@ pub struct SupplyDelivery {
     pub status_ext: Option<types::Element>,
 
     /// Patient for whom the item is supplied
-    pub patient: Option<types::Reference>,
+    pub patient: Option<types::Reference<crate::r3::resources::Patient>>,
 
     /// Category of dispense event
     pub r#type: Option<types::CodeableConcept>,
@@ -110,11 +110,11 @@ pub struct SupplyDelivery {
     pub supplier: Option<types::Reference>,
 
     /// Where the Supply was sent
-    pub destination: Option<types::Reference>,
+    pub destination: Option<types::Reference<crate::r3::resources::Location>>,
 
     /// Who collected the Supply
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub receiver: Vec<types::Reference>,
+    pub receiver: Vec<types::Reference<crate::r3::resources::Practitioner>>,
 }
 
 /// The item that is being delivered or has been supplied.

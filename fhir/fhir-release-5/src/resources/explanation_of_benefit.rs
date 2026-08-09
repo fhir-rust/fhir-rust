@@ -117,7 +117,7 @@ pub struct ExplanationOfBenefit {
     #[serde(rename = "_use")]
     pub use_ext: Option<types::Element>,
     /// Reference to the patient who is the recipient of the products and services
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r5::resources::Patient>,
     /// Relevant time frame for the claim
     pub billable_period: Option<types::Period>,
     /// Response creation date
@@ -128,7 +128,7 @@ pub struct ExplanationOfBenefit {
     /// Author of the claim
     pub enterer: Option<types::Reference>,
     /// Party responsible for reimbursement
-    pub insurer: Option<types::Reference>,
+    pub insurer: Option<types::Reference<crate::r5::resources::Organization>>,
     /// Party responsible for the claim
     pub provider: Option<types::Reference>,
     /// Desired processing urgency
@@ -143,23 +143,23 @@ pub struct ExplanationOfBenefit {
     /// Prescription authorizing services or products
     pub prescription: Option<types::Reference>,
     /// Original prescription if superceded by fulfiller
-    pub original_prescription: Option<types::Reference>,
+    pub original_prescription: Option<types::Reference<crate::r5::resources::MedicationRequest>>,
     /// Event information
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub event: Vec<ExplanationOfBenefitEvent>,
     /// Recipient of benefits payable
     pub payee: Option<ExplanationOfBenefitPayee>,
     /// Treatment Referral
-    pub referral: Option<types::Reference>,
+    pub referral: Option<types::Reference<crate::r5::resources::ServiceRequest>>,
     /// Encounters associated with the listed treatments
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub encounter: Vec<types::Reference>,
+    pub encounter: Vec<types::Reference<crate::r5::resources::Encounter>>,
     /// Servicing Facility
     pub facility: Option<types::Reference>,
     /// Reference to the Claim resource that this ExplanationOfBenefit is the outcome of
-    pub claim: Option<types::Reference>,
+    pub claim: Option<types::Reference<crate::r5::resources::Claim>>,
     /// Claim response reference
-    pub claim_response: Option<types::Reference>,
+    pub claim_response: Option<types::Reference<crate::r5::resources::ClaimResponse>>,
     /// The processing outcome of the adjudication: queued | complete | error | partial
     pub outcome: crate::r5::coded::Coded<crate::r5::codes::ClaimOutcome>,
     /// Primitive extension sibling for [`outcome`](Self::outcome) (FHIR `_outcome`).
@@ -267,7 +267,7 @@ pub struct ExplanationOfBenefitRelated {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub modifier_extension: Vec<types::Extension>,
     /// Reference to the related claim
-    pub claim: Option<types::Reference>,
+    pub claim: Option<types::Reference<crate::r5::resources::Claim>>,
     /// How the reference claim is related
     pub relationship: Option<types::CodeableConcept>,
     /// File or case reference
@@ -537,7 +537,7 @@ pub struct ExplanationOfBenefitProcedure {
     pub procedure: Option<ExplanationOfBenefitProcedureProcedure>,
     /// Unique device identifier
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub udi: Vec<types::Reference>,
+    pub udi: Vec<types::Reference<crate::r5::resources::Device>>,
 }
 
 /// Patient insurance information for adjudication.
@@ -576,7 +576,7 @@ pub struct ExplanationOfBenefitInsurance {
     #[serde(rename = "_focal")]
     pub focal_ext: Option<types::Element>,
     /// Insurance information
-    pub coverage: types::Reference,
+    pub coverage: types::Reference<crate::r5::resources::Coverage>,
     /// Prior authorization reference number
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub pre_auth_ref: Vec<types::String>,
@@ -734,13 +734,13 @@ pub struct ExplanationOfBenefitItem {
     pub net: Option<types::Money>,
     /// Unique device identifier
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub udi: Vec<types::Reference>,
+    pub udi: Vec<types::Reference<crate::r5::resources::Device>>,
     /// Anatomical location
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub body_site: Vec<ExplanationOfBenefitItemBodySite>,
     /// Encounters associated with the listed treatments
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub encounter: Vec<types::Reference>,
+    pub encounter: Vec<types::Reference<crate::r5::resources::Encounter>>,
     /// Applicable note numbers
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub note_number: Vec<types::PositiveInt>,
@@ -941,7 +941,7 @@ pub struct ExplanationOfBenefitItemDetail {
     pub net: Option<types::Money>,
     /// Unique device identifier
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub udi: Vec<types::Reference>,
+    pub udi: Vec<types::Reference<crate::r5::resources::Device>>,
     /// Applicable note numbers
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub note_number: Vec<types::PositiveInt>,
@@ -1028,7 +1028,7 @@ pub struct ExplanationOfBenefitItemDetailSubDetail {
     pub net: Option<types::Money>,
     /// Unique device identifier
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub udi: Vec<types::Reference>,
+    pub udi: Vec<types::Reference<crate::r5::resources::Device>>,
     /// Applicable note numbers
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub note_number: Vec<types::PositiveInt>,

@@ -140,7 +140,7 @@ pub struct MedicationRequest {
     pub requester: Option<MedicationRequestRequester>,
 
     /// Person who entered the request
-    pub recorder: Option<types::Reference>,
+    pub recorder: Option<types::Reference<crate::r3::resources::Practitioner>>,
 
     /// Reason or indication for writing the prescription
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -166,15 +166,15 @@ pub struct MedicationRequest {
     pub substitution: Option<MedicationRequestSubstitution>,
 
     /// An order/prescription that is being replaced
-    pub prior_prescription: Option<types::Reference>,
+    pub prior_prescription: Option<types::Reference<crate::r3::resources::MedicationRequest>>,
 
     /// Clinical Issue with action
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub detected_issue: Vec<types::Reference>,
+    pub detected_issue: Vec<types::Reference<crate::r3::resources::DetectedIssue>>,
 
     /// A list of events of interest in the lifecycle
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub event_history: Vec<types::Reference>,
+    pub event_history: Vec<types::Reference<crate::r3::resources::Provenance>>,
 }
 
 /// Indicates the specific details for the dispense or medication supply part
@@ -234,7 +234,7 @@ pub struct MedicationRequestDispenseRequest {
     pub expected_supply_duration: Option<types::Duration>,
 
     /// Intended dispenser
-    pub performer: Option<types::Reference>,
+    pub performer: Option<types::Reference<crate::r3::resources::Organization>>,
 }
 
 /// The individual, organization or device that initiated the request and has
@@ -277,7 +277,7 @@ pub struct MedicationRequestRequester {
     pub agent: types::Reference,
 
     /// Organization agent is acting for
-    pub on_behalf_of: Option<types::Reference>,
+    pub on_behalf_of: Option<types::Reference<crate::r3::resources::Organization>>,
 }
 
 /// Indicates whether or not substitution can or should be part of the

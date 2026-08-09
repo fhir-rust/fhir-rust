@@ -71,7 +71,7 @@ pub struct ImagingManifest {
     pub identifier: Option<types::Identifier>,
 
     /// Patient of the selected objects
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r3::resources::Patient>,
 
     /// Time when the selection of instances was made
     pub authoring_time: Option<types::DateTime>,
@@ -131,11 +131,11 @@ pub struct ImagingManifestStudy {
     pub uid_ext: Option<types::Element>,
 
     /// Reference to ImagingStudy
-    pub imaging_study: Option<types::Reference>,
+    pub imaging_study: Option<types::Reference<crate::r3::resources::ImagingStudy>>,
 
     /// Study access service endpoint
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub endpoint: Vec<types::Reference>,
+    pub endpoint: Vec<types::Reference<crate::r3::resources::Endpoint>>,
 
     /// Series identity of the selected instances
     pub series: ::vec1::Vec1<ImagingManifestStudySeries>,
@@ -179,7 +179,7 @@ pub struct ImagingManifestStudySeries {
 
     /// Series access endpoint
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub endpoint: Vec<types::Reference>,
+    pub endpoint: Vec<types::Reference<crate::r3::resources::Endpoint>>,
 
     /// The selected instance
     pub instance: ::vec1::Vec1<ImagingManifestStudySeriesInstance>,

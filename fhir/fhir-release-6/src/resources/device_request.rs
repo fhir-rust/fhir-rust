@@ -105,7 +105,7 @@ pub struct DeviceRequest {
 
     /// What request replaces
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub replaces: Vec<types::Reference>,
+    pub replaces: Vec<types::Reference<crate::r6::resources::DeviceRequest>>,
 
     /// Identifier of composite request
     pub group_identifier: Option<types::Identifier>,
@@ -158,7 +158,7 @@ pub struct DeviceRequest {
     pub subject: types::Reference,
 
     /// Encounter motivating request
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r6::resources::Encounter>>,
 
     /// Desired time or schedule for use
     /// The `DeviceRequest.occurrence[x]` choice element (0..1); see [`DeviceRequestOccurrence`].
@@ -206,7 +206,7 @@ pub struct DeviceRequest {
 
     /// Request provenance
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub relevant_history: Vec<types::Reference>,
+    pub relevant_history: Vec<types::Reference<crate::r6::resources::Provenance>>,
 }
 
 /// Specific parameters for the ordered item. For example, the prism value for

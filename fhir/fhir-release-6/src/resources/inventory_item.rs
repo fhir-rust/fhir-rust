@@ -329,7 +329,7 @@ pub struct InventoryItemInstance {
     pub subject: Option<types::Reference>,
 
     /// The location that the item is associated with
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r6::resources::Location>>,
 }
 
 /// The item name(s) - the brand name, or common name, functional name, generic
@@ -425,7 +425,7 @@ pub struct InventoryItemResponsibleOrganization {
     pub role: types::CodeableConcept,
 
     /// An organization that is associated with the item
-    pub organization: types::Reference,
+    pub organization: types::Reference<crate::r6::resources::Organization>,
 }
 
 /// The `InventoryItem.characteristic.value[x]` choice element (see `spec/11-choice-types.md`).

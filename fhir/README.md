@@ -274,6 +274,7 @@ cargo run --example primitive_extensions  # _field primitive extensions
 cargo run --example operation_outcome     # validation → OperationOutcome
 cargo run --example extensions            # ExtensionExt: get/set extensions
 cargo run --example transaction_bundle    # build/read a transaction Bundle
+cargo run --example typed_references      # Reference<Patient>: typed targets
 cargo run --example client_crud --features client  # REST CRUD vs HAPI
 
 cargo run --example r4_patient --features r4              # the same, in R4

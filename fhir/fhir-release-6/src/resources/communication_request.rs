@@ -84,7 +84,7 @@ pub struct CommunicationRequest {
 
     /// Request(s) replaced by this request
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub replaces: Vec<types::Reference>,
+    pub replaces: Vec<types::Reference<crate::r6::resources::CommunicationRequest>>,
 
     /// Composite request this is part of
     pub group_identifier: Option<types::Identifier>,
@@ -138,7 +138,7 @@ pub struct CommunicationRequest {
     pub about: Vec<types::Reference>,
 
     /// The Encounter during which this CommunicationRequest was created
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r6::resources::Encounter>>,
 
     /// Message payload
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

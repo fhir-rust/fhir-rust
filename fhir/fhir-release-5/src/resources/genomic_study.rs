@@ -120,7 +120,7 @@ pub struct GenomicStudy {
     pub subject: types::Reference,
 
     /// The healthcare event with which this genomics study is associated
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r5::resources::Encounter>>,
 
     /// When the genomic study was started
     pub start_date: Option<types::DateTime>,
@@ -246,7 +246,7 @@ pub struct GenomicStudyAnalysis {
 
     /// The specimen used in the analysis event
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub specimen: Vec<types::Reference>,
+    pub specimen: Vec<types::Reference<crate::r5::resources::Specimen>>,
 
     /// The date of the analysis event
     pub date: Option<types::DateTime>,
@@ -323,7 +323,7 @@ pub struct GenomicStudyAnalysisInput {
     pub modifier_extension: Vec<types::Extension>,
 
     /// File containing input data
-    pub file: Option<types::Reference>,
+    pub file: Option<types::Reference<crate::r5::resources::DocumentReference>>,
 
     /// Type of input data (e.g., BAM, CRAM, or FASTA)
     pub r#type: Option<types::CodeableConcept>,
@@ -369,7 +369,7 @@ pub struct GenomicStudyAnalysisOutput {
     pub modifier_extension: Vec<types::Extension>,
 
     /// File containing output data
-    pub file: Option<types::Reference>,
+    pub file: Option<types::Reference<crate::r5::resources::DocumentReference>>,
 
     /// Type of output data (e.g., VCF, MAF, or BAM)
     pub r#type: Option<types::CodeableConcept>,
@@ -455,7 +455,7 @@ pub struct GenomicStudyAnalysisDevice {
     pub modifier_extension: Vec<types::Extension>,
 
     /// Device used for the analysis
-    pub device: Option<types::Reference>,
+    pub device: Option<types::Reference<crate::r5::resources::Device>>,
 
     /// Specific function for the device used for the analysis
     pub function: Option<types::CodeableConcept>,

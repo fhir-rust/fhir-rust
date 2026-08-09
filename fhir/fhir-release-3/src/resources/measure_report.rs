@@ -92,10 +92,10 @@ pub struct MeasureReport {
     pub type_ext: Option<types::Element>,
 
     /// What measure was evaluated
-    pub measure: types::Reference,
+    pub measure: types::Reference<crate::r3::resources::Measure>,
 
     /// What patient the report is for
-    pub patient: Option<types::Reference>,
+    pub patient: Option<types::Reference<crate::r3::resources::Patient>>,
 
     /// When the report was generated
     pub date: Option<types::DateTime>,
@@ -105,7 +105,7 @@ pub struct MeasureReport {
     pub date_ext: Option<types::Element>,
 
     /// Who is reporting the data
-    pub reporting_organization: Option<types::Reference>,
+    pub reporting_organization: Option<types::Reference<crate::r3::resources::Organization>>,
 
     /// What period the report covers
     pub period: types::Period,
@@ -115,7 +115,7 @@ pub struct MeasureReport {
     pub group: Vec<MeasureReportGroup>,
 
     /// What data was evaluated to produce the measure score
-    pub evaluated_resources: Option<types::Reference>,
+    pub evaluated_resources: Option<types::Reference<crate::r3::resources::Bundle>>,
 }
 
 /// The results of the calculation, one for each population group in the
@@ -225,7 +225,7 @@ pub struct MeasureReportGroupPopulation {
     pub count_ext: Option<types::Element>,
 
     /// For patient-list reports, the patients in this population
-    pub patients: Option<types::Reference>,
+    pub patients: Option<types::Reference<crate::r3::resources::List>>,
 }
 
 /// When a measure includes multiple stratifiers, there will be a stratifier
@@ -380,7 +380,7 @@ pub struct MeasureReportGroupStratifierStratumPopulation {
     pub count_ext: Option<types::Element>,
 
     /// For patient-list reports, the patients in this population
-    pub patients: Option<types::Reference>,
+    pub patients: Option<types::Reference<crate::r3::resources::List>>,
 }
 
 #[cfg(test)]

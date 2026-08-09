@@ -237,7 +237,7 @@ pub struct PractitionerQualification {
     pub period: Option<types::Period>,
 
     /// Organization that regulates and issues the qualification
-    pub issuer: Option<types::Reference>,
+    pub issuer: Option<types::Reference<crate::r6::resources::Organization>>,
 }
 
 /// The `Practitioner.deceased[x]` choice element (see `spec/11-choice-types.md`).

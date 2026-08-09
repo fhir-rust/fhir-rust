@@ -100,7 +100,7 @@ pub struct FamilyMemberHistory {
     pub not_done_reason: Option<types::CodeableConcept>,
 
     /// Patient history is about
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r3::resources::Patient>,
 
     /// When history was captured/updated
     pub date: Option<types::DateTime>,

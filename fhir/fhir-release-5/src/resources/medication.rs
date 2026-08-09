@@ -112,7 +112,8 @@ pub struct Medication {
     pub status_ext: Option<types::Element>,
 
     /// Organization that has authorization to market medication
-    pub marketing_authorization_holder: Option<types::Reference>,
+    pub marketing_authorization_holder:
+        Option<types::Reference<crate::r5::resources::Organization>>,
 
     /// powder | tablets | capsule +
     pub dose_form: Option<types::CodeableConcept>,
@@ -128,7 +129,7 @@ pub struct Medication {
     pub batch: Option<MedicationBatch>,
 
     /// Knowledge about this medication
-    pub definition: Option<types::Reference>,
+    pub definition: Option<types::Reference<crate::r5::resources::MedicationKnowledge>>,
 }
 
 /// Active or inactive ingredient contained in the medication, identifying the

@@ -79,7 +79,7 @@ pub struct EligibilityResponse {
     pub identifier: Vec<types::Identifier>,
 
     /// Claim reference
-    pub request: Option<types::Reference>,
+    pub request: Option<types::Reference<crate::r2::resources::EligibilityRequest>>,
 
     /// complete | error
     pub outcome: Option<crate::coded::Coded<crate::r2::codes::RemittanceOutcome>>,
@@ -109,13 +109,13 @@ pub struct EligibilityResponse {
     pub created_ext: Option<types::Element>,
 
     /// Insurer
-    pub organization: Option<types::Reference>,
+    pub organization: Option<types::Reference<crate::r2::resources::Organization>>,
 
     /// Responsible practitioner
-    pub request_provider: Option<types::Reference>,
+    pub request_provider: Option<types::Reference<crate::r2::resources::Practitioner>>,
 
     /// Responsible organization
-    pub request_organization: Option<types::Reference>,
+    pub request_organization: Option<types::Reference<crate::r2::resources::Organization>>,
 }
 
 #[cfg(test)]

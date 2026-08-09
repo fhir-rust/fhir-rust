@@ -137,16 +137,16 @@ pub struct MeasureReport {
     pub reporter: Option<types::Reference>,
 
     /// What vendor prepared the data
-    pub reporting_vendor: Option<types::Reference>,
+    pub reporting_vendor: Option<types::Reference<crate::r5::resources::Organization>>,
 
     /// Where the reported data is from
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r5::resources::Location>>,
 
     /// The reporting period over which the measure was evaluated.
     pub period: types::Period,
 
     /// What parameters were provided to the report
-    pub input_parameters: Option<types::Reference>,
+    pub input_parameters: Option<types::Reference<crate::r5::resources::Parameters>>,
 
     /// What scoring method (e.g. proportion, ratio, continuous-variable)
     pub scoring: Option<types::CodeableConcept>,
@@ -274,14 +274,14 @@ pub struct MeasureReportGroupPopulation {
     pub count_ext: Option<types::Element>,
 
     /// For subject-list reports, the subject results in this population
-    pub subject_results: Option<types::Reference>,
+    pub subject_results: Option<types::Reference<crate::r5::resources::List>>,
 
     /// For subject-list reports, a subject result in this population
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub subject_report: Vec<types::Reference>,
+    pub subject_report: Vec<types::Reference<crate::r5::resources::MeasureReport>>,
 
     /// What individual(s) in the population
-    pub subjects: Option<types::Reference>,
+    pub subjects: Option<types::Reference<crate::r5::resources::Group>>,
 }
 
 /// Stratification results.
@@ -478,14 +478,14 @@ pub struct MeasureReportGroupStratifierStratumPopulation {
     pub count_ext: Option<types::Element>,
 
     /// For subject-list reports, the subject results in this population
-    pub subject_results: Option<types::Reference>,
+    pub subject_results: Option<types::Reference<crate::r5::resources::List>>,
 
     /// For subject-list reports, a subject result in this population
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub subject_report: Vec<types::Reference>,
+    pub subject_report: Vec<types::Reference<crate::r5::resources::MeasureReport>>,
 
     /// What individual(s) in the population
-    pub subjects: Option<types::Reference>,
+    pub subjects: Option<types::Reference<crate::r5::resources::Group>>,
 }
 
 #[cfg(test)]

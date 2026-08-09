@@ -80,7 +80,7 @@ pub struct RelatedPerson {
     pub identifier: Vec<types::Identifier>,
 
     /// The patient this person is related to
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r2::resources::Patient>,
 
     /// The nature of the relationship
     pub relationship: Option<types::CodeableConcept>,

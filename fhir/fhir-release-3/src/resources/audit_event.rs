@@ -184,7 +184,7 @@ pub struct AuditEventAgent {
     pub requestor_ext: Option<types::Element>,
 
     /// Where
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r3::resources::Location>>,
 
     /// Policy that authorized event
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

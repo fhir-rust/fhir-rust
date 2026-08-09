@@ -87,10 +87,10 @@ pub struct NutritionOrder {
     pub status_ext: Option<types::Element>,
 
     /// The person who requires the diet, formula or nutritional supplement
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r3::resources::Patient>,
 
     /// The encounter associated with this nutrition order
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r3::resources::Encounter>>,
 
     /// Date and time the nutrition order was requested
     pub date_time: types::DateTime,
@@ -100,12 +100,12 @@ pub struct NutritionOrder {
     pub date_time_ext: Option<types::Element>,
 
     /// Who ordered the diet, formula or nutritional supplement
-    pub orderer: Option<types::Reference>,
+    pub orderer: Option<types::Reference<crate::r3::resources::Practitioner>>,
 
     /// List of the patient's food and nutrition-related allergies and
     /// intolerances
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub allergy_intolerance: Vec<types::Reference>,
+    pub allergy_intolerance: Vec<types::Reference<crate::r3::resources::AllergyIntolerance>>,
 
     /// Order-specific modifier about the type of food that should be given
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

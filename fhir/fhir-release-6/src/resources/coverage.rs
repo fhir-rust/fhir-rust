@@ -111,7 +111,7 @@ pub struct Coverage {
     pub subscriber_id: Vec<types::Identifier>,
 
     /// Plan beneficiary
-    pub beneficiary: types::Reference,
+    pub beneficiary: types::Reference<crate::r6::resources::Patient>,
 
     /// Dependent number
     pub dependent: Option<types::String>,
@@ -127,7 +127,7 @@ pub struct Coverage {
     pub period: Option<types::Period>,
 
     /// Issuer of the policy
-    pub insurer: Option<types::Reference>,
+    pub insurer: Option<types::Reference<crate::r6::resources::Organization>>,
 
     /// Additional coverage classifications
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -160,10 +160,10 @@ pub struct Coverage {
 
     /// Contract details
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub contract: Vec<types::Reference>,
+    pub contract: Vec<types::Reference<crate::r6::resources::Contract>>,
 
     /// Insurance plan details
-    pub insurance_plan: Option<types::Reference>,
+    pub insurance_plan: Option<types::Reference<crate::r6::resources::InsurancePlan>>,
 }
 
 /// A suite of underwriter specific classifiers.

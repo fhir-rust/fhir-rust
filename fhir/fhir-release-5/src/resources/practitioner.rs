@@ -191,7 +191,7 @@ pub struct PractitionerQualification {
     pub period: Option<types::Period>,
 
     /// Organization that regulates and issues the qualification
-    pub issuer: Option<types::Reference>,
+    pub issuer: Option<types::Reference<crate::r5::resources::Organization>>,
 }
 
 /// A language which may be used to communicate with the practitioner about their

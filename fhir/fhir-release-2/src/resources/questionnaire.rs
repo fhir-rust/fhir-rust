@@ -282,7 +282,7 @@ pub struct QuestionnaireGroupQuestion {
     pub repeats_ext: Option<types::Element>,
 
     /// Valueset containing permitted answers
-    pub options: Option<types::Reference>,
+    pub options: Option<types::Reference<crate::r2::resources::ValueSet>>,
 
     /// Permitted answer
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

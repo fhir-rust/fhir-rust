@@ -161,7 +161,7 @@ pub struct NutritionOrder {
     pub subject: types::Reference,
 
     /// The encounter associated with this nutrition order
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r5::resources::Encounter>>,
 
     /// Information to support fulfilling of the nutrition order
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -182,7 +182,7 @@ pub struct NutritionOrder {
 
     /// References to the patient's food and nutrition-related allergies and intolerances that inform safe fulfillment
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub allergy_intolerance: Vec<types::Reference>,
+    pub allergy_intolerance: Vec<types::Reference<crate::r5::resources::AllergyIntolerance>>,
 
     /// Order-specific modifier about the type of food that should be given
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

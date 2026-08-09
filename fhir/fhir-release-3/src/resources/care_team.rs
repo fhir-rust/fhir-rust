@@ -116,11 +116,11 @@ pub struct CareTeam {
 
     /// Why the care team exists
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub reason_reference: Vec<types::Reference>,
+    pub reason_reference: Vec<types::Reference<crate::r3::resources::Condition>>,
 
     /// Organization responsible for the care team
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub managing_organization: Vec<types::Reference>,
+    pub managing_organization: Vec<types::Reference<crate::r3::resources::Organization>>,
 
     /// Comments made about the CareTeam
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -170,7 +170,7 @@ pub struct CareTeamParticipant {
     pub member: Option<types::Reference>,
 
     /// Organization of the practitioner
-    pub on_behalf_of: Option<types::Reference>,
+    pub on_behalf_of: Option<types::Reference<crate::r3::resources::Organization>>,
 
     /// Time period of participant
     pub period: Option<types::Period>,

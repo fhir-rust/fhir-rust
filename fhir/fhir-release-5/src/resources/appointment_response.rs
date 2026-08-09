@@ -101,7 +101,7 @@ pub struct AppointmentResponse {
     pub identifier: Vec<types::Identifier>,
 
     /// Reference to the parent `Appointment` this response relates to.
-    pub appointment: types::Reference,
+    pub appointment: types::Reference<crate::r5::resources::Appointment>,
 
     /// Set when this response proposes a different time than the one requested.
     pub proposed_new_time: Option<types::Boolean>,

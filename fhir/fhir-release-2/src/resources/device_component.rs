@@ -88,10 +88,10 @@ pub struct DeviceComponent {
     pub last_system_change_ext: Option<types::Element>,
 
     /// A source device of this component
-    pub source: Option<types::Reference>,
+    pub source: Option<types::Reference<crate::r2::resources::Device>>,
 
     /// Parent resource link
-    pub parent: Option<types::Reference>,
+    pub parent: Option<types::Reference<crate::r2::resources::DeviceComponent>>,
 
     /// Component operational status
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

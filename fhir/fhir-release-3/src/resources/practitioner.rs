@@ -172,7 +172,7 @@ pub struct PractitionerQualification {
     pub period: Option<types::Period>,
 
     /// Organization that regulates and issues the qualification
-    pub issuer: Option<types::Reference>,
+    pub issuer: Option<types::Reference<crate::r3::resources::Organization>>,
 }
 
 #[cfg(test)]

@@ -103,7 +103,7 @@ pub struct ServiceRequest {
 
     /// What request replaces
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub replaces: Vec<types::Reference>,
+    pub replaces: Vec<types::Reference<crate::r4::resources::ServiceRequest>>,
 
     /// Composite Request ID
     pub requisition: Option<types::Identifier>,
@@ -158,7 +158,7 @@ pub struct ServiceRequest {
     pub subject: types::Reference,
 
     /// Encounter in which the request was created
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r4::resources::Encounter>>,
 
     /// When service should occur
     /// The `ServiceRequest.occurrence[x]` choice element (0..1); see [`ServiceRequestOccurrence`].
@@ -193,7 +193,7 @@ pub struct ServiceRequest {
 
     /// Requested location
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub location_reference: Vec<types::Reference>,
+    pub location_reference: Vec<types::Reference<crate::r4::resources::Location>>,
 
     /// Explanation/Justification for procedure or service
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -213,7 +213,7 @@ pub struct ServiceRequest {
 
     /// Procedure Samples
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub specimen: Vec<types::Reference>,
+    pub specimen: Vec<types::Reference<crate::r4::resources::Specimen>>,
 
     /// Location on Body
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -232,7 +232,7 @@ pub struct ServiceRequest {
 
     /// Request provenance
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub relevant_history: Vec<types::Reference>,
+    pub relevant_history: Vec<types::Reference<crate::r4::resources::Provenance>>,
 }
 
 /// The `ServiceRequest.quantity[x]` choice element (see `spec/11-choice-types.md`).

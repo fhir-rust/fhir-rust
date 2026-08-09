@@ -102,7 +102,7 @@ pub struct ManufacturedItemDefinition {
 
     /// Manufacturer of the item, one of several possible
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub manufacturer: Vec<types::Reference>,
+    pub manufacturer: Vec<types::Reference<crate::r6::resources::Organization>>,
 
     /// Allows specifying that an item is on the market for sale, or that it is
     /// not available, and the dates and locations associated

@@ -112,14 +112,14 @@ pub struct OrganizationAffiliation {
     pub period: Option<types::Period>,
 
     /// Reference to the primary Organization on whose behalf, or for which, the role is made available
-    pub organization: Option<types::Reference>,
+    pub organization: Option<types::Reference<crate::r5::resources::Organization>>,
 
     /// Reference to the Organization that provides or performs the role, such as delivering services or being a network member
-    pub participating_organization: Option<types::Reference>,
+    pub participating_organization: Option<types::Reference<crate::r5::resources::Organization>>,
 
     /// The network in which the participatingOrganization provides the role's services (if defined) at the indicated locations (if defined)
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub network: Vec<types::Reference>,
+    pub network: Vec<types::Reference<crate::r5::resources::Organization>>,
 
     /// Coded definition of the role the participatingOrganization plays with respect to the primary organization
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -131,11 +131,11 @@ pub struct OrganizationAffiliation {
 
     /// The location(s) at which the role occurs
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub location: Vec<types::Reference>,
+    pub location: Vec<types::Reference<crate::r5::resources::Location>>,
 
     /// Healthcare services provided through the role
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub healthcare_service: Vec<types::Reference>,
+    pub healthcare_service: Vec<types::Reference<crate::r5::resources::HealthcareService>>,
 
     /// Official contact details at the participatingOrganization relevant to this Affiliation
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -143,7 +143,7 @@ pub struct OrganizationAffiliation {
 
     /// Technical endpoints providing access to services operated for this role
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub endpoint: Vec<types::Reference>,
+    pub endpoint: Vec<types::Reference<crate::r5::resources::Endpoint>>,
 }
 
 #[cfg(test)]

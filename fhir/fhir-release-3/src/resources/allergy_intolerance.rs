@@ -119,7 +119,7 @@ pub struct AllergyIntolerance {
     pub code: Option<types::CodeableConcept>,
 
     /// Who the sensitivity is for
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r3::resources::Patient>,
 
     /// When allergy or intolerance was identified
     /// The `AllergyIntolerance.onset[x]` choice element (0..1); see [`AllergyIntoleranceOnset`].

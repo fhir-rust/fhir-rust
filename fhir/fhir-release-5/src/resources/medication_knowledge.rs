@@ -110,7 +110,7 @@ pub struct MedicationKnowledge {
     pub status_ext: Option<types::Element>,
 
     /// Creator or owner of the knowledge or information about the medication
-    pub author: Option<types::Reference>,
+    pub author: Option<types::Reference<crate::r5::resources::Organization>>,
 
     /// Codes that identify the different jurisdictions for which the information of this resource was created
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -130,7 +130,7 @@ pub struct MedicationKnowledge {
 
     /// The set of medication resources that are associated with this medication
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub associated_medication: Vec<types::Reference>,
+    pub associated_medication: Vec<types::Reference<crate::r5::resources::Medication>>,
 
     /// Category of the medication or product
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -168,7 +168,7 @@ pub struct MedicationKnowledge {
 
     /// Potential clinical issue with or between medication(s), such as a known interaction, contraindication, or warning
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub clinical_use_issue: Vec<types::Reference>,
+    pub clinical_use_issue: Vec<types::Reference<crate::r5::resources::ClinicalUseDefinition>>,
 
     /// How the medication should be stored
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -212,7 +212,7 @@ pub struct MedicationKnowledgeRelatedMedicationKnowledge {
     pub r#type: types::CodeableConcept,
 
     /// Associated documentation about the associated medication knowledge
-    pub reference: vec1::Vec1<types::Reference>,
+    pub reference: vec1::Vec1<types::Reference<crate::r5::resources::MedicationKnowledge>>,
 }
 
 /// Associated documentation about the medication.
@@ -252,7 +252,7 @@ pub struct MedicationKnowledgeMonograph {
     pub r#type: Option<types::CodeableConcept>,
 
     /// Associated documentation about the medication
-    pub source: Option<types::Reference>,
+    pub source: Option<types::Reference<crate::r5::resources::DocumentReference>>,
 }
 
 /// The pricing of the medication.
@@ -597,7 +597,7 @@ pub struct MedicationKnowledgePackaging {
     pub cost: Vec<MedicationKnowledgeCost>,
 
     /// The packaged medication that is being priced
-    pub packaged_product: Option<types::Reference>,
+    pub packaged_product: Option<types::Reference<crate::r5::resources::PackagedProductDefinition>>,
 }
 
 /// How the medication should be stored.
@@ -726,7 +726,7 @@ pub struct MedicationKnowledgeRegulatory {
     pub modifier_extension: Vec<types::Extension>,
 
     /// Specifies the authority of the regulation
-    pub regulatory_authority: types::Reference,
+    pub regulatory_authority: types::Reference<crate::r5::resources::Organization>,
 
     /// Specifies if changes are allowed when dispensing a medication from a regulatory perspective
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -858,7 +858,7 @@ pub struct MedicationKnowledgeDefinitional {
 
     /// Definitional resources that provide more information about this medication
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub definition: Vec<types::Reference>,
+    pub definition: Vec<types::Reference<crate::r5::resources::MedicinalProductDefinition>>,
 
     /// powder | tablets | capsule +
     pub dose_form: Option<types::CodeableConcept>,

@@ -109,14 +109,14 @@ pub struct InsuranceProduct {
     pub period: Option<types::Period>,
 
     /// Product issuer
-    pub owned_by: Option<types::Reference>,
+    pub owned_by: Option<types::Reference<crate::r6::resources::Organization>>,
 
     /// Product administrator
-    pub administered_by: Option<types::Reference>,
+    pub administered_by: Option<types::Reference<crate::r6::resources::Organization>>,
 
     /// Where product applies
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub coverage_area: Vec<types::Reference>,
+    pub coverage_area: Vec<types::Reference<crate::r6::resources::Location>>,
 
     /// Official contact details relevant to the health insurance product
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -124,11 +124,11 @@ pub struct InsuranceProduct {
 
     /// Technical endpoint
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub endpoint: Vec<types::Reference>,
+    pub endpoint: Vec<types::Reference<crate::r6::resources::Endpoint>>,
 
     /// What networks are Included
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub network: Vec<types::Reference>,
+    pub network: Vec<types::Reference<crate::r6::resources::Organization>>,
 
     /// Coverage details
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -172,7 +172,7 @@ pub struct InsuranceProductCoverage {
 
     /// What networks provide coverage
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub network: Vec<types::Reference>,
+    pub network: Vec<types::Reference<crate::r6::resources::Organization>>,
 
     /// List of benefits
     pub benefit: ::vec1::Vec1<InsuranceProductCoverageBenefit>,
@@ -307,7 +307,7 @@ pub struct InsuranceProductRelated {
     pub modifier_extension: Vec<types::Extension>,
 
     /// Related Product reference
-    pub product: Option<types::Reference>,
+    pub product: Option<types::Reference<crate::r6::resources::InsuranceProduct>>,
 
     /// Relationship of this product to the related product
     pub relationship: Option<types::CodeableConcept>,

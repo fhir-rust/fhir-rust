@@ -125,11 +125,11 @@ pub struct Specimen {
 
     /// Specimen from which this specimen originated
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub parent: Vec<types::Reference>,
+    pub parent: Vec<types::Reference<crate::r5::resources::Specimen>>,
 
     /// Why the specimen was collected
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub request: Vec<types::Reference>,
+    pub request: Vec<types::Reference<crate::r5::resources::ServiceRequest>>,
 
     /// grouped | pooled
     pub combined: Option<crate::r5::coded::Coded<crate::r5::codes::SpecimenCombined>>,
@@ -267,7 +267,7 @@ pub struct SpecimenCollection {
     pub device: Option<types::CodeableReference>,
 
     /// The procedure that collects the specimen
-    pub procedure: Option<types::Reference>,
+    pub procedure: Option<types::Reference<crate::r5::resources::Procedure>>,
 
     /// Anatomical collection site
     pub body_site: Option<types::CodeableReference>,
@@ -325,7 +325,7 @@ pub struct SpecimenProcessing {
 
     /// Material used in the processing step
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub additive: Vec<types::Reference>,
+    pub additive: Vec<types::Reference<crate::r5::resources::Substance>>,
 
     /// The `Specimen.processing.time[x]` choice element (0..1); see [`SpecimenProcessingTime`].
     #[serde(flatten)]
@@ -369,10 +369,10 @@ pub struct SpecimenContainer {
     pub modifier_extension: Vec<types::Extension>,
 
     /// Device resource for the container
-    pub device: types::Reference,
+    pub device: types::Reference<crate::r5::resources::Device>,
 
     /// Where the container is
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r5::resources::Location>>,
 
     /// Quantity of specimen within container
     pub specimen_quantity: Option<types::Quantity>,

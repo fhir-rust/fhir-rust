@@ -75,7 +75,7 @@ pub struct DetectedIssue {
     pub modifier_extension: Vec<types::Extension>,
 
     /// Associated patient
-    pub patient: Option<types::Reference>,
+    pub patient: Option<types::Reference<crate::r2::resources::Patient>>,
 
     /// Issue Category, e.g. drug-drug, duplicate therapy, etc.
     pub category: Option<types::CodeableConcept>,
@@ -172,7 +172,7 @@ pub struct DetectedIssueMitigation {
     pub date_ext: Option<types::Element>,
 
     /// Who is committing?
-    pub author: Option<types::Reference>,
+    pub author: Option<types::Reference<crate::r2::resources::Practitioner>>,
 }
 
 #[cfg(test)]

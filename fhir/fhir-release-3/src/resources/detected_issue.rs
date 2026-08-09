@@ -95,7 +95,7 @@ pub struct DetectedIssue {
     pub severity_ext: Option<types::Element>,
 
     /// Associated patient
-    pub patient: Option<types::Reference>,
+    pub patient: Option<types::Reference<crate::r3::resources::Patient>>,
 
     /// When identified
     pub date: Option<types::DateTime>,
@@ -179,7 +179,7 @@ pub struct DetectedIssueMitigation {
     pub date_ext: Option<types::Element>,
 
     /// Who is committing?
-    pub author: Option<types::Reference>,
+    pub author: Option<types::Reference<crate::r3::resources::Practitioner>>,
 }
 
 #[cfg(test)]

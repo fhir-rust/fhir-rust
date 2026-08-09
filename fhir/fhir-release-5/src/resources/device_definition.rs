@@ -124,7 +124,7 @@ pub struct DeviceDefinition {
     pub part_number_ext: Option<types::Element>,
 
     /// Name of device manufacturer, as a reference to an Organization resource
-    pub manufacturer: Option<types::Reference>,
+    pub manufacturer: Option<types::Reference<crate::r5::resources::Organization>>,
 
     /// The name or names of the device as given by the manufacturer
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -173,7 +173,7 @@ pub struct DeviceDefinition {
     pub property: Vec<DeviceDefinitionProperty>,
 
     /// The organization responsible for device, typically the manufacturer or its authorized representative
-    pub owner: Option<types::Reference>,
+    pub owner: Option<types::Reference<crate::r5::resources::Organization>>,
 
     /// Details for human/organization for support
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -545,7 +545,7 @@ pub struct DeviceDefinitionHasPart {
     pub modifier_extension: Vec<types::Extension>,
 
     /// Reference to the part
-    pub reference: types::Reference,
+    pub reference: types::Reference<crate::r5::resources::DeviceDefinition>,
 
     /// Number of occurrences of the part
     pub count: Option<types::Integer>,
@@ -653,7 +653,7 @@ pub struct DeviceDefinitionPackagingDistributor {
 
     /// Distributor as an Organization resource
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub organization_reference: Vec<types::Reference>,
+    pub organization_reference: Vec<types::Reference<crate::r5::resources::Organization>>,
 }
 
 /// The version of the device or software.

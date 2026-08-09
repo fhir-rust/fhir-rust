@@ -120,7 +120,7 @@ pub struct Transport {
 
     /// Part of referenced event
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub part_of: Vec<types::Reference>,
+    pub part_of: Vec<types::Reference<crate::r5::resources::Transport>>,
 
     /// Current lifecycle state: in-progress | completed | abandoned | cancelled | planned | entered-in-error
     pub status: Option<crate::r5::coded::Coded<crate::r5::codes::TransportStatus>>,
@@ -159,7 +159,7 @@ pub struct Transport {
     pub r#for: Option<types::Reference>,
 
     /// Healthcare event during which this transport originated
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r5::resources::Encounter>>,
 
     /// Completion time of the event (the occurrence)
     pub completion_time: Option<types::DateTime>,
@@ -190,7 +190,7 @@ pub struct Transport {
     pub owner: Option<types::Reference>,
 
     /// The principal physical location where the transport is performed
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r5::resources::Location>>,
 
     /// Associated insurance coverage
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -202,7 +202,7 @@ pub struct Transport {
 
     /// Key events in history of the Transport
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub relevant_history: Vec<types::Reference>,
+    pub relevant_history: Vec<types::Reference<crate::r5::resources::Provenance>>,
 
     /// Constraints on fulfillment transports
     pub restriction: Option<TransportRestriction>,
@@ -216,16 +216,16 @@ pub struct Transport {
     pub output: Vec<TransportOutput>,
 
     /// The location to which the focus of the transport should be moved
-    pub requested_location: types::Reference,
+    pub requested_location: types::Reference<crate::r5::resources::Location>,
 
     /// The current physical location of the focus of the transport
-    pub current_location: types::Reference,
+    pub current_location: types::Reference<crate::r5::resources::Location>,
 
     /// The clinical or administrative reason the transport is needed
     pub reason: Option<types::CodeableReference>,
 
     /// Parent (or preceding) transport
-    pub history: Option<types::Reference>,
+    pub history: Option<types::Reference<crate::r5::resources::Transport>>,
 }
 
 /// Transport.restriction

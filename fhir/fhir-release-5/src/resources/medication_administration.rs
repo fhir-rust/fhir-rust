@@ -104,7 +104,7 @@ pub struct MedicationAdministration {
 
     /// Plan this is fulfilled by this administration
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub based_on: Vec<types::Reference>,
+    pub based_on: Vec<types::Reference<crate::r5::resources::CarePlan>>,
 
     /// Part of referenced event
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -131,7 +131,7 @@ pub struct MedicationAdministration {
     pub subject: types::Reference,
 
     /// Encounter administered as part of
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r5::resources::Encounter>>,
 
     /// Additional information to support administration
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -166,7 +166,7 @@ pub struct MedicationAdministration {
     pub reason: Vec<types::CodeableReference>,
 
     /// Request administration performed against
-    pub request: Option<types::Reference>,
+    pub request: Option<types::Reference<crate::r5::resources::MedicationRequest>>,
 
     /// Device used to administer
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -181,7 +181,7 @@ pub struct MedicationAdministration {
 
     /// A list of events of interest in the lifecycle
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub event_history: Vec<types::Reference>,
+    pub event_history: Vec<types::Reference<crate::r5::resources::Provenance>>,
 }
 
 /// Who or what performed the medication administration and what type of

@@ -92,7 +92,7 @@ pub struct Task {
 
     /// Composite task
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub part_of: Vec<types::Reference>,
+    pub part_of: Vec<types::Reference<crate::r3::resources::Task>>,
 
     /// draft | requested | received | accepted | +
     pub status: crate::coded::Coded<crate::r3::codes::TaskStatus>,
@@ -177,7 +177,7 @@ pub struct Task {
 
     /// Key events in history of the Task
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub relevant_history: Vec<types::Reference>,
+    pub relevant_history: Vec<types::Reference<crate::r3::resources::Provenance>>,
 
     /// Constraints on fulfillment tasks
     pub restriction: Option<TaskRestriction>,
@@ -318,7 +318,7 @@ pub struct TaskRequester {
     pub agent: types::Reference,
 
     /// Organization individual is acting for
-    pub on_behalf_of: Option<types::Reference>,
+    pub on_behalf_of: Option<types::Reference<crate::r3::resources::Organization>>,
 }
 
 /// If the Task.focus is a request resource and the task is seeking fulfillment

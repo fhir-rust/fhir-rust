@@ -115,13 +115,13 @@ pub struct MolecularSequence {
     pub focus: Vec<types::Reference>,
 
     /// Specimen used for sequencing
-    pub specimen: Option<types::Reference>,
+    pub specimen: Option<types::Reference<crate::r5::resources::Specimen>>,
 
     /// The method or platform used for sequencing, referencing the Device that performed it
-    pub device: Option<types::Reference>,
+    pub device: Option<types::Reference<crate::r5::resources::Device>>,
 
     /// Who should be responsible for test result
-    pub performer: Option<types::Reference>,
+    pub performer: Option<types::Reference<crate::r5::resources::Organization>>,
 
     /// Sequence that was observed, provided inline as a literal string of residues
     pub literal: Option<types::String>,

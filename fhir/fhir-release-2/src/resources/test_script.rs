@@ -402,7 +402,7 @@ pub struct TestScriptMetadataCapability {
     pub link_ext: Vec<Option<types::Element>>,
 
     /// Required Conformance
-    pub conformance: types::Reference,
+    pub conformance: types::Reference<crate::r2::resources::Conformance>,
 }
 
 /// A link to the FHIR specification that this test is covering.

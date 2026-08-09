@@ -123,7 +123,7 @@ pub struct DiagnosticReport {
     pub subject: Option<types::Reference>,
 
     /// Health care event when test ordered
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r5::resources::Encounter>>,
 
     /// The `DiagnosticReport.effective[x]` choice element (0..1); see [`DiagnosticReportEffective`].
     #[serde(flatten)]
@@ -145,11 +145,11 @@ pub struct DiagnosticReport {
 
     /// Specimens this report is based on
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub specimen: Vec<types::Reference>,
+    pub specimen: Vec<types::Reference<crate::r5::resources::Specimen>>,
 
     /// Observations that make up the individual results contributing to this report
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub result: Vec<types::Reference>,
+    pub result: Vec<types::Reference<crate::r5::resources::Observation>>,
 
     /// Comments about the diagnostic report
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -168,7 +168,7 @@ pub struct DiagnosticReport {
     pub media: Vec<DiagnosticReportMedia>,
 
     /// Reference to a Composition resource for the DiagnosticReport structure
-    pub composition: Option<types::Reference>,
+    pub composition: Option<types::Reference<crate::r5::resources::Composition>>,
 
     /// Clinical conclusion (interpretation) of test results, the narrative summary a clinician relies on for decision making
     pub conclusion: Option<types::Markdown>,
@@ -271,7 +271,7 @@ pub struct DiagnosticReportMedia {
     pub comment_ext: Option<types::Element>,
 
     /// Reference to the image or data source
-    pub link: types::Reference,
+    pub link: types::Reference<crate::r5::resources::DocumentReference>,
 }
 
 #[cfg(test)]

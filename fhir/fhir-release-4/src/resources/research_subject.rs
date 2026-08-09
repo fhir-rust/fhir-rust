@@ -92,10 +92,10 @@ pub struct ResearchSubject {
     pub period: Option<types::Period>,
 
     /// Study subject is part of
-    pub study: types::Reference,
+    pub study: types::Reference<crate::r4::resources::ResearchStudy>,
 
     /// Who is part of study
-    pub individual: types::Reference,
+    pub individual: types::Reference<crate::r4::resources::Patient>,
 
     /// What path should be followed
     pub assigned_arm: Option<types::String>,
@@ -112,7 +112,7 @@ pub struct ResearchSubject {
     pub actual_arm_ext: Option<types::Element>,
 
     /// Agreement to participate in study
-    pub consent: Option<types::Reference>,
+    pub consent: Option<types::Reference<crate::r4::resources::Consent>>,
 }
 
 #[cfg(test)]

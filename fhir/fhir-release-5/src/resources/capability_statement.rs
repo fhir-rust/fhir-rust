@@ -359,7 +359,7 @@ pub struct CapabilityStatementImplementation {
     pub url_ext: Option<types::Element>,
 
     /// Organization that manages the data
-    pub custodian: Option<types::Reference>,
+    pub custodian: Option<types::Reference<crate::r5::resources::Organization>>,
 }
 
 /// If the endpoint is a RESTful one.

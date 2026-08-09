@@ -154,7 +154,7 @@ pub struct SubstanceReferenceInformationGene {
 
     /// Todo
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub source: Vec<types::Reference>,
+    pub source: Vec<types::Reference<crate::r5::resources::DocumentReference>>,
 }
 
 /// Todo
@@ -198,7 +198,7 @@ pub struct SubstanceReferenceInformationGeneElement {
 
     /// Todo
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub source: Vec<types::Reference>,
+    pub source: Vec<types::Reference<crate::r5::resources::DocumentReference>>,
 }
 
 /// A biological target that the substance interacts with, and the nature of
@@ -259,7 +259,7 @@ pub struct SubstanceReferenceInformationTarget {
 
     /// Todo
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub source: Vec<types::Reference>,
+    pub source: Vec<types::Reference<crate::r5::resources::DocumentReference>>,
 }
 
 #[cfg(test)]

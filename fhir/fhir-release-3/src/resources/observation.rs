@@ -143,7 +143,7 @@ pub struct Observation {
     pub method: Option<types::CodeableConcept>,
 
     /// Specimen used for this observation
-    pub specimen: Option<types::Reference>,
+    pub specimen: Option<types::Reference<crate::r3::resources::Specimen>>,
 
     /// (Measurement) Device
     pub device: Option<types::Reference>,

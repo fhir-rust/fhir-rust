@@ -138,7 +138,7 @@ pub struct NamingSystem {
     pub unique_id: ::vec1::Vec1<NamingSystemUniqueId>,
 
     /// Use this instead
-    pub replaced_by: Option<types::Reference>,
+    pub replaced_by: Option<types::Reference<crate::r2::resources::NamingSystem>>,
 }
 
 /// Contacts to assist a user in finding and communicating with the publisher.

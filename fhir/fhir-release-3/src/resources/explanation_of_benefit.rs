@@ -93,7 +93,7 @@ pub struct ExplanationOfBenefit {
     pub sub_type: Vec<types::CodeableConcept>,
 
     /// The subject of the Products and Services
-    pub patient: Option<types::Reference>,
+    pub patient: Option<types::Reference<crate::r3::resources::Patient>>,
 
     /// Period for charge submission
     pub billable_period: Option<types::Period>,
@@ -106,28 +106,28 @@ pub struct ExplanationOfBenefit {
     pub created_ext: Option<types::Element>,
 
     /// Author
-    pub enterer: Option<types::Reference>,
+    pub enterer: Option<types::Reference<crate::r3::resources::Practitioner>>,
 
     /// Insurer responsible for the EOB
-    pub insurer: Option<types::Reference>,
+    pub insurer: Option<types::Reference<crate::r3::resources::Organization>>,
 
     /// Responsible provider for the claim
-    pub provider: Option<types::Reference>,
+    pub provider: Option<types::Reference<crate::r3::resources::Practitioner>>,
 
     /// Responsible organization for the claim
-    pub organization: Option<types::Reference>,
+    pub organization: Option<types::Reference<crate::r3::resources::Organization>>,
 
     /// Treatment Referral
-    pub referral: Option<types::Reference>,
+    pub referral: Option<types::Reference<crate::r3::resources::ReferralRequest>>,
 
     /// Servicing Facility
-    pub facility: Option<types::Reference>,
+    pub facility: Option<types::Reference<crate::r3::resources::Location>>,
 
     /// Claim reference
-    pub claim: Option<types::Reference>,
+    pub claim: Option<types::Reference<crate::r3::resources::Claim>>,
 
     /// Claim response reference
-    pub claim_response: Option<types::Reference>,
+    pub claim_response: Option<types::Reference<crate::r3::resources::ClaimResponse>>,
 
     /// complete | error | partial
     pub outcome: Option<types::CodeableConcept>,
@@ -147,7 +147,7 @@ pub struct ExplanationOfBenefit {
     pub prescription: Option<types::Reference>,
 
     /// Original prescription if superceded by fulfiller
-    pub original_prescription: Option<types::Reference>,
+    pub original_prescription: Option<types::Reference<crate::r3::resources::MedicationRequest>>,
 
     /// Party to be paid any benefits payable
     pub payee: Option<ExplanationOfBenefitPayee>,
@@ -754,7 +754,7 @@ pub struct ExplanationOfBenefitInsurance {
     pub modifier_extension: Vec<types::Extension>,
 
     /// Insurance information
-    pub coverage: Option<types::Reference>,
+    pub coverage: Option<types::Reference<crate::r3::resources::Coverage>>,
 
     /// Pre-Authorization/Determination Reference
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -889,7 +889,7 @@ pub struct ExplanationOfBenefitItem {
 
     /// Unique Device Identifier
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub udi: Vec<types::Reference>,
+    pub udi: Vec<types::Reference<crate::r3::resources::Device>>,
 
     /// Service Location
     pub body_site: Option<types::CodeableConcept>,
@@ -900,7 +900,7 @@ pub struct ExplanationOfBenefitItem {
 
     /// Encounters related to this billed item
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub encounter: Vec<types::Reference>,
+    pub encounter: Vec<types::Reference<crate::r3::resources::Encounter>>,
 
     /// List of note numbers which apply
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -1052,7 +1052,7 @@ pub struct ExplanationOfBenefitItemDetail {
 
     /// Unique Device Identifier
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub udi: Vec<types::Reference>,
+    pub udi: Vec<types::Reference<crate::r3::resources::Device>>,
 
     /// List of note numbers which apply
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -1152,7 +1152,7 @@ pub struct ExplanationOfBenefitItemDetailSubDetail {
 
     /// Unique Device Identifier
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub udi: Vec<types::Reference>,
+    pub udi: Vec<types::Reference<crate::r3::resources::Device>>,
 
     /// List of note numbers which apply
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -1419,7 +1419,7 @@ pub struct ExplanationOfBenefitRelated {
     pub modifier_extension: Vec<types::Extension>,
 
     /// Reference to the related claim
-    pub claim: Option<types::Reference>,
+    pub claim: Option<types::Reference<crate::r3::resources::Claim>>,
 
     /// How the reference claim is related
     pub relationship: Option<types::CodeableConcept>,

@@ -139,7 +139,7 @@ pub struct Goal {
 
     /// Observation that resulted from goal
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub outcome_reference: Vec<types::Reference>,
+    pub outcome_reference: Vec<types::Reference<crate::r3::resources::Observation>>,
 }
 
 /// Indicates what should be done by when.

@@ -81,11 +81,11 @@ pub struct MedicinalProductPharmaceutical {
 
     /// Ingredient
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub ingredient: Vec<types::Reference>,
+    pub ingredient: Vec<types::Reference<crate::r4::resources::MedicinalProductIngredient>>,
 
     /// Accompanying device
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub device: Vec<types::Reference>,
+    pub device: Vec<types::Reference<crate::r4::resources::DeviceDefinition>>,
 
     /// Characteristics e.g. a products onset of action
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

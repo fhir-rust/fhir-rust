@@ -93,7 +93,7 @@ pub struct Media {
     pub subject: Option<types::Reference>,
 
     /// The person who generated the image
-    pub operator: Option<types::Reference>,
+    pub operator: Option<types::Reference<crate::r2::resources::Practitioner>>,
 
     /// Imaging view, e.g. Lateral or Antero-posterior
     pub view: Option<types::CodeableConcept>,

@@ -99,7 +99,7 @@ pub struct DetectedIssue {
     pub severity_ext: Option<types::Element>,
 
     /// Associated patient
-    pub patient: Option<types::Reference>,
+    pub patient: Option<types::Reference<crate::r4::resources::Patient>>,
 
     /// When identified
     /// The `DetectedIssue.identified[x]` choice element (0..1); see [`DetectedIssueIdentified`].

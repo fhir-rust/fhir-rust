@@ -92,10 +92,10 @@ pub struct PractitionerRole {
 
     /// Practitioner that is able to provide the defined services for the
     /// organization
-    pub practitioner: Option<types::Reference>,
+    pub practitioner: Option<types::Reference<crate::r4::resources::Practitioner>>,
 
     /// Organization where the roles are available
-    pub organization: Option<types::Reference>,
+    pub organization: Option<types::Reference<crate::r4::resources::Organization>>,
 
     /// Roles which this practitioner may perform
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -107,12 +107,12 @@ pub struct PractitionerRole {
 
     /// The location(s) at which this practitioner provides care
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub location: Vec<types::Reference>,
+    pub location: Vec<types::Reference<crate::r4::resources::Location>>,
 
     /// The list of healthcare services that this worker provides for this
     /// role's Organization/Location(s)
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub healthcare_service: Vec<types::Reference>,
+    pub healthcare_service: Vec<types::Reference<crate::r4::resources::HealthcareService>>,
 
     /// Contact details that are specific to the role/location/service
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -136,7 +136,7 @@ pub struct PractitionerRole {
     /// Technical endpoints providing access to services operated for the
     /// practitioner with this role
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub endpoint: Vec<types::Reference>,
+    pub endpoint: Vec<types::Reference<crate::r4::resources::Endpoint>>,
 }
 
 /// A collection of times the practitioner is available or performing this role

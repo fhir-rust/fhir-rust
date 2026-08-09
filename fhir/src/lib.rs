@@ -232,6 +232,7 @@
 //! cargo run --example operation_outcome
 //! cargo run --example extensions
 //! cargo run --example transaction_bundle
+//! cargo run --example typed_references
 //! cargo run --example convert_release --features "r4 r5"
 //! ```
 //!

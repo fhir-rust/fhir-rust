@@ -88,7 +88,7 @@ pub struct DocumentReference {
     pub author: Vec<types::Reference>,
 
     /// Organization which maintains the document
-    pub custodian: Option<types::Reference>,
+    pub custodian: Option<types::Reference<crate::r2::resources::Organization>>,
 
     /// Who/what authenticated the document
     pub authenticator: Option<types::Reference>,
@@ -219,7 +219,7 @@ pub struct DocumentReferenceContext {
     pub modifier_extension: Vec<types::Extension>,
 
     /// Context of the document content
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r2::resources::Encounter>>,
 
     /// Main Clinical Acts Documented
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -236,7 +236,7 @@ pub struct DocumentReferenceContext {
     pub practice_setting: Option<types::CodeableConcept>,
 
     /// Patient demographics from source
-    pub source_patient_info: Option<types::Reference>,
+    pub source_patient_info: Option<types::Reference<crate::r2::resources::Patient>>,
 
     /// Related identifiers or resources
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -329,5 +329,5 @@ pub struct DocumentReferenceRelatesTo {
     pub code_ext: Option<types::Element>,
 
     /// Target of the relationship
-    pub target: types::Reference,
+    pub target: types::Reference<crate::r2::resources::DocumentReference>,
 }

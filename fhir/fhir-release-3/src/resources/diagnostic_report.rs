@@ -120,11 +120,11 @@ pub struct DiagnosticReport {
 
     /// Specimens this report is based on
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub specimen: Vec<types::Reference>,
+    pub specimen: Vec<types::Reference<crate::r3::resources::Specimen>>,
 
     /// Observations - simple, or complex nested groups
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub result: Vec<types::Reference>,
+    pub result: Vec<types::Reference<crate::r3::resources::Observation>>,
 
     /// Reference to full details of imaging associated with the diagnostic
     /// report
@@ -196,7 +196,7 @@ pub struct DiagnosticReportImage {
     pub comment_ext: Option<types::Element>,
 
     /// Reference to the image source
-    pub link: types::Reference,
+    pub link: types::Reference<crate::r3::resources::Media>,
 }
 
 /// Indicates who or what participated in producing the report.

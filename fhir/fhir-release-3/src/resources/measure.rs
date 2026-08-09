@@ -205,7 +205,7 @@ pub struct Measure {
 
     /// Logic used by the measure
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub library: Vec<types::Reference>,
+    pub library: Vec<types::Reference<crate::r3::resources::Library>>,
 
     /// Disclaimer for use of the measure or its referenced content
     pub disclaimer: Option<types::Markdown>,

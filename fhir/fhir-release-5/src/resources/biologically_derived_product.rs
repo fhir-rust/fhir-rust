@@ -109,11 +109,11 @@ pub struct BiologicallyDerivedProduct {
 
     /// The parent biologically-derived product, when this instance is an aliquot or derivative of another product
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub parent: Vec<types::Reference>,
+    pub parent: Vec<types::Reference<crate::r5::resources::BiologicallyDerivedProduct>>,
 
     /// Request to obtain and/or infuse this product
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub request: Vec<types::Reference>,
+    pub request: Vec<types::Reference<crate::r5::resources::ServiceRequest>>,
 
     /// Instance identifier
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -126,7 +126,7 @@ pub struct BiologicallyDerivedProduct {
     /// Processing facilities responsible for the labeling and distribution of this
     /// biologically derived product
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub processing_facility: Vec<types::Reference>,
+    pub processing_facility: Vec<types::Reference<crate::r5::resources::Organization>>,
 
     /// A unique identifier for an aliquot of a product
     pub division: Option<types::String>,

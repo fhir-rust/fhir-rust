@@ -419,11 +419,11 @@ pub struct EvidenceVariableConstraint {
     pub expression: Option<types::Expression>,
 
     /// List of anticipated values used to express value of the variable
-    pub expected_value_set: Option<types::Reference>,
+    pub expected_value_set: Option<types::Reference<crate::r6::resources::ValueSet>>,
 
     /// List of anticipated values used to express units for the value of the
     /// variable
-    pub expected_units_value_set: Option<types::Reference>,
+    pub expected_units_value_set: Option<types::Reference<crate::r6::resources::ValueSet>>,
 
     /// Permissibility of unanticipated value used to express value of the
     /// variable

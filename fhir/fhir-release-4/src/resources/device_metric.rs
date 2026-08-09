@@ -86,10 +86,10 @@ pub struct DeviceMetric {
     pub unit: Option<types::CodeableConcept>,
 
     /// Describes the link to the source Device
-    pub source: Option<types::Reference>,
+    pub source: Option<types::Reference<crate::r4::resources::Device>>,
 
     /// Describes the link to the parent Device
-    pub parent: Option<types::Reference>,
+    pub parent: Option<types::Reference<crate::r4::resources::Device>>,
 
     /// on | off | standby | entered-in-error
     pub operational_status: Option<crate::coded::Coded<crate::r4::codes::MetricOperationalStatus>>,

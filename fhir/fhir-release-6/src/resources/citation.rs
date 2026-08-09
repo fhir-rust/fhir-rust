@@ -332,7 +332,7 @@ pub struct CitationCitedArtifact {
 
     /// Citation for the primary version and complete form of the cited
     /// artifact
-    pub base_citation: Option<types::Reference>,
+    pub base_citation: Option<types::Reference<crate::r6::resources::Citation>>,
 
     /// The artifact related to the cited artifact
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -465,7 +465,7 @@ pub struct CitationCitedArtifactClassification {
 
     /// Complex or externally created classification
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub artifact_assessment: Vec<types::Reference>,
+    pub artifact_assessment: Vec<types::Reference<crate::r6::resources::ArtifactAssessment>>,
 }
 
 /// This element is used to list authors and other contributors, their contact
@@ -936,7 +936,7 @@ pub struct CitationCitedArtifactPublicationFormPublishedIn {
     pub title_ext: Option<types::Element>,
 
     /// Name of or resource describing the publisher
-    pub publisher: Option<types::Reference>,
+    pub publisher: Option<types::Reference<crate::r6::resources::Organization>>,
 
     /// Geographic location of the publisher
     pub publisher_location: Option<types::String>,

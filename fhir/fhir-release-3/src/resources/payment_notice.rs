@@ -106,13 +106,13 @@ pub struct PaymentNotice {
     pub created_ext: Option<types::Element>,
 
     /// Insurer or Regulatory body
-    pub target: Option<types::Reference>,
+    pub target: Option<types::Reference<crate::r3::resources::Organization>>,
 
     /// Responsible practitioner
-    pub provider: Option<types::Reference>,
+    pub provider: Option<types::Reference<crate::r3::resources::Practitioner>>,
 
     /// Responsible organization
-    pub organization: Option<types::Reference>,
+    pub organization: Option<types::Reference<crate::r3::resources::Organization>>,
 
     /// Whether payment has been sent or cleared
     pub payment_status: Option<types::CodeableConcept>,

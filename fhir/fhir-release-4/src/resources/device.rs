@@ -81,7 +81,7 @@ pub struct Device {
     pub identifier: Vec<types::Identifier>,
 
     /// The reference to the definition for the device
-    pub definition: Option<types::Reference>,
+    pub definition: Option<types::Reference<crate::r4::resources::DeviceDefinition>>,
 
     /// Unique Device Identifier (UDI) Barcode string
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -179,17 +179,17 @@ pub struct Device {
     pub property: Vec<DeviceProperty>,
 
     /// Patient to whom Device is affixed
-    pub patient: Option<types::Reference>,
+    pub patient: Option<types::Reference<crate::r4::resources::Patient>>,
 
     /// Organization responsible for device
-    pub owner: Option<types::Reference>,
+    pub owner: Option<types::Reference<crate::r4::resources::Organization>>,
 
     /// Details for human/organization for support
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub contact: Vec<types::ContactPoint>,
 
     /// Where the device is found
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r4::resources::Location>>,
 
     /// Network address to contact device
     pub url: Option<types::Uri>,
@@ -207,7 +207,7 @@ pub struct Device {
     pub safety: Vec<types::CodeableConcept>,
 
     /// The parent device
-    pub parent: Option<types::Reference>,
+    pub parent: Option<types::Reference<crate::r4::resources::Device>>,
 }
 
 /// This represents the manufacturer's name of the device as provided by the

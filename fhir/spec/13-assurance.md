@@ -184,8 +184,8 @@ for a v1 client and disqualifying for a mission-critical one.
 
 ## Future work
 
-- R4B and R6 models (spec 12).
-- Typed `Reference<T>` (spec 04).
+- R4B model (spec 12; R6 shipped as a ballot draft, and the typed
+  `Reference<T>` rollout completed 2026-08-09 — spec 04, T11).
 
 ## Acceptance criteria
 

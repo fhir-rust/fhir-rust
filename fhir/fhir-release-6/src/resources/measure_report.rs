@@ -85,7 +85,7 @@ pub struct MeasureReport {
     pub category: Option<types::CodeableConcept>,
 
     /// Evaluation messages
-    pub messages: Option<types::Reference>,
+    pub messages: Option<types::Reference<crate::r6::resources::OperationOutcome>>,
 
     /// complete | pending | error
     pub status: crate::coded::Coded<crate::r6::codes::MeasureReportStatus>,
@@ -129,17 +129,17 @@ pub struct MeasureReport {
     pub reporter: Option<types::Reference>,
 
     /// What vendor prepared the data
-    pub reporting_vendor: Option<types::Reference>,
+    pub reporting_vendor: Option<types::Reference<crate::r6::resources::Organization>>,
 
     /// Where the reported data is from
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub location: Vec<types::Reference>,
+    pub location: Vec<types::Reference<crate::r6::resources::Location>>,
 
     /// What period the report covers
     pub period: types::Period,
 
     /// What parameters were provided to the report
-    pub input_parameters: Option<types::Reference>,
+    pub input_parameters: Option<types::Reference<crate::r6::resources::Parameters>>,
 
     /// What scoring method (e.g. proportion, ratio, continuous-variable)
     /// (deprecated, use group.scoring)
@@ -320,15 +320,15 @@ pub struct MeasureReportGroupPopulation {
     pub count_quantity: Option<types::Quantity>,
 
     /// For subject-list reports, the subject results in this population
-    pub subject_results: Option<types::Reference>,
+    pub subject_results: Option<types::Reference<crate::r6::resources::List>>,
 
     /// For subject-list reports, references to the individual reports for
     /// subjects in this population
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub subject_report: Vec<types::Reference>,
+    pub subject_report: Vec<types::Reference<crate::r6::resources::MeasureReport>>,
 
     /// What individual(s) in the population
-    pub subjects: Option<types::Reference>,
+    pub subjects: Option<types::Reference<crate::r6::resources::Group>>,
 }
 
 /// The stratification results for this measure group, calculated as defined by
@@ -566,14 +566,14 @@ pub struct MeasureReportGroupStratifierStratumPopulation {
     pub count_quantity: Option<types::Quantity>,
 
     /// For subject-list reports, the subject results in this population
-    pub subject_results: Option<types::Reference>,
+    pub subject_results: Option<types::Reference<crate::r6::resources::List>>,
 
     /// For subject-list reports, a subject result in this population
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub subject_report: Vec<types::Reference>,
+    pub subject_report: Vec<types::Reference<crate::r6::resources::MeasureReport>>,
 
     /// What individual(s) in the population
-    pub subjects: Option<types::Reference>,
+    pub subjects: Option<types::Reference<crate::r6::resources::Group>>,
 }
 
 /// The `MeasureReport.group.measureScore[x]` choice element (see `spec/11-choice-types.md`).

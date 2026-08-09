@@ -99,7 +99,7 @@ pub struct ImmunizationRecommendation {
     pub identifier: Vec<types::Identifier>,
 
     /// Reference to the patient for whom this set of recommendations is forecast.
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r5::resources::Patient>,
 
     /// Point in time at which this set of recommendations was generated.
     pub date: types::DateTime,
@@ -108,7 +108,7 @@ pub struct ImmunizationRecommendation {
     pub date_ext: Option<types::Element>,
 
     /// Organization responsible for the immunization protocol used to forecast.
-    pub authority: Option<types::Reference>,
+    pub authority: Option<types::Reference<crate::r5::resources::Organization>>,
 
     /// One entry per vaccine or vaccine group being recommended for the patient.
     pub recommendation: vec1::Vec1<ImmunizationRecommendationRecommendation>,

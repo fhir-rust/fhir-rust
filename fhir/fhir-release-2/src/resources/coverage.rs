@@ -75,7 +75,7 @@ pub struct Coverage {
     pub modifier_extension: Vec<types::Extension>,
 
     /// An identifier for the plan issuer
-    pub issuer: Option<types::Reference>,
+    pub issuer: Option<types::Reference<crate::r2::resources::Organization>>,
 
     /// BIN Number
     pub bin: Option<types::Identifier>,
@@ -129,14 +129,14 @@ pub struct Coverage {
     pub sequence_ext: Option<types::Element>,
 
     /// Plan holder information
-    pub subscriber: Option<types::Reference>,
+    pub subscriber: Option<types::Reference<crate::r2::resources::Patient>>,
 
     /// Insurer network
     pub network: Option<types::Identifier>,
 
     /// Contract details
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub contract: Vec<types::Reference>,
+    pub contract: Vec<types::Reference<crate::r2::resources::Contract>>,
 }
 
 #[cfg(test)]

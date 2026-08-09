@@ -133,7 +133,7 @@ pub struct Account {
     pub coverage: Vec<AccountCoverage>,
 
     /// Entity managing the Account
-    pub owner: Option<types::Reference>,
+    pub owner: Option<types::Reference<crate::r5::resources::Organization>>,
 
     /// Explanation of purpose/use
     pub description: Option<types::Markdown>,
@@ -208,7 +208,7 @@ pub struct AccountCoverage {
 
     /// The party(s), such as insurances, that may contribute to the payment of
     /// this account
-    pub coverage: types::Reference,
+    pub coverage: types::Reference<crate::r5::resources::Coverage>,
 
     /// The priority of the coverage in the context of this account
     pub priority: Option<types::PositiveInt>,
@@ -385,7 +385,7 @@ pub struct AccountProcedure {
 
     /// Any devices that were associated with the procedure
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub device: Vec<types::Reference>,
+    pub device: Vec<types::Reference<crate::r5::resources::Device>>,
 }
 
 /// Other associated accounts related to this account.
@@ -425,7 +425,7 @@ pub struct AccountRelatedAccount {
     pub relationship: Option<types::CodeableConcept>,
 
     /// Reference to an associated Account
-    pub account: types::Reference,
+    pub account: types::Reference<crate::r5::resources::Account>,
 }
 
 /// Calculated account balance(s).

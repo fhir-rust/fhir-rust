@@ -220,7 +220,7 @@ pub struct CapabilityStatement {
 
     /// Profiles for use cases supported
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub profile: Vec<types::Reference>,
+    pub profile: Vec<types::Reference<crate::r3::resources::StructureDefinition>>,
 
     /// If the endpoint is a RESTful one
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -285,7 +285,7 @@ pub struct CapabilityStatementDocument {
     pub documentation_ext: Option<types::Element>,
 
     /// Constraint on a resource used in the document
-    pub profile: types::Reference,
+    pub profile: types::Reference<crate::r3::resources::StructureDefinition>,
 }
 
 /// Identifies a specific implementation instance that is described by the
@@ -509,10 +509,10 @@ pub struct CapabilityStatementMessagingEvent {
     pub focus_ext: Option<types::Element>,
 
     /// Profile that describes the request
-    pub request: types::Reference,
+    pub request: types::Reference<crate::r3::resources::StructureDefinition>,
 
     /// Profile that describes the response
-    pub response: types::Reference,
+    pub response: types::Reference<crate::r3::resources::StructureDefinition>,
 
     /// Endpoint-specific event documentation
     pub documentation: Option<types::String>,
@@ -566,7 +566,7 @@ pub struct CapabilityStatementMessagingSupportedMessage {
     pub mode_ext: Option<types::Element>,
 
     /// Message supported by this system
-    pub definition: types::Reference,
+    pub definition: types::Reference<crate::r3::resources::MessageDefinition>,
 }
 
 /// A definition of the restful capabilities of the solution, if any.
@@ -741,7 +741,7 @@ pub struct CapabilityStatementRestOperation {
     pub name_ext: Option<types::Element>,
 
     /// The defined operation/query
-    pub definition: types::Reference,
+    pub definition: types::Reference<crate::r3::resources::OperationDefinition>,
 }
 
 /// A specification of the restful capabilities of the solution for a specific
@@ -781,7 +781,7 @@ pub struct CapabilityStatementRestResource {
     pub type_ext: Option<types::Element>,
 
     /// Base System profile for all uses of resource
-    pub profile: Option<types::Reference>,
+    pub profile: Option<types::Reference<crate::r3::resources::StructureDefinition>>,
 
     /// Additional information about the use of the resource type
     pub documentation: Option<types::Markdown>,

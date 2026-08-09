@@ -121,7 +121,7 @@ pub struct MedicationStatement {
     pub subject: types::Reference,
 
     /// Encounter associated with MedicationStatement
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r6::resources::Encounter>>,
 
     /// The date/time or interval when the medication is/was/will be taken
     /// The `MedicationStatement.effective[x]` choice element (0..1); see [`MedicationStatementEffective`].

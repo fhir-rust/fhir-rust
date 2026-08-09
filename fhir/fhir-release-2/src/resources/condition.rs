@@ -79,10 +79,10 @@ pub struct Condition {
     pub identifier: Vec<types::Identifier>,
 
     /// Who has the condition?
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r2::resources::Patient>,
 
     /// Encounter when condition first asserted
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r2::resources::Encounter>>,
 
     /// Person who asserts this condition
     pub asserter: Option<types::Reference>,

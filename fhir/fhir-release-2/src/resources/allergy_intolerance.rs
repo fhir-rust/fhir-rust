@@ -96,7 +96,7 @@ pub struct AllergyIntolerance {
     pub recorder: Option<types::Reference>,
 
     /// Who the sensitivity is for
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r2::resources::Patient>,
 
     /// Source of the information about the allergy
     pub reporter: Option<types::Reference>,

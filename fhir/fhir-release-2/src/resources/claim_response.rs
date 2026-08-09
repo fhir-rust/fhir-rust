@@ -79,7 +79,7 @@ pub struct ClaimResponse {
     pub identifier: Vec<types::Identifier>,
 
     /// Id of resource triggering adjudication
-    pub request: Option<types::Reference>,
+    pub request: Option<types::Reference<crate::r2::resources::Claim>>,
 
     /// Resource version
     pub ruleset: Option<types::Coding>,
@@ -95,13 +95,13 @@ pub struct ClaimResponse {
     pub created_ext: Option<types::Element>,
 
     /// Insurer
-    pub organization: Option<types::Reference>,
+    pub organization: Option<types::Reference<crate::r2::resources::Organization>>,
 
     /// Responsible practitioner
-    pub request_provider: Option<types::Reference>,
+    pub request_provider: Option<types::Reference<crate::r2::resources::Practitioner>>,
 
     /// Responsible organization
-    pub request_organization: Option<types::Reference>,
+    pub request_organization: Option<types::Reference<crate::r2::resources::Organization>>,
 
     /// complete | error
     pub outcome: Option<crate::coded::Coded<crate::r2::codes::RemittanceOutcome>>,
@@ -437,7 +437,7 @@ pub struct ClaimResponseCoverage {
     pub focal_ext: Option<types::Element>,
 
     /// Insurance information
-    pub coverage: types::Reference,
+    pub coverage: types::Reference<crate::r2::resources::Coverage>,
 
     /// Business agreement
     pub business_arrangement: Option<types::String>,
@@ -459,7 +459,7 @@ pub struct ClaimResponseCoverage {
     pub pre_auth_ref_ext: Vec<Option<types::Element>>,
 
     /// Adjudication results
-    pub claim_response: Option<types::Reference>,
+    pub claim_response: Option<types::Reference<crate::r2::resources::ClaimResponse>>,
 
     /// Original version
     pub original_ruleset: Option<types::Coding>,

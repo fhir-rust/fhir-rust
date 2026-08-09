@@ -116,14 +116,14 @@ pub struct Composition {
     pub attester: Vec<CompositionAttester>,
 
     /// Organization which maintains the composition
-    pub custodian: Option<types::Reference>,
+    pub custodian: Option<types::Reference<crate::r2::resources::Organization>>,
 
     /// The clinical service(s) being documented
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub event: Vec<CompositionEvent>,
 
     /// Context of the Composition
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r2::resources::Encounter>>,
 
     /// Composition is broken into sections
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

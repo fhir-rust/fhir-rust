@@ -137,11 +137,11 @@ pub struct Organization {
     pub contact: Vec<types::ExtendedContactDetail>,
 
     /// A reference to the parent organization of which this organization forms a part, used to build institutional hierarchies of departments and divisions.
-    pub part_of: Option<types::Reference>,
+    pub part_of: Option<types::Reference<crate::r5::resources::Organization>>,
 
     /// Technical endpoints providing access to services operated for the organization
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub endpoint: Vec<types::Reference>,
+    pub endpoint: Vec<types::Reference<crate::r5::resources::Endpoint>>,
 
     /// Qualifications, certifications, accreditations, licenses, training, etc. pertaining to the provision of care
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -193,7 +193,7 @@ pub struct OrganizationQualification {
     pub period: Option<types::Period>,
 
     /// Organization that regulates and issues the qualification
-    pub issuer: Option<types::Reference>,
+    pub issuer: Option<types::Reference<crate::r5::resources::Organization>>,
 }
 
 #[cfg(test)]

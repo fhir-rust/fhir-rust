@@ -117,7 +117,7 @@ pub struct DocumentReference {
     pub authenticator: Option<types::Reference>,
 
     /// Organization which maintains the document
-    pub custodian: Option<types::Reference>,
+    pub custodian: Option<types::Reference<crate::r4::resources::Organization>>,
 
     /// Relationships to other documents
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -238,7 +238,7 @@ pub struct DocumentReferenceContext {
     pub practice_setting: Option<types::CodeableConcept>,
 
     /// Patient demographics from source
-    pub source_patient_info: Option<types::Reference>,
+    pub source_patient_info: Option<types::Reference<crate::r4::resources::Patient>>,
 
     /// Related identifiers or resources
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -289,5 +289,5 @@ pub struct DocumentReferenceRelatesTo {
     pub code_ext: Option<types::Element>,
 
     /// Target of the relationship
-    pub target: types::Reference,
+    pub target: types::Reference<crate::r4::resources::DocumentReference>,
 }

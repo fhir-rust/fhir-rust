@@ -81,7 +81,7 @@ pub struct DeviceUseStatement {
 
     /// Fulfills plan, proposal or order
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub based_on: Vec<types::Reference>,
+    pub based_on: Vec<types::Reference<crate::r4::resources::ServiceRequest>>,
 
     /// active | completed | entered-in-error +
     pub status: crate::coded::Coded<crate::r4::codes::DeviceStatementStatus>,
@@ -113,7 +113,7 @@ pub struct DeviceUseStatement {
     pub source: Option<types::Reference>,
 
     /// Reference to device used
-    pub device: types::Reference,
+    pub device: types::Reference<crate::r4::resources::Device>,
 
     /// Why device was used
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

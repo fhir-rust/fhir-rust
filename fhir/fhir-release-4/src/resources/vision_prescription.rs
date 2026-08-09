@@ -87,10 +87,10 @@ pub struct VisionPrescription {
     pub created_ext: Option<types::Element>,
 
     /// Who prescription is for
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r4::resources::Patient>,
 
     /// Created during encounter / admission / stay
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r4::resources::Encounter>>,
 
     /// When prescription was authorized
     pub date_written: types::DateTime,

@@ -103,7 +103,7 @@ pub struct AdministrableProductDefinition {
 
     /// References the overall medicinal product definition from which one or more constituent parts of this administrable product are prepared and used
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub form_of: Vec<types::Reference>,
+    pub form_of: Vec<types::Reference<crate::r5::resources::MedicinalProductDefinition>>,
 
     /// The dose form of the final product after necessary reconstitution or processing, e.g. solution for injection
     pub administrable_dose_form: Option<types::CodeableConcept>,
@@ -113,14 +113,14 @@ pub struct AdministrableProductDefinition {
 
     /// Indicates the specific manufactured items that are part of the 'formOf' product that are used in the preparation of this specific administrable form
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub produced_from: Vec<types::Reference>,
+    pub produced_from: Vec<types::Reference<crate::r5::resources::ManufacturedItemDefinition>>,
 
     /// The ingredients of this administrable medicinal product. This is only needed if the ingredients are not specified either using ManufacturedItemDefiniton, or using by incoming references from the Ingredient resource
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub ingredient: Vec<types::CodeableConcept>,
 
     /// A device that is integral to the medicinal product, in effect being considered as an "ingredient" of the medicinal product
-    pub device: Option<types::Reference>,
+    pub device: Option<types::Reference<crate::r5::resources::DeviceDefinition>>,
 
     /// A general description of the product, when in its final form, suitable for administration e.g. effervescent blue liquid, to be swallowed
     pub description: Option<types::Markdown>,

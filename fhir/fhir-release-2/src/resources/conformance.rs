@@ -178,7 +178,7 @@ pub struct Conformance {
 
     /// Profiles for use cases supported
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub profile: Vec<types::Reference>,
+    pub profile: Vec<types::Reference<crate::r2::resources::StructureDefinition>>,
 
     /// If the endpoint is a RESTful one
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -290,7 +290,7 @@ pub struct ConformanceDocument {
     pub documentation_ext: Option<types::Element>,
 
     /// Constraint on a resource used in the document
-    pub profile: types::Reference,
+    pub profile: types::Reference<crate::r2::resources::StructureDefinition>,
 }
 
 /// Identifies a specific implementation instance that is described by the
@@ -502,10 +502,10 @@ pub struct ConformanceMessagingEvent {
     pub focus_ext: Option<types::Element>,
 
     /// Profile that describes the request
-    pub request: types::Reference,
+    pub request: types::Reference<crate::r2::resources::StructureDefinition>,
 
     /// Profile that describes the response
-    pub response: types::Reference,
+    pub response: types::Reference<crate::r2::resources::StructureDefinition>,
 
     /// Endpoint-specific event documentation
     pub documentation: Option<types::String>,
@@ -686,7 +686,7 @@ pub struct ConformanceRestOperation {
     pub name_ext: Option<types::Element>,
 
     /// The defined operation/query
-    pub definition: types::Reference,
+    pub definition: types::Reference<crate::r2::resources::OperationDefinition>,
 }
 
 /// A specification of the restful capabilities of the solution for a specific
@@ -726,7 +726,7 @@ pub struct ConformanceRestResource {
     pub type_ext: Option<types::Element>,
 
     /// Base System profile for all uses of resource
-    pub profile: Option<types::Reference>,
+    pub profile: Option<types::Reference<crate::r2::resources::StructureDefinition>>,
 
     /// What operations are supported?
     pub interaction: ::vec1::Vec1<ConformanceRestResourceInteraction>,

@@ -85,7 +85,7 @@ pub struct Medication {
     pub is_brand_ext: Option<types::Element>,
 
     /// Manufacturer of the item
-    pub manufacturer: Option<types::Reference>,
+    pub manufacturer: Option<types::Reference<crate::r2::resources::Organization>>,
 
     /// Administrable medication details
     pub product: Option<MedicationProduct>,
@@ -173,7 +173,7 @@ pub struct MedicationPackageContent {
     pub modifier_extension: Vec<types::Extension>,
 
     /// A product in the package
-    pub item: types::Reference,
+    pub item: types::Reference<crate::r2::resources::Medication>,
 
     /// Quantity present in the package
     pub amount: Option<types::Quantity>,

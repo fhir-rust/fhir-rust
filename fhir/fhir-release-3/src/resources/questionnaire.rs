@@ -310,7 +310,7 @@ pub struct QuestionnaireItem {
     pub max_length_ext: Option<types::Element>,
 
     /// Valueset containing permitted answers
-    pub options: Option<types::Reference>,
+    pub options: Option<types::Reference<crate::r3::resources::ValueSet>>,
 
     /// Permitted answer
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

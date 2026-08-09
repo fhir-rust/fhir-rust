@@ -76,10 +76,10 @@ pub struct ClinicalImpression {
     pub modifier_extension: Vec<types::Extension>,
 
     /// The patient being assessed
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r2::resources::Patient>,
 
     /// The clinician performing the assessment
-    pub assessor: Option<types::Reference>,
+    pub assessor: Option<types::Reference<crate::r2::resources::Practitioner>>,
 
     /// in-progress | completed | entered-in-error
     pub status: crate::coded::Coded<crate::r2::codes::ClinicalImpressionStatus>,
@@ -103,7 +103,7 @@ pub struct ClinicalImpression {
     pub description_ext: Option<types::Element>,
 
     /// Reference to last assessment
-    pub previous: Option<types::Reference>,
+    pub previous: Option<types::Reference<crate::r2::resources::ClinicalImpression>>,
 
     /// General assessment of patient state
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

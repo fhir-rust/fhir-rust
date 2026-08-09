@@ -86,7 +86,7 @@ pub struct QuestionnaireResponse {
     pub parent: Vec<types::Reference>,
 
     /// Form being answered
-    pub questionnaire: Option<types::Reference>,
+    pub questionnaire: Option<types::Reference<crate::r3::resources::Questionnaire>>,
 
     /// in-progress | completed | amended | entered-in-error | stopped
     pub status: crate::coded::Coded<crate::r3::codes::QuestionnaireAnswersStatus>,

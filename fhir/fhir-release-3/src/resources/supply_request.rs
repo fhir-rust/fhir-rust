@@ -114,7 +114,7 @@ pub struct SupplyRequest {
 
     /// Who is intended to fulfill the request
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub supplier: Vec<types::Reference>,
+    pub supplier: Vec<types::Reference<crate::r3::resources::Organization>>,
 
     /// Why the supply item was requested
     /// The `SupplyRequest.reason[x]` choice element (0..1); see [`SupplyRequestReason`].
@@ -212,7 +212,7 @@ pub struct SupplyRequestRequester {
     pub agent: types::Reference,
 
     /// Organization agent is acting for
-    pub on_behalf_of: Option<types::Reference>,
+    pub on_behalf_of: Option<types::Reference<crate::r3::resources::Organization>>,
 }
 
 /// The `SupplyRequest.occurrence[x]` choice element (see `spec/11-choice-types.md`).

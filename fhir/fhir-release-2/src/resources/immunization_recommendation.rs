@@ -72,7 +72,7 @@ pub struct ImmunizationRecommendation {
     pub identifier: Vec<types::Identifier>,
 
     /// Who this profile is for
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r2::resources::Patient>,
 
     /// Vaccine administration recommendations
     pub recommendation: ::vec1::Vec1<ImmunizationRecommendationRecommendation>,
@@ -142,7 +142,7 @@ pub struct ImmunizationRecommendationRecommendation {
 
     /// Past immunizations supporting recommendation
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub supporting_immunization: Vec<types::Reference>,
+    pub supporting_immunization: Vec<types::Reference<crate::r2::resources::Immunization>>,
 
     /// Patient observations supporting recommendation
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -247,7 +247,7 @@ pub struct ImmunizationRecommendationRecommendationProtocol {
     pub description_ext: Option<types::Element>,
 
     /// Who is responsible for protocol
-    pub authority: Option<types::Reference>,
+    pub authority: Option<types::Reference<crate::r2::resources::Organization>>,
 
     /// Name of vaccination series
     pub series: Option<types::String>,

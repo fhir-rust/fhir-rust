@@ -270,7 +270,7 @@ pub struct SearchParameterComponent {
     pub modifier_extension: Vec<types::Extension>,
 
     /// Defines how the part works
-    pub definition: types::Reference,
+    pub definition: types::Reference<crate::r3::resources::SearchParameter>,
 
     /// Subexpression relative to main expression
     pub expression: types::String,

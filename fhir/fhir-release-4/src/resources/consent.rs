@@ -88,7 +88,7 @@ pub struct Consent {
     pub category: ::vec1::Vec1<types::CodeableConcept>,
 
     /// Who the consent applies to
-    pub patient: Option<types::Reference>,
+    pub patient: Option<types::Reference<crate::r4::resources::Patient>>,
 
     /// When this Consent was created or indexed
     pub date_time: Option<types::DateTime>,
@@ -103,7 +103,7 @@ pub struct Consent {
 
     /// Custodian of the consent
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub organization: Vec<types::Reference>,
+    pub organization: Vec<types::Reference<crate::r4::resources::Organization>>,
 
     /// Source from which this consent is taken
     /// The `Consent.source[x]` choice element (0..1); see [`ConsentSource`].

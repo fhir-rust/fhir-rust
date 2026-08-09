@@ -105,11 +105,11 @@ pub struct Specimen {
 
     /// Specimen from which this specimen originated
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub parent: Vec<types::Reference>,
+    pub parent: Vec<types::Reference<crate::r4::resources::Specimen>>,
 
     /// Why the specimen was collected
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub request: Vec<types::Reference>,
+    pub request: Vec<types::Reference<crate::r4::resources::ServiceRequest>>,
 
     /// Collection details
     pub collection: Option<SpecimenCollection>,
@@ -301,7 +301,7 @@ pub struct SpecimenProcessing {
 
     /// Material used in the processing step
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub additive: Vec<types::Reference>,
+    pub additive: Vec<types::Reference<crate::r4::resources::Substance>>,
 
     /// Date and time of specimen processing
     /// The `Specimen.processing.time[x]` choice element (0..1); see [`SpecimenProcessingTime`].

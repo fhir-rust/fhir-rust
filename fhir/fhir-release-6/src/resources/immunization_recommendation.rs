@@ -73,7 +73,7 @@ pub struct ImmunizationRecommendation {
     pub identifier: Vec<types::Identifier>,
 
     /// Who this profile is for
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r6::resources::Patient>,
 
     /// Date recommendation(s) created
     pub date: types::DateTime,
@@ -83,7 +83,7 @@ pub struct ImmunizationRecommendation {
     pub date_ext: Option<types::Element>,
 
     /// Who is responsible for schedule
-    pub authority: Option<types::Reference>,
+    pub authority: Option<types::Reference<crate::r6::resources::Organization>>,
 
     /// Vaccine administration recommendations
     pub recommendation: ::vec1::Vec1<ImmunizationRecommendationRecommendation>,

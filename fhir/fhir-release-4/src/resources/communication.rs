@@ -108,7 +108,7 @@ pub struct Communication {
 
     /// Reply to
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub in_response_to: Vec<types::Reference>,
+    pub in_response_to: Vec<types::Reference<crate::r4::resources::Communication>>,
 
     /// preparation | in-progress | not-done | on-hold | stopped | completed |
     /// entered-in-error | unknown
@@ -147,7 +147,7 @@ pub struct Communication {
     pub about: Vec<types::Reference>,
 
     /// Encounter created as part of
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r4::resources::Encounter>>,
 
     /// When sent
     pub sent: Option<types::DateTime>,

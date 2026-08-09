@@ -79,7 +79,7 @@ pub struct FamilyMemberHistory {
     pub identifier: Vec<types::Identifier>,
 
     /// Patient history is about
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r2::resources::Patient>,
 
     /// When history was captured/updated
     pub date: Option<types::DateTime>,

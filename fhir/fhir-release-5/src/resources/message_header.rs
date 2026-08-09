@@ -180,7 +180,7 @@ pub struct MessageHeaderDestination {
     pub name_ext: Option<types::Element>,
 
     /// Particular delivery destination within the destination
-    pub target: Option<types::Reference>,
+    pub target: Option<types::Reference<crate::r5::resources::Device>>,
 
     /// Intended "real-world" recipient for the data
     pub receiver: Option<types::Reference>,
@@ -296,7 +296,7 @@ pub struct MessageHeaderResponse {
     pub code_ext: Option<types::Element>,
 
     /// Specific list of hints/warnings/errors
-    pub details: Option<types::Reference>,
+    pub details: Option<types::Reference<crate::r5::resources::OperationOutcome>>,
 }
 
 #[cfg(test)]

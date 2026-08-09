@@ -142,10 +142,10 @@ pub struct MedicinalProductAuthorization {
     pub jurisdictional_authorization: Vec<MedicinalProductAuthorizationJurisdictionalAuthorization>,
 
     /// Marketing Authorization Holder
-    pub holder: Option<types::Reference>,
+    pub holder: Option<types::Reference<crate::r4::resources::Organization>>,
 
     /// Medicines Regulatory Agency
-    pub regulator: Option<types::Reference>,
+    pub regulator: Option<types::Reference<crate::r4::resources::Organization>>,
 
     /// The regulatory procedure for granting or amending a marketing
     /// authorization

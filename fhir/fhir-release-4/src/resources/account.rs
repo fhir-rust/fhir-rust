@@ -110,7 +110,7 @@ pub struct Account {
     pub coverage: Vec<AccountCoverage>,
 
     /// Entity managing the Account
-    pub owner: Option<types::Reference>,
+    pub owner: Option<types::Reference<crate::r4::resources::Organization>>,
 
     /// Explanation of purpose/use
     pub description: Option<types::String>,
@@ -124,7 +124,7 @@ pub struct Account {
     pub guarantor: Vec<AccountGuarantor>,
 
     /// Reference to a parent Account
-    pub part_of: Option<types::Reference>,
+    pub part_of: Option<types::Reference<crate::r4::resources::Account>>,
 }
 
 /// The party(s) that are responsible for covering the payment of this account,
@@ -165,7 +165,7 @@ pub struct AccountCoverage {
 
     /// The party(s), such as insurances, that may contribute to the payment of
     /// this account
-    pub coverage: types::Reference,
+    pub coverage: types::Reference<crate::r4::resources::Coverage>,
 
     /// The priority of the coverage in the context of this account
     pub priority: Option<types::PositiveInt>,

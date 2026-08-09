@@ -110,7 +110,7 @@ pub struct SupplyRequest {
     pub priority_ext: Option<types::Element>,
 
     /// The patient for who the supply request is for
-    pub deliver_for: Option<types::Reference>,
+    pub deliver_for: Option<types::Reference<crate::r6::resources::Patient>>,
 
     /// Medication, Substance, or Device requested to be supplied
     pub item: types::CodeableReference,

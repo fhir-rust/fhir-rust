@@ -86,13 +86,13 @@ pub struct VisionPrescription {
     pub date_written_ext: Option<types::Element>,
 
     /// Who prescription is for
-    pub patient: Option<types::Reference>,
+    pub patient: Option<types::Reference<crate::r2::resources::Patient>>,
 
     /// Who authorizes the vision product
-    pub prescriber: Option<types::Reference>,
+    pub prescriber: Option<types::Reference<crate::r2::resources::Practitioner>>,
 
     /// Created during encounter / admission / stay
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r2::resources::Encounter>>,
 
     /// Reason or indication for writing the prescription
     /// The `VisionPrescription.reason[x]` choice element (0..1); see [`VisionPrescriptionReason`].

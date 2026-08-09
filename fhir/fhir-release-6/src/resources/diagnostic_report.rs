@@ -112,7 +112,7 @@ pub struct DiagnosticReport {
     pub relates_to: Vec<types::RelatedArtifact>,
 
     /// Encounter associated with the DiagnosticReport
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r6::resources::Encounter>>,
 
     /// Clinically relevant time/time-period for the results that are included
     /// in the report
@@ -129,7 +129,7 @@ pub struct DiagnosticReport {
 
     /// The procedure(s) from which the report was produced
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub procedure: Vec<types::Reference>,
+    pub procedure: Vec<types::Reference<crate::r6::resources::Procedure>>,
 
     /// Responsible Diagnostic Service
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -141,11 +141,11 @@ pub struct DiagnosticReport {
 
     /// Specimens this report is based on
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub specimen: Vec<types::Reference>,
+    pub specimen: Vec<types::Reference<crate::r6::resources::Specimen>>,
 
     /// Observations
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub result: Vec<types::Reference>,
+    pub result: Vec<types::Reference<crate::r6::resources::Observation>>,
 
     /// Comments about the diagnostic report
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -165,7 +165,7 @@ pub struct DiagnosticReport {
     pub media: Vec<DiagnosticReportMedia>,
 
     /// Reference to a Composition resource for the DiagnosticReport structure
-    pub composition: Option<types::Reference>,
+    pub composition: Option<types::Reference<crate::r6::resources::Composition>>,
 
     /// Clinical conclusion (interpretation) of test results
     pub conclusion: Option<types::Markdown>,
@@ -188,7 +188,7 @@ pub struct DiagnosticReport {
 
     /// Communication initiated during the reporting process
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub communication: Vec<types::Reference>,
+    pub communication: Vec<types::Reference<crate::r6::resources::Communication>>,
 }
 
 /// A list of key images or data associated with this report. The images or
@@ -236,7 +236,7 @@ pub struct DiagnosticReportMedia {
     pub comment_ext: Option<types::Element>,
 
     /// Reference to the image or data source
-    pub link: types::Reference,
+    pub link: types::Reference<crate::r6::resources::DocumentReference>,
 }
 
 /// This backbone element contains supporting information that was used in the

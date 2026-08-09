@@ -79,7 +79,7 @@ pub struct PaymentReconciliation {
     pub identifier: Vec<types::Identifier>,
 
     /// Claim reference
-    pub request: Option<types::Reference>,
+    pub request: Option<types::Reference<crate::r2::resources::ProcessRequest>>,
 
     /// complete | error
     pub outcome: Option<crate::coded::Coded<crate::r2::codes::RemittanceOutcome>>,
@@ -112,13 +112,13 @@ pub struct PaymentReconciliation {
     pub period: Option<types::Period>,
 
     /// Insurer
-    pub organization: Option<types::Reference>,
+    pub organization: Option<types::Reference<crate::r2::resources::Organization>>,
 
     /// Responsible practitioner
-    pub request_provider: Option<types::Reference>,
+    pub request_provider: Option<types::Reference<crate::r2::resources::Practitioner>>,
 
     /// Responsible organization
-    pub request_organization: Option<types::Reference>,
+    pub request_organization: Option<types::Reference<crate::r2::resources::Organization>>,
 
     /// Details
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -180,10 +180,10 @@ pub struct PaymentReconciliationDetail {
     pub responce: Option<types::Reference>,
 
     /// Submitter
-    pub submitter: Option<types::Reference>,
+    pub submitter: Option<types::Reference<crate::r2::resources::Organization>>,
 
     /// Payee
-    pub payee: Option<types::Reference>,
+    pub payee: Option<types::Reference<crate::r2::resources::Organization>>,
 
     /// Invoice date
     pub date: Option<types::Date>,

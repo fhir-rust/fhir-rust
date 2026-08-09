@@ -81,7 +81,7 @@ pub struct AppointmentResponse {
     pub identifier: Vec<types::Identifier>,
 
     /// Appointment this response relates to
-    pub appointment: types::Reference,
+    pub appointment: types::Reference<crate::r4::resources::Appointment>,
 
     /// Time from appointment, or requested new start time
     pub start: Option<types::Instant>,

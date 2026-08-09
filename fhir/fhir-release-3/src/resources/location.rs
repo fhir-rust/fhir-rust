@@ -137,15 +137,15 @@ pub struct Location {
     pub position: Option<LocationPosition>,
 
     /// Organization responsible for provisioning and upkeep
-    pub managing_organization: Option<types::Reference>,
+    pub managing_organization: Option<types::Reference<crate::r3::resources::Organization>>,
 
     /// Another Location this one is physically part of
-    pub part_of: Option<types::Reference>,
+    pub part_of: Option<types::Reference<crate::r3::resources::Location>>,
 
     /// Technical endpoints providing access to services operated for the
     /// location
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub endpoint: Vec<types::Reference>,
+    pub endpoint: Vec<types::Reference<crate::r3::resources::Endpoint>>,
 }
 
 /// The absolute geographic location of the Location, expressed using the WGS84

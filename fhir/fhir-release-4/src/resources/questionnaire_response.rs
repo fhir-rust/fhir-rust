@@ -105,7 +105,7 @@ pub struct QuestionnaireResponse {
     pub subject: Option<types::Reference>,
 
     /// Encounter created as part of
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r4::resources::Encounter>>,
 
     /// Date the answers were gathered
     pub authored: Option<types::DateTime>,

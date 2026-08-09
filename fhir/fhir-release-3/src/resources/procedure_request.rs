@@ -174,7 +174,7 @@ pub struct ProcedureRequest {
 
     /// Procedure Samples
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub specimen: Vec<types::Reference>,
+    pub specimen: Vec<types::Reference<crate::r3::resources::Specimen>>,
 
     /// Location on Body
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -186,7 +186,7 @@ pub struct ProcedureRequest {
 
     /// Request provenance
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub relevant_history: Vec<types::Reference>,
+    pub relevant_history: Vec<types::Reference<crate::r3::resources::Provenance>>,
 }
 
 /// The individual who initiated the request and has responsibility for its
@@ -229,7 +229,7 @@ pub struct ProcedureRequestRequester {
     pub agent: types::Reference,
 
     /// Organization agent is acting for
-    pub on_behalf_of: Option<types::Reference>,
+    pub on_behalf_of: Option<types::Reference<crate::r3::resources::Organization>>,
 }
 
 /// The `ProcedureRequest.occurrence[x]` choice element (see `spec/11-choice-types.md`).

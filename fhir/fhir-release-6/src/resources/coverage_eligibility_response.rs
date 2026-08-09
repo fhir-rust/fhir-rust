@@ -88,7 +88,7 @@ pub struct CoverageEligibilityResponse {
     pub purpose_ext: Vec<Option<types::Element>>,
 
     /// Intended recipient of products and services
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r6::resources::Patient>,
 
     /// Event information
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -110,7 +110,7 @@ pub struct CoverageEligibilityResponse {
     pub requestor: Option<types::Reference>,
 
     /// Eligibility request reference
-    pub request: types::Reference,
+    pub request: types::Reference<crate::r6::resources::CoverageEligibilityRequest>,
 
     /// queued | complete | error | partial
     pub outcome: crate::coded::Coded<crate::r6::codes::EligibilityOutcome>,
@@ -127,7 +127,7 @@ pub struct CoverageEligibilityResponse {
     pub disposition_ext: Option<types::Element>,
 
     /// Coverage issuer
-    pub insurer: types::Reference,
+    pub insurer: types::Reference<crate::r6::resources::Organization>,
 
     /// Patient insurance information
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -277,7 +277,7 @@ pub struct CoverageEligibilityResponseInsurance {
     pub modifier_extension: Vec<types::Extension>,
 
     /// Insurance information
-    pub coverage: types::Reference,
+    pub coverage: types::Reference<crate::r6::resources::Coverage>,
 
     /// Coverage inforce indicator
     pub inforce: Option<types::Boolean>,

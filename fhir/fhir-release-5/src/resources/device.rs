@@ -212,14 +212,14 @@ pub struct Device {
 
     /// Organization responsible for the device, such as the entity that
     /// owns, procures, or maintains it
-    pub owner: Option<types::Reference>,
+    pub owner: Option<types::Reference<crate::r5::resources::Organization>>,
 
     /// Details for human/organization for support
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub contact: Vec<types::ContactPoint>,
 
     /// Where the device is found
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r5::resources::Location>>,
 
     /// Network address to contact device
     pub url: Option<types::Uri>,
@@ -229,7 +229,7 @@ pub struct Device {
 
     /// Technical endpoints providing access to electronic services provided by the device
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub endpoint: Vec<types::Reference>,
+    pub endpoint: Vec<types::Reference<crate::r5::resources::Endpoint>>,
 
     /// Linked device acting as a communication/data collector, translator or controller
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -244,7 +244,7 @@ pub struct Device {
     pub safety: Vec<types::CodeableConcept>,
 
     /// The higher level or encompassing device that this device is a logical part of
-    pub parent: Option<types::Reference>,
+    pub parent: Option<types::Reference<crate::r5::resources::Device>>,
 }
 
 /// Unique Device Identifier (UDI) Barcode string.

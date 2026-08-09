@@ -108,7 +108,7 @@ pub struct List {
     pub subject: Vec<types::Reference>,
 
     /// Context in which list created
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r6::resources::Encounter>>,
 
     /// When the list was prepared
     pub date: Option<types::DateTime>,

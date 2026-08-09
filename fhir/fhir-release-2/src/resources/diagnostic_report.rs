@@ -97,7 +97,7 @@ pub struct DiagnosticReport {
     pub subject: types::Reference,
 
     /// Health care event when test ordered
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r2::resources::Encounter>>,
 
     /// Clinically Relevant time/time-period for report
     /// The `DiagnosticReport.effective[x]` choice element (1..1); see [`DiagnosticReportEffective`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
@@ -120,11 +120,11 @@ pub struct DiagnosticReport {
 
     /// Specimens this report is based on
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub specimen: Vec<types::Reference>,
+    pub specimen: Vec<types::Reference<crate::r2::resources::Specimen>>,
 
     /// Observations - simple, or complex nested groups
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub result: Vec<types::Reference>,
+    pub result: Vec<types::Reference<crate::r2::resources::Observation>>,
 
     /// Reference to full details of imaging associated with the diagnostic
     /// report
@@ -196,7 +196,7 @@ pub struct DiagnosticReportImage {
     pub comment_ext: Option<types::Element>,
 
     /// Reference to the image source
-    pub link: types::Reference,
+    pub link: types::Reference<crate::r2::resources::Media>,
 }
 
 /// The `DiagnosticReport.effective[x]` choice element (see `spec/11-choice-types.md`).

@@ -89,7 +89,7 @@ pub struct EligibilityRequest {
     pub priority: Option<types::CodeableConcept>,
 
     /// The subject of the Products and Services
-    pub patient: Option<types::Reference>,
+    pub patient: Option<types::Reference<crate::r3::resources::Patient>>,
 
     /// Estimated date or dates of Service
     /// The `EligibilityRequest.serviced[x]` choice element (0..1); see [`EligibilityRequestServiced`].
@@ -104,22 +104,22 @@ pub struct EligibilityRequest {
     pub created_ext: Option<types::Element>,
 
     /// Author
-    pub enterer: Option<types::Reference>,
+    pub enterer: Option<types::Reference<crate::r3::resources::Practitioner>>,
 
     /// Responsible practitioner
-    pub provider: Option<types::Reference>,
+    pub provider: Option<types::Reference<crate::r3::resources::Practitioner>>,
 
     /// Responsible organization
-    pub organization: Option<types::Reference>,
+    pub organization: Option<types::Reference<crate::r3::resources::Organization>>,
 
     /// Target
-    pub insurer: Option<types::Reference>,
+    pub insurer: Option<types::Reference<crate::r3::resources::Organization>>,
 
     /// Servicing Facility
-    pub facility: Option<types::Reference>,
+    pub facility: Option<types::Reference<crate::r3::resources::Location>>,
 
     /// Insurance or medical plan
-    pub coverage: Option<types::Reference>,
+    pub coverage: Option<types::Reference<crate::r3::resources::Coverage>>,
 
     /// Business agreement
     pub business_arrangement: Option<types::String>,

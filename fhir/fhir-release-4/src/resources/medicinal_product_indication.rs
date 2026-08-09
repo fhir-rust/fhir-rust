@@ -102,7 +102,8 @@ pub struct MedicinalProductIndication {
 
     /// Describe the undesirable effects of the medicinal product
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub undesirable_effect: Vec<types::Reference>,
+    pub undesirable_effect:
+        Vec<types::Reference<crate::r4::resources::MedicinalProductUndesirableEffect>>,
 
     /// The population group to which this applies
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

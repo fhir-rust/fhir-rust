@@ -18,12 +18,16 @@ pub fn augment(mut source: String, plan: &TypePlan, version: Version) -> String 
     let module = version.module();
 
     // Builder does not survive the generic parameter, and a reference never
-    // needed one — R5 dropped the derive when the marker landed.
+    // needed one — R5 dropped the derive when the marker landed. Default is
+    // implemented by hand below instead of derived: the derive would demand
+    // `T: Default`, and a typed target like `Reference<Appointment>` must
+    // default fine even when `Appointment` (required fields) cannot.
     source = source.replace(
         "use fhir_derive_macros::{Builder, Validate};",
         "use fhir_derive_macros::Validate;\nuse std::marker::PhantomData;",
     );
     source = source.replace(", Validate, Builder)]", ", Validate)]");
+    source = source.replace("#[derive(Debug, Default, Clone,", "#[derive(Debug, Clone,");
 
     // The generic parameter, defaulting to the untyped target so that a bare
     // `types::Reference` keeps meaning what it always did.
@@ -51,8 +55,9 @@ pub fn augment(mut source: String, plan: &TypePlan, version: Version) -> String 
     // The machinery, between the struct and the tests module.
     // Every field the renderer emitted, in order — including the `_ext`
     // primitive-extension siblings, which ride on their field's plan rather
-    // than being plans of their own.
-    let mut fields: Vec<String> = Vec::new();
+    // than being plans of their own. The bool is "defaults to an empty Vec"
+    // (everything else on Reference is an Option defaulting to None).
+    let mut fields: Vec<(String, bool)> = Vec::new();
     for f in &plan
         .structs
         .iter()
@@ -60,9 +65,13 @@ pub fn augment(mut source: String, plan: &TypePlan, version: Version) -> String 
         .expect("Reference has a root struct")
         .fields
     {
-        fields.push(f.ident.clone());
+        let is_vec = matches!(
+            f.wrapper,
+            super::plan::Wrapper::Vec | super::plan::Wrapper::Vec1
+        );
+        fields.push((f.ident.clone(), is_vec));
         if f.sibling.is_some() {
-            fields.push(format!("{}_ext", f.ident.trim_start_matches("r#")));
+            fields.push((format!("{}_ext", f.ident.trim_start_matches("r#")), false));
         }
     }
 
@@ -75,9 +84,26 @@ pub fn augment(mut source: String, plan: &TypePlan, version: Version) -> String 
     source
 }
 
-/// The trait, the untyped target, and the `cast`/`into_any`/`resolve` impls.
-fn machinery(fields: &[String], module: &str) -> String {
-    let mut machinery = String::new();
+/// The bound-free `Default`: the derive would demand `T: Default`, and a
+/// typed reference must default fine even when its target resource (required
+/// fields) cannot.
+fn default_impl(fields: &[(String, bool)]) -> String {
+    let mut out = String::from(
+        "\nimpl<T> Default for Reference<T> {\n    fn default() -> Self {\n        Reference {\n",
+    );
+    for (field, is_vec) in fields {
+        let value = if *is_vec { "Vec::new()" } else { "None" };
+        let _ = writeln!(out, "            {field}: {value},");
+    }
+    out.push_str("            _marker: PhantomData,\n        }\n    }\n}\n");
+    out
+}
+
+/// The trait, the untyped target, and the `Default`/`cast`/`into_any`/
+/// `resolve` impls.
+fn machinery(fields: &[(String, bool)], module: &str) -> String {
+    let mut machinery = default_impl(fields);
+
     let _ = write!(
         machinery,
         "\n/// A marker type naming the resource a [`Reference`] points to.\n\
@@ -107,7 +133,7 @@ fn machinery(fields: &[String], module: &str) -> String {
          \x20   pub fn cast<U>(self) -> Reference<U> {{\n\
          \x20       Reference {{\n"
     );
-    for field in fields {
+    for (field, _) in fields {
         let _ = writeln!(machinery, "            {field}: self.{field},");
     }
     let _ = write!(

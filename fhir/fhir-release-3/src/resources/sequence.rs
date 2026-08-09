@@ -95,16 +95,16 @@ pub struct Sequence {
     pub coordinate_system_ext: Option<types::Element>,
 
     /// Who and/or what this is about
-    pub patient: Option<types::Reference>,
+    pub patient: Option<types::Reference<crate::r3::resources::Patient>>,
 
     /// Specimen used for sequencing
-    pub specimen: Option<types::Reference>,
+    pub specimen: Option<types::Reference<crate::r3::resources::Specimen>>,
 
     /// The method for sequencing
-    pub device: Option<types::Reference>,
+    pub device: Option<types::Reference<crate::r3::resources::Device>>,
 
     /// Who should be responsible for test result
-    pub performer: Option<types::Reference>,
+    pub performer: Option<types::Reference<crate::r3::resources::Organization>>,
 
     /// The number of copies of the seqeunce of interest. (RNASeq)
     pub quantity: Option<types::Quantity>,
@@ -142,7 +142,7 @@ pub struct Sequence {
 
     /// Pointer to next atomic sequence
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub pointer: Vec<types::Reference>,
+    pub pointer: Vec<types::Reference<crate::r3::resources::Sequence>>,
 }
 
 /// An experimental feature attribute that defines the quality of the feature
@@ -326,7 +326,7 @@ pub struct SequenceReferenceSeq {
     pub reference_seq_id: Option<types::CodeableConcept>,
 
     /// A Pointer to another Sequence entity as reference sequence
-    pub reference_seq_pointer: Option<types::Reference>,
+    pub reference_seq_pointer: Option<types::Reference<crate::r3::resources::Sequence>>,
 
     /// A string to represent reference sequence
     pub reference_seq_string: Option<types::String>,
@@ -511,7 +511,7 @@ pub struct SequenceVariant {
     pub cigar_ext: Option<types::Element>,
 
     /// Pointer to observed variant information
-    pub variant_pointer: Option<types::Reference>,
+    pub variant_pointer: Option<types::Reference<crate::r3::resources::Observation>>,
 }
 
 #[cfg(test)]

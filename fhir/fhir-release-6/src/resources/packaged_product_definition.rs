@@ -93,7 +93,7 @@ pub struct PackagedProductDefinition {
 
     /// The product that this is a pack for
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub package_for: Vec<types::Reference>,
+    pub package_for: Vec<types::Reference<crate::r6::resources::MedicinalProductDefinition>>,
 
     /// The status within the lifecycle of this item. High level - not intended
     /// to duplicate details elsewhere e.g. legal status, or
@@ -143,12 +143,12 @@ pub struct PackagedProductDefinition {
     /// Manufacturer of this package type (multiple means these are all
     /// possible manufacturers)
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub manufacturer: Vec<types::Reference>,
+    pub manufacturer: Vec<types::Reference<crate::r6::resources::Organization>>,
 
     /// Additional information or supporting documentation about the packaged
     /// product
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub attached_document: Vec<types::Reference>,
+    pub attached_document: Vec<types::Reference<crate::r6::resources::DocumentReference>>,
 
     /// A packaging item, as a container for medically related items, possibly
     /// with other packaging items within, or a packaging component, such as
@@ -282,7 +282,7 @@ pub struct PackagedProductDefinitionPackaging {
     /// Manufacturer of this packaging item (multiple means these are all
     /// potential manufacturers)
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub manufacturer: Vec<types::Reference>,
+    pub manufacturer: Vec<types::Reference<crate::r6::resources::Organization>>,
 
     /// General characteristics of this item
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

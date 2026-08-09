@@ -117,7 +117,7 @@ pub struct SubscriptionStatus {
     pub notification_event: Vec<SubscriptionStatusNotificationEvent>,
 
     /// Reference to the Subscription responsible for this notification
-    pub subscription: types::Reference,
+    pub subscription: types::Reference<crate::r5::resources::Subscription>,
 
     /// Canonical reference to the SubscriptionTopic this notification relates to
     pub topic: Option<types::Canonical>,

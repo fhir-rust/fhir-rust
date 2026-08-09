@@ -109,7 +109,7 @@ pub struct Media {
     pub subject: Option<types::Reference>,
 
     /// Encounter associated with media
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r4::resources::Encounter>>,
 
     /// When Media was collected
     /// The `Media.created[x]` choice element (0..1); see [`MediaCreated`].

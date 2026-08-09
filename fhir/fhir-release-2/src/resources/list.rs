@@ -95,7 +95,7 @@ pub struct List {
     pub source: Option<types::Reference>,
 
     /// Context in which list created
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r2::resources::Encounter>>,
 
     /// current | retired | entered-in-error
     pub status: crate::coded::Coded<crate::r2::codes::ListStatus>,

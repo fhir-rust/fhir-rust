@@ -130,7 +130,7 @@ pub struct SubstanceDefinition {
 
     /// Supporting literature
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub information_source: Vec<types::Reference>,
+    pub information_source: Vec<types::Reference<crate::r5::resources::Citation>>,
 
     /// Textual comment about the substance's catalogue or registry record
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -138,11 +138,11 @@ pub struct SubstanceDefinition {
 
     /// The entity that creates, makes, produces or fabricates the substance
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub manufacturer: Vec<types::Reference>,
+    pub manufacturer: Vec<types::Reference<crate::r5::resources::Organization>>,
 
     /// An entity that is the source for the substance. It may be different from the manufacturer
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub supplier: Vec<types::Reference>,
+    pub supplier: Vec<types::Reference<crate::r5::resources::Organization>>,
 
     /// Moiety, for structural modifications
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -157,7 +157,8 @@ pub struct SubstanceDefinition {
     pub property: Vec<SubstanceDefinitionProperty>,
 
     /// General information detailing this substance
-    pub reference_information: Option<types::Reference>,
+    pub reference_information:
+        Option<types::Reference<crate::r5::resources::SubstanceReferenceInformation>>,
 
     /// The average mass of a molecule of a compound
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -179,13 +180,13 @@ pub struct SubstanceDefinition {
     pub relationship: Vec<SubstanceDefinitionRelationship>,
 
     /// Data items specific to nucleic acids
-    pub nucleic_acid: Option<types::Reference>,
+    pub nucleic_acid: Option<types::Reference<crate::r5::resources::SubstanceNucleicAcid>>,
 
     /// Data items specific to polymers
-    pub polymer: Option<types::Reference>,
+    pub polymer: Option<types::Reference<crate::r5::resources::SubstancePolymer>>,
 
     /// Data items specific to proteins
-    pub protein: Option<types::Reference>,
+    pub protein: Option<types::Reference<crate::r5::resources::SubstanceProtein>>,
 
     /// Material or taxonomic/anatomical source
     pub source_material: Option<SubstanceDefinitionSourceMaterial>,
@@ -450,7 +451,7 @@ pub struct SubstanceDefinitionStructure {
 
     /// Source of information for the structure
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub source_document: Vec<types::Reference>,
+    pub source_document: Vec<types::Reference<crate::r5::resources::DocumentReference>>,
 
     /// A depiction of the structure of the substance
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -503,7 +504,7 @@ pub struct SubstanceDefinitionStructureRepresentation {
     pub format: Option<types::CodeableConcept>,
 
     /// An attachment with the structural representation e.g. a structure graphic or AnIML file
-    pub document: Option<types::Reference>,
+    pub document: Option<types::Reference<crate::r5::resources::DocumentReference>>,
 }
 
 /// SubstanceDefinition.code - Codes associated with the substance
@@ -557,7 +558,7 @@ pub struct SubstanceDefinitionCode {
 
     /// Supporting literature
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub source: Vec<types::Reference>,
+    pub source: Vec<types::Reference<crate::r5::resources::DocumentReference>>,
 }
 
 /// SubstanceDefinition.name - Names applicable to this substance
@@ -637,7 +638,7 @@ pub struct SubstanceDefinitionName {
 
     /// Supporting literature
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub source: Vec<types::Reference>,
+    pub source: Vec<types::Reference<crate::r5::resources::DocumentReference>>,
 }
 
 /// SubstanceDefinition.name.official - Details of the official nature of this name
@@ -744,7 +745,7 @@ pub struct SubstanceDefinitionRelationship {
 
     /// Supporting literature
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub source: Vec<types::Reference>,
+    pub source: Vec<types::Reference<crate::r5::resources::DocumentReference>>,
 }
 
 /// SubstanceDefinition.sourceMaterial - Material or taxonomic/anatomical source

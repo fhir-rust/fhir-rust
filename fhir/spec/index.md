@@ -104,5 +104,6 @@ exactly — `0..1`→`Option<T>`, `1..1`→`T`, `0..*`→`Vec<T>`,
 
 Open improvements are recorded as **Future work** sections within the relevant
 spec. The largest of them are a FHIRPath evaluator (unlocking most of spec 10),
-typed `Reference<T>` rollout (spec 04), an R4B model (spec 12), and semantic
-cross-version remapping driven by HL7's extension maps (spec 14).
+an R4B model (spec 12), and semantic cross-version remapping driven by HL7's
+extension maps (spec 14). (The typed `Reference<T>` rollout completed
+2026-08-09 — spec 04, T11.)

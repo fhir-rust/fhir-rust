@@ -99,7 +99,7 @@ pub struct ProcedureRequest {
     pub scheduled: Option<ProcedureRequestScheduled>,
 
     /// Encounter request created during
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r2::resources::Encounter>>,
 
     /// Who should perform the procedure
     pub performer: Option<types::Reference>,

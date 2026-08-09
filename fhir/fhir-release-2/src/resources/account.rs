@@ -109,7 +109,7 @@ pub struct Account {
     pub subject: Option<types::Reference>,
 
     /// Who is responsible?
-    pub owner: Option<types::Reference>,
+    pub owner: Option<types::Reference<crate::r2::resources::Organization>>,
 
     /// Explanation of purpose/use
     pub description: Option<types::String>,

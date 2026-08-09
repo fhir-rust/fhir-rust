@@ -79,7 +79,7 @@ pub struct OrderResponse {
     pub identifier: Vec<types::Identifier>,
 
     /// The order that this is a response to
-    pub request: types::Reference,
+    pub request: types::Reference<crate::r2::resources::Order>,
 
     /// When the response was made
     pub date: Option<types::DateTime>,

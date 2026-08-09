@@ -88,7 +88,7 @@ pub struct RelatedPerson {
     pub active_ext: Option<types::Element>,
 
     /// The patient this person is related to
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r6::resources::Patient>,
 
     /// The personal relationship of the related person to the patient
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

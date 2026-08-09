@@ -104,7 +104,7 @@ pub struct Condition {
     pub subject: types::Reference,
 
     /// Encounter created as part of
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r4::resources::Encounter>>,
 
     /// Estimated or actual date, date-time, or age
     /// The `Condition.onset[x]` choice element (0..1); see [`ConditionOnset`].

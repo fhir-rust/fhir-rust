@@ -106,7 +106,7 @@ pub struct List {
     pub subject: Option<types::Reference>,
 
     /// Context in which list created
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r4::resources::Encounter>>,
 
     /// When the list was prepared
     pub date: Option<types::DateTime>,

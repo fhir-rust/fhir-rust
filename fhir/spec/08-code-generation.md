@@ -105,8 +105,8 @@ generators are still how R5 is edited in bulk. New work goes in `codegen`.
 - Retire the legacy `r5::parse` layer once R5's prose can be carried across a
   regeneration — for example by holding the hand-written documentation outside
   the generated files.
-- Generate typed `Reference<T>` fields from each element's `targetProfile`
-  (spec 04, Future work).
+- ~~Generate typed `Reference<T>` fields from each element's
+  `targetProfile`~~ — done 2026-08-09 (T11; spec 04).
 
 ## Acceptance criteria
 

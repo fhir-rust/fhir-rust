@@ -514,7 +514,7 @@ pub struct MeasureGroupPopulation {
     pub criteria: Option<types::Expression>,
 
     /// A group resource that defines this population
-    pub group_definition: Option<types::Reference>,
+    pub group_definition: Option<types::Reference<crate::r5::resources::Group>>,
 
     /// Which population
     pub input_population_id: Option<types::String>,
@@ -578,7 +578,7 @@ pub struct MeasureGroupStratifier {
     pub criteria: Option<types::Expression>,
 
     /// A group resource that defines this population
-    pub group_definition: Option<types::Reference>,
+    pub group_definition: Option<types::Reference<crate::r5::resources::Group>>,
 
     /// Stratifier criteria component for the measure
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -637,7 +637,7 @@ pub struct MeasureGroupStratifierComponent {
     pub criteria: Option<types::Expression>,
 
     /// A group resource that defines this population
-    pub group_definition: Option<types::Reference>,
+    pub group_definition: Option<types::Reference<crate::r5::resources::Group>>,
 }
 
 /// What other data should be reported with the measure.

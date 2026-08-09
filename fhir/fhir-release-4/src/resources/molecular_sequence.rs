@@ -95,16 +95,16 @@ pub struct MolecularSequence {
     pub coordinate_system_ext: Option<types::Element>,
 
     /// Who and/or what this is about
-    pub patient: Option<types::Reference>,
+    pub patient: Option<types::Reference<crate::r4::resources::Patient>>,
 
     /// Specimen used for sequencing
-    pub specimen: Option<types::Reference>,
+    pub specimen: Option<types::Reference<crate::r4::resources::Specimen>>,
 
     /// The method for sequencing
-    pub device: Option<types::Reference>,
+    pub device: Option<types::Reference<crate::r4::resources::Device>>,
 
     /// Who should be responsible for test result
-    pub performer: Option<types::Reference>,
+    pub performer: Option<types::Reference<crate::r4::resources::Organization>>,
 
     /// The number of copies of the sequence of interest. (RNASeq)
     pub quantity: Option<types::Quantity>,
@@ -142,7 +142,7 @@ pub struct MolecularSequence {
 
     /// Pointer to next atomic sequence
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub pointer: Vec<types::Reference>,
+    pub pointer: Vec<types::Reference<crate::r4::resources::MolecularSequence>>,
 
     /// Structural variant
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -443,7 +443,7 @@ pub struct MolecularSequenceReferenceSeq {
     pub reference_seq_id: Option<types::CodeableConcept>,
 
     /// A pointer to another MolecularSequence entity as reference sequence
-    pub reference_seq_pointer: Option<types::Reference>,
+    pub reference_seq_pointer: Option<types::Reference<crate::r4::resources::MolecularSequence>>,
 
     /// A string to represent reference sequence
     pub reference_seq_string: Option<types::String>,
@@ -787,7 +787,7 @@ pub struct MolecularSequenceVariant {
     pub cigar_ext: Option<types::Element>,
 
     /// Pointer to observed variant information
-    pub variant_pointer: Option<types::Reference>,
+    pub variant_pointer: Option<types::Reference<crate::r4::resources::Observation>>,
 }
 
 #[cfg(test)]

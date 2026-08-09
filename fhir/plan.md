@@ -15,11 +15,11 @@ The 2026-07-11 plan ran to completion or was overtaken, phase by phase:
 
 | Phase | Planned | Outcome |
 | --- | --- | --- |
-| 0 — infrastructure | CI, examples oracle, publish hygiene, proptest | Done, exceeded — 16-job CI incl. fuzzing, SBOM, package-size, corpus gate (7,400 examples, hard gate); published. **Proptest (T4) was never done** — the one unfinished Phase 0 item. |
+| 0 — infrastructure | CI, examples oracle, publish hygiene, proptest | Done, exceeded — 16-job CI incl. fuzzing, SBOM, package-size, corpus gate (7,400 examples, hard gate); published. Proptest, the last unfinished item, closed 2026-08-06 (T48). |
 | 1 — primitive extensions | `_field` siblings | Done — shipped as `_ext` fields serde-renamed to `_<name>`, generator-emitted. |
-| 2 — type safety | choice enums, coded enums, typed refs, value APIs | Choice enums, `Coded<E>`, and the temporal accessors done (T12 — inherent `parse_parts`/`date_parts` in every release's `temporal.rs`; the audit briefly mis-recorded this by checking the wrong file). **Typed `Reference<T>`: machinery only** — the type exists with `cast`/`resolve`, but zero fields are typed (T11). |
+| 2 — type safety | choice enums, coded enums, typed refs, value APIs | **Complete** as of 2026-08-09: choice enums, `Coded<E>`, temporal accessors (T12), and the full typed-`Reference<T>` rollout — machinery in every release and typed fields wherever `targetProfile` names one resource (T11). |
 | 3 — validation | cardinality, invariants, OperationOutcome | Done, exceeded — 8 invariant classes vs the planned 3, `vec1::Vec1` for `1..*`, corpus-tested. |
-| 4 — ergonomics | builders, prelude, bundle utils, typed `contained` | Done **except typed `contained`** — still `Vec<serde_json::Value>` (T18, not a recorded reversal). |
+| 4 — ergonomics | builders, prelude, bundle utils, typed `contained` | **Complete** — typed `contained` landed 2026-08-06 (T47, breaking → 4.0). |
 | 5 — interop | client, XML, summary | Done, hardened past the plan (timeouts, percent-encoding, size caps, fuzzing — T29/T31 found and fixed a remote DoS in the XML reader). |
 | 6 — multi-version | "R4B under `src/r4b/`" | Exceeded in substance, obsolete in form: **five releases (R2–R6) shipped as separate crates** — the workspace split is what made compiling them tractable (peak memory 12.9 GB → 5.0 GB). R4B itself remains future work (spec 12). |
 | A — assurance | (added later) | T26–T36 all done: lexical `Decimal`, full-corpus CI gate, client hardening, fuzzing, supply chain, R5 drift audit, cross-release conversion (`fhir::convert`, the 3.0.0 headline). |
@@ -32,25 +32,17 @@ and five reservation crates at 0.0.1 — 13 crates, all published.
 
 Tracked as discrete tasks in [`tasks.md`](tasks.md); the plan-level view:
 
-1. **Drift found by the 2026-08-06 audit (Phase B, T37–T45).** The tree is in
-   better shape than its own metadata: the facade's `rust-version` (1.97)
-   contradicts the other 12 crates and the CI job (1.88); `bin/check-llms`
-   greps files deleted by the crate split and currently exits 1, so the `llms`
-   CI job cannot pass; `llms.json`/`llms.txt` describe version 1.1.0 with no
-   `r2`, `r6`, or `convert` — and `llms.txt` is a 22 MB byte-identical
-   duplicate of `fhir.md` in git; `#![forbid(unsafe_code)]` covers 1 of 13
-   crates while spec 13 `R13.14` requires it of the crate that owns the HTTP
-   client and XML reader; `AGENTS.md`/`AGENTS/` still describe four releases
-   and dead `src/<release>/` paths; the CHANGELOG never recorded
-   `fhir-derive-macros` 1.2.0. None of this is model behaviour; all of it is
-   the kind of confident-but-wrong text this repository's audits exist to
-   catch.
-2. **The one unfinished half of an old phase**: typed `Reference<T>` fields
-   (generator emission from `targetProfile`, T11). Typed `contained` closed
-   2026-08-06 (T47, breaking → 4.0); the temporal accessors turned out to
-   have been done all along (T12 — the audit had checked the wrong file).
-   T11 is a deliberate-scope decision first and codegen second — deciding
-   *not* to do it and recording why is an acceptable close.
+1. ~~Drift found by the 2026-08-06 audit (Phase B, T37–T49)~~ — **all
+   executed or closed by decision by 2026-08-07**: MSRV reconciled, the llms
+   gate repaired and its artifacts regenerated, `forbid(unsafe_code)` in all
+   13 crates, the AGENTS sweep, the changelog and identity strings, the
+   profdata removal, the fhir-core doctest gate. The two owner decisions are
+   recorded in place (llms.txt duplication is deliberate, T38; no book
+   deploy, T46).
+2. ~~The unfinished halves of old phases~~ — all closed: typed `contained`
+   2026-08-06 (T47), the temporal accessors were done all along (T12), and
+   the typed `Reference<T>` rollout — machinery and field emission —
+   completed 2026-08-09 (T11). What remains from the old plan is only R4B.
 3. **R4B** (spec 12 future work) — the only FHIR release published by HL7 and
    not modelled here. The generator and the adding-a-release procedure
    (`doc/adding-a-release.md`) are proven by five releases; R4B is a
@@ -86,7 +78,7 @@ Tracked as discrete tasks in [`tasks.md`](tasks.md); the plan-level view:
 | --- | --- |
 | R5 hand-documented tree drifts from the generator again | `tests/r5_drift.rs` fails on any unsanctioned difference (T35/T36 closed the 18 that had accumulated) |
 | A generator fix lands in some release crates and not others | regeneration is per-release and cheap; the drift test covers R5; corpus gates cover all |
-| Metadata drift (the Phase B class) recurs | the audit pattern that caught it — verify every doc claim against the tree — is recorded in `tasks.md`; `bin/check-llms` (once repaired, T38) and `scripts/check-published-match.sh` are the mechanical share |
+| Metadata drift (the Phase B class) recurs | the audit pattern that caught it — verify every doc claim against the tree — is recorded in `tasks.md`; `bin/check-llms` (repaired, T38) and `scripts/check-published-match.sh` are the mechanical share |
 | Compile time / memory regress with new releases | the crate-per-release split is the mitigation and is measured (12.9 → 5.0 GB); keep new releases in their own crates |
 | `unsafe` enters via dependencies or macros unguarded | T39 rolls `forbid(unsafe_code)` to all crates; `cargo-deny` + SBOM in CI |
 

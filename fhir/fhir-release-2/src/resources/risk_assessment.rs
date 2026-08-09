@@ -85,10 +85,10 @@ pub struct RiskAssessment {
     pub date_ext: Option<types::Element>,
 
     /// Condition assessed
-    pub condition: Option<types::Reference>,
+    pub condition: Option<types::Reference<crate::r2::resources::Condition>>,
 
     /// Where was assessment performed?
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r2::resources::Encounter>>,
 
     /// Who did assessment?
     pub performer: Option<types::Reference>,

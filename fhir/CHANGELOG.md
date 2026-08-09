@@ -20,8 +20,24 @@ the trees genuinely converged, down to the one recorded cycle-break
 difference (`Reference::identifier` vs `Identifier::assigner`; one `Box`
 either way, at opposite edges). **Breaking, narrowly**: generated
 `Reference` no longer derives `Builder` (the derive does not survive the
-generic parameter; R5 dropped it when the marker landed). Field emission —
-`Reference<Patient>` where `targetProfile` names one resource — is phase 2.
+generic parameter; R5 dropped it when the marker landed).
+
+### Changed - **breaking**: reference fields are typed by `targetProfile` (T11, phase 2)
+
+Where the specification gives a reference element exactly one target, the
+field now says so: `AllergyIntolerance.patient` is `Reference<Patient>`,
+`Medication.definition` is `Reference<MedicationKnowledge>` — 376 fields in
+R5 alone, and proportionally in every release. Multiple targets
+(`Observation.subject`) and abstract ones (`Resource`, which names the
+tagged enum, not a markable struct) stay `Reference<Any>` via the default
+parameter; the wire form is identical either way, and `resolve` now rejects
+a matching id under the wrong `resourceType` when the marker is concrete.
+`Default` on `Reference<T>` is a hand-written bound-free impl — the derive's
+`T: Default` bound would have broken defaults for targets with required
+fields — and the type-cycle breaker sees through the generic (the phantom
+embeds nothing), keeping the `Identifier.assigner` box where it was.
+Breaking for code that names reference field types; `cast`/`into_any` are
+the escape hatches, and `examples/typed_references.rs` is the tour.
 
 ### Changed - **breaking**: `contained` is typed (T47)
 

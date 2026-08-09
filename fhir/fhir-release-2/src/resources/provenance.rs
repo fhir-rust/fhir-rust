@@ -88,7 +88,7 @@ pub struct Provenance {
     pub activity: Option<types::CodeableConcept>,
 
     /// Where the activity occurred, if relevant
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r2::resources::Location>>,
 
     /// Policy or plan the activity was defined by
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

@@ -126,28 +126,28 @@ pub struct EpisodeOfCare {
     pub diagnosis: Vec<EpisodeOfCareDiagnosis>,
 
     /// Reference to the [`Patient`](crate::r5::resources::patient::Patient) who is the focus of this episode of care
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r5::resources::Patient>,
 
     /// Organization that assumes overall responsibility for care coordination during the episode
-    pub managing_organization: Option<types::Reference>,
+    pub managing_organization: Option<types::Reference<crate::r5::resources::Organization>>,
 
     /// Interval during which the managing organization's responsibility is assumed
     pub period: Option<types::Period>,
 
     /// Originating Referral Request(s)
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub referral_request: Vec<types::Reference>,
+    pub referral_request: Vec<types::Reference<crate::r5::resources::ServiceRequest>>,
 
     /// Care manager/care coordinator for the patient
     pub care_manager: Option<types::Reference>,
 
     /// Other practitioners facilitating this episode of care
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub care_team: Vec<types::Reference>,
+    pub care_team: Vec<types::Reference<crate::r5::resources::CareTeam>>,
 
     /// The set of accounts that may be used for billing for this EpisodeOfCare
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub account: Vec<types::Reference>,
+    pub account: Vec<types::Reference<crate::r5::resources::Account>>,
 }
 
 /// Past list of status codes (the current status may be included to cover the

@@ -88,7 +88,7 @@ pub struct ReferralRequest {
 
     /// Request(s) replaced by this request
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub replaces: Vec<types::Reference>,
+    pub replaces: Vec<types::Reference<crate::r3::resources::ReferralRequest>>,
 
     /// Composite request this is part of
     pub group_identifier: Option<types::Identifier>,
@@ -175,7 +175,7 @@ pub struct ReferralRequest {
 
     /// Key events in history of request
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub relevant_history: Vec<types::Reference>,
+    pub relevant_history: Vec<types::Reference<crate::r3::resources::Provenance>>,
 }
 
 /// The individual who initiated the request and has responsibility for its
@@ -218,7 +218,7 @@ pub struct ReferralRequestRequester {
     pub agent: types::Reference,
 
     /// Organization agent is acting for
-    pub on_behalf_of: Option<types::Reference>,
+    pub on_behalf_of: Option<types::Reference<crate::r3::resources::Organization>>,
 }
 
 /// The `ReferralRequest.occurrence[x]` choice element (see `spec/11-choice-types.md`).

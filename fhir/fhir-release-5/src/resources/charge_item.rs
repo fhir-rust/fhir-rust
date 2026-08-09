@@ -128,7 +128,7 @@ pub struct ChargeItem {
 
     /// Part of referenced ChargeItem
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub part_of: Vec<types::Reference>,
+    pub part_of: Vec<types::Reference<crate::r5::resources::ChargeItem>>,
 
     /// A code that identifies the charge, like a billing code
     pub code: types::CodeableConcept,
@@ -137,7 +137,7 @@ pub struct ChargeItem {
     pub subject: types::Reference,
 
     /// Encounter associated with this ChargeItem
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r5::resources::Encounter>>,
 
     /// The `ChargeItem.occurrence[x]` choice element (0..1); see [`ChargeItemOccurrence`].
     #[serde(flatten)]
@@ -148,13 +148,13 @@ pub struct ChargeItem {
     pub performer: Vec<ChargeItemPerformer>,
 
     /// Organization providing the charged service
-    pub performing_organization: Option<types::Reference>,
+    pub performing_organization: Option<types::Reference<crate::r5::resources::Organization>>,
 
     /// Organization requesting the charged service
-    pub requesting_organization: Option<types::Reference>,
+    pub requesting_organization: Option<types::Reference<crate::r5::resources::Organization>>,
 
     /// Organization that has ownership of the (potential, future) revenue
-    pub cost_center: Option<types::Reference>,
+    pub cost_center: Option<types::Reference<crate::r5::resources::Organization>>,
 
     /// Quantity of the item or service being charged, e.g. the number of units administered
     pub quantity: Option<types::Quantity>,
@@ -195,7 +195,7 @@ pub struct ChargeItem {
 
     /// Account to place this charge
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub account: Vec<types::Reference>,
+    pub account: Vec<types::Reference<crate::r5::resources::Account>>,
 
     /// Comments made about the ChargeItem
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

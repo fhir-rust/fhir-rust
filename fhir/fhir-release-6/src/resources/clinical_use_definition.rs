@@ -114,7 +114,7 @@ pub struct ClinicalUseDefinition {
 
     /// The population group to which this applies
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub population: Vec<types::Reference>,
+    pub population: Vec<types::Reference<crate::r6::resources::Group>>,
 
     /// Logic used by the clinical use definition
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -181,7 +181,7 @@ pub struct ClinicalUseDefinitionContraindication {
 
     /// The indication which this is a contraindication for
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub indication: Vec<types::Reference>,
+    pub indication: Vec<types::Reference<crate::r6::resources::ClinicalUseDefinition>>,
 
     /// An expression that returns true or false, indicating whether the
     /// indication is applicable or not, after having applied its other
@@ -295,7 +295,7 @@ pub struct ClinicalUseDefinitionIndication {
     /// An unwanted side effect or negative outcome of the subject of this
     /// resource when being used for this indication
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub undesirable_effect: Vec<types::Reference>,
+    pub undesirable_effect: Vec<types::Reference<crate::r6::resources::ClinicalUseDefinition>>,
 
     /// An expression that returns true or false, indicating whether the
     /// indication is applicable or not, after having applied its other

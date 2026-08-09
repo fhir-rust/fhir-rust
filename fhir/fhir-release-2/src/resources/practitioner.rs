@@ -164,7 +164,7 @@ pub struct PractitionerPractitionerRole {
     pub modifier_extension: Vec<types::Extension>,
 
     /// Organization where the roles are performed
-    pub managing_organization: Option<types::Reference>,
+    pub managing_organization: Option<types::Reference<crate::r2::resources::Organization>>,
 
     /// Roles which this practitioner may perform
     pub role: Option<types::CodeableConcept>,
@@ -179,12 +179,12 @@ pub struct PractitionerPractitionerRole {
 
     /// The location(s) at which this practitioner provides care
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub location: Vec<types::Reference>,
+    pub location: Vec<types::Reference<crate::r2::resources::Location>>,
 
     /// The list of healthcare services that this worker provides for this
     /// role's Organization/Location(s)
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub healthcare_service: Vec<types::Reference>,
+    pub healthcare_service: Vec<types::Reference<crate::r2::resources::HealthcareService>>,
 }
 
 /// Qualifications obtained by training and certification.
@@ -233,7 +233,7 @@ pub struct PractitionerQualification {
     pub period: Option<types::Period>,
 
     /// Organization that regulates and issues the qualification
-    pub issuer: Option<types::Reference>,
+    pub issuer: Option<types::Reference<crate::r2::resources::Organization>>,
 }
 
 #[cfg(test)]

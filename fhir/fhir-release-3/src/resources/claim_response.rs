@@ -86,7 +86,7 @@ pub struct ClaimResponse {
     pub status_ext: Option<types::Element>,
 
     /// The subject of the Products and Services
-    pub patient: Option<types::Reference>,
+    pub patient: Option<types::Reference<crate::r3::resources::Patient>>,
 
     /// Creation date
     pub created: Option<types::DateTime>,
@@ -96,16 +96,16 @@ pub struct ClaimResponse {
     pub created_ext: Option<types::Element>,
 
     /// Insurance issuing organization
-    pub insurer: Option<types::Reference>,
+    pub insurer: Option<types::Reference<crate::r3::resources::Organization>>,
 
     /// Responsible practitioner
-    pub request_provider: Option<types::Reference>,
+    pub request_provider: Option<types::Reference<crate::r3::resources::Practitioner>>,
 
     /// Responsible organization
-    pub request_organization: Option<types::Reference>,
+    pub request_organization: Option<types::Reference<crate::r3::resources::Organization>>,
 
     /// Id of resource triggering adjudication
-    pub request: Option<types::Reference>,
+    pub request: Option<types::Reference<crate::r3::resources::Claim>>,
 
     /// complete | error | partial
     pub outcome: Option<types::CodeableConcept>,
@@ -156,7 +156,7 @@ pub struct ClaimResponse {
 
     /// Request for additional information
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub communication_request: Vec<types::Reference>,
+    pub communication_request: Vec<types::Reference<crate::r3::resources::CommunicationRequest>>,
 
     /// Insurance or medical plan
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -416,7 +416,7 @@ pub struct ClaimResponseInsurance {
     pub focal_ext: Option<types::Element>,
 
     /// Insurance information
-    pub coverage: types::Reference,
+    pub coverage: types::Reference<crate::r3::resources::Coverage>,
 
     /// Business agreement
     pub business_arrangement: Option<types::String>,
@@ -435,7 +435,7 @@ pub struct ClaimResponseInsurance {
     pub pre_auth_ref_ext: Vec<Option<types::Element>>,
 
     /// Adjudication results
-    pub claim_response: Option<types::Reference>,
+    pub claim_response: Option<types::Reference<crate::r3::resources::ClaimResponse>>,
 }
 
 /// The first tier service adjudications for submitted services.

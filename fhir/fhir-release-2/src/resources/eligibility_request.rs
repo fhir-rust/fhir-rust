@@ -92,13 +92,13 @@ pub struct EligibilityRequest {
     pub created_ext: Option<types::Element>,
 
     /// Insurer
-    pub target: Option<types::Reference>,
+    pub target: Option<types::Reference<crate::r2::resources::Organization>>,
 
     /// Responsible practitioner
-    pub provider: Option<types::Reference>,
+    pub provider: Option<types::Reference<crate::r2::resources::Practitioner>>,
 
     /// Responsible organization
-    pub organization: Option<types::Reference>,
+    pub organization: Option<types::Reference<crate::r2::resources::Organization>>,
 }
 
 #[cfg(test)]

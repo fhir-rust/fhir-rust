@@ -102,7 +102,7 @@ pub struct Coverage {
     pub subscriber_id_ext: Option<types::Element>,
 
     /// Plan Beneficiary
-    pub beneficiary: Option<types::Reference>,
+    pub beneficiary: Option<types::Reference<crate::r3::resources::Patient>>,
 
     /// Beneficiary relationship to the Subscriber
     pub relationship: Option<types::CodeableConcept>,
@@ -147,7 +147,7 @@ pub struct Coverage {
 
     /// Contract details
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub contract: Vec<types::Reference>,
+    pub contract: Vec<types::Reference<crate::r3::resources::Contract>>,
 }
 
 /// A suite of underwrite specific classifiers, for example may be used to

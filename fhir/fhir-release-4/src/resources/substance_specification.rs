@@ -97,7 +97,7 @@ pub struct SubstanceSpecification {
 
     /// Supporting literature
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub source: Vec<types::Reference>,
+    pub source: Vec<types::Reference<crate::r4::resources::DocumentReference>>,
 
     /// Textual comment about this record of a substance
     pub comment: Option<types::String>,
@@ -116,7 +116,8 @@ pub struct SubstanceSpecification {
     pub property: Vec<SubstanceSpecificationProperty>,
 
     /// General information detailing this substance
-    pub reference_information: Option<types::Reference>,
+    pub reference_information:
+        Option<types::Reference<crate::r4::resources::SubstanceReferenceInformation>>,
 
     /// Structural information
     pub structure: Option<SubstanceSpecificationStructure>,
@@ -140,16 +141,16 @@ pub struct SubstanceSpecification {
     pub relationship: Vec<SubstanceSpecificationRelationship>,
 
     /// Data items specific to nucleic acids
-    pub nucleic_acid: Option<types::Reference>,
+    pub nucleic_acid: Option<types::Reference<crate::r4::resources::SubstanceNucleicAcid>>,
 
     /// Data items specific to polymers
-    pub polymer: Option<types::Reference>,
+    pub polymer: Option<types::Reference<crate::r4::resources::SubstancePolymer>>,
 
     /// Data items specific to proteins
-    pub protein: Option<types::Reference>,
+    pub protein: Option<types::Reference<crate::r4::resources::SubstanceProtein>>,
 
     /// Material or taxonomic/anatomical source for the substance
-    pub source_material: Option<types::Reference>,
+    pub source_material: Option<types::Reference<crate::r4::resources::SubstanceSourceMaterial>>,
 }
 
 /// Codes associated with the substance.
@@ -210,7 +211,7 @@ pub struct SubstanceSpecificationCode {
 
     /// Supporting literature
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub source: Vec<types::Reference>,
+    pub source: Vec<types::Reference<crate::r4::resources::DocumentReference>>,
 }
 
 /// Moiety, for structural modifications.
@@ -362,7 +363,7 @@ pub struct SubstanceSpecificationName {
 
     /// Supporting literature
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub source: Vec<types::Reference>,
+    pub source: Vec<types::Reference<crate::r4::resources::DocumentReference>>,
 }
 
 /// Details of the official nature of this name.
@@ -546,7 +547,7 @@ pub struct SubstanceSpecificationRelationship {
 
     /// Supporting literature
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub source: Vec<types::Reference>,
+    pub source: Vec<types::Reference<crate::r4::resources::DocumentReference>>,
 }
 
 /// Structural information.
@@ -616,7 +617,7 @@ pub struct SubstanceSpecificationStructure {
 
     /// Supporting literature
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub source: Vec<types::Reference>,
+    pub source: Vec<types::Reference<crate::r4::resources::DocumentReference>>,
 
     /// Molecular structural representation
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

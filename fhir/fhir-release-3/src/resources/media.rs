@@ -81,7 +81,7 @@ pub struct Media {
 
     /// Procedure that caused this media to be created
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub based_on: Vec<types::Reference>,
+    pub based_on: Vec<types::Reference<crate::r3::resources::ProcedureRequest>>,
 
     /// photo | video | audio
     pub r#type: crate::coded::Coded<crate::r3::codes::DigitalMediaType>,
@@ -108,7 +108,7 @@ pub struct Media {
     pub occurrence: Option<MediaOccurrence>,
 
     /// The person who generated the image
-    pub operator: Option<types::Reference>,
+    pub operator: Option<types::Reference<crate::r3::resources::Practitioner>>,
 
     /// Why was event performed?
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

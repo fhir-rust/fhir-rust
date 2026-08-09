@@ -114,7 +114,7 @@ pub struct Slot {
     pub appointment_type: Vec<types::CodeableConcept>,
 
     /// Reference to the Schedule resource that this slot subdivides and reports availability for; this reference is required
-    pub schedule: types::Reference,
+    pub schedule: types::Reference<crate::r5::resources::Schedule>,
 
     /// Availability status of the interval: busy | free | busy-unavailable | busy-tentative | entered-in-error
     pub status: crate::r5::coded::Coded<crate::r5::codes::Slotstatus>,

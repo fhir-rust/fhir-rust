@@ -88,10 +88,10 @@ pub struct DeviceUseRequest {
     pub status_ext: Option<types::Element>,
 
     /// Device requested
-    pub device: types::Reference,
+    pub device: types::Reference<crate::r2::resources::Device>,
 
     /// Encounter motivating request
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r2::resources::Encounter>>,
 
     /// Request identifier
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -129,7 +129,7 @@ pub struct DeviceUseRequest {
     pub recorded_on_ext: Option<types::Element>,
 
     /// Focus of request
-    pub subject: types::Reference,
+    pub subject: types::Reference<crate::r2::resources::Patient>,
 
     /// Schedule for use
     /// The `DeviceUseRequest.timing[x]` choice element (0..1); see [`DeviceUseRequestTiming`].

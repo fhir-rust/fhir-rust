@@ -92,11 +92,11 @@ pub struct ResearchStudy {
 
     /// Steps followed in executing study
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub protocol: Vec<types::Reference>,
+    pub protocol: Vec<types::Reference<crate::r4::resources::PlanDefinition>>,
 
     /// Part of larger study
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub part_of: Vec<types::Reference>,
+    pub part_of: Vec<types::Reference<crate::r4::resources::ResearchStudy>>,
 
     /// active | administratively-completed | approved | closed-to-accrual |
     /// closed-to-accrual-and-intervention | completed | disapproved |
@@ -153,20 +153,20 @@ pub struct ResearchStudy {
 
     /// Inclusion & exclusion criteria
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub enrollment: Vec<types::Reference>,
+    pub enrollment: Vec<types::Reference<crate::r4::resources::Group>>,
 
     /// When the study began and ended
     pub period: Option<types::Period>,
 
     /// Organization that initiates and is legally responsible for the study
-    pub sponsor: Option<types::Reference>,
+    pub sponsor: Option<types::Reference<crate::r4::resources::Organization>>,
 
     /// Researcher who oversees multiple aspects of the study
     pub principal_investigator: Option<types::Reference>,
 
     /// Facility where study activities are conducted
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub site: Vec<types::Reference>,
+    pub site: Vec<types::Reference<crate::r4::resources::Location>>,
 
     /// accrual-goal-met | closed-due-to-toxicity |
     /// closed-due-to-lack-of-study-progress |

@@ -146,7 +146,7 @@ pub struct Person {
     pub communication: Vec<PersonCommunication>,
 
     /// The organization that is the custodian of the person record
-    pub managing_organization: Option<types::Reference>,
+    pub managing_organization: Option<types::Reference<crate::r5::resources::Organization>>,
 
     /// Links to Patient, Practitioner, RelatedPerson, or other Person records that concern the same actual person
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

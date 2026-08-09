@@ -206,7 +206,7 @@ pub struct ActivityDefinition {
 
     /// Logic used by the asset
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub library: Vec<types::Reference>,
+    pub library: Vec<types::Reference<crate::r3::resources::Library>>,
 
     /// Kind of resource
     pub kind: Option<crate::coded::Coded<crate::r3::codes::ResourceTypes>>,
@@ -224,7 +224,7 @@ pub struct ActivityDefinition {
     pub timing: Option<ActivityDefinitionTiming>,
 
     /// Where it should happen
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r3::resources::Location>>,
 
     /// Who should participate in the action
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -247,7 +247,7 @@ pub struct ActivityDefinition {
     pub body_site: Vec<types::CodeableConcept>,
 
     /// Transform to apply the template
-    pub transform: Option<types::Reference>,
+    pub transform: Option<types::Reference<crate::r3::resources::StructureMap>>,
 
     /// Dynamic aspects of the definition
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

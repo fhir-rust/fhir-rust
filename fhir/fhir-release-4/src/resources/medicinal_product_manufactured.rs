@@ -88,11 +88,11 @@ pub struct MedicinalProductManufactured {
     /// Manufacturer of the item (Note that this should be named "manufacturer"
     /// but it currently causes technical issues)
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub manufacturer: Vec<types::Reference>,
+    pub manufacturer: Vec<types::Reference<crate::r4::resources::Organization>>,
 
     /// Ingredient
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub ingredient: Vec<types::Reference>,
+    pub ingredient: Vec<types::Reference<crate::r4::resources::MedicinalProductIngredient>>,
 
     /// Dimensions, color etc.
     pub physical_characteristics: Option<types::ProdCharacteristic>,

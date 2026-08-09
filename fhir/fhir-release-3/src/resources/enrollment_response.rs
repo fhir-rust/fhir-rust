@@ -86,7 +86,7 @@ pub struct EnrollmentResponse {
     pub status_ext: Option<types::Element>,
 
     /// Claim reference
-    pub request: Option<types::Reference>,
+    pub request: Option<types::Reference<crate::r3::resources::EnrollmentRequest>>,
 
     /// complete | error | partial
     pub outcome: Option<types::CodeableConcept>,
@@ -106,13 +106,13 @@ pub struct EnrollmentResponse {
     pub created_ext: Option<types::Element>,
 
     /// Insurer
-    pub organization: Option<types::Reference>,
+    pub organization: Option<types::Reference<crate::r3::resources::Organization>>,
 
     /// Responsible practitioner
-    pub request_provider: Option<types::Reference>,
+    pub request_provider: Option<types::Reference<crate::r3::resources::Practitioner>>,
 
     /// Responsible organization
-    pub request_organization: Option<types::Reference>,
+    pub request_organization: Option<types::Reference<crate::r3::resources::Organization>>,
 }
 
 #[cfg(test)]

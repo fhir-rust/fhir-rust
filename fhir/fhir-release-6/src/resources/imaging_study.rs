@@ -99,7 +99,7 @@ pub struct ImagingStudy {
     pub subject: types::Reference,
 
     /// Encounter with which this imaging study is associated
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r6::resources::Encounter>>,
 
     /// When the study was started
     pub started: Option<types::DateTime>,
@@ -114,21 +114,21 @@ pub struct ImagingStudy {
 
     /// Part of referenced event
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub part_of: Vec<types::Reference>,
+    pub part_of: Vec<types::Reference<crate::r6::resources::Procedure>>,
 
     /// Referring physician
     pub referrer: Option<types::Reference>,
 
     /// Study access endpoint
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub endpoint: Vec<types::Reference>,
+    pub endpoint: Vec<types::Reference<crate::r6::resources::Endpoint>>,
 
     /// Associated procedure(s)
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub procedure: Vec<types::CodeableReference>,
 
     /// Where imaging study occurred
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r6::resources::Location>>,
 
     /// Why was imaging study performed?
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -233,7 +233,7 @@ pub struct ImagingStudySeries {
 
     /// Series access endpoint
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub endpoint: Vec<types::Reference>,
+    pub endpoint: Vec<types::Reference<crate::r6::resources::Endpoint>>,
 
     /// Body part examined
     pub body_site: Option<types::CodeableReference>,
@@ -243,7 +243,7 @@ pub struct ImagingStudySeries {
 
     /// Specimen imaged
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub specimen: Vec<types::Reference>,
+    pub specimen: Vec<types::Reference<crate::r6::resources::Specimen>>,
 
     /// When the series started
     pub started: Option<types::DateTime>,

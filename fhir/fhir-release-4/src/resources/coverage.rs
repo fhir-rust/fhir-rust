@@ -96,7 +96,7 @@ pub struct Coverage {
     pub subscriber_id_ext: Option<types::Element>,
 
     /// Plan beneficiary
-    pub beneficiary: types::Reference,
+    pub beneficiary: types::Reference<crate::r4::resources::Patient>,
 
     /// Dependent number
     pub dependent: Option<types::String>,
@@ -145,7 +145,7 @@ pub struct Coverage {
 
     /// Contract details
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub contract: Vec<types::Reference>,
+    pub contract: Vec<types::Reference<crate::r4::resources::Contract>>,
 }
 
 /// A suite of underwriter specific classifiers.

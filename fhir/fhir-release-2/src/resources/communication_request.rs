@@ -108,7 +108,7 @@ pub struct CommunicationRequest {
     pub status_ext: Option<types::Element>,
 
     /// Encounter leading to message
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r2::resources::Encounter>>,
 
     /// When scheduled
     /// The `CommunicationRequest.scheduled[x]` choice element (0..1); see [`CommunicationRequestScheduled`].
@@ -127,7 +127,7 @@ pub struct CommunicationRequest {
     pub requested_on_ext: Option<types::Element>,
 
     /// Focus of message
-    pub subject: Option<types::Reference>,
+    pub subject: Option<types::Reference<crate::r2::resources::Patient>>,
 
     /// Message urgency
     pub priority: Option<types::CodeableConcept>,

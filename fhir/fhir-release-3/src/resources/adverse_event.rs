@@ -104,10 +104,10 @@ pub struct AdverseEvent {
 
     /// Adverse Reaction Events linked to exposure to substance
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub reaction: Vec<types::Reference>,
+    pub reaction: Vec<types::Reference<crate::r3::resources::Condition>>,
 
     /// Location where adverse event occurred
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r3::resources::Location>>,
 
     /// Mild | Moderate | Severe
     pub seriousness: Option<types::CodeableConcept>,
@@ -139,11 +139,11 @@ pub struct AdverseEvent {
 
     /// AdverseEvent.referenceDocument
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub reference_document: Vec<types::Reference>,
+    pub reference_document: Vec<types::Reference<crate::r3::resources::DocumentReference>>,
 
     /// AdverseEvent.study
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub study: Vec<types::Reference>,
+    pub study: Vec<types::Reference<crate::r3::resources::ResearchStudy>>,
 }
 
 /// Describes the entity that is suspected to have caused the adverse event.

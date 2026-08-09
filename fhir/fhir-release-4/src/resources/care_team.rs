@@ -102,7 +102,7 @@ pub struct CareTeam {
     pub subject: Option<types::Reference>,
 
     /// Encounter created as part of
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r4::resources::Encounter>>,
 
     /// Time period team covers
     pub period: Option<types::Period>,
@@ -117,11 +117,11 @@ pub struct CareTeam {
 
     /// Why the care team exists
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub reason_reference: Vec<types::Reference>,
+    pub reason_reference: Vec<types::Reference<crate::r4::resources::Condition>>,
 
     /// Organization responsible for the care team
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub managing_organization: Vec<types::Reference>,
+    pub managing_organization: Vec<types::Reference<crate::r4::resources::Organization>>,
 
     /// A contact detail for the care team (that applies to all members)
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -176,7 +176,7 @@ pub struct CareTeamParticipant {
     pub member: Option<types::Reference>,
 
     /// Organization of the practitioner
-    pub on_behalf_of: Option<types::Reference>,
+    pub on_behalf_of: Option<types::Reference<crate::r4::resources::Organization>>,
 
     /// Time period of participant
     pub period: Option<types::Period>,

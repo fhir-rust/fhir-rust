@@ -115,7 +115,7 @@ pub struct Organization {
     pub address: Vec<types::Address>,
 
     /// The organization of which this organization forms a part
-    pub part_of: Option<types::Reference>,
+    pub part_of: Option<types::Reference<crate::r3::resources::Organization>>,
 
     /// Contact for the organization for a certain purpose
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -124,7 +124,7 @@ pub struct Organization {
     /// Technical endpoints providing access to services operated for the
     /// organization
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub endpoint: Vec<types::Reference>,
+    pub endpoint: Vec<types::Reference<crate::r3::resources::Endpoint>>,
 }
 
 /// Contact for the organization for a certain purpose.

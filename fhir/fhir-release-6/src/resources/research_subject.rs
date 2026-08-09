@@ -91,7 +91,7 @@ pub struct ResearchSubject {
     pub period: Option<types::Period>,
 
     /// Study subject is part of
-    pub study: types::Reference,
+    pub study: types::Reference<crate::r6::resources::ResearchStudy>,
 
     /// Who or what is part of study
     pub subject: types::Reference,
@@ -121,7 +121,7 @@ pub struct ResearchSubject {
 
     /// Agreement to participate in study
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub consent: Vec<types::Reference>,
+    pub consent: Vec<types::Reference<crate::r6::resources::Consent>>,
 }
 
 /// A significant event in the progress of a ResearchSubject.

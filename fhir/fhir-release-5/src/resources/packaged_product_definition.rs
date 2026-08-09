@@ -117,7 +117,7 @@ pub struct PackagedProductDefinition {
 
     /// References the medicinal or manufactured product definitions that this package is a pack for.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub package_for: Vec<types::Reference>,
+    pub package_for: Vec<types::Reference<crate::r5::resources::MedicinalProductDefinition>>,
 
     /// The status within the lifecycle of this item. High level - not intended to duplicate details elsewhere e.g. legal status, or authorization/marketing status
     pub status: Option<types::CodeableConcept>,
@@ -154,11 +154,11 @@ pub struct PackagedProductDefinition {
 
     /// Manufacturer of this package type (multiple means these are all possible manufacturers)
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub manufacturer: Vec<types::Reference>,
+    pub manufacturer: Vec<types::Reference<crate::r5::resources::Organization>>,
 
     /// Additional information or supporting documentation about the packaged product
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub attached_document: Vec<types::Reference>,
+    pub attached_document: Vec<types::Reference<crate::r5::resources::DocumentReference>>,
 
     /// The outermost packaging item, forming the root of the nested container hierarchy and the medically related items it holds.
     pub packaging: Option<PackagedProductDefinitionPackaging>,
@@ -282,7 +282,7 @@ pub struct PackagedProductDefinitionPackaging {
 
     /// Manufacturer of this packaging item (multiple means these are all potential manufacturers)
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub manufacturer: Vec<types::Reference>,
+    pub manufacturer: Vec<types::Reference<crate::r5::resources::Organization>>,
 
     /// General characteristics of this item
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

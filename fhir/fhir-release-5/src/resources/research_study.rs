@@ -127,11 +127,11 @@ pub struct ResearchStudy {
 
     /// Steps followed in executing study
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub protocol: Vec<types::Reference>,
+    pub protocol: Vec<types::Reference<crate::r5::resources::PlanDefinition>>,
 
     /// Part of larger study
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub part_of: Vec<types::Reference>,
+    pub part_of: Vec<types::Reference<crate::r5::resources::ResearchStudy>>,
 
     /// References, URLs, and attachments
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -438,7 +438,7 @@ pub struct ResearchStudyRecruitment {
     pub eligibility: Option<types::Reference>,
 
     /// Group of participants who were enrolled in study
-    pub actual_group: Option<types::Reference>,
+    pub actual_group: Option<types::Reference<crate::r5::resources::Group>>,
 }
 
 /// Defined path through the study for a subject.
@@ -500,10 +500,10 @@ pub struct ResearchStudyComparisonGroup {
 
     /// Interventions or exposures in this comparisonGroup or cohort
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub intended_exposure: Vec<types::Reference>,
+    pub intended_exposure: Vec<types::Reference<crate::r5::resources::EvidenceVariable>>,
 
     /// Group of participants who were enrolled in study comparisonGroup
-    pub observed_group: Option<types::Reference>,
+    pub observed_group: Option<types::Reference<crate::r5::resources::Group>>,
 }
 
 /// A goal for the study.
@@ -611,7 +611,7 @@ pub struct ResearchStudyOutcomeMeasure {
     pub description_ext: Option<types::Element>,
 
     /// Structured outcome definition
-    pub reference: Option<types::Reference>,
+    pub reference: Option<types::Reference<crate::r5::resources::EvidenceVariable>>,
 }
 
 #[cfg(test)]

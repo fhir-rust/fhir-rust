@@ -182,7 +182,7 @@ pub struct CatalogEntryRelatedEntry {
     pub relationtype_ext: Option<types::Element>,
 
     /// The reference to the related item
-    pub item: types::Reference,
+    pub item: types::Reference<crate::r4::resources::CatalogEntry>,
 }
 
 #[cfg(test)]

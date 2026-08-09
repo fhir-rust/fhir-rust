@@ -73,7 +73,7 @@ pub struct MedicinalProductPackaged {
 
     /// The product with this is a pack for
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub subject: Vec<types::Reference>,
+    pub subject: Vec<types::Reference<crate::r4::resources::MedicinalProduct>>,
 
     /// Textual description
     pub description: Option<types::String>,
@@ -91,11 +91,12 @@ pub struct MedicinalProductPackaged {
     pub marketing_status: Vec<types::MarketingStatus>,
 
     /// Manufacturer of this Package Item
-    pub marketing_authorization: Option<types::Reference>,
+    pub marketing_authorization:
+        Option<types::Reference<crate::r4::resources::MedicinalProductAuthorization>>,
 
     /// Manufacturer of this Package Item
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub manufacturer: Vec<types::Reference>,
+    pub manufacturer: Vec<types::Reference<crate::r4::resources::Organization>>,
 
     /// Batch numbering
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -206,11 +207,12 @@ pub struct MedicinalProductPackagedPackageItem {
 
     /// A device accompanying a medicinal product
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub device: Vec<types::Reference>,
+    pub device: Vec<types::Reference<crate::r4::resources::DeviceDefinition>>,
 
     /// The manufactured item as contained in the packaged medicinal product
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub manufactured_item: Vec<types::Reference>,
+    pub manufactured_item:
+        Vec<types::Reference<crate::r4::resources::MedicinalProductManufactured>>,
 
     /// Allows containers within containers
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -229,5 +231,5 @@ pub struct MedicinalProductPackagedPackageItem {
 
     /// Manufacturer of this Package Item
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub manufacturer: Vec<types::Reference>,
+    pub manufacturer: Vec<types::Reference<crate::r4::resources::Organization>>,
 }

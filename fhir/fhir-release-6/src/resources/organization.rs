@@ -120,12 +120,12 @@ pub struct Organization {
     pub contact: Vec<types::ExtendedContactDetail>,
 
     /// The organization of which this organization forms a part
-    pub part_of: Option<types::Reference>,
+    pub part_of: Option<types::Reference<crate::r6::resources::Organization>>,
 
     /// Technical endpoints providing access to services operated for the
     /// organization
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub endpoint: Vec<types::Reference>,
+    pub endpoint: Vec<types::Reference<crate::r6::resources::Endpoint>>,
 
     /// Qualifications, certifications, accreditations, licenses, training,
     /// etc. pertaining to the provision of care
@@ -186,7 +186,7 @@ pub struct OrganizationQualification {
     pub period: Option<types::Period>,
 
     /// Organization that regulates and issues the qualification
-    pub issuer: Option<types::Reference>,
+    pub issuer: Option<types::Reference<crate::r6::resources::Organization>>,
 }
 
 #[cfg(test)]

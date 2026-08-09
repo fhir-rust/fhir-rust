@@ -83,7 +83,7 @@ pub struct ImagingStudy {
     pub started_ext: Option<types::Element>,
 
     /// Who the images are of
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r2::resources::Patient>,
 
     /// Formal identifier for the study
     pub uid: types::Oid,
@@ -101,14 +101,14 @@ pub struct ImagingStudy {
 
     /// Order(s) that caused this study to be performed
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub order: Vec<types::Reference>,
+    pub order: Vec<types::Reference<crate::r2::resources::DiagnosticOrder>>,
 
     /// All series modality if actual acquisition modalities
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub modality_list: Vec<types::Coding>,
 
     /// Referring physician (0008,0090)
-    pub referrer: Option<types::Reference>,
+    pub referrer: Option<types::Reference<crate::r2::resources::Practitioner>>,
 
     /// ONLINE | OFFLINE | NEARLINE | UNAVAILABLE (0008,0056)
     pub availability: Option<types::Code>,
@@ -140,10 +140,10 @@ pub struct ImagingStudy {
 
     /// Type of procedure performed
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub procedure: Vec<types::Reference>,
+    pub procedure: Vec<types::Reference<crate::r2::resources::Procedure>>,
 
     /// Who interpreted images
-    pub interpreter: Option<types::Reference>,
+    pub interpreter: Option<types::Reference<crate::r2::resources::Practitioner>>,
 
     /// Institution-generated description
     pub description: Option<types::String>,

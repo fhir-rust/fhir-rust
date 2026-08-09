@@ -143,13 +143,13 @@ pub struct Device {
     pub lot_number_ext: Option<types::Element>,
 
     /// Organization responsible for device
-    pub owner: Option<types::Reference>,
+    pub owner: Option<types::Reference<crate::r2::resources::Organization>>,
 
     /// Where the resource is found
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r2::resources::Location>>,
 
     /// If the resource is affixed to a person
-    pub patient: Option<types::Reference>,
+    pub patient: Option<types::Reference<crate::r2::resources::Patient>>,
 
     /// Details for human/organization for support
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

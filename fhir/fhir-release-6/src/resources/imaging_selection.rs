@@ -150,12 +150,12 @@ pub struct ImagingSelection {
 
     /// Related resources that are the focus for the imaging selection
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub focus: Vec<types::Reference>,
+    pub focus: Vec<types::Reference<crate::r6::resources::ImagingSelection>>,
 
     /// The network services providing retrieval for the images referenced in
     /// the imaging selection
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub endpoint: Vec<types::Reference>,
+    pub endpoint: Vec<types::Reference<crate::r6::resources::Endpoint>>,
 
     /// The selected instances
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

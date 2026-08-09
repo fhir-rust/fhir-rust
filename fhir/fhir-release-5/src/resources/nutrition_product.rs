@@ -115,7 +115,7 @@ pub struct NutritionProduct {
 
     /// Manufacturer, representative or officially responsible for the product
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub manufacturer: Vec<types::Reference>,
+    pub manufacturer: Vec<types::Reference<crate::r5::resources::Organization>>,
 
     /// The product's nutritional composition, expressed as nutrient amounts such as per pack, per serving, or per dose
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

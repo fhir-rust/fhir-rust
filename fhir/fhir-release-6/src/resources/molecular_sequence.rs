@@ -182,7 +182,7 @@ pub struct MolecularSequenceConcatenatedSequenceElement {
     pub modifier_extension: Vec<types::Extension>,
 
     /// The Molecular Sequence corresponding to this element
-    pub sequence: types::Reference,
+    pub sequence: types::Reference<crate::r6::resources::MolecularSequence>,
 
     /// The ordinal position of this sequence element within the concatenated
     /// Molecular Sequence
@@ -231,7 +231,7 @@ pub struct MolecularSequenceExtracted {
 
     /// The Molecular Sequence that serves as the parent sequence, from which
     /// the intended sequence will be extracted
-    pub starting_sequence: types::Reference,
+    pub starting_sequence: types::Reference<crate::r6::resources::MolecularSequence>,
 
     /// The start coordinate (on the parent sequence) of the interval that
     /// defines the subsequence to be extracted
@@ -344,7 +344,7 @@ pub struct MolecularSequenceRelative {
 
     /// The Molecular Sequence that serves as the starting sequence, on which
     /// edits will be applied
-    pub starting_sequence: types::Reference,
+    pub starting_sequence: types::Reference<crate::r6::resources::MolecularSequence>,
 
     /// An edit (change) made to a sequence
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -414,11 +414,11 @@ pub struct MolecularSequenceRelativeEdit {
 
     /// The sequence that defines the replacement sequence used in the edit
     /// operation
-    pub replacement_sequence: types::Reference,
+    pub replacement_sequence: types::Reference<crate::r6::resources::MolecularSequence>,
 
     /// The sequence on the 'starting' sequence for the edit operation, defined
     /// by the specified interval, that will be replaced during the edit
-    pub replaced_sequence: Option<types::Reference>,
+    pub replaced_sequence: Option<types::Reference<crate::r6::resources::MolecularSequence>>,
 }
 
 /// A Molecular Sequence that is represented as a repeated sequence motif.
@@ -457,7 +457,7 @@ pub struct MolecularSequenceRepeated {
     pub modifier_extension: Vec<types::Extension>,
 
     /// The sequence that defines the repeated motif
-    pub sequence_motif: types::Reference,
+    pub sequence_motif: types::Reference<crate::r6::resources::MolecularSequence>,
 
     /// The number of repeats (copies) of the sequence motif
     pub copy_count: types::Integer,

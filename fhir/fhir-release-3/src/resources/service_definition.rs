@@ -212,7 +212,7 @@ pub struct ServiceDefinition {
     pub data_requirement: Vec<types::DataRequirement>,
 
     /// Operation to invoke
-    pub operation_definition: Option<types::Reference>,
+    pub operation_definition: Option<types::Reference<crate::r3::resources::OperationDefinition>>,
 }
 
 #[cfg(test)]

@@ -118,7 +118,7 @@ pub struct CarePlan {
 
     /// Health issues this plan addresses
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub addresses: Vec<types::Reference>,
+    pub addresses: Vec<types::Reference<crate::r2::resources::Condition>>,
 
     /// Information considered as part of plan
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -134,7 +134,7 @@ pub struct CarePlan {
 
     /// Desired outcome of plan
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub goal: Vec<types::Reference>,
+    pub goal: Vec<types::Reference<crate::r2::resources::Goal>>,
 
     /// Action to occur as part of plan
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -245,11 +245,11 @@ pub struct CarePlanActivityDetail {
 
     /// Condition triggering need for activity
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub reason_reference: Vec<types::Reference>,
+    pub reason_reference: Vec<types::Reference<crate::r2::resources::Condition>>,
 
     /// Goals this activity relates to
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub goal: Vec<types::Reference>,
+    pub goal: Vec<types::Reference<crate::r2::resources::Goal>>,
 
     /// not-started | scheduled | in-progress | on-hold | completed | cancelled
     pub status: Option<crate::coded::Coded<crate::r2::codes::CarePlanActivityStatus>>,
@@ -274,7 +274,7 @@ pub struct CarePlanActivityDetail {
     pub scheduled: Option<CarePlanActivityDetailScheduled>,
 
     /// Where it should happen
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r2::resources::Location>>,
 
     /// Who will be responsible?
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -386,7 +386,7 @@ pub struct CarePlanRelatedPlan {
     pub code_ext: Option<types::Element>,
 
     /// Plan relationship exists with
-    pub plan: types::Reference,
+    pub plan: types::Reference<crate::r2::resources::CarePlan>,
 }
 
 /// The `CarePlan.activity.detail.scheduled[x]` choice element (see `spec/11-choice-types.md`).

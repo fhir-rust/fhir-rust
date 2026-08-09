@@ -95,10 +95,10 @@ pub struct MessageHeader {
     pub timestamp_ext: Option<types::Element>,
 
     /// The source of the data entry
-    pub enterer: Option<types::Reference>,
+    pub enterer: Option<types::Reference<crate::r3::resources::Practitioner>>,
 
     /// The source of the decision
-    pub author: Option<types::Reference>,
+    pub author: Option<types::Reference<crate::r3::resources::Practitioner>>,
 
     /// Message source application
     pub source: MessageHeaderSource,
@@ -160,7 +160,7 @@ pub struct MessageHeaderDestination {
     pub name_ext: Option<types::Element>,
 
     /// Particular delivery destination within the destination
-    pub target: Option<types::Reference>,
+    pub target: Option<types::Reference<crate::r3::resources::Device>>,
 
     /// Actual destination address or id
     pub endpoint: types::Uri,
@@ -221,7 +221,7 @@ pub struct MessageHeaderResponse {
     pub code_ext: Option<types::Element>,
 
     /// Specific list of hints/warnings/errors
-    pub details: Option<types::Reference>,
+    pub details: Option<types::Reference<crate::r3::resources::OperationOutcome>>,
 }
 
 /// The source application from which this message originated.

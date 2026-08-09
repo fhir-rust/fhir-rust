@@ -91,7 +91,7 @@ pub struct Endpoint {
 
     /// Organization that manages this endpoint (may not be the organization
     /// that exposes the endpoint)
-    pub managing_organization: Option<types::Reference>,
+    pub managing_organization: Option<types::Reference<crate::r3::resources::Organization>>,
 
     /// Contact details for source (e.g. troubleshooting)
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

@@ -137,6 +137,9 @@ pub struct Context {
     pub primitives: BTreeSet<String>,
     /// Names of the enums generated into the release's `codes` module.
     pub code_enums: BTreeSet<String>,
+    /// Names of the resources this release models, e.g. `"Patient"` — the
+    /// candidates for a typed `Reference<T>` target (T11).
+    pub resources: BTreeSet<String>,
     /// The release module name, e.g. `"r4"`, for absolute paths.
     pub module: String,
 }
@@ -377,6 +380,31 @@ fn plan_field(
 
 /// The Rust type for a non-choice, non-backbone element.
 fn scalar_type(type_code: &str, element: &ElementDefinition, ctx: &Context) -> String {
+    // A reference whose `targetProfile` names exactly one modelled resource is
+    // typed as `Reference<ThatResource>` (T11); anything else — multiple
+    // targets, an abstract target like `Resource`, or a profile this release
+    // does not model — stays `Reference<Any>` via the default parameter.
+    // R3 repeats the whole type entry once per target, so the targets are
+    // collected across every `Reference` entry rather than read off one.
+    if type_code == "Reference" {
+        let targets: std::collections::BTreeSet<&str> = element
+            .types
+            .iter()
+            .filter(|t| t.code == "Reference")
+            .flat_map(super::spec::ElementType::target_profiles)
+            .map(|url| url.rsplit(['/', '#']).next().unwrap_or(url))
+            .collect();
+        if targets.len() == 1 {
+            let name = targets.iter().next().expect("one target");
+            // `Resource`/`DomainResource` mean "any" — and `resources::Resource`
+            // names the tagged enum, not a markable struct — so both stay
+            // untyped even though the resources bundle defines them.
+            if *name != "Resource" && *name != "DomainResource" && ctx.resources.contains(*name) {
+                let module = &ctx.module;
+                return format!("types::Reference<crate::{module}::resources::{name}>");
+            }
+        }
+    }
     // `contained` is the one polymorphic slot narrow enough to type: it holds
     // this release's own resources and nothing else, so it is the `Resource`
     // enum rather than raw JSON (T47). `Bundle.entry.resource` and the other
@@ -515,7 +543,10 @@ fn struct_target(field: &FieldPlan) -> Option<&str> {
         return None;
     }
     if let Some(name) = field.inner_type.strip_prefix("types::") {
-        return Some(name);
+        // A typed `Reference<crate::…::X>` participates in cycles as
+        // `Reference`: the target parameter is a zero-sized phantom and embeds
+        // nothing, so the struct edge is to `Reference` itself (T11).
+        return Some(name.split('<').next().unwrap_or(name));
     }
     // A nested backbone struct is named directly, e.g. `ObservationComponent`.
     field
@@ -613,6 +644,10 @@ mod tests {
                 .map(str::to_string)
                 .collect(),
             code_enums: ["ObservationStatus"]
+                .into_iter()
+                .map(str::to_string)
+                .collect(),
+            resources: ["Patient", "Observation"]
                 .into_iter()
                 .map(str::to_string)
                 .collect(),

@@ -120,7 +120,7 @@ pub struct BodyStructure {
     pub image: Vec<types::Attachment>,
 
     /// The patient this body structure belongs to
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r5::resources::Patient>,
 }
 
 /// BodyStructureIncludedStructure
@@ -171,7 +171,7 @@ pub struct BodyStructureIncludedStructure {
 
     /// Cartesian reference for structure
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub spatial_reference: Vec<types::Reference>,
+    pub spatial_reference: Vec<types::Reference<crate::r5::resources::ImagingSelection>>,
 
     /// Code that represents the included structure qualifier
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

@@ -102,7 +102,7 @@ pub struct MolecularDefinition {
     /// Constituents of an aggregate molecular concept (e.g., haplotype,
     /// genotype)
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub member: Vec<types::Reference>,
+    pub member: Vec<types::Reference<crate::r6::resources::MolecularDefinition>>,
 
     /// A defined location on a molecular entity
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -447,7 +447,7 @@ pub struct MolecularDefinitionLocationSequenceLocation {
     pub modifier_extension: Vec<types::Extension>,
 
     /// The sequence on which the location is defined
-    pub sequence_context: types::Reference,
+    pub sequence_context: types::Reference<crate::r6::resources::MolecularDefinition>,
 
     /// An interval on a sequence
     pub coordinate_interval: Option<MolecularDefinitionLocationSequenceLocationCoordinateInterval>,
@@ -606,7 +606,7 @@ pub struct MolecularDefinitionRepresentation {
 
     /// A resolvable representation of a molecular entity (e.g., URI, attached
     /// and formatted file)
-    pub resolvable: Option<types::Reference>,
+    pub resolvable: Option<types::Reference<crate::r6::resources::DocumentReference>>,
 
     /// A molecular entity that is represented as a portion of a different
     /// entity
@@ -694,7 +694,7 @@ pub struct MolecularDefinitionRepresentationConcatenatedSequenceElement {
 
     /// A reference to the sequence that defines this specific concatenated
     /// element
-    pub sequence: types::Reference,
+    pub sequence: types::Reference<crate::r6::resources::MolecularDefinition>,
 
     /// The ordinal index of the element within the concatenated representation
     pub ordinal_index: types::Integer,
@@ -746,7 +746,7 @@ pub struct MolecularDefinitionRepresentationExtracted {
 
     /// The molecular entity that serves as the conceptual 'parent' from which
     /// the intended entity is derived
-    pub starting_molecule: types::Reference,
+    pub starting_molecule: types::Reference<crate::r6::resources::MolecularDefinition>,
 
     /// The interval on startingMolecule that defines the portion to be
     /// extracted to produce the intended entity
@@ -944,7 +944,7 @@ pub struct MolecularDefinitionRepresentationRelative {
     pub modifier_extension: Vec<types::Extension>,
 
     /// The molecular entity on which edits will be applied
-    pub starting_molecule: types::Reference,
+    pub starting_molecule: types::Reference<crate::r6::resources::MolecularDefinition>,
 
     /// A defined edit (change) to be applied
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -1001,11 +1001,11 @@ pub struct MolecularDefinitionRepresentationRelativeEdit {
 
     /// The molecular entity that serves as the replacement in the edit
     /// operation
-    pub replacement_molecule: types::Reference,
+    pub replacement_molecule: types::Reference<crate::r6::resources::MolecularDefinition>,
 
     /// The portion of the molecular entity that is replaced by the
     /// replacementMolecule
-    pub replaced_molecule: Option<types::Reference>,
+    pub replaced_molecule: Option<types::Reference<crate::r6::resources::MolecularDefinition>>,
 }
 
 /// The interval on startingMolecule that defines the portion to be extracted
@@ -1143,7 +1143,7 @@ pub struct MolecularDefinitionRepresentationRepeated {
     pub modifier_extension: Vec<types::Extension>,
 
     /// The motif that is repeated
-    pub sequence_motif: types::Reference,
+    pub sequence_motif: types::Reference<crate::r6::resources::MolecularDefinition>,
 
     /// The number of copies of the motif
     pub copy_count: types::Integer,

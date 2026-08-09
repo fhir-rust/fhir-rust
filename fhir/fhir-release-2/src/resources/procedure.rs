@@ -124,17 +124,17 @@ pub struct Procedure {
     pub performed: Option<ProcedurePerformed>,
 
     /// The encounter associated with the procedure
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r2::resources::Encounter>>,
 
     /// Where the procedure happened
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r2::resources::Location>>,
 
     /// The result of procedure
     pub outcome: Option<types::CodeableConcept>,
 
     /// Any report resulting from the procedure
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub report: Vec<types::Reference>,
+    pub report: Vec<types::Reference<crate::r2::resources::DiagnosticReport>>,
 
     /// Complication following the procedure
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -201,7 +201,7 @@ pub struct ProcedureFocalDevice {
     pub action: Option<types::CodeableConcept>,
 
     /// Device that was changed
-    pub manipulated: types::Reference,
+    pub manipulated: types::Reference<crate::r2::resources::Device>,
 }
 
 /// Limited to 'real' people rather than equipment.

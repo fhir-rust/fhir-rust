@@ -93,7 +93,7 @@ pub struct ProcessRequest {
     pub action_ext: Option<types::Element>,
 
     /// Party which is the target of the request
-    pub target: Option<types::Reference>,
+    pub target: Option<types::Reference<crate::r3::resources::Organization>>,
 
     /// Creation date
     pub created: Option<types::DateTime>,
@@ -103,10 +103,10 @@ pub struct ProcessRequest {
     pub created_ext: Option<types::Element>,
 
     /// Responsible practitioner
-    pub provider: Option<types::Reference>,
+    pub provider: Option<types::Reference<crate::r3::resources::Practitioner>>,
 
     /// Responsible organization
-    pub organization: Option<types::Reference>,
+    pub organization: Option<types::Reference<crate::r3::resources::Organization>>,
 
     /// Reference to the Request resource
     pub request: Option<types::Reference>,

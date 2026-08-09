@@ -103,13 +103,13 @@ pub struct MedicationOrder {
     pub reason_ended: Option<types::CodeableConcept>,
 
     /// Who prescription is for
-    pub patient: Option<types::Reference>,
+    pub patient: Option<types::Reference<crate::r2::resources::Patient>>,
 
     /// Who ordered the medication(s)
-    pub prescriber: Option<types::Reference>,
+    pub prescriber: Option<types::Reference<crate::r2::resources::Practitioner>>,
 
     /// Created during encounter/admission/stay
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r2::resources::Encounter>>,
 
     /// Reason or indication for writing the prescription
     /// The `MedicationOrder.reason[x]` choice element (0..1); see [`MedicationOrderReason`].
@@ -139,7 +139,7 @@ pub struct MedicationOrder {
     pub substitution: Option<MedicationOrderSubstitution>,
 
     /// An order/prescription that this supersedes
-    pub prior_prescription: Option<types::Reference>,
+    pub prior_prescription: Option<types::Reference<crate::r2::resources::MedicationOrder>>,
 }
 
 /// Indicates the specific details for the dispense or medication supply part

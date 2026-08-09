@@ -133,10 +133,10 @@ pub struct AllergyIntolerance {
     pub code: Option<types::CodeableConcept>,
 
     /// Who the allergy or intolerance is for; typically a reference to a [`Patient`](crate::r5::resources::patient::Patient)
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r5::resources::Patient>,
 
     /// Encounter when the allergy or intolerance was asserted
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r5::resources::Encounter>>,
 
     /// The `AllergyIntolerance.onset[x]` choice element (0..1); see [`AllergyIntoleranceOnset`].
     #[serde(flatten)]

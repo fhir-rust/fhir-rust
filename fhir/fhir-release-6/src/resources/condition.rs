@@ -102,13 +102,13 @@ pub struct Condition {
     pub body_site: Vec<types::CodeableConcept>,
 
     /// Anatomical body structure
-    pub body_structure: Option<types::Reference>,
+    pub body_structure: Option<types::Reference<crate::r6::resources::BodyStructure>>,
 
     /// Who has the condition?
     pub subject: types::Reference,
 
     /// The Encounter during which this Condition was created
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r6::resources::Encounter>>,
 
     /// Estimated or actual date, date-time, or age
     /// The `Condition.onset[x]` choice element (0..1); see [`ConditionOnset`].

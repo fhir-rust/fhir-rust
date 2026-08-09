@@ -109,7 +109,7 @@ pub struct BodyStructure {
     pub image: Vec<types::Attachment>,
 
     /// Who this is about
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r4::resources::Patient>,
 }
 
 #[cfg(test)]

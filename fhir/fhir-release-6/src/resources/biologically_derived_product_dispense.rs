@@ -80,11 +80,11 @@ pub struct BiologicallyDerivedProductDispense {
 
     /// The order or request that this dispense is fulfilling
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub based_on: Vec<types::Reference>,
+    pub based_on: Vec<types::Reference<crate::r6::resources::ServiceRequest>>,
 
     /// Short description
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub part_of: Vec<types::Reference>,
+    pub part_of: Vec<types::Reference<crate::r6::resources::BiologicallyDerivedProductDispense>>,
 
     /// preparation | in-progress | allocated | issued | unfulfilled | returned
     /// | entered-in-error | unknown
@@ -98,10 +98,10 @@ pub struct BiologicallyDerivedProductDispense {
     pub origin_relationship_type: Option<types::CodeableConcept>,
 
     /// The BiologicallyDerivedProduct that is dispensed
-    pub product: types::Reference,
+    pub product: types::Reference<crate::r6::resources::BiologicallyDerivedProduct>,
 
     /// The intended recipient of the dispensed product
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r6::resources::Patient>,
 
     /// Indicates the type of matching associated with the dispense
     pub match_status: Option<types::CodeableConcept>,
@@ -111,7 +111,7 @@ pub struct BiologicallyDerivedProductDispense {
     pub performer: Vec<BiologicallyDerivedProductDispensePerformer>,
 
     /// Where the dispense occurred
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r6::resources::Location>>,
 
     /// Amount dispensed
     pub quantity: Option<types::Quantity>,
@@ -131,7 +131,7 @@ pub struct BiologicallyDerivedProductDispense {
     pub when_handed_over_ext: Option<types::Element>,
 
     /// Where the product was dispatched to
-    pub destination: Option<types::Reference>,
+    pub destination: Option<types::Reference<crate::r6::resources::Location>>,
 
     /// Additional notes
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -184,7 +184,7 @@ pub struct BiologicallyDerivedProductDispensePerformer {
     pub function: Option<types::CodeableConcept>,
 
     /// Who performed the action
-    pub actor: types::Reference,
+    pub actor: types::Reference<crate::r6::resources::Practitioner>,
 }
 
 #[cfg(test)]

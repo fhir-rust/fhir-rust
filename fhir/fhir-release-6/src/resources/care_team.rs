@@ -114,7 +114,7 @@ pub struct CareTeam {
 
     /// Organization responsible for the care team
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub managing_organization: Vec<types::Reference>,
+    pub managing_organization: Vec<types::Reference<crate::r6::resources::Organization>>,
 
     /// A contact detail for the care team (that applies to all members)
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

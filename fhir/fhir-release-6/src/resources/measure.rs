@@ -594,7 +594,7 @@ pub struct MeasureGroupPopulation {
     pub criteria: Option<types::Expression>,
 
     /// A group resource that defines this population
-    pub group_definition: Option<types::Reference>,
+    pub group_definition: Option<types::Reference<crate::r6::resources::Group>>,
 
     /// Which population
     pub input_population_id: Option<types::String>,
@@ -666,7 +666,7 @@ pub struct MeasureGroupStratifier {
     pub criteria: Option<types::Expression>,
 
     /// A group resource that defines this population
-    pub group_definition: Option<types::Reference>,
+    pub group_definition: Option<types::Reference<crate::r6::resources::Group>>,
 
     /// What stratum values?
     pub value_set: Option<types::Canonical>,
@@ -745,7 +745,7 @@ pub struct MeasureGroupStratifierComponent {
     pub criteria: Option<types::Expression>,
 
     /// A group resource that defines this population
-    pub group_definition: Option<types::Reference>,
+    pub group_definition: Option<types::Reference<crate::r6::resources::Group>>,
 
     /// What stratum values?
     pub value_set: Option<types::Canonical>,

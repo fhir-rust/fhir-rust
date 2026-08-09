@@ -116,11 +116,11 @@ pub struct ResearchStudy {
 
     /// Steps followed in executing study
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub protocol: Vec<types::Reference>,
+    pub protocol: Vec<types::Reference<crate::r6::resources::PlanDefinition>>,
 
     /// Part of larger study
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub part_of: Vec<types::Reference>,
+    pub part_of: Vec<types::Reference<crate::r6::resources::ResearchStudy>>,
 
     /// How to cite this ResearchStudy
     pub cite_as: Option<types::Markdown>,
@@ -347,10 +347,10 @@ pub struct ResearchStudyComparisonGroup {
     pub actual_number_ext: Option<types::Element>,
 
     /// Inclusion and exclusion criteria for the comparison group
-    pub eligibility: Option<types::Reference>,
+    pub eligibility: Option<types::Reference<crate::r6::resources::Group>>,
 
     /// Group of participants who were enrolled in the comparison group
-    pub observed_group: Option<types::Reference>,
+    pub observed_group: Option<types::Reference<crate::r6::resources::Group>>,
 }
 
 /// Additional names for the study.
@@ -516,16 +516,16 @@ pub struct ResearchStudyObjectiveOutcomeMeasure {
     pub description_ext: Option<types::Element>,
 
     /// Definition of the outcome measure
-    pub endpoint: types::Reference,
+    pub endpoint: types::Reference<crate::r6::resources::EvidenceVariable>,
 
     /// Population for this estimand
-    pub population: Option<types::Reference>,
+    pub population: Option<types::Reference<crate::r6::resources::Group>>,
 
     /// Comparison group of interest
-    pub intervention: Option<types::Reference>,
+    pub intervention: Option<types::Reference<crate::r6::resources::Group>>,
 
     /// Comparison group for comparison
-    pub comparator: Option<types::Reference>,
+    pub comparator: Option<types::Reference<crate::r6::resources::Group>>,
 
     /// Statistical measure for treatment effect estimate
     pub summary_measure: Option<types::CodeableConcept>,
@@ -686,10 +686,10 @@ pub struct ResearchStudyRecruitment {
     pub actual_number_ext: Option<types::Element>,
 
     /// Inclusion and exclusion criteria
-    pub eligibility: Option<types::Reference>,
+    pub eligibility: Option<types::Reference<crate::r6::resources::Group>>,
 
     /// Group of participants who were enrolled in study
-    pub actual_group: Option<types::Reference>,
+    pub actual_group: Option<types::Reference<crate::r6::resources::Group>>,
 }
 
 /// Relationships that this ResearchStudy has with other FHIR or non-FHIR

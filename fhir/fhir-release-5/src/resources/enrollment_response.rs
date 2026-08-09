@@ -101,7 +101,7 @@ pub struct EnrollmentResponse {
     pub status_ext: Option<types::Element>,
 
     /// Reference to the originating `EnrollmentRequest` that this response answers
-    pub request: Option<types::Reference>,
+    pub request: Option<types::Reference<crate::r5::resources::EnrollmentRequest>>,
 
     /// The processing outcome of the enrollment request: queued | complete | error | partial
     pub outcome: Option<crate::r5::coded::Coded<crate::r5::codes::EnrollmentOutcome>>,
@@ -122,7 +122,7 @@ pub struct EnrollmentResponse {
     pub created_ext: Option<types::Element>,
 
     /// Reference to the insurer organization that processed the enrollment request
-    pub organization: Option<types::Reference>,
+    pub organization: Option<types::Reference<crate::r5::resources::Organization>>,
 
     /// Reference to the practitioner who is responsible for the claim, if applicable
     pub request_provider: Option<types::Reference>,

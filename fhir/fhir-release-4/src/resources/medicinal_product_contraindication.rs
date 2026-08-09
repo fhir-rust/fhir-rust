@@ -92,7 +92,8 @@ pub struct MedicinalProductContraindication {
     /// Information about the use of the medicinal product in relation to other
     /// therapies as part of the indication
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub therapeutic_indication: Vec<types::Reference>,
+    pub therapeutic_indication:
+        Vec<types::Reference<crate::r4::resources::MedicinalProductIndication>>,
 
     /// Information about the use of the medicinal product in relation to other
     /// therapies described as part of the indication

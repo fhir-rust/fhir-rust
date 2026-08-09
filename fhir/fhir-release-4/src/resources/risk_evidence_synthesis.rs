@@ -209,13 +209,13 @@ pub struct RiskEvidenceSynthesis {
     pub study_type: Option<types::CodeableConcept>,
 
     /// What population?
-    pub population: types::Reference,
+    pub population: types::Reference<crate::r4::resources::EvidenceVariable>,
 
     /// What exposure?
-    pub exposure: Option<types::Reference>,
+    pub exposure: Option<types::Reference<crate::r4::resources::EvidenceVariable>>,
 
     /// What outcome?
-    pub outcome: types::Reference,
+    pub outcome: types::Reference<crate::r4::resources::EvidenceVariable>,
 
     /// What sample size was involved?
     pub sample_size: Option<RiskEvidenceSynthesisSampleSize>,

@@ -109,14 +109,14 @@ pub struct InsurancePlan {
     pub period: Option<types::Period>,
 
     /// Plan issuer
-    pub owned_by: Option<types::Reference>,
+    pub owned_by: Option<types::Reference<crate::r4::resources::Organization>>,
 
     /// Product administrator
-    pub administered_by: Option<types::Reference>,
+    pub administered_by: Option<types::Reference<crate::r4::resources::Organization>>,
 
     /// Where product applies
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub coverage_area: Vec<types::Reference>,
+    pub coverage_area: Vec<types::Reference<crate::r4::resources::Location>>,
 
     /// Contact for the product
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -124,11 +124,11 @@ pub struct InsurancePlan {
 
     /// Technical endpoint
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub endpoint: Vec<types::Reference>,
+    pub endpoint: Vec<types::Reference<crate::r4::resources::Endpoint>>,
 
     /// What networks are Included
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub network: Vec<types::Reference>,
+    pub network: Vec<types::Reference<crate::r4::resources::Organization>>,
 
     /// Coverage details
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -221,7 +221,7 @@ pub struct InsurancePlanCoverage {
 
     /// What networks provide coverage
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub network: Vec<types::Reference>,
+    pub network: Vec<types::Reference<crate::r4::resources::Organization>>,
 
     /// List of benefits
     pub benefit: ::vec1::Vec1<InsurancePlanCoverageBenefit>,
@@ -363,11 +363,11 @@ pub struct InsurancePlanPlan {
 
     /// Where product applies
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub coverage_area: Vec<types::Reference>,
+    pub coverage_area: Vec<types::Reference<crate::r4::resources::Location>>,
 
     /// What networks provide coverage
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub network: Vec<types::Reference>,
+    pub network: Vec<types::Reference<crate::r4::resources::Organization>>,
 
     /// Overall costs
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

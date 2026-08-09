@@ -143,6 +143,10 @@ name = "transaction_bundle"
 required-features = ["r5"]
 
 [[example]]
+name = "typed_references"
+required-features = ["r5"]
+
+[[example]]
 name = "validate_resource"
 required-features = ["r5"]
 

@@ -141,7 +141,7 @@ pub struct NutritionIntake {
     pub subject: types::Reference,
 
     /// Encounter associated with NutritionIntake
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r5::resources::Encounter>>,
 
     /// The `NutritionIntake.occurrence[x]` choice element (0..1); see [`NutritionIntakeOccurrence`].
     #[serde(flatten)]
@@ -169,7 +169,7 @@ pub struct NutritionIntake {
     pub performer: Vec<NutritionIntakePerformer>,
 
     /// Where the intake occurred
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r5::resources::Location>>,
 
     /// Additional supporting information
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

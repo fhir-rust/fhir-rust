@@ -116,7 +116,7 @@ pub struct Composition {
     pub subject: Vec<types::Reference>,
 
     /// Context of the Composition
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r6::resources::Encounter>>,
 
     /// Composition editing time
     pub date: types::DateTime,
@@ -155,7 +155,7 @@ pub struct Composition {
     pub attester: Vec<CompositionAttester>,
 
     /// Organization which maintains the composition
-    pub custodian: Option<types::Reference>,
+    pub custodian: Option<types::Reference<crate::r6::resources::Organization>>,
 
     /// Relationships to other compositions/documents
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

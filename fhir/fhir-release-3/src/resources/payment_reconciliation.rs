@@ -96,10 +96,10 @@ pub struct PaymentReconciliation {
     pub created_ext: Option<types::Element>,
 
     /// Insurer
-    pub organization: Option<types::Reference>,
+    pub organization: Option<types::Reference<crate::r3::resources::Organization>>,
 
     /// Claim reference
-    pub request: Option<types::Reference>,
+    pub request: Option<types::Reference<crate::r3::resources::ProcessRequest>>,
 
     /// complete | error | partial
     pub outcome: Option<types::CodeableConcept>,
@@ -112,10 +112,10 @@ pub struct PaymentReconciliation {
     pub disposition_ext: Option<types::Element>,
 
     /// Responsible practitioner
-    pub request_provider: Option<types::Reference>,
+    pub request_provider: Option<types::Reference<crate::r3::resources::Practitioner>>,
 
     /// Responsible organization
-    pub request_organization: Option<types::Reference>,
+    pub request_organization: Option<types::Reference<crate::r3::resources::Organization>>,
 
     /// List of settlements
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -177,10 +177,10 @@ pub struct PaymentReconciliationDetail {
     pub response: Option<types::Reference>,
 
     /// Organization which submitted the claim
-    pub submitter: Option<types::Reference>,
+    pub submitter: Option<types::Reference<crate::r3::resources::Organization>>,
 
     /// Organization which is receiving the payment
-    pub payee: Option<types::Reference>,
+    pub payee: Option<types::Reference<crate::r3::resources::Organization>>,
 
     /// Invoice date
     pub date: Option<types::Date>,

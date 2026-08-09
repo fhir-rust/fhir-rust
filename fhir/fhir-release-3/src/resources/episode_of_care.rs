@@ -102,28 +102,28 @@ pub struct EpisodeOfCare {
     pub diagnosis: Vec<EpisodeOfCareDiagnosis>,
 
     /// The patient who is the focus of this episode of care
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r3::resources::Patient>,
 
     /// Organization that assumes care
-    pub managing_organization: Option<types::Reference>,
+    pub managing_organization: Option<types::Reference<crate::r3::resources::Organization>>,
 
     /// Interval during responsibility is assumed
     pub period: Option<types::Period>,
 
     /// Originating Referral Request(s)
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub referral_request: Vec<types::Reference>,
+    pub referral_request: Vec<types::Reference<crate::r3::resources::ReferralRequest>>,
 
     /// Care manager/care co-ordinator for the patient
-    pub care_manager: Option<types::Reference>,
+    pub care_manager: Option<types::Reference<crate::r3::resources::Practitioner>>,
 
     /// Other practitioners facilitating this episode of care
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub team: Vec<types::Reference>,
+    pub team: Vec<types::Reference<crate::r3::resources::CareTeam>>,
 
     /// The set of accounts that may be used for billing for this EpisodeOfCare
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub account: Vec<types::Reference>,
+    pub account: Vec<types::Reference<crate::r3::resources::Account>>,
 }
 
 /// The list of diagnosis relevant to this episode of care.
@@ -162,7 +162,7 @@ pub struct EpisodeOfCareDiagnosis {
     pub modifier_extension: Vec<types::Extension>,
 
     /// Conditions/problems/diagnoses this episode of care is for
-    pub condition: types::Reference,
+    pub condition: types::Reference<crate::r3::resources::Condition>,
 
     /// Role that this diagnosis has within the episode of care (e.g.
     /// admission, billing, discharge …)

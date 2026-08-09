@@ -98,7 +98,7 @@ pub struct DeviceMetric {
     pub unit: Option<types::CodeableConcept>,
 
     /// Reference to the parent Device that this metric describes and produces measurements for.
-    pub device: types::Reference,
+    pub device: types::Reference<crate::r5::resources::Device>,
 
     /// Indicates the current operational status of the device metric: on | off | standby | entered-in-error.
     pub operational_status:

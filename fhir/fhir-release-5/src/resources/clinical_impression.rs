@@ -120,7 +120,7 @@ pub struct ClinicalImpression {
     pub subject: types::Reference,
 
     /// The Encounter during which this ClinicalImpression was created
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r5::resources::Encounter>>,
 
     /// The `ClinicalImpression.effective[x]` choice element (0..1); see [`ClinicalImpressionEffective`].
     #[serde(flatten)]
@@ -136,7 +136,7 @@ pub struct ClinicalImpression {
     pub performer: Option<types::Reference>,
 
     /// Reference to last assessment
-    pub previous: Option<types::Reference>,
+    pub previous: Option<types::Reference<crate::r5::resources::ClinicalImpression>>,
 
     /// Relevant impressions of patient state
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -170,7 +170,7 @@ pub struct ClinicalImpression {
 
     /// RiskAssessment expressing likely outcome
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub prognosis_reference: Vec<types::Reference>,
+    pub prognosis_reference: Vec<types::Reference<crate::r5::resources::RiskAssessment>>,
 
     /// Information supporting the clinical impression
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

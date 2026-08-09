@@ -97,10 +97,10 @@ pub struct PaymentReconciliation {
     pub created_ext: Option<types::Element>,
 
     /// Party generating payment
-    pub payment_issuer: Option<types::Reference>,
+    pub payment_issuer: Option<types::Reference<crate::r4::resources::Organization>>,
 
     /// Reference to requesting resource
-    pub request: Option<types::Reference>,
+    pub request: Option<types::Reference<crate::r4::resources::Task>>,
 
     /// Responsible practitioner
     pub requestor: Option<types::Reference>,
@@ -205,7 +205,7 @@ pub struct PaymentReconciliationDetail {
     pub date_ext: Option<types::Element>,
 
     /// Contact for the response
-    pub responsible: Option<types::Reference>,
+    pub responsible: Option<types::Reference<crate::r4::resources::PractitionerRole>>,
 
     /// Recipient of the payment
     pub payee: Option<types::Reference>,

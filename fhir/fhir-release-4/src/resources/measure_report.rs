@@ -229,7 +229,7 @@ pub struct MeasureReportGroupPopulation {
     pub count_ext: Option<types::Element>,
 
     /// For subject-list reports, the subject results in this population
-    pub subject_results: Option<types::Reference>,
+    pub subject_results: Option<types::Reference<crate::r4::resources::List>>,
 }
 
 /// When a measure includes multiple stratifiers, there will be a stratifier
@@ -421,7 +421,7 @@ pub struct MeasureReportGroupStratifierStratumPopulation {
     pub count_ext: Option<types::Element>,
 
     /// For subject-list reports, the subject results in this population
-    pub subject_results: Option<types::Reference>,
+    pub subject_results: Option<types::Reference<crate::r4::resources::List>>,
 }
 
 #[cfg(test)]

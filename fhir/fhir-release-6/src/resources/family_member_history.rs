@@ -90,7 +90,7 @@ pub struct FamilyMemberHistory {
     pub data_absent_reason: Option<types::CodeableConcept>,
 
     /// Patient history is about
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r6::resources::Patient>,
 
     /// When history was recorded or last updated
     pub date: Option<types::DateTime>,

@@ -95,7 +95,7 @@ pub struct Flag {
     pub subject: types::Reference,
 
     /// Alert relevant during encounter
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r2::resources::Encounter>>,
 
     /// Flag creator
     pub author: Option<types::Reference>,

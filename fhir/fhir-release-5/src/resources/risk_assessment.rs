@@ -119,14 +119,14 @@ pub struct RiskAssessment {
     pub subject: types::Reference,
 
     /// Where was assessment performed?
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r5::resources::Encounter>>,
 
     /// The `RiskAssessment.occurrence[x]` choice element (0..1); see [`RiskAssessmentOccurrence`].
     #[serde(flatten)]
     pub occurrence: Option<RiskAssessmentOccurrence>,
 
     /// Condition assessed
-    pub condition: Option<types::Reference>,
+    pub condition: Option<types::Reference<crate::r5::resources::Condition>>,
 
     /// Who did assessment?
     pub performer: Option<types::Reference>,

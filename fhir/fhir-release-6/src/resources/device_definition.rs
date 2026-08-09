@@ -135,7 +135,7 @@ pub struct DeviceDefinition {
     pub part_number_ext: Option<types::Element>,
 
     /// Name of device manufacturer
-    pub manufacturer: Option<types::Reference>,
+    pub manufacturer: Option<types::Reference<crate::r6::resources::Organization>>,
 
     /// The catalog or model number for the device for example as defined by
     /// the manufacturer
@@ -694,7 +694,7 @@ pub struct DeviceDefinitionHasPart {
     pub modifier_extension: Vec<types::Extension>,
 
     /// Reference to the part
-    pub reference: types::Reference,
+    pub reference: types::Reference<crate::r6::resources::DeviceDefinition>,
 
     /// Number of occurrences of the part
     pub count: Option<types::Integer>,
@@ -908,7 +908,7 @@ pub struct DeviceDefinitionPackagingDistributor {
 
     /// Distributor as an Organization resource
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub organization_reference: Vec<types::Reference>,
+    pub organization_reference: Vec<types::Reference<crate::r6::resources::Organization>>,
 }
 
 /// Static or essentially fixed characteristics or features of this kind of

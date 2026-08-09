@@ -160,10 +160,10 @@ pub struct Location {
     pub position: Option<LocationPosition>,
 
     /// Organization responsible for provisioning and upkeep
-    pub managing_organization: Option<types::Reference>,
+    pub managing_organization: Option<types::Reference<crate::r5::resources::Organization>>,
 
     /// Reference to another Location that physically contains this one, enabling location hierarchies such as bed within room within ward.
-    pub part_of: Option<types::Reference>,
+    pub part_of: Option<types::Reference<crate::r5::resources::Location>>,
 
     /// Collection of characteristics (attributes)
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -179,7 +179,7 @@ pub struct Location {
 
     /// Technical endpoints providing access to services operated for the location
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub endpoint: Vec<types::Reference>,
+    pub endpoint: Vec<types::Reference<crate::r5::resources::Endpoint>>,
 }
 
 /// The absolute geographic location of the Location, expressed using the WGS84

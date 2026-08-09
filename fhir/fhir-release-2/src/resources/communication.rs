@@ -104,7 +104,7 @@ pub struct Communication {
     pub status_ext: Option<types::Element>,
 
     /// Encounter leading to message
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r2::resources::Encounter>>,
 
     /// When sent
     pub sent: Option<types::DateTime>,
@@ -125,10 +125,10 @@ pub struct Communication {
     pub reason: Vec<types::CodeableConcept>,
 
     /// Focus of message
-    pub subject: Option<types::Reference>,
+    pub subject: Option<types::Reference<crate::r2::resources::Patient>>,
 
     /// CommunicationRequest producing this message
-    pub request_detail: Option<types::Reference>,
+    pub request_detail: Option<types::Reference<crate::r2::resources::CommunicationRequest>>,
 }
 
 /// Text, attachment(s), or resource(s) that was communicated to the recipient.

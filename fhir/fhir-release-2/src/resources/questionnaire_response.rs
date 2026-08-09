@@ -78,7 +78,7 @@ pub struct QuestionnaireResponse {
     pub identifier: Option<types::Identifier>,
 
     /// Form being answered
-    pub questionnaire: Option<types::Reference>,
+    pub questionnaire: Option<types::Reference<crate::r2::resources::Questionnaire>>,
 
     /// in-progress | completed | amended
     pub status: crate::coded::Coded<crate::r2::codes::QuestionnaireAnswersStatus>,
@@ -104,7 +104,7 @@ pub struct QuestionnaireResponse {
     pub source: Option<types::Reference>,
 
     /// Primary encounter during which the answers were collected
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r2::resources::Encounter>>,
 
     /// Grouped questions
     pub group: Option<QuestionnaireResponseGroup>,

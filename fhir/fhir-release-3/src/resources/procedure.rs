@@ -130,7 +130,7 @@ pub struct Procedure {
     pub performer: Vec<ProcedurePerformer>,
 
     /// Where the procedure happened
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r3::resources::Location>>,
 
     /// Coded reason procedure performed
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -149,7 +149,7 @@ pub struct Procedure {
 
     /// Any report resulting from the procedure
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub report: Vec<types::Reference>,
+    pub report: Vec<types::Reference<crate::r3::resources::DiagnosticReport>>,
 
     /// Complication following the procedure
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -157,7 +157,7 @@ pub struct Procedure {
 
     /// A condition that is a result of the procedure
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub complication_detail: Vec<types::Reference>,
+    pub complication_detail: Vec<types::Reference<crate::r3::resources::Condition>>,
 
     /// Instructions for follow up
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -221,7 +221,7 @@ pub struct ProcedureFocalDevice {
     pub action: Option<types::CodeableConcept>,
 
     /// Device that was changed
-    pub manipulated: types::Reference,
+    pub manipulated: types::Reference<crate::r3::resources::Device>,
 }
 
 /// Limited to 'real' people rather than equipment.
@@ -266,7 +266,7 @@ pub struct ProcedurePerformer {
     pub actor: types::Reference,
 
     /// Organization the device or practitioner was acting for
-    pub on_behalf_of: Option<types::Reference>,
+    pub on_behalf_of: Option<types::Reference<crate::r3::resources::Organization>>,
 }
 
 /// The `Procedure.performed[x]` choice element (see `spec/11-choice-types.md`).

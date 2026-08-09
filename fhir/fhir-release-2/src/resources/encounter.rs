@@ -104,22 +104,22 @@ pub struct Encounter {
     pub priority: Option<types::CodeableConcept>,
 
     /// The patient present at the encounter
-    pub patient: Option<types::Reference>,
+    pub patient: Option<types::Reference<crate::r2::resources::Patient>>,
 
     /// Episode(s) of care that this encounter should be recorded against
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub episode_of_care: Vec<types::Reference>,
+    pub episode_of_care: Vec<types::Reference<crate::r2::resources::EpisodeOfCare>>,
 
     /// The ReferralRequest that initiated this encounter
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub incoming_referral: Vec<types::Reference>,
+    pub incoming_referral: Vec<types::Reference<crate::r2::resources::ReferralRequest>>,
 
     /// List of participants involved in the encounter
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub participant: Vec<EncounterParticipant>,
 
     /// The appointment that scheduled this encounter
-    pub appointment: Option<types::Reference>,
+    pub appointment: Option<types::Reference<crate::r2::resources::Appointment>>,
 
     /// The start and end time of the encounter
     pub period: Option<types::Period>,
@@ -143,10 +143,10 @@ pub struct Encounter {
     pub location: Vec<EncounterLocation>,
 
     /// The custodian organization of this Encounter record
-    pub service_provider: Option<types::Reference>,
+    pub service_provider: Option<types::Reference<crate::r2::resources::Organization>>,
 
     /// Another Encounter this encounter is part of
-    pub part_of: Option<types::Reference>,
+    pub part_of: Option<types::Reference<crate::r2::resources::Encounter>>,
 }
 
 /// Details about the admission to a healthcare service.
@@ -188,14 +188,14 @@ pub struct EncounterHospitalization {
     pub pre_admission_identifier: Option<types::Identifier>,
 
     /// The location from which the patient came before admission
-    pub origin: Option<types::Reference>,
+    pub origin: Option<types::Reference<crate::r2::resources::Location>>,
 
     /// From where patient was admitted (physician referral, transfer)
     pub admit_source: Option<types::CodeableConcept>,
 
     /// The admitting diagnosis as reported by admitting practitioner
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub admitting_diagnosis: Vec<types::Reference>,
+    pub admitting_diagnosis: Vec<types::Reference<crate::r2::resources::Condition>>,
 
     /// The type of hospital re-admission that has occurred (if any). If the
     /// value is absent, then this is not identified as a readmission
@@ -214,7 +214,7 @@ pub struct EncounterHospitalization {
     pub special_arrangement: Vec<types::CodeableConcept>,
 
     /// Location to which the patient is discharged
-    pub destination: Option<types::Reference>,
+    pub destination: Option<types::Reference<crate::r2::resources::Location>>,
 
     /// Category or kind of location after discharge
     pub discharge_disposition: Option<types::CodeableConcept>,
@@ -222,7 +222,7 @@ pub struct EncounterHospitalization {
     /// The final diagnosis given a patient before release from the hospital
     /// after all testing, surgery, and workup are complete
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub discharge_diagnosis: Vec<types::Reference>,
+    pub discharge_diagnosis: Vec<types::Reference<crate::r2::resources::Condition>>,
 }
 
 /// List of locations where the patient has been during this encounter.
@@ -261,7 +261,7 @@ pub struct EncounterLocation {
     pub modifier_extension: Vec<types::Extension>,
 
     /// Location the encounter takes place
-    pub location: types::Reference,
+    pub location: types::Reference<crate::r2::resources::Location>,
 
     /// planned | active | reserved | completed
     pub status: Option<crate::coded::Coded<crate::r2::codes::EncounterLocationStatus>>,

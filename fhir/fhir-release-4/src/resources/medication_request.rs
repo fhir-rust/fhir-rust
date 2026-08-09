@@ -134,7 +134,7 @@ pub struct MedicationRequest {
     pub subject: types::Reference,
 
     /// Encounter created as part of encounter/admission/stay
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r4::resources::Encounter>>,
 
     /// Information to support ordering of the medication
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -215,15 +215,15 @@ pub struct MedicationRequest {
     pub substitution: Option<MedicationRequestSubstitution>,
 
     /// An order/prescription that is being replaced
-    pub prior_prescription: Option<types::Reference>,
+    pub prior_prescription: Option<types::Reference<crate::r4::resources::MedicationRequest>>,
 
     /// Clinical Issue with action
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub detected_issue: Vec<types::Reference>,
+    pub detected_issue: Vec<types::Reference<crate::r4::resources::DetectedIssue>>,
 
     /// A list of events of interest in the lifecycle
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub event_history: Vec<types::Reference>,
+    pub event_history: Vec<types::Reference<crate::r4::resources::Provenance>>,
 }
 
 /// Indicates the specific details for the dispense or medication supply part
@@ -289,7 +289,7 @@ pub struct MedicationRequestDispenseRequest {
     pub expected_supply_duration: Option<types::Duration>,
 
     /// Intended dispenser
-    pub performer: Option<types::Reference>,
+    pub performer: Option<types::Reference<crate::r4::resources::Organization>>,
 }
 
 /// Indicates the quantity or duration for the first dispense of the

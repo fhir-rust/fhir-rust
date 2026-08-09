@@ -115,7 +115,7 @@ pub struct ImagingStudy {
     pub subject: types::Reference,
 
     /// Encounter with which this imaging study is associated
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r5::resources::Encounter>>,
 
     /// The date and time when the study was started (acquisition began)
     pub started: Option<types::DateTime>,
@@ -129,14 +129,14 @@ pub struct ImagingStudy {
 
     /// Part of referenced event
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub part_of: Vec<types::Reference>,
+    pub part_of: Vec<types::Reference<crate::r5::resources::Procedure>>,
 
     /// Referring physician
     pub referrer: Option<types::Reference>,
 
     /// Study access endpoint
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub endpoint: Vec<types::Reference>,
+    pub endpoint: Vec<types::Reference<crate::r5::resources::Endpoint>>,
 
     /// Number of Study Related Series
     pub number_of_series: Option<types::UnsignedInt>,
@@ -155,7 +155,7 @@ pub struct ImagingStudy {
     pub procedure: Vec<types::CodeableReference>,
 
     /// Where ImagingStudy occurred
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r5::resources::Location>>,
 
     /// Why the study was requested / performed
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -241,7 +241,7 @@ pub struct ImagingStudySeries {
 
     /// Series access endpoint
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub endpoint: Vec<types::Reference>,
+    pub endpoint: Vec<types::Reference<crate::r5::resources::Endpoint>>,
 
     /// Body part examined
     pub body_site: Option<types::CodeableReference>,
@@ -251,7 +251,7 @@ pub struct ImagingStudySeries {
 
     /// Specimen imaged
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub specimen: Vec<types::Reference>,
+    pub specimen: Vec<types::Reference<crate::r5::resources::Specimen>>,
 
     /// When the series started
     pub started: Option<types::DateTime>,

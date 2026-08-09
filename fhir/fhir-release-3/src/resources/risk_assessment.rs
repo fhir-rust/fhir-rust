@@ -108,7 +108,7 @@ pub struct RiskAssessment {
     pub occurrence: Option<RiskAssessmentOccurrence>,
 
     /// Condition assessed
-    pub condition: Option<types::Reference>,
+    pub condition: Option<types::Reference<crate::r3::resources::Condition>>,
 
     /// Who did assessment?
     pub performer: Option<types::Reference>,

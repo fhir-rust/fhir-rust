@@ -206,7 +206,7 @@ pub struct MessageHeaderResponse {
     pub code_ext: Option<types::Element>,
 
     /// Specific list of hints/warnings/errors
-    pub details: Option<types::Reference>,
+    pub details: Option<types::Reference<crate::r6::resources::OperationOutcome>>,
 }
 
 /// The source application from which this message originated.

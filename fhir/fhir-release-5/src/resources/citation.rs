@@ -518,7 +518,7 @@ pub struct CitationCitedArtifactVersion {
     pub value_ext: Option<types::Element>,
 
     /// Citation for the main version of the cited artifact.
-    pub base_citation: Option<types::Reference>,
+    pub base_citation: Option<types::Reference<crate::r5::resources::Citation>>,
 }
 
 /// An effective date or period for a status of the cited artifact.
@@ -709,7 +709,7 @@ pub struct CitationCitedArtifactPart {
     pub value_ext: Option<types::Element>,
 
     /// The citation for the full article or artifact.
-    pub base_citation: Option<types::Reference>,
+    pub base_citation: Option<types::Reference<crate::r5::resources::Citation>>,
 }
 
 /// The artifact related to the cited artifact.
@@ -949,7 +949,7 @@ pub struct CitationCitedArtifactPublicationFormPublishedIn {
     pub title_ext: Option<types::Element>,
 
     /// Name of or resource describing the publisher.
-    pub publisher: Option<types::Reference>,
+    pub publisher: Option<types::Reference<crate::r5::resources::Organization>>,
 
     /// Geographic location of the publisher.
     pub publisher_location: Option<types::String>,
@@ -1044,7 +1044,7 @@ pub struct CitationCitedArtifactClassification {
 
     /// Complex or externally created classification.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub artifact_assessment: Vec<types::Reference>,
+    pub artifact_assessment: Vec<types::Reference<crate::r5::resources::ArtifactAssessment>>,
 }
 
 /// Attribution of authors and other contributors.

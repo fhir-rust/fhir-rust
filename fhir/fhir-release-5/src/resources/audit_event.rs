@@ -136,10 +136,10 @@ pub struct AuditEvent {
     pub based_on: Vec<types::Reference>,
 
     /// The patient is the subject of the data used/created/updated/deleted during the activity
-    pub patient: Option<types::Reference>,
+    pub patient: Option<types::Reference<crate::r5::resources::Patient>>,
 
     /// Encounter within which this event occurred or which the event is tightly associated
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r5::resources::Encounter>>,
 
     /// Actor(s) involved in the event, such as the user, system, or device that performed or participated in the action
     pub agent: vec1::Vec1<AuditEventAgent>,
@@ -250,7 +250,7 @@ pub struct AuditEventAgent {
     pub requestor_ext: Option<types::Element>,
 
     /// The agent location when the event occurred
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r5::resources::Location>>,
 
     /// Policy that authorized the agent participation in the event
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -307,7 +307,7 @@ pub struct AuditEventSource {
     pub modifier_extension: Vec<types::Extension>,
 
     /// Logical source location within the enterprise
-    pub site: Option<types::Reference>,
+    pub site: Option<types::Reference<crate::r5::resources::Location>>,
 
     /// The identity of source detecting the event
     pub observer: types::Reference,

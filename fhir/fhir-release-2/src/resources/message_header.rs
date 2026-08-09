@@ -95,10 +95,10 @@ pub struct MessageHeader {
     pub destination: Vec<MessageHeaderDestination>,
 
     /// The source of the data entry
-    pub enterer: Option<types::Reference>,
+    pub enterer: Option<types::Reference<crate::r2::resources::Practitioner>>,
 
     /// The source of the decision
-    pub author: Option<types::Reference>,
+    pub author: Option<types::Reference<crate::r2::resources::Practitioner>>,
 
     /// Intended "real-world" recipient for the data
     pub receiver: Option<types::Reference>,
@@ -157,7 +157,7 @@ pub struct MessageHeaderDestination {
     pub name_ext: Option<types::Element>,
 
     /// Particular delivery destination within the destination
-    pub target: Option<types::Reference>,
+    pub target: Option<types::Reference<crate::r2::resources::Device>>,
 
     /// Actual destination address or id
     pub endpoint: types::Uri,
@@ -218,7 +218,7 @@ pub struct MessageHeaderResponse {
     pub code_ext: Option<types::Element>,
 
     /// Specific list of hints/warnings/errors
-    pub details: Option<types::Reference>,
+    pub details: Option<types::Reference<crate::r2::resources::OperationOutcome>>,
 }
 
 /// The source application from which this message originated.

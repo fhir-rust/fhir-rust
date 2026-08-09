@@ -108,7 +108,7 @@ pub struct Person {
     pub photo: Option<types::Attachment>,
 
     /// The organization that is the custodian of the person record
-    pub managing_organization: Option<types::Reference>,
+    pub managing_organization: Option<types::Reference<crate::r2::resources::Organization>>,
 
     /// This person's record is in active use
     pub active: Option<types::Boolean>,

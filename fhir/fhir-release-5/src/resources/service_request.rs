@@ -123,7 +123,7 @@ pub struct ServiceRequest {
 
     /// What request replaces
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub replaces: Vec<types::Reference>,
+    pub replaces: Vec<types::Reference<crate::r5::resources::ServiceRequest>>,
 
     /// Composite Request ID
     pub requisition: Option<types::Identifier>,
@@ -175,7 +175,7 @@ pub struct ServiceRequest {
     pub focus: Vec<types::Reference>,
 
     /// Encounter in which the request was created
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r5::resources::Encounter>>,
 
     /// The `ServiceRequest.occurrence[x]` choice element (0..1); see [`ServiceRequestOccurrence`].
     #[serde(flatten)]
@@ -219,14 +219,14 @@ pub struct ServiceRequest {
 
     /// Procedure Samples
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub specimen: Vec<types::Reference>,
+    pub specimen: Vec<types::Reference<crate::r5::resources::Specimen>>,
 
     /// Coded location on Body
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub body_site: Vec<types::CodeableConcept>,
 
     /// BodyStructure-based location on the body
-    pub body_structure: Option<types::Reference>,
+    pub body_structure: Option<types::Reference<crate::r5::resources::BodyStructure>>,
 
     /// Comments
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -238,7 +238,7 @@ pub struct ServiceRequest {
 
     /// Request provenance
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub relevant_history: Vec<types::Reference>,
+    pub relevant_history: Vec<types::Reference<crate::r5::resources::Provenance>>,
 }
 
 /// Additional order information for a ServiceRequest.

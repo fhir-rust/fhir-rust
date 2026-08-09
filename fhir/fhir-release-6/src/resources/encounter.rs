@@ -113,7 +113,7 @@ pub struct Encounter {
 
     /// Episode(s) of care that this encounter should be recorded against
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub episode_of_care: Vec<types::Reference>,
+    pub episode_of_care: Vec<types::Reference<crate::r6::resources::EpisodeOfCare>>,
 
     /// The request that initiated this encounter
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -121,13 +121,13 @@ pub struct Encounter {
 
     /// The group(s) that are allocated to participate in this encounter
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub care_team: Vec<types::Reference>,
+    pub care_team: Vec<types::Reference<crate::r6::resources::CareTeam>>,
 
     /// Another Encounter this encounter is part of
-    pub part_of: Option<types::Reference>,
+    pub part_of: Option<types::Reference<crate::r6::resources::Encounter>>,
 
     /// The organization (facility) responsible for this encounter
-    pub service_provider: Option<types::Reference>,
+    pub service_provider: Option<types::Reference<crate::r6::resources::Organization>>,
 
     /// List of participants involved in the encounter
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -135,7 +135,7 @@ pub struct Encounter {
 
     /// The appointment that scheduled this encounter
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub appointment: Vec<types::Reference>,
+    pub appointment: Vec<types::Reference<crate::r6::resources::Appointment>>,
 
     /// Connection details of a virtual service (e.g. conference call)
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -172,7 +172,7 @@ pub struct Encounter {
 
     /// The set of accounts that may be used for billing for this Encounter
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub account: Vec<types::Reference>,
+    pub account: Vec<types::Reference<crate::r6::resources::Account>>,
 
     /// Diet preferences reported by the patient
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -332,7 +332,7 @@ pub struct EncounterLocation {
     pub modifier_extension: Vec<types::Extension>,
 
     /// Location the encounter takes place
-    pub location: types::Reference,
+    pub location: types::Reference<crate::r6::resources::Location>,
 
     /// planned | active | reserved | completed
     pub status: Option<crate::coded::Coded<crate::r6::codes::EncounterLocationStatus>>,

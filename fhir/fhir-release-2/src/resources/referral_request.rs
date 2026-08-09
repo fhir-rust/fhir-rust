@@ -103,7 +103,7 @@ pub struct ReferralRequest {
     pub priority: Option<types::CodeableConcept>,
 
     /// Patient referred to care or transfer
-    pub patient: Option<types::Reference>,
+    pub patient: Option<types::Reference<crate::r2::resources::Patient>>,
 
     /// Requester of referral / transfer of care
     pub requester: Option<types::Reference>,
@@ -113,7 +113,7 @@ pub struct ReferralRequest {
     pub recipient: Vec<types::Reference>,
 
     /// Originating encounter
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r2::resources::Encounter>>,
 
     /// Date referral/transfer of care request is sent
     pub date_sent: Option<types::DateTime>,

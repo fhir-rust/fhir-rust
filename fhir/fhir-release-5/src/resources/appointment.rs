@@ -143,7 +143,7 @@ pub struct Appointment {
 
     /// Appointment replaced by this Appointment
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub replaces: Vec<types::Reference>,
+    pub replaces: Vec<types::Reference<crate::r5::resources::Appointment>>,
 
     /// Connection details of a virtual service (e.g. conference call)
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -154,10 +154,10 @@ pub struct Appointment {
     pub supporting_information: Vec<types::Reference>,
 
     /// The previous appointment in a series
-    pub previous_appointment: Option<types::Reference>,
+    pub previous_appointment: Option<types::Reference<crate::r5::resources::Appointment>>,
 
     /// The originating appointment in a recurring set of appointments
-    pub originating_appointment: Option<types::Reference>,
+    pub originating_appointment: Option<types::Reference<crate::r5::resources::Appointment>>,
 
     /// Date and time when the appointment is scheduled to begin, once a fixed time has been set
     pub start: Option<types::Instant>,
@@ -183,11 +183,11 @@ pub struct Appointment {
 
     /// The Slot resource(s) that this appointment is filling, drawn from a Schedule's published availability
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub slot: Vec<types::Reference>,
+    pub slot: Vec<types::Reference<crate::r5::resources::Slot>>,
 
     /// The set of accounts that may be used for billing for this Appointment
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub account: Vec<types::Reference>,
+    pub account: Vec<types::Reference<crate::r5::resources::Account>>,
 
     /// The date that this appointment was initially created
     pub created: Option<types::DateTime>,

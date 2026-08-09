@@ -79,7 +79,7 @@ pub struct HealthcareService {
     pub identifier: Vec<types::Identifier>,
 
     /// Organization that provides this service
-    pub provided_by: Option<types::Reference>,
+    pub provided_by: Option<types::Reference<crate::r2::resources::Organization>>,
 
     /// Broad category of service being performed or delivered
     pub service_category: Option<types::CodeableConcept>,
@@ -89,7 +89,7 @@ pub struct HealthcareService {
     pub service_type: Vec<HealthcareServiceServiceType>,
 
     /// Location where service may be provided
-    pub location: types::Reference,
+    pub location: types::Reference<crate::r2::resources::Location>,
 
     /// Description of service as presented to a consumer while searching
     pub service_name: Option<types::String>,
@@ -122,7 +122,7 @@ pub struct HealthcareService {
 
     /// Location(s) service is inteded for/available to
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub coverage_area: Vec<types::Reference>,
+    pub coverage_area: Vec<types::Reference<crate::r2::resources::Location>>,
 
     /// Conditions under which service is available/offered
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

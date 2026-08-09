@@ -107,7 +107,7 @@ pub struct ImmunizationEvaluation {
     pub status_ext: Option<types::Element>,
 
     /// Reference to the [`Patient`](crate::r5::resources::patient::Patient) whose immunization history is being evaluated.
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r5::resources::Patient>,
 
     /// Date evaluation was performed
     pub date: Option<types::DateTime>,
@@ -116,13 +116,13 @@ pub struct ImmunizationEvaluation {
     pub date_ext: Option<types::Element>,
 
     /// Reference to the organization or body responsible for publishing the recommendations used in this evaluation.
-    pub authority: Option<types::Reference>,
+    pub authority: Option<types::Reference<crate::r5::resources::Organization>>,
 
     /// The vaccine-preventable disease whose recommendation schedule this evaluation was assessed against.
     pub target_disease: types::CodeableConcept,
 
     /// Reference to the specific `Immunization` event being evaluated.
-    pub immunization_event: types::Reference,
+    pub immunization_event: types::Reference<crate::r5::resources::Immunization>,
 
     /// Whether the dose counts as valid, invalid, or another status relative to the published recommendations.
     pub dose_status: types::CodeableConcept,

@@ -346,7 +346,7 @@ pub struct CapabilityStatementImplementation {
     pub url_ext: Option<types::Element>,
 
     /// Organization that manages the data
-    pub custodian: Option<types::Reference>,
+    pub custodian: Option<types::Reference<crate::r4::resources::Organization>>,
 }
 
 /// A description of the messaging capabilities of the solution.

@@ -144,10 +144,10 @@ pub struct Invoice {
     pub participant: Vec<InvoiceParticipant>,
 
     /// Issuing Organization of Invoice
-    pub issuer: Option<types::Reference>,
+    pub issuer: Option<types::Reference<crate::r5::resources::Organization>>,
 
     /// Reference to the Account whose collected charges are being balanced by this invoice.
-    pub account: Option<types::Reference>,
+    pub account: Option<types::Reference<crate::r5::resources::Account>>,
 
     /// Individual charge lines that make up this invoice, each with its own price components.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

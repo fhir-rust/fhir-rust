@@ -88,10 +88,10 @@ pub struct DeviceComponent {
     pub last_system_change_ext: Option<types::Element>,
 
     /// Top-level device resource link
-    pub source: Option<types::Reference>,
+    pub source: Option<types::Reference<crate::r3::resources::Device>>,
 
     /// Parent resource link
-    pub parent: Option<types::Reference>,
+    pub parent: Option<types::Reference<crate::r3::resources::DeviceComponent>>,
 
     /// Current operational status of the component, for example On, Off or
     /// Standby

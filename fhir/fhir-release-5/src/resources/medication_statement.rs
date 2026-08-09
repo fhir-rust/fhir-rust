@@ -122,7 +122,7 @@ pub struct MedicationStatement {
     pub subject: types::Reference,
 
     /// Encounter associated with MedicationStatement
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r5::resources::Encounter>>,
 
     /// The `MedicationStatement.effective[x]` choice element (0..1); see [`MedicationStatementEffective`].
     #[serde(flatten)]

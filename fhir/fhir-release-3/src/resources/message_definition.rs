@@ -168,7 +168,7 @@ pub struct MessageDefinition {
     pub copyright_ext: Option<types::Element>,
 
     /// Definition this one is based on
-    pub base: Option<types::Reference>,
+    pub base: Option<types::Reference<crate::r3::resources::MessageDefinition>>,
 
     /// Protocol/workflow this is part of
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -176,7 +176,7 @@ pub struct MessageDefinition {
 
     /// Takes the place of
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub replaces: Vec<types::Reference>,
+    pub replaces: Vec<types::Reference<crate::r3::resources::MessageDefinition>>,
 
     /// Event type
     pub event: types::Coding,
@@ -241,7 +241,7 @@ pub struct MessageDefinitionAllowedResponse {
     pub modifier_extension: Vec<types::Extension>,
 
     /// Reference to allowed message definition response
-    pub message: types::Reference,
+    pub message: types::Reference<crate::r3::resources::MessageDefinition>,
 
     /// When should this response be used
     pub situation: Option<types::Markdown>,
@@ -296,7 +296,7 @@ pub struct MessageDefinitionFocus {
     pub code_ext: Option<types::Element>,
 
     /// Profile that must be adhered to by focus
-    pub profile: Option<types::Reference>,
+    pub profile: Option<types::Reference<crate::r3::resources::StructureDefinition>>,
 
     /// Minimum number of focuses of this type
     pub min: Option<types::UnsignedInt>,

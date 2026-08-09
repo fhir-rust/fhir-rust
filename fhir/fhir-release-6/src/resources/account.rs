@@ -117,7 +117,7 @@ pub struct Account {
     pub coverage: Vec<AccountCoverage>,
 
     /// Entity managing the Account
-    pub owner: Option<types::Reference>,
+    pub owner: Option<types::Reference<crate::r6::resources::Organization>>,
 
     /// Explanation of purpose/use
     pub description: Option<types::Markdown>,
@@ -139,7 +139,7 @@ pub struct Account {
     pub procedure: Vec<AccountProcedure>,
 
     /// Reference to an associated parent Account
-    pub parent: Option<types::Reference>,
+    pub parent: Option<types::Reference<crate::r6::resources::Account>>,
 
     /// The base or default currency
     pub currency: Option<types::CodeableConcept>,
@@ -248,7 +248,7 @@ pub struct AccountCoverage {
 
     /// The party(s), such as insurances, that may contribute to the payment of
     /// this account
-    pub coverage: types::Reference,
+    pub coverage: types::Reference<crate::r6::resources::Coverage>,
 
     /// The priority of the coverage in the context of this account
     pub priority: Option<types::PositiveInt>,
@@ -379,7 +379,7 @@ pub struct AccountGuarantor {
     pub period: Option<types::Period>,
 
     /// A specific Account for the guarantor
-    pub account: Option<types::Reference>,
+    pub account: Option<types::Reference<crate::r6::resources::Account>>,
 }
 
 /// When using an account for billing a specific Encounter the set of
@@ -447,7 +447,7 @@ pub struct AccountProcedure {
 
     /// Any devices that were associated with the procedure
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub device: Vec<types::Reference>,
+    pub device: Vec<types::Reference<crate::r6::resources::Device>>,
 }
 
 #[cfg(test)]

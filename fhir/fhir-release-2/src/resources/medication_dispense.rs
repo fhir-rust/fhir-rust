@@ -85,14 +85,14 @@ pub struct MedicationDispense {
     pub status_ext: Option<types::Element>,
 
     /// Who the dispense is for
-    pub patient: Option<types::Reference>,
+    pub patient: Option<types::Reference<crate::r2::resources::Patient>>,
 
     /// Practitioner responsible for dispensing medication
-    pub dispenser: Option<types::Reference>,
+    pub dispenser: Option<types::Reference<crate::r2::resources::Practitioner>>,
 
     /// Medication order that authorizes the dispense
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub authorizing_prescription: Vec<types::Reference>,
+    pub authorizing_prescription: Vec<types::Reference<crate::r2::resources::MedicationOrder>>,
 
     /// Trial fill, partial fill, emergency fill, etc.
     pub r#type: Option<types::CodeableConcept>,
@@ -123,7 +123,7 @@ pub struct MedicationDispense {
     pub when_handed_over_ext: Option<types::Element>,
 
     /// Where the medication was sent
-    pub destination: Option<types::Reference>,
+    pub destination: Option<types::Reference<crate::r2::resources::Location>>,
 
     /// Who collected the medication
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -269,7 +269,7 @@ pub struct MedicationDispenseSubstitution {
 
     /// Who is responsible for the substitution
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub responsible_party: Vec<types::Reference>,
+    pub responsible_party: Vec<types::Reference<crate::r2::resources::Practitioner>>,
 }
 
 /// The `MedicationDispense.medication[x]` choice element (see `spec/11-choice-types.md`).

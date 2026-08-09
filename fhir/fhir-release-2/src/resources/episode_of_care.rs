@@ -97,23 +97,23 @@ pub struct EpisodeOfCare {
 
     /// Conditions/problems/diagnoses this episode of care is for
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub condition: Vec<types::Reference>,
+    pub condition: Vec<types::Reference<crate::r2::resources::Condition>>,
 
     /// Patient for this episode of care
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r2::resources::Patient>,
 
     /// Organization that assumes care
-    pub managing_organization: Option<types::Reference>,
+    pub managing_organization: Option<types::Reference<crate::r2::resources::Organization>>,
 
     /// Interval during responsibility is assumed
     pub period: Option<types::Period>,
 
     /// Originating Referral Request(s)
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub referral_request: Vec<types::Reference>,
+    pub referral_request: Vec<types::Reference<crate::r2::resources::ReferralRequest>>,
 
     /// Care manager/care co-ordinator for the patient
-    pub care_manager: Option<types::Reference>,
+    pub care_manager: Option<types::Reference<crate::r2::resources::Practitioner>>,
 
     /// Other practitioners facilitating this episode of care
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

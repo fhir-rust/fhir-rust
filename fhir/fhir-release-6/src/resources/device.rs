@@ -86,7 +86,7 @@ pub struct Device {
     pub identifier: Vec<types::Identifier>,
 
     /// The reference to the definition for the device
-    pub definition: Option<types::Reference>,
+    pub definition: Option<types::Reference<crate::r6::resources::DeviceDefinition>>,
 
     /// Unique Device Identifier (UDI) value
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -192,7 +192,7 @@ pub struct Device {
     pub contact: Vec<types::ContactPoint>,
 
     /// Where the device is found
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r6::resources::Location>>,
 
     /// Device notes and comments
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -204,7 +204,7 @@ pub struct Device {
 
     /// The higher level or encompassing device that this device is a logical
     /// part of
-    pub parent: Option<types::Reference>,
+    pub parent: Option<types::Reference<crate::r6::resources::Device>>,
 }
 
 /// Material added to a container device (typically used in specimen collection

@@ -123,7 +123,7 @@ pub struct Appointment {
 
     /// If provided, then no schedule and start/end values MUST match slot
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub slot: Vec<types::Reference>,
+    pub slot: Vec<types::Reference<crate::r2::resources::Slot>>,
 
     /// Additional comments
     pub comment: Option<types::String>,

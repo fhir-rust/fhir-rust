@@ -170,7 +170,7 @@ pub struct OperationDefinition {
     pub notes_ext: Option<types::Element>,
 
     /// Marks this as a profile of the base
-    pub base: Option<types::Reference>,
+    pub base: Option<types::Reference<crate::r2::resources::OperationDefinition>>,
 
     /// Invoke at the system level?
     pub system: types::Boolean,
@@ -325,7 +325,7 @@ pub struct OperationDefinitionParameter {
     pub type_ext: Option<types::Element>,
 
     /// Profile on the type
-    pub profile: Option<types::Reference>,
+    pub profile: Option<types::Reference<crate::r2::resources::StructureDefinition>>,
 
     /// ValueSet details if this is coded
     pub binding: Option<OperationDefinitionParameterBinding>,

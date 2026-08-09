@@ -80,7 +80,7 @@ pub struct MedicationDispense {
 
     /// Event that dispense is part of
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub part_of: Vec<types::Reference>,
+    pub part_of: Vec<types::Reference<crate::r3::resources::Procedure>>,
 
     /// preparation | in-progress | on-hold | completed | entered-in-error |
     /// stopped
@@ -114,7 +114,7 @@ pub struct MedicationDispense {
 
     /// Medication order that authorizes the dispense
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub authorizing_prescription: Vec<types::Reference>,
+    pub authorizing_prescription: Vec<types::Reference<crate::r3::resources::MedicationRequest>>,
 
     /// Trial fill, partial fill, emergency fill, etc.
     pub r#type: Option<types::CodeableConcept>,
@@ -140,7 +140,7 @@ pub struct MedicationDispense {
     pub when_handed_over_ext: Option<types::Element>,
 
     /// Where the medication was sent
-    pub destination: Option<types::Reference>,
+    pub destination: Option<types::Reference<crate::r3::resources::Location>>,
 
     /// Who collected the medication
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -160,7 +160,7 @@ pub struct MedicationDispense {
 
     /// Clinical issue with action
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub detected_issue: Vec<types::Reference>,
+    pub detected_issue: Vec<types::Reference<crate::r3::resources::DetectedIssue>>,
 
     /// Whether the dispense was or was not performed
     pub not_done: Option<types::Boolean>,
@@ -176,7 +176,7 @@ pub struct MedicationDispense {
 
     /// A list of releveant lifecycle events
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub event_history: Vec<types::Reference>,
+    pub event_history: Vec<types::Reference<crate::r3::resources::Provenance>>,
 }
 
 /// Indicates who or what performed the event. It should be assumed that the
@@ -219,7 +219,7 @@ pub struct MedicationDispensePerformer {
     pub actor: types::Reference,
 
     /// Organization organization was acting for
-    pub on_behalf_of: Option<types::Reference>,
+    pub on_behalf_of: Option<types::Reference<crate::r3::resources::Organization>>,
 }
 
 /// Indicates whether or not substitution was made as part of the dispense. In
@@ -278,7 +278,7 @@ pub struct MedicationDispenseSubstitution {
 
     /// Who is responsible for the substitution
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub responsible_party: Vec<types::Reference>,
+    pub responsible_party: Vec<types::Reference<crate::r3::resources::Practitioner>>,
 }
 
 /// The `MedicationDispense.medication[x]` choice element (see `spec/11-choice-types.md`).

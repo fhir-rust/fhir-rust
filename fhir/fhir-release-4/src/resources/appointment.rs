@@ -153,7 +153,7 @@ pub struct Appointment {
 
     /// The slots that this appointment is filling
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub slot: Vec<types::Reference>,
+    pub slot: Vec<types::Reference<crate::r4::resources::Slot>>,
 
     /// The date that this appointment was initially created
     pub created: Option<types::DateTime>,
@@ -178,7 +178,7 @@ pub struct Appointment {
 
     /// The service request this appointment is allocated to assess
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub based_on: Vec<types::Reference>,
+    pub based_on: Vec<types::Reference<crate::r4::resources::ServiceRequest>>,
 
     /// Participants involved in appointment
     pub participant: ::vec1::Vec1<AppointmentParticipant>,

@@ -87,7 +87,7 @@ pub struct DeviceMetric {
     pub unit: Option<types::CodeableConcept>,
 
     /// Describes the link to the Device
-    pub device: types::Reference,
+    pub device: types::Reference<crate::r6::resources::Device>,
 
     /// on | off | standby | entered-in-error
     pub operational_status: Option<crate::coded::Coded<crate::r6::codes::MetricOperationalStatus>>,

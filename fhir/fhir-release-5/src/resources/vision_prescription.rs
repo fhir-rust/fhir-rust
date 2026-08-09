@@ -111,10 +111,10 @@ pub struct VisionPrescription {
 
     /// Reference to the [`Patient`](crate::r5::resources::patient::Patient)
     /// for whom the vision prescription was written.
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r5::resources::Patient>,
 
     /// Created during encounter / admission / stay
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r5::resources::Encounter>>,
 
     /// The date on which the eye examination was performed and the
     /// prescription was authorized by the prescriber.

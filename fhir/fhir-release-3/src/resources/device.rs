@@ -134,17 +134,17 @@ pub struct Device {
     pub version_ext: Option<types::Element>,
 
     /// Patient to whom Device is affixed
-    pub patient: Option<types::Reference>,
+    pub patient: Option<types::Reference<crate::r3::resources::Patient>>,
 
     /// Organization responsible for device
-    pub owner: Option<types::Reference>,
+    pub owner: Option<types::Reference<crate::r3::resources::Organization>>,
 
     /// Details for human/organization for support
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub contact: Vec<types::ContactPoint>,
 
     /// Where the resource is found
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r3::resources::Location>>,
 
     /// Network address to contact device
     pub url: Option<types::Uri>,

@@ -113,7 +113,7 @@ pub struct DeviceAlert {
 
     /// The value causing the alert condition
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub derived_from: Vec<types::Reference>,
+    pub derived_from: Vec<types::Reference<crate::r6::resources::Observation>>,
 
     /// Text to be displayed for the alert condition
     pub label: Option<types::String>,

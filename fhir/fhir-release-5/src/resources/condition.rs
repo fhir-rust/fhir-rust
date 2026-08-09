@@ -123,7 +123,7 @@ pub struct Condition {
     pub subject: types::Reference,
 
     /// The encounter during which this condition was created or asserted
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r5::resources::Encounter>>,
 
     /// The `Condition.onset[x]` choice element (0..1); see [`ConditionOnset`].
     #[serde(flatten)]

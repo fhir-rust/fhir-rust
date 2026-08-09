@@ -255,7 +255,7 @@ pub struct ObservationDefinition {
 
     /// Kind of specimen used by this type of observation
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub specimen: Vec<types::Reference>,
+    pub specimen: Vec<types::Reference<crate::r6::resources::SpecimenDefinition>>,
 
     /// Measurement device or model of device
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

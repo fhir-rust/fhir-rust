@@ -94,7 +94,7 @@ pub struct Transport {
 
     /// Part of referenced event
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub part_of: Vec<types::Reference>,
+    pub part_of: Vec<types::Reference<crate::r6::resources::Transport>>,
 
     /// preparation | in-progress | not-done | suspended | stopped | on-hold |
     /// completed | entered-in-error | unknown
@@ -124,7 +124,7 @@ pub struct Transport {
     pub r#for: Option<types::Reference>,
 
     /// Healthcare event during which this transport originated
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r6::resources::Encounter>>,
 
     /// Completion time of the event (the occurrence)
     pub completion_time: Option<types::DateTime>,
@@ -158,7 +158,7 @@ pub struct Transport {
     pub owner: Option<types::Reference>,
 
     /// Where transport occurs
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r6::resources::Location>>,
 
     /// Associated insurance coverage
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -170,7 +170,7 @@ pub struct Transport {
 
     /// Key events in history of the Transport
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub relevant_history: Vec<types::Reference>,
+    pub relevant_history: Vec<types::Reference<crate::r6::resources::Provenance>>,
 
     /// Constraints on fulfillment transports
     pub restriction: Option<TransportRestriction>,
@@ -184,16 +184,16 @@ pub struct Transport {
     pub output: Vec<TransportOutput>,
 
     /// The desired location
-    pub requested_location: types::Reference,
+    pub requested_location: types::Reference<crate::r6::resources::Location>,
 
     /// The entity current location
-    pub current_location: types::Reference,
+    pub current_location: types::Reference<crate::r6::resources::Location>,
 
     /// Why transport is needed
     pub reason: Option<types::CodeableReference>,
 
     /// Parent (or preceding) transport
-    pub history: Option<types::Reference>,
+    pub history: Option<types::Reference<crate::r6::resources::Transport>>,
 }
 
 /// Additional information that may be needed in the execution of the

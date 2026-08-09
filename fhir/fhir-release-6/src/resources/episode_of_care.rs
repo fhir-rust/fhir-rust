@@ -114,25 +114,25 @@ pub struct EpisodeOfCare {
     pub subject: types::Reference,
 
     /// Organization that assumes responsibility for care coordination
-    pub managing_organization: Option<types::Reference>,
+    pub managing_organization: Option<types::Reference<crate::r6::resources::Organization>>,
 
     /// Interval during responsibility is assumed
     pub period: Option<types::Period>,
 
     /// Originating Referral Request(s)
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub referral_request: Vec<types::Reference>,
+    pub referral_request: Vec<types::Reference<crate::r6::resources::ServiceRequest>>,
 
     /// Care manager/care coordinator for the patient
     pub care_manager: Option<types::Reference>,
 
     /// Other practitioners facilitating this episode of care
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub care_team: Vec<types::Reference>,
+    pub care_team: Vec<types::Reference<crate::r6::resources::CareTeam>>,
 
     /// The set of accounts that may be used for billing for this EpisodeOfCare
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub account: Vec<types::Reference>,
+    pub account: Vec<types::Reference<crate::r6::resources::Account>>,
 }
 
 /// The list of medical conditions that were addressed during the episode of

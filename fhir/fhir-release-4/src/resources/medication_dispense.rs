@@ -84,7 +84,7 @@ pub struct MedicationDispense {
 
     /// Event that dispense is part of
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub part_of: Vec<types::Reference>,
+    pub part_of: Vec<types::Reference<crate::r4::resources::Procedure>>,
 
     /// preparation | in-progress | cancelled | on-hold | completed |
     /// entered-in-error | stopped | declined | unknown
@@ -122,11 +122,11 @@ pub struct MedicationDispense {
     pub performer: Vec<MedicationDispensePerformer>,
 
     /// Where the dispense occurred
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r4::resources::Location>>,
 
     /// Medication order that authorizes the dispense
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub authorizing_prescription: Vec<types::Reference>,
+    pub authorizing_prescription: Vec<types::Reference<crate::r4::resources::MedicationRequest>>,
 
     /// Trial fill, partial fill, emergency fill, etc.
     pub r#type: Option<types::CodeableConcept>,
@@ -152,7 +152,7 @@ pub struct MedicationDispense {
     pub when_handed_over_ext: Option<types::Element>,
 
     /// Where the medication was sent
-    pub destination: Option<types::Reference>,
+    pub destination: Option<types::Reference<crate::r4::resources::Location>>,
 
     /// Who collected the medication
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -172,11 +172,11 @@ pub struct MedicationDispense {
 
     /// Clinical issue with action
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub detected_issue: Vec<types::Reference>,
+    pub detected_issue: Vec<types::Reference<crate::r4::resources::DetectedIssue>>,
 
     /// A list of relevant lifecycle events
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub event_history: Vec<types::Reference>,
+    pub event_history: Vec<types::Reference<crate::r4::resources::Provenance>>,
 }
 
 /// Indicates who or what performed the event.

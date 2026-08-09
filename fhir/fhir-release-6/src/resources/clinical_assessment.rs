@@ -107,7 +107,7 @@ pub struct ClinicalAssessment {
     pub subject: types::Reference,
 
     /// The Encounter during which this ClinicalAssessment was created
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r6::resources::Encounter>>,
 
     /// Time of assessment
     /// The `ClinicalAssessment.effective[x]` choice element (0..1); see [`ClinicalAssessmentEffective`].
@@ -125,7 +125,7 @@ pub struct ClinicalAssessment {
     pub performer: Option<types::Reference>,
 
     /// Reference to last assessment
-    pub previous: Option<types::Reference>,
+    pub previous: Option<types::Reference<crate::r6::resources::ClinicalAssessment>>,
 
     /// Relevant assessments of patient state
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -161,7 +161,7 @@ pub struct ClinicalAssessment {
 
     /// RiskAssessment expressing likely outcome
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub prognosis_reference: Vec<types::Reference>,
+    pub prognosis_reference: Vec<types::Reference<crate::r6::resources::RiskAssessment>>,
 
     /// Information supporting the clinical assessment
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

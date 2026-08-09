@@ -259,7 +259,7 @@ pub struct TestPlanDependency {
     pub description_ext: Option<types::Element>,
 
     /// Link to predecessor test plans
-    pub predecessor: Option<types::Reference>,
+    pub predecessor: Option<types::Reference<crate::r6::resources::TestPlan>>,
 }
 
 /// What is being tested with this Test Plan - a conformance resource, or

@@ -114,7 +114,7 @@ pub struct Claim {
     pub use_ext: Option<types::Element>,
 
     /// The [`Patient`](crate::r5::resources::patient::Patient) who is the recipient of the products and services
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r5::resources::Patient>,
 
     /// Relevant time frame for the claim
     pub billable_period: Option<types::Period>,
@@ -129,7 +129,7 @@ pub struct Claim {
     pub enterer: Option<types::Reference>,
 
     /// The insurer (payer) who is the target of the claim submission
-    pub insurer: Option<types::Reference>,
+    pub insurer: Option<types::Reference<crate::r5::resources::Organization>>,
 
     /// The practitioner or organization responsible for the claim
     pub provider: Option<types::Reference>,
@@ -154,11 +154,11 @@ pub struct Claim {
     pub payee: Option<ClaimPayee>,
 
     /// Treatment referral
-    pub referral: Option<types::Reference>,
+    pub referral: Option<types::Reference<crate::r5::resources::ServiceRequest>>,
 
     /// Encounters associated with the listed treatments
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub encounter: Vec<types::Reference>,
+    pub encounter: Vec<types::Reference<crate::r5::resources::Encounter>>,
 
     /// Servicing facility
     pub facility: Option<types::Reference>,
@@ -238,7 +238,7 @@ pub struct ClaimRelated {
     pub modifier_extension: Vec<types::Extension>,
 
     /// Reference to the related claim
-    pub claim: Option<types::Reference>,
+    pub claim: Option<types::Reference<crate::r5::resources::Claim>>,
 
     /// How the reference claim is related
     pub relationship: Option<types::CodeableConcept>,
@@ -546,7 +546,7 @@ pub struct ClaimProcedure {
 
     /// Unique device identifier
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub udi: Vec<types::Reference>,
+    pub udi: Vec<types::Reference<crate::r5::resources::Device>>,
 }
 
 /// Claim nested backbone element `Claim.insurance`. Patient insurance information
@@ -598,7 +598,7 @@ pub struct ClaimInsurance {
     pub identifier: Option<types::Identifier>,
 
     /// Insurance information
-    pub coverage: types::Reference,
+    pub coverage: types::Reference<crate::r5::resources::Coverage>,
 
     /// Additional provider contract number
     pub business_arrangement: Option<types::String>,
@@ -615,7 +615,7 @@ pub struct ClaimInsurance {
     pub pre_auth_ref_ext: Vec<Option<types::Element>>,
 
     /// Adjudication results
-    pub claim_response: Option<types::Reference>,
+    pub claim_response: Option<types::Reference<crate::r5::resources::ClaimResponse>>,
 }
 
 /// Claim nested backbone element `Claim.accident`. Details of the event
@@ -795,7 +795,7 @@ pub struct ClaimItem {
 
     /// Unique device identifier
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub udi: Vec<types::Reference>,
+    pub udi: Vec<types::Reference<crate::r5::resources::Device>>,
 
     /// Anatomical location
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -803,7 +803,7 @@ pub struct ClaimItem {
 
     /// Encounters associated with the listed treatments
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub encounter: Vec<types::Reference>,
+    pub encounter: Vec<types::Reference<crate::r5::resources::Encounter>>,
 
     /// Product or service provided
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -930,7 +930,7 @@ pub struct ClaimItemDetail {
 
     /// Unique device identifier
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub udi: Vec<types::Reference>,
+    pub udi: Vec<types::Reference<crate::r5::resources::Device>>,
 
     /// Product or service provided
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -1023,7 +1023,7 @@ pub struct ClaimItemDetailSubDetail {
 
     /// Unique device identifier
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub udi: Vec<types::Reference>,
+    pub udi: Vec<types::Reference<crate::r5::resources::Device>>,
 }
 
 #[cfg(test)]

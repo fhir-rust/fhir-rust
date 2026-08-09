@@ -119,7 +119,7 @@ pub struct Flag {
     pub period: Option<types::Period>,
 
     /// Alert relevant during encounter
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r5::resources::Encounter>>,
 
     /// Flag creator
     pub author: Option<types::Reference>,

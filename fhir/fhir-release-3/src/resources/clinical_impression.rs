@@ -115,10 +115,10 @@ pub struct ClinicalImpression {
     pub date_ext: Option<types::Element>,
 
     /// The clinician performing the assessment
-    pub assessor: Option<types::Reference>,
+    pub assessor: Option<types::Reference<crate::r3::resources::Practitioner>>,
 
     /// Reference to last assessment
-    pub previous: Option<types::Reference>,
+    pub previous: Option<types::Reference<crate::r3::resources::ClinicalImpression>>,
 
     /// Relevant impressions of patient state
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -154,7 +154,7 @@ pub struct ClinicalImpression {
 
     /// RiskAssessment expressing likely outcome
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub prognosis_reference: Vec<types::Reference>,
+    pub prognosis_reference: Vec<types::Reference<crate::r3::resources::RiskAssessment>>,
 
     /// Action taken as part of assessment procedure
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

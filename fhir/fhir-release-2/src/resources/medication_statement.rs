@@ -79,7 +79,7 @@ pub struct MedicationStatement {
     pub identifier: Vec<types::Identifier>,
 
     /// Who is/was taking the medication
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r2::resources::Patient>,
 
     pub information_source: Option<types::Reference>,
 

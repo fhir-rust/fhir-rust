@@ -99,7 +99,7 @@ pub struct Medication {
     pub is_over_the_counter_ext: Option<types::Element>,
 
     /// Manufacturer of the item
-    pub manufacturer: Option<types::Reference>,
+    pub manufacturer: Option<types::Reference<crate::r3::resources::Organization>>,
 
     /// powder | tablets | capsule +
     pub form: Option<types::CodeableConcept>,

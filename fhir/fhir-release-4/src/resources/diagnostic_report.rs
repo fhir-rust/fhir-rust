@@ -105,7 +105,7 @@ pub struct DiagnosticReport {
     pub subject: Option<types::Reference>,
 
     /// Health care event when test ordered
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r4::resources::Encounter>>,
 
     /// Clinically relevant time/time-period for report
     /// The `DiagnosticReport.effective[x]` choice element (0..1); see [`DiagnosticReportEffective`].
@@ -129,16 +129,16 @@ pub struct DiagnosticReport {
 
     /// Specimens this report is based on
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub specimen: Vec<types::Reference>,
+    pub specimen: Vec<types::Reference<crate::r4::resources::Specimen>>,
 
     /// Observations
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub result: Vec<types::Reference>,
+    pub result: Vec<types::Reference<crate::r4::resources::Observation>>,
 
     /// Reference to full details of imaging associated with the diagnostic
     /// report
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub imaging_study: Vec<types::Reference>,
+    pub imaging_study: Vec<types::Reference<crate::r4::resources::ImagingStudy>>,
 
     /// Key images associated with this report
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -205,7 +205,7 @@ pub struct DiagnosticReportMedia {
     pub comment_ext: Option<types::Element>,
 
     /// Reference to the image source
-    pub link: types::Reference,
+    pub link: types::Reference<crate::r4::resources::Media>,
 }
 
 /// The `DiagnosticReport.effective[x]` choice element (see `spec/11-choice-types.md`).

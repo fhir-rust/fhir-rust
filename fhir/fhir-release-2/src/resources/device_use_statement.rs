@@ -79,7 +79,7 @@ pub struct DeviceUseStatement {
 
     pub when_used: Option<types::Period>,
 
-    pub device: types::Reference,
+    pub device: types::Reference<crate::r2::resources::Device>,
 
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub identifier: Vec<types::Identifier>,
@@ -101,7 +101,7 @@ pub struct DeviceUseStatement {
     #[serde(rename = "_recordedOn")]
     pub recorded_on_ext: Option<types::Element>,
 
-    pub subject: types::Reference,
+    pub subject: types::Reference<crate::r2::resources::Patient>,
 
     /// The `DeviceUseStatement.timing[x]` choice element (0..1); see [`DeviceUseStatementTiming`].
     #[serde(flatten)]

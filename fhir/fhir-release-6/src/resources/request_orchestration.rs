@@ -138,7 +138,7 @@ pub struct RequestOrchestration {
     pub subject: Option<types::Reference>,
 
     /// Created as part of
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r6::resources::Encounter>>,
 
     /// When the request orchestration was authored
     pub authored_on: Option<types::DateTime>,
@@ -156,7 +156,7 @@ pub struct RequestOrchestration {
 
     /// What goals
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub goal: Vec<types::Reference>,
+    pub goal: Vec<types::Reference<crate::r6::resources::Goal>>,
 
     /// Additional notes about the response
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -255,7 +255,7 @@ pub struct RequestOrchestrationAction {
 
     /// What goals
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub goal: Vec<types::Reference>,
+    pub goal: Vec<types::Reference<crate::r6::resources::Goal>>,
 
     /// Whether or not the action is applicable
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

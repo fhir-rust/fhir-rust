@@ -85,7 +85,7 @@ pub struct GuidanceResponse {
     pub identifier: Option<types::Identifier>,
 
     /// A reference to a knowledge module
-    pub module: types::Reference,
+    pub module: types::Reference<crate::r3::resources::ServiceDefinition>,
 
     /// success | data-requested | data-required | in-progress | failure |
     /// entered-in-error
@@ -109,7 +109,7 @@ pub struct GuidanceResponse {
     pub occurrence_date_time_ext: Option<types::Element>,
 
     /// Device returning the guidance
-    pub performer: Option<types::Reference>,
+    pub performer: Option<types::Reference<crate::r3::resources::Device>>,
 
     /// Reason for the response
     /// The `GuidanceResponse.reason[x]` choice element (0..1); see [`GuidanceResponseReason`].
@@ -122,10 +122,10 @@ pub struct GuidanceResponse {
 
     /// Messages resulting from the evaluation of the artifact or artifacts
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub evaluation_message: Vec<types::Reference>,
+    pub evaluation_message: Vec<types::Reference<crate::r3::resources::OperationOutcome>>,
 
     /// The output parameters of the evaluation, if any
-    pub output_parameters: Option<types::Reference>,
+    pub output_parameters: Option<types::Reference<crate::r3::resources::Parameters>>,
 
     /// Proposed actions, if any
     pub result: Option<types::Reference>,

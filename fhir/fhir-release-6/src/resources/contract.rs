@@ -105,7 +105,7 @@ pub struct Contract {
     pub legal_state: Option<types::CodeableConcept>,
 
     /// Source Contract Definition
-    pub instantiates_canonical: Option<types::Reference>,
+    pub instantiates_canonical: Option<types::Reference<crate::r6::resources::Contract>>,
 
     /// External Contract Definition
     pub instantiates_uri: Option<types::Uri>,
@@ -136,16 +136,16 @@ pub struct Contract {
 
     /// Authority under which this Contract has standing
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub authority: Vec<types::Reference>,
+    pub authority: Vec<types::Reference<crate::r6::resources::Organization>>,
 
     /// A sphere of control governed by an authoritative jurisdiction,
     /// organization, or person
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub domain: Vec<types::Reference>,
+    pub domain: Vec<types::Reference<crate::r6::resources::Location>>,
 
     /// Specific Location
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub site: Vec<types::Reference>,
+    pub site: Vec<types::Reference<crate::r6::resources::Location>>,
 
     /// Computer friendly designation
     pub name: Option<types::String>,
@@ -208,7 +208,7 @@ pub struct Contract {
 
     /// Key event in Contract History
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub relevant_history: Vec<types::Reference>,
+    pub relevant_history: Vec<types::Reference<crate::r6::resources::Provenance>>,
 
     /// Contract Signatory
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

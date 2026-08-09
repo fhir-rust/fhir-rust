@@ -259,16 +259,17 @@ pub struct ResearchDefinition {
     pub library_ext: Vec<Option<types::Element>>,
 
     /// What population?
-    pub population: types::Reference,
+    pub population: types::Reference<crate::r4::resources::ResearchElementDefinition>,
 
     /// What exposure?
-    pub exposure: Option<types::Reference>,
+    pub exposure: Option<types::Reference<crate::r4::resources::ResearchElementDefinition>>,
 
     /// What alternative exposure state?
-    pub exposure_alternative: Option<types::Reference>,
+    pub exposure_alternative:
+        Option<types::Reference<crate::r4::resources::ResearchElementDefinition>>,
 
     /// What outcome?
-    pub outcome: Option<types::Reference>,
+    pub outcome: Option<types::Reference<crate::r4::resources::ResearchElementDefinition>>,
 }
 
 /// The `ResearchDefinition.subject[x]` choice element (see `spec/11-choice-types.md`).

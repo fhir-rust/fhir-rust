@@ -103,7 +103,7 @@ pub struct PaymentNotice {
     pub provider: Option<types::Reference>,
 
     /// Payment reference
-    pub payment: types::Reference,
+    pub payment: types::Reference<crate::r4::resources::PaymentReconciliation>,
 
     /// Payment or clearing date
     pub payment_date: Option<types::Date>,
@@ -116,7 +116,7 @@ pub struct PaymentNotice {
     pub payee: Option<types::Reference>,
 
     /// Party being notified
-    pub recipient: types::Reference,
+    pub recipient: types::Reference<crate::r4::resources::Organization>,
 
     /// Monetary amount of the payment
     pub amount: types::Money,

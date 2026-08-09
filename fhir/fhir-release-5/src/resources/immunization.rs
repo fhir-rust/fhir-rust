@@ -136,10 +136,10 @@ pub struct Immunization {
     pub expiration_date_ext: Option<types::Element>,
 
     /// Reference to the patient who was immunized
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r5::resources::Patient>,
 
     /// Encounter immunization was part of
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r5::resources::Encounter>>,
 
     /// Additional information in support of the immunization
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -159,7 +159,7 @@ pub struct Immunization {
     pub information_source: Option<types::CodeableReference>,
 
     /// Where immunization occurred
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r5::resources::Location>>,
 
     /// Body site vaccine was administered
     pub site: Option<types::CodeableConcept>,
@@ -377,7 +377,7 @@ pub struct ImmunizationProtocolApplied {
     pub series_ext: Option<types::Element>,
 
     /// Who is responsible for publishing the recommendations
-    pub authority: Option<types::Reference>,
+    pub authority: Option<types::Reference<crate::r5::resources::Organization>>,
 
     /// Vaccine preventatable disease being targeted
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

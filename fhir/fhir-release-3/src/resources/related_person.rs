@@ -87,7 +87,7 @@ pub struct RelatedPerson {
     pub active_ext: Option<types::Element>,
 
     /// The patient this person is related to
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r3::resources::Patient>,
 
     /// The nature of the relationship
     pub relationship: Option<types::CodeableConcept>,

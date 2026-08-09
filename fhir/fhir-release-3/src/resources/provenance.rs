@@ -90,7 +90,7 @@ pub struct Provenance {
     pub policy_ext: Vec<Option<types::Element>>,
 
     /// Where the activity occurred, if relevant
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r3::resources::Location>>,
 
     /// Reason the activity is occurring
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

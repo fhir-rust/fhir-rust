@@ -93,11 +93,11 @@ pub struct Contract {
 
     /// Authority under which this Contract has standing
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub authority: Vec<types::Reference>,
+    pub authority: Vec<types::Reference<crate::r2::resources::Organization>>,
 
     /// Domain in which this Contract applies
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub domain: Vec<types::Reference>,
+    pub domain: Vec<types::Reference<crate::r2::resources::Location>>,
 
     /// Contract Tyoe
     pub r#type: Option<types::CodeableConcept>,

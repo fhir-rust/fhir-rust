@@ -145,7 +145,7 @@ pub struct SubstanceReferenceInformationClassification {
 
     /// Todo
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub source: Vec<types::Reference>,
+    pub source: Vec<types::Reference<crate::r4::resources::DocumentReference>>,
 }
 
 /// Todo.
@@ -191,7 +191,7 @@ pub struct SubstanceReferenceInformationGene {
 
     /// Todo
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub source: Vec<types::Reference>,
+    pub source: Vec<types::Reference<crate::r4::resources::DocumentReference>>,
 }
 
 /// Todo.
@@ -237,7 +237,7 @@ pub struct SubstanceReferenceInformationGeneElement {
 
     /// Todo
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub source: Vec<types::Reference>,
+    pub source: Vec<types::Reference<crate::r4::resources::DocumentReference>>,
 }
 
 /// Todo.
@@ -300,7 +300,7 @@ pub struct SubstanceReferenceInformationTarget {
 
     /// Todo
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub source: Vec<types::Reference>,
+    pub source: Vec<types::Reference<crate::r4::resources::DocumentReference>>,
 }
 
 /// The `SubstanceReferenceInformation.target.amount[x]` choice element (see `spec/11-choice-types.md`).

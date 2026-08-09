@@ -101,7 +101,7 @@ pub struct ImagingStudy {
     pub modality_list: Vec<types::Coding>,
 
     /// Who the images are of
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r3::resources::Patient>,
 
     /// Originating context
     pub context: Option<types::Reference>,
@@ -118,15 +118,15 @@ pub struct ImagingStudy {
     pub based_on: Vec<types::Reference>,
 
     /// Referring physician
-    pub referrer: Option<types::Reference>,
+    pub referrer: Option<types::Reference<crate::r3::resources::Practitioner>>,
 
     /// Who interpreted images
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub interpreter: Vec<types::Reference>,
+    pub interpreter: Vec<types::Reference<crate::r3::resources::Practitioner>>,
 
     /// Study access endpoint
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub endpoint: Vec<types::Reference>,
+    pub endpoint: Vec<types::Reference<crate::r3::resources::Endpoint>>,
 
     /// Number of Study Related Series
     pub number_of_series: Option<types::UnsignedInt>,
@@ -144,7 +144,7 @@ pub struct ImagingStudy {
 
     /// The performed Procedure reference
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub procedure_reference: Vec<types::Reference>,
+    pub procedure_reference: Vec<types::Reference<crate::r3::resources::Procedure>>,
 
     /// The performed procedure code
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -240,7 +240,7 @@ pub struct ImagingStudySeries {
 
     /// Series access endpoint
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub endpoint: Vec<types::Reference>,
+    pub endpoint: Vec<types::Reference<crate::r3::resources::Endpoint>>,
 
     /// Body part examined
     pub body_site: Option<types::Coding>,
@@ -257,7 +257,7 @@ pub struct ImagingStudySeries {
 
     /// Who performed the series
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub performer: Vec<types::Reference>,
+    pub performer: Vec<types::Reference<crate::r3::resources::Practitioner>>,
 
     /// A single SOP instance from the series
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

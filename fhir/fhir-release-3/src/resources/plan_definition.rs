@@ -209,7 +209,7 @@ pub struct PlanDefinition {
 
     /// Logic used by the plan definition
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub library: Vec<types::Reference>,
+    pub library: Vec<types::Reference<crate::r3::resources::Library>>,
 
     /// What the plan is trying to accomplish
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -377,7 +377,7 @@ pub struct PlanDefinitionAction {
     pub definition: Option<types::Reference>,
 
     /// Transform to apply the template
-    pub transform: Option<types::Reference>,
+    pub transform: Option<types::Reference<crate::r3::resources::StructureMap>>,
 
     /// Dynamic aspects of the definition
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

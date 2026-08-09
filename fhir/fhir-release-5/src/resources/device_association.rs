@@ -105,7 +105,7 @@ pub struct DeviceAssociation {
     pub identifier: Vec<types::Identifier>,
 
     /// Reference to the device that is the subject of this association
-    pub device: types::Reference,
+    pub device: types::Reference<crate::r5::resources::Device>,
 
     /// Describes the relationship between the device and subject, such as parent/child or usage relationships
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -122,7 +122,7 @@ pub struct DeviceAssociation {
     pub subject: Option<types::Reference>,
 
     /// Current anatomical location of the device in/on subject, when applicable
-    pub body_structure: Option<types::Reference>,
+    pub body_structure: Option<types::Reference<crate::r5::resources::BodyStructure>>,
 
     /// Begin and end dates and times for the device association
     pub period: Option<types::Period>,

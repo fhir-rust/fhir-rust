@@ -148,7 +148,7 @@ pub struct Observation {
     pub focus: Vec<types::Reference>,
 
     /// Healthcare event during which this observation is made
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r5::resources::Encounter>>,
 
     /// The `Observation.effective[x]` choice element (0..1); see [`ObservationEffective`].
     #[serde(flatten)]
@@ -183,7 +183,7 @@ pub struct Observation {
     pub body_site: Option<types::CodeableConcept>,
 
     /// Observed body structure
-    pub body_structure: Option<types::Reference>,
+    pub body_structure: Option<types::Reference<crate::r5::resources::BodyStructure>>,
 
     /// How it was done
     pub method: Option<types::CodeableConcept>,
@@ -248,7 +248,7 @@ pub struct ObservationTriggeredBy {
     pub modifier_extension: Vec<types::Extension>,
 
     /// Triggering observation
-    pub observation: types::Reference,
+    pub observation: types::Reference<crate::r5::resources::Observation>,
 
     /// reflex | repeat | re-run
     pub r#type: crate::r5::coded::Coded<crate::r5::codes::ObservationTriggeredbytype>,

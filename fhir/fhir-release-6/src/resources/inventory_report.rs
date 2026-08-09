@@ -157,7 +157,7 @@ pub struct InventoryReportInventoryListing {
     pub modifier_extension: Vec<types::Extension>,
 
     /// Location of the inventory items
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r6::resources::Location>>,
 
     /// The status of the items that are being reported
     pub item_status: Option<types::CodeableConcept>,

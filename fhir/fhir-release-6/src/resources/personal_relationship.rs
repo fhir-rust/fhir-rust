@@ -95,7 +95,7 @@ pub struct PersonalRelationship {
 
     /// This relationship is applicable to the referenced group(s)
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub group: Vec<types::Reference>,
+    pub group: Vec<types::Reference<crate::r6::resources::Group>>,
 }
 
 #[cfg(test)]

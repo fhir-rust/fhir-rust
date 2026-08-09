@@ -85,7 +85,7 @@ pub struct MedicationKnowledge {
     pub status_ext: Option<types::Element>,
 
     /// Manufacturer of the item
-    pub manufacturer: Option<types::Reference>,
+    pub manufacturer: Option<types::Reference<crate::r4::resources::Organization>>,
 
     /// powder | tablets | capsule +
     pub dose_form: Option<types::CodeableConcept>,
@@ -108,7 +108,7 @@ pub struct MedicationKnowledge {
 
     /// A medication resource that is associated with this medication
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub associated_medication: Vec<types::Reference>,
+    pub associated_medication: Vec<types::Reference<crate::r4::resources::Medication>>,
 
     /// Category of the medication or product
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -159,7 +159,7 @@ pub struct MedicationKnowledge {
 
     /// Potential clinical issue with or between medication(s)
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub contraindication: Vec<types::Reference>,
+    pub contraindication: Vec<types::Reference<crate::r4::resources::DetectedIssue>>,
 
     /// Regulatory information about a medication
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -715,7 +715,7 @@ pub struct MedicationKnowledgeRegulatory {
     pub modifier_extension: Vec<types::Extension>,
 
     /// Specifies the authority of the regulation
-    pub regulatory_authority: types::Reference,
+    pub regulatory_authority: types::Reference<crate::r4::resources::Organization>,
 
     /// Specifies if changes are allowed when dispensing a medication from a
     /// regulatory perspective
@@ -893,7 +893,7 @@ pub struct MedicationKnowledgeRelatedMedicationKnowledge {
     pub r#type: types::CodeableConcept,
 
     /// Associated documentation about the associated medication knowledge
-    pub reference: ::vec1::Vec1<types::Reference>,
+    pub reference: ::vec1::Vec1<types::Reference<crate::r4::resources::MedicationKnowledge>>,
 }
 
 /// The `MedicationKnowledge.administrationGuidelines.indication[x]` choice element (see `spec/11-choice-types.md`).

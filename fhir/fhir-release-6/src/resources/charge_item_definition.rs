@@ -169,7 +169,7 @@ pub struct ChargeItemDefinition {
 
     /// Candidate account(s) for charge items
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub account: Vec<types::Reference>,
+    pub account: Vec<types::Reference<crate::r6::resources::Account>>,
 
     /// Name of the publisher/steward (organization or individual)
     pub publisher: Option<types::String>,

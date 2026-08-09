@@ -197,7 +197,7 @@ pub struct PermissionRule {
     pub modifier_extension: Vec<types::Extension>,
 
     /// Reference to a Permission
-    pub import: Option<types::Reference>,
+    pub import: Option<types::Reference<crate::r6::resources::Permission>>,
 
     /// deny | permit
     pub r#type: Option<crate::coded::Coded<crate::r6::codes::ConsentProvisionType>>,

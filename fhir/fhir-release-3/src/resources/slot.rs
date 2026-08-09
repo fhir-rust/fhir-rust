@@ -100,7 +100,7 @@ pub struct Slot {
 
     /// The schedule resource that this slot defines an interval of status
     /// information
-    pub schedule: types::Reference,
+    pub schedule: types::Reference<crate::r3::resources::Schedule>,
 
     /// busy | free | busy-unavailable | busy-tentative | entered-in-error
     pub status: crate::coded::Coded<crate::r3::codes::Slotstatus>,

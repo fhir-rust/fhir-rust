@@ -43,7 +43,7 @@ use std::marker::PhantomData;
 /// assert_eq!(value, back);
 /// ```
 #[serde_with::skip_serializing_none]
-#[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct Reference<T = Any> {
     /// Unique id for inter-element referencing
@@ -80,6 +80,23 @@ pub struct Reference<T = Any> {
     #[doc(hidden)]
     #[serde(skip)]
     pub _marker: PhantomData<fn() -> T>,
+}
+
+impl<T> Default for Reference<T> {
+    fn default() -> Self {
+        Reference {
+            id: None,
+            extension: Vec::new(),
+            reference: None,
+            reference_ext: None,
+            r#type: None,
+            type_ext: None,
+            identifier: None,
+            display: None,
+            display_ext: None,
+            _marker: PhantomData,
+        }
+    }
 }
 
 /// A marker type naming the resource a [`Reference`] points to.

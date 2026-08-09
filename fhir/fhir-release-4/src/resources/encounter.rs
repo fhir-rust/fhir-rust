@@ -114,11 +114,11 @@ pub struct Encounter {
 
     /// Episode(s) of care that this encounter should be recorded against
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub episode_of_care: Vec<types::Reference>,
+    pub episode_of_care: Vec<types::Reference<crate::r4::resources::EpisodeOfCare>>,
 
     /// The ServiceRequest that initiated this encounter
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub based_on: Vec<types::Reference>,
+    pub based_on: Vec<types::Reference<crate::r4::resources::ServiceRequest>>,
 
     /// List of participants involved in the encounter
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -126,7 +126,7 @@ pub struct Encounter {
 
     /// The appointment that scheduled this encounter
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub appointment: Vec<types::Reference>,
+    pub appointment: Vec<types::Reference<crate::r4::resources::Appointment>>,
 
     /// The start and end time of the encounter
     pub period: Option<types::Period>,
@@ -148,7 +148,7 @@ pub struct Encounter {
 
     /// The set of accounts that may be used for billing for this Encounter
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub account: Vec<types::Reference>,
+    pub account: Vec<types::Reference<crate::r4::resources::Account>>,
 
     /// Details about the admission to a healthcare service
     pub hospitalization: Option<EncounterHospitalization>,
@@ -158,10 +158,10 @@ pub struct Encounter {
     pub location: Vec<EncounterLocation>,
 
     /// The organization (facility) responsible for this encounter
-    pub service_provider: Option<types::Reference>,
+    pub service_provider: Option<types::Reference<crate::r4::resources::Organization>>,
 
     /// Another Encounter this encounter is part of
-    pub part_of: Option<types::Reference>,
+    pub part_of: Option<types::Reference<crate::r4::resources::Encounter>>,
 }
 
 /// The class history permits the tracking of the encounters transitions
@@ -365,7 +365,7 @@ pub struct EncounterLocation {
     pub modifier_extension: Vec<types::Extension>,
 
     /// Location the encounter takes place
-    pub location: types::Reference,
+    pub location: types::Reference<crate::r4::resources::Location>,
 
     /// planned | active | reserved | completed
     pub status: Option<crate::coded::Coded<crate::r4::codes::EncounterLocationStatus>>,

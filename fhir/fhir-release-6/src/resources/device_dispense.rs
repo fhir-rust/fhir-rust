@@ -86,7 +86,7 @@ pub struct DeviceDispense {
 
     /// The bigger event that this dispense is a part of
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub part_of: Vec<types::Reference>,
+    pub part_of: Vec<types::Reference<crate::r6::resources::Procedure>>,
 
     /// preparation | in-progress | cancelled | on-hold | completed |
     /// entered-in-error | stopped | declined | unknown
@@ -113,7 +113,7 @@ pub struct DeviceDispense {
     pub receiver: Option<types::Reference>,
 
     /// Encounter associated with event
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r6::resources::Encounter>>,
 
     /// Information that supports the dispensing of the device
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -124,7 +124,7 @@ pub struct DeviceDispense {
     pub performer: Vec<DeviceDispensePerformer>,
 
     /// Where the dispense occurred
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r6::resources::Location>>,
 
     /// Trial fill, partial fill, emergency fill, etc
     pub r#type: Option<types::CodeableConcept>,
@@ -147,7 +147,7 @@ pub struct DeviceDispense {
     pub when_handed_over_ext: Option<types::Element>,
 
     /// Where the device was sent or should be sent
-    pub destination: Option<types::Reference>,
+    pub destination: Option<types::Reference<crate::r6::resources::Location>>,
 
     /// Information about the dispense
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -162,7 +162,7 @@ pub struct DeviceDispense {
 
     /// A list of relevant lifecycle events
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub event_history: Vec<types::Reference>,
+    pub event_history: Vec<types::Reference<crate::r6::resources::Provenance>>,
 }
 
 /// Indicates who or what performed the event.

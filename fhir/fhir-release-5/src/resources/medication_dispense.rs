@@ -100,7 +100,7 @@ pub struct MedicationDispense {
 
     /// Plan that is fulfilled by this dispense
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub based_on: Vec<types::Reference>,
+    pub based_on: Vec<types::Reference<crate::r5::resources::CarePlan>>,
 
     /// Event that dispense is part of
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -132,7 +132,7 @@ pub struct MedicationDispense {
     pub subject: types::Reference,
 
     /// Encounter associated with event
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r5::resources::Encounter>>,
 
     /// Information that supports the dispensing of the medication
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -143,11 +143,11 @@ pub struct MedicationDispense {
     pub performer: Vec<MedicationDispensePerformer>,
 
     /// Where the dispense occurred
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r5::resources::Location>>,
 
     /// Medication order that authorizes the dispense
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub authorizing_prescription: Vec<types::Reference>,
+    pub authorizing_prescription: Vec<types::Reference<crate::r5::resources::MedicationRequest>>,
 
     /// Trial fill, partial fill, emergency fill, etc
     pub r#type: Option<types::CodeableConcept>,
@@ -177,7 +177,7 @@ pub struct MedicationDispense {
     pub when_handed_over_ext: Option<types::Element>,
 
     /// Where the medication was/will be sent
-    pub destination: Option<types::Reference>,
+    pub destination: Option<types::Reference<crate::r5::resources::Location>>,
 
     /// Who collected the medication or where the medication was delivered
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -202,7 +202,7 @@ pub struct MedicationDispense {
 
     /// A list of relevant lifecycle events
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub event_history: Vec<types::Reference>,
+    pub event_history: Vec<types::Reference<crate::r5::resources::Provenance>>,
 }
 
 /// Who performed event.

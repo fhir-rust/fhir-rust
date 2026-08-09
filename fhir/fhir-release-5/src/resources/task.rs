@@ -127,7 +127,7 @@ pub struct Task {
 
     /// Composite task
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub part_of: Vec<types::Reference>,
+    pub part_of: Vec<types::Reference<crate::r5::resources::Task>>,
 
     /// The current lifecycle state of the task, e.g. draft | requested |
     /// received | accepted | in-progress | completed | cancelled | +.
@@ -179,7 +179,7 @@ pub struct Task {
     pub r#for: Option<types::Reference>,
 
     /// Healthcare event during which this task originated
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r5::resources::Encounter>>,
 
     /// When the task should be performed
     pub requested_period: Option<types::Period>,
@@ -214,7 +214,7 @@ pub struct Task {
     pub performer: Vec<TaskPerformer>,
 
     /// Where task occurs
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r5::resources::Location>>,
 
     /// Why task is needed
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -230,7 +230,7 @@ pub struct Task {
 
     /// Key events in history of the Task
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub relevant_history: Vec<types::Reference>,
+    pub relevant_history: Vec<types::Reference<crate::r5::resources::Provenance>>,
 
     /// Constraints on fulfillment tasks
     pub restriction: Option<TaskRestriction>,

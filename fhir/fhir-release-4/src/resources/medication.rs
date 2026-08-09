@@ -91,7 +91,7 @@ pub struct Medication {
     pub status_ext: Option<types::Element>,
 
     /// Manufacturer of the item
-    pub manufacturer: Option<types::Reference>,
+    pub manufacturer: Option<types::Reference<crate::r4::resources::Organization>>,
 
     /// powder | tablets | capsule +
     pub form: Option<types::CodeableConcept>,

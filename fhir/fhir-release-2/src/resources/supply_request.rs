@@ -75,7 +75,7 @@ pub struct SupplyRequest {
     pub modifier_extension: Vec<types::Extension>,
 
     /// Patient for whom the item is supplied
-    pub patient: Option<types::Reference>,
+    pub patient: Option<types::Reference<crate::r2::resources::Patient>>,
 
     /// Who initiated this order
     pub source: Option<types::Reference>,
@@ -105,7 +105,7 @@ pub struct SupplyRequest {
 
     /// Who is intended to fulfill the request
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub supplier: Vec<types::Reference>,
+    pub supplier: Vec<types::Reference<crate::r2::resources::Organization>>,
 
     /// Why the supply item was requested
     /// The `SupplyRequest.reason[x]` choice element (0..1); see [`SupplyRequestReason`].

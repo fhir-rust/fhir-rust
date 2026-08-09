@@ -105,13 +105,13 @@ pub struct ProcessResponse {
     pub created_ext: Option<types::Element>,
 
     /// Authoring Organization
-    pub organization: Option<types::Reference>,
+    pub organization: Option<types::Reference<crate::r2::resources::Organization>>,
 
     /// Responsible Practitioner
-    pub request_provider: Option<types::Reference>,
+    pub request_provider: Option<types::Reference<crate::r2::resources::Practitioner>>,
 
     /// Responsible organization
-    pub request_organization: Option<types::Reference>,
+    pub request_organization: Option<types::Reference<crate::r2::resources::Organization>>,
 
     /// Printed Form Identifier
     pub form: Option<types::Coding>,

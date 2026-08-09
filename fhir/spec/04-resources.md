@@ -93,11 +93,14 @@ than normalizing. See spec 12.
 - Individual resource structs do **not** carry a `resourceType` field; the
   discriminator is handled by the `Resource` enum. Adding a per-struct
   `resourceType` for standalone serialization is future work.
-- R5 additionally provides a phantom-typed `Reference<T>` with a `ResourceType`
-  marker trait, so a reference can name its target at compile time. The
-  machinery exists but no generated field uses it, and R4 has no counterpart.
-  Rolling it out across every release, driven by each element's `targetProfile`,
-  is future work.
+- Every release provides a phantom-typed `Reference<T>` with a `ResourceType`
+  marker trait, so a reference can name its target at compile time; the
+  generator emits the machinery, one marker impl per resource, and — where an
+  element's `targetProfile` names exactly one modelled resource — the typed
+  field itself (`AllergyIntolerance.patient: Reference<Patient>`). Multiple
+  or abstract targets stay `Reference<Any>`, the default parameter, and the
+  wire form is identical either way. *(Rolled out 2026-08-09, T11; until
+  then the machinery was an R5-only hand-written prototype no field used.)*
 
 ## Acceptance criteria
 

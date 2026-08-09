@@ -227,7 +227,7 @@ pub struct ConditionDefinition {
 
     /// Appropriate team for this condition
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub team: Vec<types::Reference>,
+    pub team: Vec<types::Reference<crate::r6::resources::CareTeam>>,
 
     /// Questionnaire for this condition
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -319,7 +319,7 @@ pub struct ConditionDefinitionPlan {
     pub role: Option<types::CodeableConcept>,
 
     /// The actual plan
-    pub reference: types::Reference,
+    pub reference: types::Reference<crate::r6::resources::PlanDefinition>,
 }
 
 /// An observation that suggests that this condition applies.
@@ -416,7 +416,7 @@ pub struct ConditionDefinitionQuestionnaire {
     pub purpose_ext: Option<types::Element>,
 
     /// Specific Questionnaire
-    pub reference: types::Reference,
+    pub reference: types::Reference<crate::r6::resources::Questionnaire>,
 }
 
 /// The `ConditionDefinition.versionAlgorithm[x]` choice element (see `spec/11-choice-types.md`).

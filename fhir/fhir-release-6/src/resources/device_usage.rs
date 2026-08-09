@@ -81,7 +81,7 @@ pub struct DeviceUsage {
 
     /// Fulfills plan, proposal or order
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub based_on: Vec<types::Reference>,
+    pub based_on: Vec<types::Reference<crate::r6::resources::ServiceRequest>>,
 
     /// active | completed | not-done | entered-in-error +
     pub status: crate::coded::Coded<crate::r6::codes::DeviceusageStatus>,
@@ -95,7 +95,7 @@ pub struct DeviceUsage {
     pub category: Vec<types::CodeableConcept>,
 
     /// Patient using device
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r6::resources::Patient>,
 
     /// Supporting information
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

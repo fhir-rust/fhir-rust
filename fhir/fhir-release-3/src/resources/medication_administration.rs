@@ -142,11 +142,11 @@ pub struct MedicationAdministration {
     pub reason_reference: Vec<types::Reference>,
 
     /// Request administration performed against
-    pub prescription: Option<types::Reference>,
+    pub prescription: Option<types::Reference<crate::r3::resources::MedicationRequest>>,
 
     /// Device used to administer
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub device: Vec<types::Reference>,
+    pub device: Vec<types::Reference<crate::r3::resources::Device>>,
 
     /// Information about the administration
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -157,7 +157,7 @@ pub struct MedicationAdministration {
 
     /// A list of events of interest in the lifecycle
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub event_history: Vec<types::Reference>,
+    pub event_history: Vec<types::Reference<crate::r3::resources::Provenance>>,
 }
 
 /// Describes the medication dosage information details e.g. dose, rate, site,
@@ -261,7 +261,7 @@ pub struct MedicationAdministrationPerformer {
     pub actor: types::Reference,
 
     /// Organization organization was acting for
-    pub on_behalf_of: Option<types::Reference>,
+    pub on_behalf_of: Option<types::Reference<crate::r3::resources::Organization>>,
 }
 
 /// The `MedicationAdministration.medication[x]` choice element (see `spec/11-choice-types.md`).

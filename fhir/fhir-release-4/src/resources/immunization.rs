@@ -93,10 +93,10 @@ pub struct Immunization {
     pub vaccine_code: types::CodeableConcept,
 
     /// Who was immunized
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r4::resources::Patient>,
 
     /// Encounter immunization was part of
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r4::resources::Encounter>>,
 
     /// Vaccine administration date
     /// The `Immunization.occurrence[x]` choice element (1..1); see [`ImmunizationOccurrence`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
@@ -121,10 +121,10 @@ pub struct Immunization {
     pub report_origin: Option<types::CodeableConcept>,
 
     /// Where immunization occurred
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r4::resources::Location>>,
 
     /// Vaccine manufacturer
-    pub manufacturer: Option<types::Reference>,
+    pub manufacturer: Option<types::Reference<crate::r4::resources::Organization>>,
 
     /// Vaccine lot number
     pub lot_number: Option<types::String>,
@@ -347,7 +347,7 @@ pub struct ImmunizationProtocolApplied {
     pub series_ext: Option<types::Element>,
 
     /// Who is responsible for publishing the recommendations
-    pub authority: Option<types::Reference>,
+    pub authority: Option<types::Reference<crate::r4::resources::Organization>>,
 
     /// Vaccine preventatable disease being targetted
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -408,7 +408,7 @@ pub struct ImmunizationReaction {
     pub date_ext: Option<types::Element>,
 
     /// Additional information on reaction
-    pub detail: Option<types::Reference>,
+    pub detail: Option<types::Reference<crate::r4::resources::Observation>>,
 
     /// Indicates self-reported reaction
     pub reported: Option<types::Boolean>,

@@ -89,7 +89,7 @@ pub struct MedicinalProductIngredient {
 
     /// Manufacturer of this Ingredient
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub manufacturer: Vec<types::Reference>,
+    pub manufacturer: Vec<types::Reference<crate::r4::resources::Organization>>,
 
     /// A specified substance that comprises this ingredient
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

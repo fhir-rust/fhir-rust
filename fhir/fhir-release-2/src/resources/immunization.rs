@@ -96,7 +96,7 @@ pub struct Immunization {
     pub vaccine_code: types::CodeableConcept,
 
     /// Who was immunized
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r2::resources::Patient>,
 
     /// Flag for whether immunization was given
     pub was_not_given: types::Boolean,
@@ -113,19 +113,19 @@ pub struct Immunization {
     pub reported_ext: Option<types::Element>,
 
     /// Who administered vaccine
-    pub performer: Option<types::Reference>,
+    pub performer: Option<types::Reference<crate::r2::resources::Practitioner>>,
 
     /// Who ordered vaccination
-    pub requester: Option<types::Reference>,
+    pub requester: Option<types::Reference<crate::r2::resources::Practitioner>>,
 
     /// Encounter administered as part of
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r2::resources::Encounter>>,
 
     /// Vaccine manufacturer
-    pub manufacturer: Option<types::Reference>,
+    pub manufacturer: Option<types::Reference<crate::r2::resources::Organization>>,
 
     /// Where vaccination occurred
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r2::resources::Location>>,
 
     /// Vaccine lot number
     pub lot_number: Option<types::String>,
@@ -254,7 +254,7 @@ pub struct ImmunizationReaction {
     pub date_ext: Option<types::Element>,
 
     /// Additional information on reaction
-    pub detail: Option<types::Reference>,
+    pub detail: Option<types::Reference<crate::r2::resources::Observation>>,
 
     /// Indicates self-reported reaction
     pub reported: Option<types::Boolean>,
@@ -308,7 +308,7 @@ pub struct ImmunizationVaccinationProtocol {
     pub description_ext: Option<types::Element>,
 
     /// Who is responsible for protocol
-    pub authority: Option<types::Reference>,
+    pub authority: Option<types::Reference<crate::r2::resources::Organization>>,
 
     /// Name of vaccine series
     pub series: Option<types::String>,

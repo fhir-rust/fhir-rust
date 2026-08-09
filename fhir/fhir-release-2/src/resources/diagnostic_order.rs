@@ -78,14 +78,14 @@ pub struct DiagnosticOrder {
     pub subject: types::Reference,
 
     /// Who ordered the test
-    pub orderer: Option<types::Reference>,
+    pub orderer: Option<types::Reference<crate::r2::resources::Practitioner>>,
 
     /// Identifiers assigned to this order
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub identifier: Vec<types::Identifier>,
 
     /// The encounter that this diagnostic order is associated with
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r2::resources::Encounter>>,
 
     /// Explanation/Justification for test
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -97,7 +97,7 @@ pub struct DiagnosticOrder {
 
     /// If the whole order relates to specific specimens
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub specimen: Vec<types::Reference>,
+    pub specimen: Vec<types::Reference<crate::r2::resources::Specimen>>,
 
     /// proposed | draft | planned | requested | received | accepted |
     /// in-progress | review | completed | cancelled | suspended | rejected |
@@ -230,7 +230,7 @@ pub struct DiagnosticOrderItem {
 
     /// If this item relates to specific specimens
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub specimen: Vec<types::Reference>,
+    pub specimen: Vec<types::Reference<crate::r2::resources::Specimen>>,
 
     /// Location of requested test (if applicable)
     pub body_site: Option<types::CodeableConcept>,

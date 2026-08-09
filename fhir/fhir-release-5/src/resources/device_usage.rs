@@ -102,7 +102,7 @@ pub struct DeviceUsage {
 
     /// Fulfills plan, proposal or order
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub based_on: Vec<types::Reference>,
+    pub based_on: Vec<types::Reference<crate::r5::resources::ServiceRequest>>,
 
     /// The current state of this device usage record: active | completed | not-done | entered-in-error +
     pub status: crate::r5::coded::Coded<crate::r5::codes::DeviceusageStatus>,
@@ -115,7 +115,7 @@ pub struct DeviceUsage {
     pub category: Vec<types::CodeableConcept>,
 
     /// A reference to the [`Patient`](crate::r5::resources::patient::Patient) (or group) reported to be using the device
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r5::resources::Patient>,
 
     /// Supporting information
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

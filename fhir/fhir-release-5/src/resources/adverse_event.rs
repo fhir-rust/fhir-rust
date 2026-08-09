@@ -128,7 +128,7 @@ pub struct AdverseEvent {
     pub subject: types::Reference,
 
     /// The Encounter associated with the start of the AdverseEvent
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r5::resources::Encounter>>,
 
     /// The `AdverseEvent.occurrence[x]` choice element (0..1); see [`AdverseEventOccurrence`].
     #[serde(flatten)]
@@ -151,7 +151,7 @@ pub struct AdverseEvent {
     pub resulting_effect: Vec<types::Reference>,
 
     /// Location where adverse event occurred
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r5::resources::Location>>,
 
     /// Seriousness or gravity of the event
     pub seriousness: Option<types::CodeableConcept>,
@@ -170,7 +170,7 @@ pub struct AdverseEvent {
 
     /// Research study that the subject is enrolled in
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub study: Vec<types::Reference>,
+    pub study: Vec<types::Reference<crate::r5::resources::ResearchStudy>>,
 
     /// Considered likely or probable or anticipated in the research study
     pub expected_in_research_study: Option<types::Boolean>,

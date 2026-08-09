@@ -145,7 +145,7 @@ pub struct Patient {
     pub care_provider: Vec<types::Reference>,
 
     /// Organization that is the custodian of the patient record
-    pub managing_organization: Option<types::Reference>,
+    pub managing_organization: Option<types::Reference<crate::r2::resources::Organization>>,
 
     /// Link to another patient resource that concerns the same actual person
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -302,7 +302,7 @@ pub struct PatientContact {
     pub gender_ext: Option<types::Element>,
 
     /// Organization that is associated with the contact
-    pub organization: Option<types::Reference>,
+    pub organization: Option<types::Reference<crate::r2::resources::Organization>>,
 
     /// The period during which this contact person or organization is valid to
     /// be contacted relating to this patient
@@ -345,7 +345,7 @@ pub struct PatientLink {
     pub modifier_extension: Vec<types::Extension>,
 
     /// The other patient resource that the link refers to
-    pub other: types::Reference,
+    pub other: types::Reference<crate::r2::resources::Patient>,
 
     /// replace | refer | seealso - type of link
     pub r#type: crate::coded::Coded<crate::r2::codes::LinkType>,

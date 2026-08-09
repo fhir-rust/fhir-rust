@@ -140,7 +140,7 @@ pub struct SubstanceIngredient {
     pub quantity: Option<types::Ratio>,
 
     /// A component of the substance
-    pub substance: types::Reference,
+    pub substance: types::Reference<crate::r2::resources::Substance>,
 }
 
 /// Substance may be used to describe a kind of substance, or a specific

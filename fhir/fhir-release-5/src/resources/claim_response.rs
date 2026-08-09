@@ -123,7 +123,7 @@ pub struct ClaimResponse {
     pub use_ext: Option<types::Element>,
 
     /// Reference to the [`Patient`](crate::r5::resources::patient::Patient) who is the subject of the claim being adjudicated.
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r5::resources::Patient>,
 
     /// The date and time this ClaimResponse was created by the insurer.
     pub created: types::DateTime,
@@ -132,13 +132,13 @@ pub struct ClaimResponse {
     pub created_ext: Option<types::Element>,
 
     /// Party responsible for reimbursement
-    pub insurer: Option<types::Reference>,
+    pub insurer: Option<types::Reference<crate::r5::resources::Organization>>,
 
     /// Party responsible for the claim
     pub requestor: Option<types::Reference>,
 
     /// Reference to the `Claim` resource that triggered this adjudication.
-    pub request: Option<types::Reference>,
+    pub request: Option<types::Reference<crate::r5::resources::Claim>>,
 
     /// The high-level processing outcome of the adjudication: queued | complete | error | partial.
     pub outcome: crate::r5::coded::Coded<crate::r5::codes::ClaimOutcome>,
@@ -173,7 +173,7 @@ pub struct ClaimResponse {
 
     /// Encounters associated with the listed treatments
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub encounter: Vec<types::Reference>,
+    pub encounter: Vec<types::Reference<crate::r5::resources::Encounter>>,
 
     /// Package billing code
     pub diagnosis_related_group: Option<types::CodeableConcept>,
@@ -212,7 +212,7 @@ pub struct ClaimResponse {
 
     /// Request for additional information
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub communication_request: Vec<types::Reference>,
+    pub communication_request: Vec<types::Reference<crate::r5::resources::CommunicationRequest>>,
 
     /// Patient insurance information
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -1080,7 +1080,7 @@ pub struct ClaimResponseInsurance {
     pub focal_ext: Option<types::Element>,
 
     /// Insurance information
-    pub coverage: types::Reference,
+    pub coverage: types::Reference<crate::r5::resources::Coverage>,
 
     /// Additional provider contract number
     pub business_arrangement: Option<types::String>,
@@ -1089,7 +1089,7 @@ pub struct ClaimResponseInsurance {
     pub business_arrangement_ext: Option<types::Element>,
 
     /// Adjudication results
-    pub claim_response: Option<types::Reference>,
+    pub claim_response: Option<types::Reference<crate::r5::resources::ClaimResponse>>,
 }
 
 /// Processing errors.

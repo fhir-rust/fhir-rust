@@ -100,15 +100,15 @@ pub struct CarePlan {
 
     /// Fulfills CarePlan
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub based_on: Vec<types::Reference>,
+    pub based_on: Vec<types::Reference<crate::r4::resources::CarePlan>>,
 
     /// CarePlan replaced by this CarePlan
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub replaces: Vec<types::Reference>,
+    pub replaces: Vec<types::Reference<crate::r4::resources::CarePlan>>,
 
     /// Part of referenced CarePlan
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub part_of: Vec<types::Reference>,
+    pub part_of: Vec<types::Reference<crate::r4::resources::CarePlan>>,
 
     /// draft | active | on-hold | revoked | completed | entered-in-error |
     /// unknown
@@ -147,7 +147,7 @@ pub struct CarePlan {
     pub subject: types::Reference,
 
     /// Encounter created as part of
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r4::resources::Encounter>>,
 
     /// Time period plan covers
     pub period: Option<types::Period>,
@@ -168,11 +168,11 @@ pub struct CarePlan {
 
     /// Who's involved in plan?
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub care_team: Vec<types::Reference>,
+    pub care_team: Vec<types::Reference<crate::r4::resources::CareTeam>>,
 
     /// Health issues this plan addresses
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub addresses: Vec<types::Reference>,
+    pub addresses: Vec<types::Reference<crate::r4::resources::Condition>>,
 
     /// Information considered as part of plan
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -180,7 +180,7 @@ pub struct CarePlan {
 
     /// Desired outcome of plan
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub goal: Vec<types::Reference>,
+    pub goal: Vec<types::Reference<crate::r4::resources::Goal>>,
 
     /// Action to occur as part of plan
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -323,7 +323,7 @@ pub struct CarePlanActivityDetail {
 
     /// Goals this activity relates to
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub goal: Vec<types::Reference>,
+    pub goal: Vec<types::Reference<crate::r4::resources::Goal>>,
 
     /// not-started | scheduled | in-progress | on-hold | completed | cancelled
     /// | stopped | unknown | entered-in-error
@@ -349,7 +349,7 @@ pub struct CarePlanActivityDetail {
     pub scheduled: Option<CarePlanActivityDetailScheduled>,
 
     /// Where it should happen
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r4::resources::Location>>,
 
     /// Who will be responsible?
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

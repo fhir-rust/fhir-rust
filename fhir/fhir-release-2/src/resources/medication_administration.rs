@@ -86,16 +86,16 @@ pub struct MedicationAdministration {
     pub status_ext: Option<types::Element>,
 
     /// Who received medication
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r2::resources::Patient>,
 
     /// Who administered substance
     pub practitioner: Option<types::Reference>,
 
     /// Encounter administered as part of
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r2::resources::Encounter>>,
 
     /// Order administration performed against
-    pub prescription: Option<types::Reference>,
+    pub prescription: Option<types::Reference<crate::r2::resources::MedicationOrder>>,
 
     /// True if medication not administered
     pub was_not_given: Option<types::Boolean>,
@@ -124,7 +124,7 @@ pub struct MedicationAdministration {
 
     /// Device used to administer
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub device: Vec<types::Reference>,
+    pub device: Vec<types::Reference<crate::r2::resources::Device>>,
 
     /// Information about the administration
     pub note: Option<types::String>,

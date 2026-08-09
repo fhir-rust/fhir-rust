@@ -88,7 +88,7 @@ pub struct ImmunizationEvaluation {
     pub status_ext: Option<types::Element>,
 
     /// Who this evaluation is for
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r6::resources::Patient>,
 
     /// Date evaluation was performed
     pub date: Option<types::DateTime>,
@@ -98,13 +98,13 @@ pub struct ImmunizationEvaluation {
     pub date_ext: Option<types::Element>,
 
     /// Who is responsible for publishing the recommendations
-    pub authority: Option<types::Reference>,
+    pub authority: Option<types::Reference<crate::r6::resources::Organization>>,
 
     /// The vaccine preventable disease schedule being evaluated
     pub target_disease: types::CodeableConcept,
 
     /// Immunization being evaluated
-    pub immunization_event: types::Reference,
+    pub immunization_event: types::Reference<crate::r6::resources::Immunization>,
 
     /// Status of the dose relative to published recommendations
     pub dose_status: types::CodeableConcept,

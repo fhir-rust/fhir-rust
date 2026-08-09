@@ -178,7 +178,7 @@ pub struct OperationDefinition {
     pub comment_ext: Option<types::Element>,
 
     /// Marks this as a profile of the base
-    pub base: Option<types::Reference>,
+    pub base: Option<types::Reference<crate::r3::resources::OperationDefinition>>,
 
     /// Types this operation applies to
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -358,7 +358,7 @@ pub struct OperationDefinitionParameter {
     pub search_type_ext: Option<types::Element>,
 
     /// Profile on the type
-    pub profile: Option<types::Reference>,
+    pub profile: Option<types::Reference<crate::r3::resources::StructureDefinition>>,
 
     /// ValueSet details if this is coded
     pub binding: Option<OperationDefinitionParameterBinding>,

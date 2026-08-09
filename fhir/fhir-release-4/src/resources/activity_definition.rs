@@ -285,7 +285,7 @@ pub struct ActivityDefinition {
     pub timing: Option<ActivityDefinitionTiming>,
 
     /// Where it should happen
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r4::resources::Location>>,
 
     /// Who should participate in the action
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -309,15 +309,16 @@ pub struct ActivityDefinition {
 
     /// What specimens are required to perform this action
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub specimen_requirement: Vec<types::Reference>,
+    pub specimen_requirement: Vec<types::Reference<crate::r4::resources::SpecimenDefinition>>,
 
     /// What observations are required to perform this action
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub observation_requirement: Vec<types::Reference>,
+    pub observation_requirement: Vec<types::Reference<crate::r4::resources::ObservationDefinition>>,
 
     /// What observations must be produced by this action
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub observation_result_requirement: Vec<types::Reference>,
+    pub observation_result_requirement:
+        Vec<types::Reference<crate::r4::resources::ObservationDefinition>>,
 
     /// Transform to apply the template
     pub transform: Option<types::Canonical>,

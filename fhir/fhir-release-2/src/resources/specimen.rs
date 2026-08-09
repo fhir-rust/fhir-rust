@@ -90,7 +90,7 @@ pub struct Specimen {
 
     /// Specimen from which this specimen originated
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub parent: Vec<types::Reference>,
+    pub parent: Vec<types::Reference<crate::r2::resources::Specimen>>,
 
     /// Where the specimen came from. This may be from the patient(s) or from
     /// the environment or a device
@@ -154,7 +154,7 @@ pub struct SpecimenCollection {
     pub modifier_extension: Vec<types::Extension>,
 
     /// Who collected the specimen
-    pub collector: Option<types::Reference>,
+    pub collector: Option<types::Reference<crate::r2::resources::Practitioner>>,
 
     /// Collector comments
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -289,7 +289,7 @@ pub struct SpecimenTreatment {
 
     /// Material used in the processing step
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub additive: Vec<types::Reference>,
+    pub additive: Vec<types::Reference<crate::r2::resources::Substance>>,
 }
 
 /// The `Specimen.collection.collected[x]` choice element (see `spec/11-choice-types.md`).

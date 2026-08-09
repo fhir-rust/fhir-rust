@@ -122,19 +122,19 @@ pub struct ObservationDefinition {
 
     /// Value set of valid coded values for the observations conforming to this
     /// ObservationDefinition
-    pub valid_coded_value_set: Option<types::Reference>,
+    pub valid_coded_value_set: Option<types::Reference<crate::r4::resources::ValueSet>>,
 
     /// Value set of normal coded values for the observations conforming to
     /// this ObservationDefinition
-    pub normal_coded_value_set: Option<types::Reference>,
+    pub normal_coded_value_set: Option<types::Reference<crate::r4::resources::ValueSet>>,
 
     /// Value set of abnormal coded values for the observations conforming to
     /// this ObservationDefinition
-    pub abnormal_coded_value_set: Option<types::Reference>,
+    pub abnormal_coded_value_set: Option<types::Reference<crate::r4::resources::ValueSet>>,
 
     /// Value set of critical coded values for the observations conforming to
     /// this ObservationDefinition
-    pub critical_coded_value_set: Option<types::Reference>,
+    pub critical_coded_value_set: Option<types::Reference<crate::r4::resources::ValueSet>>,
 }
 
 /// Multiple ranges of results qualified by different contexts for ordinal or

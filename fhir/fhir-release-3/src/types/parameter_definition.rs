@@ -89,7 +89,7 @@ pub struct ParameterDefinition {
     pub type_ext: Option<types::Element>,
 
     /// What profile the value is expected to be
-    pub profile: Option<types::Reference>,
+    pub profile: Option<types::Reference<crate::r3::resources::StructureDefinition>>,
 }
 
 #[cfg(test)]

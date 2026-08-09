@@ -98,7 +98,7 @@ pub struct BiologicallyDerivedProduct {
 
     /// Procedure request
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub request: Vec<types::Reference>,
+    pub request: Vec<types::Reference<crate::r4::resources::ServiceRequest>>,
 
     /// The amount of this biologically derived product
     pub quantity: Option<types::Integer>,
@@ -109,7 +109,7 @@ pub struct BiologicallyDerivedProduct {
 
     /// BiologicallyDerivedProduct parent
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub parent: Vec<types::Reference>,
+    pub parent: Vec<types::Reference<crate::r4::resources::BiologicallyDerivedProduct>>,
 
     /// How this product was collected
     pub collection: Option<BiologicallyDerivedProductCollection>,
@@ -271,7 +271,7 @@ pub struct BiologicallyDerivedProductProcessing {
     pub procedure: Option<types::CodeableConcept>,
 
     /// Substance added during processing
-    pub additive: Option<types::Reference>,
+    pub additive: Option<types::Reference<crate::r4::resources::Substance>>,
 
     /// Time of processing
     /// The `BiologicallyDerivedProduct.processing.time[x]` choice element (0..1); see [`BiologicallyDerivedProductProcessingTime`].

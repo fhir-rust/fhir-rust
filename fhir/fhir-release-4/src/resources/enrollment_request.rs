@@ -94,16 +94,16 @@ pub struct EnrollmentRequest {
     pub created_ext: Option<types::Element>,
 
     /// Target
-    pub insurer: Option<types::Reference>,
+    pub insurer: Option<types::Reference<crate::r4::resources::Organization>>,
 
     /// Responsible practitioner
     pub provider: Option<types::Reference>,
 
     /// The subject to be enrolled
-    pub candidate: Option<types::Reference>,
+    pub candidate: Option<types::Reference<crate::r4::resources::Patient>>,
 
     /// Insurance information
-    pub coverage: Option<types::Reference>,
+    pub coverage: Option<types::Reference<crate::r4::resources::Coverage>>,
 }
 
 #[cfg(test)]

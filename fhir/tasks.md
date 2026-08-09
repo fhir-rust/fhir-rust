@@ -154,7 +154,7 @@ Conventions for the executing session:
 - **Accept:** examples suite green; ≥100 fields migrated; docs updated.
 - **Depends:** T8, T9 (avoid double-churn on the same structs)
 
-### T11. Typed references — *machinery generated everywhere (2026-08-08); field emission remains*
+### T11. Typed references — *done (machinery 2026-08-08; field emission 2026-08-09)*
 - *Status:* phase 1 done. The generator now emits the full typed-`Reference<T>`
   machinery for every release (`codegen/reference_gen.rs` post-processes the
   rendered struct: generic parameter defaulting to `Any`, zero-sized marker,
@@ -169,11 +169,23 @@ Conventions for the executing session:
   what it did. One deliberate removal: generated `Reference` no longer
   derives `Builder` (it does not survive the generic parameter, and R5
   dropped it when the marker landed).
-- *Remaining — phase 2:* generator picks `Reference<Patient>` where the
-  element's `targetProfile` names a single modelled resource (`Any`
-  otherwise) — the data is already in `ElementMeta.types[].target_profiles` —
-  plus the R5 field splice and the choice-variant question. Breaking for
-  code naming field types; belongs in the open 4.0 window.
+- *Phase 2 (2026-08-09):* the generator types every reference field whose
+  `targetProfile` names exactly one modelled resource — 376 fields in R5
+  alone, e.g. `AllergyIntolerance.patient: Reference<Patient>` — and leaves
+  multiple/abstract targets at the `Any` default (`Resource`/`DomainResource`
+  are excluded by name: `resources::Resource` is the enum). Three things the
+  rollout surfaced, each now handled in the generator: the cycle-breaker had
+  to see through the generic (`Reference<…>` participates as `Reference`,
+  since the phantom embeds nothing); `Default` is a hand-written bound-free
+  impl (the derive's `T: Default` bound broke `Reference<Appointment>` for
+  targets with required fields); and the abstract-target exclusion above.
+  The R5 hand-tree was spliced from generator output — the drift gate caught
+  the two fields the splice script missed, which is exactly its job.
+  `examples/typed_references.rs` demonstrates the typed field, marker-checked
+  `resolve` (a matching id under the wrong `resourceType` is refused), and
+  `cast`. Choice-variant references (`value[x]` arms) stay untyped —
+  recorded, not forgotten: their targets are per-variant and the enum arms
+  are shared machinery. Breaking (field types changed) → 4.0.
 - **Do:** `Reference<T: ResourceType = Any>` newtype-with-phantom over the
   existing struct; generator picks `Reference<Patient>` where targetProfile
   is a single type, `Reference<Any>` otherwise. `Deref` to untyped;
@@ -326,10 +338,11 @@ Conventions for the executing session:
 - **Accept:** `mdbook build` green in CI; linked from README.
 - **Depends:** T1 (CI); content updated at the end of each phase
 
-### T24. Example set expansion — *done except `typed_references.rs`*
-- *Status:* 15 examples are wired; `search_response.rs` and
-  `convert_release.rs` landed under T43 (2026-08-06). `typed_references.rs`
-  stays blocked on T11.
+### T24. Example set expansion — *done*
+- *Status:* 16 examples are wired; `search_response.rs` and
+  `convert_release.rs` landed under T43 (2026-08-06), and
+  `typed_references.rs` — the last one, blocked on T11 — landed with T11
+  phase 2 (2026-08-09).
 - **Do (rolling):** `extensions.rs` (T17), `primitive_extensions.rs` (T7),
   `transaction_bundle.rs` + `search_response.rs` (T18),
   `operation_outcome.rs` (T15), `typed_references.rs` (T11),

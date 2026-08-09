@@ -126,7 +126,7 @@ pub struct CareTeam {
 
     /// Organization responsible for the care team
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub managing_organization: Vec<types::Reference>,
+    pub managing_organization: Vec<types::Reference<crate::r5::resources::Organization>>,
 
     /// A contact detail for the care team (that applies to all members)
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -181,7 +181,7 @@ pub struct CareTeamParticipant {
     pub member: Option<types::Reference>,
 
     /// Organization of the practitioner
-    pub on_behalf_of: Option<types::Reference>,
+    pub on_behalf_of: Option<types::Reference<crate::r5::resources::Organization>>,
 
     /// The `CareTeam.participant.coverage[x]` choice element (0..1); see [`CareTeamParticipantCoverage`].
     #[serde(flatten)]

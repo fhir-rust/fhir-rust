@@ -112,7 +112,7 @@ pub struct Provenance {
     pub policy_ext: Vec<Option<types::Element>>,
 
     /// Where the activity occurred, if relevant
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r5::resources::Location>>,
 
     /// Authorization (purposeOfUse) related to the event
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -126,10 +126,10 @@ pub struct Provenance {
     pub based_on: Vec<types::Reference>,
 
     /// The patient is the subject of the data created/updated (.target) by the activity
-    pub patient: Option<types::Reference>,
+    pub patient: Option<types::Reference<crate::r5::resources::Patient>>,
 
     /// Encounter within which this event occurred or which the event is tightly associated
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r5::resources::Encounter>>,
 
     /// The actors, human or system, that participated in the activity, each described by a ProvenanceAgent with its role; at least one is required.
     pub agent: vec1::Vec1<ProvenanceAgent>,

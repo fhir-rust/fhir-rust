@@ -127,7 +127,7 @@ pub struct SupplyRequest {
     pub priority_ext: Option<types::Element>,
 
     /// The patient, or group of patients, for whom the supply request is intended
-    pub deliver_for: Option<types::Reference>,
+    pub deliver_for: Option<types::Reference<crate::r5::resources::Patient>>,
 
     /// The item being requested, as a coded value or a reference to a resource such as a medication or device
     pub item: types::CodeableReference,

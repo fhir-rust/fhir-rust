@@ -102,7 +102,7 @@ pub struct DetectedIssue {
     pub subject: Option<types::Reference>,
 
     /// Encounter the detected issue is part of
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r6::resources::Encounter>>,
 
     /// When detected issue occurred/is occurring
     /// The `DetectedIssue.identified[x]` choice element (0..1); see [`DetectedIssueIdentified`].

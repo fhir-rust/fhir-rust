@@ -74,7 +74,7 @@ pub struct Identifier {
     pub period: Option<types::Period>,
 
     /// Organization that issued id (may be just text)
-    pub assigner: Option<types::Reference>,
+    pub assigner: Option<types::Reference<crate::r2::resources::Organization>>,
 }
 
 #[cfg(test)]

@@ -139,14 +139,14 @@ pub struct RegulatedAuthorization {
     pub basis: Vec<types::CodeableConcept>,
 
     /// The organization that has been granted this authorization, by the regulator
-    pub holder: Option<types::Reference>,
+    pub holder: Option<types::Reference<crate::r5::resources::Organization>>,
 
     /// Reference to the regulatory authority or authorizing body that granted the authorization
-    pub regulator: Option<types::Reference>,
+    pub regulator: Option<types::Reference<crate::r5::resources::Organization>>,
 
     /// Additional information or supporting documentation about the authorization
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub attached_document: Vec<types::Reference>,
+    pub attached_document: Vec<types::Reference<crate::r5::resources::DocumentReference>>,
 
     /// The case or regulatory procedure for granting or amending a regulated authorization
     pub case: Option<RegulatedAuthorizationCase>,

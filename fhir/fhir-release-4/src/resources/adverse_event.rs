@@ -103,7 +103,7 @@ pub struct AdverseEvent {
     pub subject: types::Reference,
 
     /// Encounter created as part of
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r4::resources::Encounter>>,
 
     /// When the event occurred
     pub date: Option<types::DateTime>,
@@ -128,10 +128,10 @@ pub struct AdverseEvent {
 
     /// Effect on the subject due to this event
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub resulting_condition: Vec<types::Reference>,
+    pub resulting_condition: Vec<types::Reference<crate::r4::resources::Condition>>,
 
     /// Location where adverse event occurred
-    pub location: Option<types::Reference>,
+    pub location: Option<types::Reference<crate::r4::resources::Location>>,
 
     /// Seriousness of the event
     pub seriousness: Option<types::CodeableConcept>,
@@ -160,11 +160,11 @@ pub struct AdverseEvent {
 
     /// AdverseEvent.referenceDocument
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub reference_document: Vec<types::Reference>,
+    pub reference_document: Vec<types::Reference<crate::r4::resources::DocumentReference>>,
 
     /// AdverseEvent.study
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub study: Vec<types::Reference>,
+    pub study: Vec<types::Reference<crate::r4::resources::ResearchStudy>>,
 }
 
 /// Describes the entity that is suspected to have caused the adverse event.

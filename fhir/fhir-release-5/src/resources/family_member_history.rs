@@ -133,7 +133,7 @@ pub struct FamilyMemberHistory {
 
     /// Reference to the [`Patient`](crate::r5::resources::patient::Patient)
     /// whose family member history is being recorded.
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r5::resources::Patient>,
 
     /// When history was recorded or last updated
     pub date: Option<types::DateTime>,

@@ -63,7 +63,7 @@ pub struct ExtendedContactDetail {
     pub address: Option<types::Address>,
 
     /// This contact detail is handled/monitored by a specific organization
-    pub organization: Option<types::Reference>,
+    pub organization: Option<types::Reference<crate::r6::resources::Organization>>,
 
     /// Period that this contact was valid for usage
     pub period: Option<types::Period>,

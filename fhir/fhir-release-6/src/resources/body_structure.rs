@@ -102,7 +102,7 @@ pub struct BodyStructure {
     pub image: Vec<types::Attachment>,
 
     /// Who this is about
-    pub patient: types::Reference,
+    pub patient: types::Reference<crate::r6::resources::Patient>,
 }
 
 /// The anatomical location(s) or region(s) of the specimen, lesion, or body
@@ -153,7 +153,7 @@ pub struct BodyStructureIncludedStructure {
 
     /// Cartesian reference for structure
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub spatial_reference: Vec<types::Reference>,
+    pub spatial_reference: Vec<types::Reference<crate::r6::resources::ImagingSelection>>,
 
     /// Code that represents the included structure qualifier
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

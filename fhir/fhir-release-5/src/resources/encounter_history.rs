@@ -103,7 +103,7 @@ pub struct EncounterHistory {
     pub modifier_extension: Vec<types::Extension>,
 
     /// A reference to the Encounter whose status/class/location this record snapshots
-    pub encounter: Option<types::Reference>,
+    pub encounter: Option<types::Reference<crate::r5::resources::Encounter>>,
 
     /// Identifier(s) by which this encounter is known
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -193,7 +193,7 @@ pub struct EncounterHistoryLocation {
     pub modifier_extension: Vec<types::Extension>,
 
     /// Location the encounter takes place
-    pub location: types::Reference,
+    pub location: types::Reference<crate::r5::resources::Location>,
 
     /// The physical type of the location (usually the level in the location hierarchy - bed, room, ward, virtual etc.)
     pub form: Option<types::CodeableConcept>,

@@ -85,7 +85,7 @@ pub struct SupplyDelivery {
     pub status_ext: Option<types::Element>,
 
     /// Patient for whom the item is supplied
-    pub patient: Option<types::Reference>,
+    pub patient: Option<types::Reference<crate::r2::resources::Patient>>,
 
     /// Category of dispense event
     pub r#type: Option<types::CodeableConcept>,
@@ -97,7 +97,7 @@ pub struct SupplyDelivery {
     pub supplied_item: Option<types::Reference>,
 
     /// Dispenser
-    pub supplier: Option<types::Reference>,
+    pub supplier: Option<types::Reference<crate::r2::resources::Practitioner>>,
 
     /// Dispensing time
     pub when_prepared: Option<types::Period>,
@@ -110,11 +110,11 @@ pub struct SupplyDelivery {
     pub time_ext: Option<types::Element>,
 
     /// Where the Supply was sent
-    pub destination: Option<types::Reference>,
+    pub destination: Option<types::Reference<crate::r2::resources::Location>>,
 
     /// Who collected the Supply
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub receiver: Vec<types::Reference>,
+    pub receiver: Vec<types::Reference<crate::r2::resources::Practitioner>>,
 }
 
 #[cfg(test)]

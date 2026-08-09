@@ -156,7 +156,7 @@ pub struct Consent {
 
     /// Human Readable Policy
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub policy_text: Vec<types::Reference>,
+    pub policy_text: Vec<types::Reference<crate::r5::resources::DocumentReference>>,
 
     /// Consent Verified by patient or family
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

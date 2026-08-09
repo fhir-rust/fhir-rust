@@ -86,7 +86,7 @@ pub struct HealthcareService {
     pub active_ext: Option<types::Element>,
 
     /// Organization that provides this service
-    pub provided_by: Option<types::Reference>,
+    pub provided_by: Option<types::Reference<crate::r3::resources::Organization>>,
 
     /// Broad category of service being performed or delivered
     pub category: Option<types::CodeableConcept>,
@@ -101,7 +101,7 @@ pub struct HealthcareService {
 
     /// Location(s) where service may be provided
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub location: Vec<types::Reference>,
+    pub location: Vec<types::Reference<crate::r3::resources::Location>>,
 
     /// Description of service as presented to a consumer while searching
     pub name: Option<types::String>,
@@ -134,7 +134,7 @@ pub struct HealthcareService {
 
     /// Location(s) service is inteded for/available to
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub coverage_area: Vec<types::Reference>,
+    pub coverage_area: Vec<types::Reference<crate::r3::resources::Location>>,
 
     /// Conditions under which service is available/offered
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -192,7 +192,7 @@ pub struct HealthcareService {
     /// Technical endpoints providing access to services operated for the
     /// location
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub endpoint: Vec<types::Reference>,
+    pub endpoint: Vec<types::Reference<crate::r3::resources::Endpoint>>,
 }
 
 /// A collection of times that the Service Site is available.
