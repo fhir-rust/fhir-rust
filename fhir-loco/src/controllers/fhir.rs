@@ -17,14 +17,14 @@ use crate::store;
 
 /// FHIR's own JSON media type. Returning `application/json` would be wrong
 /// enough that conformance tooling rejects it.
-const FHIR_JSON: &str = "application/fhir+json";
+pub(crate) const FHIR_JSON: &str = "application/fhir+json";
 
 /// An OperationOutcome, which is how FHIR reports a problem.
 ///
 /// The text is deliberately about the request, never about storage: it names
 /// what the caller asked for, so it can be returned verbatim without leaking
 /// schema names or stored values.
-fn outcome(status: StatusCode, severity: &str, code: &str, text: &str) -> AxumResponse {
+pub(crate) fn outcome(status: StatusCode, severity: &str, code: &str, text: &str) -> AxumResponse {
     let body = serde_json::json!({
         "resourceType": "OperationOutcome",
         "issue": [{
@@ -71,7 +71,7 @@ fn fhir_json(
 /// duplicated status-code logic — and getting status codes right is this
 /// layer's only real job.
 #[allow(clippy::result_large_err)]
-fn version_of(
+pub(crate) fn version_of(
     v: &str,
 ) -> Result<&'static std::sync::Arc<fhir_sqlite_store::sqlite::SqliteStore>, AxumResponse> {
     let Some(versions) = store::versions() else {
@@ -254,7 +254,16 @@ async fn metadata(Path(version): Path<String>) -> AxumResponse {
         // `fhir-loco`, not `fhir-store`: the split (F-45) gave the old name to
         // the engine-agnostic persistence core, and this is the HTTP surface.
         "software": { "name": "fhir-loco", "version": env!("CARGO_PKG_VERSION") },
-        "rest": [{ "mode": "server", "resource": types }],
+        "rest": [{
+            "mode": "server",
+            "resource": types,
+            // System-level Bulk Data export is served (SV2.15); a
+            // conformance-driven client discovers it here (SV2.9).
+            "operation": [{
+                "name": "export",
+                "definition": "http://hl7.org/fhir/uv/bulkdata/OperationDefinition/export",
+            }],
+        }],
     });
     fhir_json(StatusCode::OK, &body, None)
 }
@@ -365,7 +374,7 @@ fn bundle(kind: &str, entries: Vec<serde_json::Value>, total: Option<i64>) -> se
 // call site to satisfy a lint, and the call sites are where forgetting a field
 // would be easiest to miss.
 #[allow(clippy::too_many_arguments)]
-async fn disclose(
+pub(crate) async fn disclose(
     store: &fhir_sqlite_store::sqlite::SqliteStore,
     headers: &HeaderMap,
     interaction: &str,

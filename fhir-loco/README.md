@@ -24,14 +24,18 @@ there — `410` versus `404` is `SV2.4`, `If-Match` is `SV2.5`, the
 CapabilityStatement is `SV2.8`–`SV2.11`, PASETO is `SV3.2`–`SV3.6`.
 
 What this crate does **not** do is recorded at its own id rather than in a list
-that drifts: no `$export` (`SV2.15`), and no
-concurrency limit (`SV4.2`, a Loco 1.0.1 framework limit). The listener
-speaks plain HTTP behind a TLS-terminating proxy, and `SV3.11` now enforces
+that drifts: no concurrency limit (`SV4.2`, a Loco 1.0.1 framework limit),
+and within `$export` no `_since` and no compartment exports — the served
+slice's edges are stated in `SV2.15` itself. The listener
+speaks plain HTTP behind a TLS-terminating proxy, and `SV3.11` enforces
 that posture: a non-loopback bind refuses to boot unless
 `FHIR_LOCO_TLS_TERMINATED_UPSTREAM=true` acknowledges the proxy.
-(Conditional create and the admin plane, formerly on this list, are served
-since 2026-08-07 — `SV2.14`, `SV4.3`: set `FHIR_LOCO_ADMIN_BIND` for
-`/health`, `/ready`, and `/metrics` on their own listener.)
+(Conditional create, the admin plane, and system-level async Bulk Data
+`$export` — all formerly on this list — are served: `SV2.14` and `SV4.3`
+since 2026-08-07, `SV2.15` since 2026-08-09. Set `FHIR_LOCO_ADMIN_BIND`
+for `/health`, `/ready`, and `/metrics` on their own listener;
+`FHIR_LOCO_EXPORT_DIR`/`FHIR_LOCO_EXPORT_TTL_SECS` govern where export
+files live and how long.)
 
 ## What belongs where
 

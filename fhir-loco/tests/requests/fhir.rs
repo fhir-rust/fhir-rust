@@ -671,3 +671,174 @@ async fn metadata_declares_conditional_create() {
     })
     .await;
 }
+
+/// SV2.15: the Bulk Data `$export` async slice, end to end — kick-off, poll,
+/// manifest, NDJSON fetch (disclosure-logged), cancel/cleanup.
+#[tokio::test]
+#[serial]
+async fn export_serves_the_async_bulk_data_contract() {
+    store_ready().await;
+    request::<App, _, _>(|request, _ctx| async move {
+        // Two patients this test can recognise among whatever earlier tests
+        // created; the manifest count is asserted against the file, exactly.
+        for family in ["ExportOne", "ExportTwo"] {
+            let res = request
+                .post("/r5/Patient")
+                .add_header("content-type", FHIR_JSON)
+                .add_header("authorization", &bearer("dr-who"))
+                .json(&serde_json::json!({
+                    "resourceType": "Patient",
+                    "name": [{ "family": family }]
+                }))
+                .await;
+            assert_eq!(res.status_code(), 201);
+        }
+
+        // Kick-off: 202 + Content-Location, per the Bulk Data contract.
+        let res = request
+            .get("/r5/$export?_type=Patient")
+            .add_header("authorization", &bearer("dr-who"))
+            .add_header("prefer", "respond-async")
+            .await;
+        assert_eq!(res.status_code(), 202, "{}", res.text());
+        let status_url = res
+            .headers()
+            .get("content-location")
+            .expect("Content-Location")
+            .to_str()
+            .expect("utf-8")
+            .to_string();
+
+        // Poll until complete. 202 + X-Progress while running, 200 + manifest
+        // when done; the in-process worker finishes in well under a second.
+        let mut manifest = None;
+        for _ in 0..100 {
+            let res = request
+                .get(&status_url)
+                .add_header("authorization", &bearer("dr-who"))
+                .await;
+            match res.status_code().as_u16() {
+                202 => tokio::time::sleep(std::time::Duration::from_millis(50)).await,
+                200 => {
+                    manifest = Some(body_of(&res.text()));
+                    break;
+                }
+                other => panic!("unexpected export status {other}: {}", res.text()),
+            }
+        }
+        let manifest = manifest.expect("the export should complete");
+        assert_eq!(manifest["requiresAccessToken"], true);
+        let output = manifest["output"].as_array().expect("output array");
+        let patient_output = output
+            .iter()
+            .find(|o| o["type"] == "Patient")
+            .expect("a Patient output");
+        let count = patient_output["count"].as_u64().expect("count");
+        assert!(
+            count >= 2,
+            "at least the two patients created above: {count}"
+        );
+        assert!(
+            !output.iter().any(|o| o["type"] == "Observation"),
+            "_type=Patient must filter: {output:?}"
+        );
+
+        // Fetch the NDJSON. Every line parses, is a Patient, and the line
+        // count equals the manifest count — the manifest is a promise.
+        let file_url = patient_output["url"].as_str().expect("url");
+        let res = request
+            .get(file_url)
+            .add_header("authorization", &bearer("dr-who"))
+            .await;
+        assert_eq!(res.status_code(), 200);
+        let lines: Vec<serde_json::Value> = res
+            .text()
+            .lines()
+            .map(|l| serde_json::from_str(l).expect("NDJSON line"))
+            .collect();
+        assert_eq!(
+            lines.len() as u64,
+            count,
+            "manifest count must match the file"
+        );
+        assert!(lines.iter().all(|l| l["resourceType"] == "Patient"));
+
+        // DELETE cancels/cleans; afterwards the job and its files are gone.
+        let res = request
+            .delete(&status_url)
+            .add_header("authorization", &bearer("dr-who"))
+            .await;
+        assert_eq!(res.status_code(), 202);
+        let res = request
+            .get(&status_url)
+            .add_header("authorization", &bearer("dr-who"))
+            .await;
+        assert_eq!(res.status_code(), 404, "a deleted job is gone");
+        let res = request
+            .get(file_url)
+            .add_header("authorization", &bearer("dr-who"))
+            .await;
+        assert_eq!(res.status_code(), 404, "its files are gone too");
+    })
+    .await;
+}
+
+/// SV2.15: the kick-off is strict — auth first, the async preference is
+/// required, and unsupported parameters are refused by name, never ignored.
+#[tokio::test]
+#[serial]
+async fn export_kickoff_refuses_rather_than_ignores() {
+    store_ready().await;
+    request::<App, _, _>(|request, _ctx| async move {
+        // No token: 401 before anything else happens.
+        let res = request
+            .get("/r5/$export")
+            .add_header("prefer", "respond-async")
+            .await;
+        assert_eq!(res.status_code(), 401);
+
+        // No `Prefer: respond-async`: refused, naming the header.
+        let res = request
+            .get("/r5/$export")
+            .add_header("authorization", &bearer("dr-who"))
+            .await;
+        assert_eq!(res.status_code(), 400);
+        assert!(res.text().contains("respond-async"), "{}", res.text());
+
+        // `_since` is not supported in this slice: refused by name, because
+        // silently ignoring a filter returns more than was asked (SV2.13).
+        let res = request
+            .get("/r5/$export?_since=2024-01-01T00:00:00Z")
+            .add_header("authorization", &bearer("dr-who"))
+            .add_header("prefer", "respond-async")
+            .await;
+        assert_eq!(res.status_code(), 400);
+        assert!(res.text().contains("_since"), "{}", res.text());
+
+        // An unknown `_type` value is refused, naming it.
+        let res = request
+            .get("/r5/$export?_type=NotAResource")
+            .add_header("authorization", &bearer("dr-who"))
+            .add_header("prefer", "respond-async")
+            .await;
+        assert_eq!(res.status_code(), 400);
+        assert!(res.text().contains("NotAResource"), "{}", res.text());
+    })
+    .await;
+}
+
+/// SV2.9/SV2.15: the CapabilityStatement declares the export operation.
+#[tokio::test]
+#[serial]
+async fn metadata_declares_the_export_operation() {
+    store_ready().await;
+    request::<App, _, _>(|request, _ctx| async move {
+        let body = body_of(&request.get("/r5/metadata").await.text());
+        let ops = body["rest"][0]["operation"].as_array().expect("operations");
+        assert!(
+            ops.iter().any(|o| o["name"] == "export"),
+            "the $export operation must be declared: {ops:?}"
+        );
+    })
+    .await;
+}

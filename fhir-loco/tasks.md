@@ -44,13 +44,17 @@ ports this service sits over.
   store that can hold one transaction across the operations, or a
   documented refusal.
 - [ ] **Type-level and system-level `_history`.** Only instance-level exists.
-- [ ] **`$export`** (`SV2.15`). Recorded as not provided; the last F-58
-  feature gap and one of the three §13 compliance rows that depends on this
-  crate. **Design drafted with a recommendation** — [`plan.md`](plan.md):
-  defer until a deployment needs bulk egress (option C), then build the
-  conformant async slice on Loco's worker queue (option A); a synchronous
-  endpoint under the `$export` name is rejected outright. Awaiting the owner
-  decision.
+- [x] **`$export`** (`SV2.15`) — *done 2026-08-09, owner-directed (option
+  A)*. System-level async Bulk Data: kick-off (202 + `Content-Location`,
+  `Prefer: respond-async` required), status polling with `X-Progress`, a
+  manifest whose per-type counts the NDJSON files must match, authenticated
+  disclosure-logged file fetches, `DELETE` cancel/cleanup, TTL expiry of
+  exported files, and the CapabilityStatement operation declaration.
+  `_since` and compartment exports refused by name (the honest edges are in
+  `SV2.15` itself). `src/controllers/export.rs`; tests:
+  `export_serves_the_async_bulk_data_contract`,
+  `export_kickoff_refuses_rather_than_ignores`,
+  `metadata_declares_the_export_operation`. F-58's last feature gap.
 - [x] **Listener TLS posture** (`SV3.11`) — *stated and enforced 2026-08-07*.
   The requirement now lives in this crate's own spec (service obligations
   moved here with the `SV` restatement, not §10): loopback bind, or TLS

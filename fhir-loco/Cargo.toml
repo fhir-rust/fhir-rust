@@ -36,6 +36,8 @@ serde = { version = "1", features = ["derive"] }
 # way out of the HTTP layer. `preserve_order` keeps object key order stable,
 # which matters for readable diffs and for byte-comparable responses.
 serde_json = { version = "1", features = ["arbitrary_precision", "preserve_order"] }
+# Timestamps the Bulk Data manifest's transactionTime (SV2.15). In the tree via loco.
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
 # Parses the If-None-Exist header's query-string criteria (SV2.14). Already in
 # the dependency tree via axum; declared so the controller can name it.
 serde_urlencoded = "0.7"

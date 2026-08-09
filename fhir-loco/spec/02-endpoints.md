@@ -12,6 +12,9 @@
   | `/{version}/{rtype}/{id}` | `GET`, `PUT`, `DELETE` |
   | `/{version}/{rtype}/{id}/_history` | `GET` |
   | `/{version}/{rtype}/{id}/_history/{vid}` | `GET` (vread) |
+  | `/{version}/$export` | `GET` (Bulk Data kick-off, `SV2.15`) |
+  | `/{version}/$export-status/{job}` | `GET` (poll), `DELETE` (cancel) |
+  | `/{version}/$export-file/{job}/{rtype}` | `GET` (NDJSON output) |
 
 - **SV2.2** A request naming a version this process has not mounted MUST say
   **which versions are mounted**. "Not found" for an unmounted version is
@@ -127,10 +130,34 @@
   *Served since 2026-08-07. Until then this requirement recorded the gap —
   the store capability existed with no route to it (**F-58**).*
 
-## Not implemented
+## Bulk Data export
 
-- **SV2.15** `$export` (Bulk Data) is **not served**. Restates `M8` (`C0.16`),
-  and it is one of the three §13 compliance rows that depends on this crate.
+- **SV2.15** System-level `$export` MUST be served per the Bulk Data async
+  contract (restates `M8`, `C0.16`): kick-off (`GET /{version}/$export`,
+  authenticated, requiring `Prefer: respond-async`) answers `202` with a
+  `Content-Location`; the status endpoint answers `202` + `X-Progress` while
+  running, a JSON manifest (`transactionTime`, `request`,
+  `requiresAccessToken: true`, per-type `output` entries with counts) on
+  completion, and an `OperationOutcome` on failure; `DELETE` on the status
+  URL cancels the job and removes its files; each output is
+  `application/fhir+ndjson`, its line count MUST equal the manifest's count,
+  and **every fetch is disclosure-logged** — an export is the largest
+  disclosure this server can make. Jobs expire (`FHIR_LOCO_EXPORT_TTL_SECS`,
+  default one hour) and their files go with them: exported PHI on disk has a
+  lifetime. The CapabilityStatement declares the operation (`SV2.9`).
+
+  The honest edges of the slice, stated rather than implied: `_type` is the
+  one supported parameter — `_since` and every other parameter are **refused
+  by name** (`SV2.13`'s principle; a silently dropped filter exports more
+  than was asked); compartment-based `Patient/$export` and `Group/$export`
+  are not served (the store has no compartment machinery); the export is a
+  sequence of per-resource snapshot reads, **not one transaction-time
+  snapshot** — `transactionTime` marks the kick-off, and a write racing the
+  scan may or may not appear; file URLs are host-relative, resolved against
+  whatever the fronting proxy serves.
+
+  *Served since 2026-08-09; until then this requirement recorded the gap —
+  the last of **F-58**'s feature gaps.*
 
 ---
 

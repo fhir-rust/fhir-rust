@@ -32,9 +32,9 @@ port — and the honest status per row is:
 
 | Row | Against `fhir-loco` |
 | --- | --- |
-| HIPAA §164.312(e) transmission security (~~`A7.8`~~) | **not met.** Plain HTTP; TLS is expected from a proxy the deployment supplies, and no requirement currently states that (**F-58**, **F-59**) |
+| HIPAA §164.312(e) transmission security (~~`A7.8`~~) | **partly.** Plain HTTP behind a TLS-terminating proxy, and since 2026-08-07 `SV3.11` states and **enforces** the posture: a non-loopback plaintext bind refuses to boot without the deployment's acknowledgement |
 | ONC/HTI FHIR conformance (~~`A7.12`~~) | **partly.** A CapabilityStatement is served and was corrected under **F-57**; no Inferno run has been performed |
-| ONC/HTI Bulk Data (~~`M8`~~) | **not met.** No `$export` |
+| ONC/HTI Bulk Data (~~`M8`~~) | **partly.** System-level async `$export` is served (`SV2.15`, 2026-08-09) — `_type` filtering, NDJSON outputs, disclosure-logged fetches; no `_since`, no compartment exports, and no Inferno run has been performed |
 
 The strikes stay, because a retired id is retired however live the behaviour it
 describes. Since 2026-08-03 each is **restated** in

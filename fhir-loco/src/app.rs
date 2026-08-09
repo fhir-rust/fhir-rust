@@ -99,6 +99,7 @@ impl Hooks for App {
         AppRoutes::with_default_routes() // controller routes below
             .add_route(controllers::home::routes())
             .add_route(controllers::fhir::routes())
+            .add_route(controllers::export::routes())
     }
 
     /// Time every request into the admin plane's latency histogram (SV4.3).

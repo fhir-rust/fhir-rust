@@ -63,12 +63,16 @@ shape). If ever wanted, it must be named something else.
 Zero cost, and the right answer for as long as no deployment needs bulk
 egress.
 
-**Recommendation: C until a deployment exists, then A as specified above.**
-The store side is ready either way; what A adds is operational surface
-(files on disk, retention, a queue) that only a real deployment justifies —
-and building it speculatively would create PHI-handling machinery nobody
-operates. The decision is the owner's; recording it here closes F-58's last
-feature gap either way.
+**Decided 2026-08-09: the owner chose A — built the same day** (`SV2.15`,
+closing F-58's last feature gap). Two deviations from the draft, recorded:
+the job runs on a plain spawned task with an in-process registry rather
+than Loco's worker queue — the queue adds config and backend surface for
+no gain while this server is single-process over an embedded store;
+revisit if it ever is not — and iteration pages `search_page`'s keyset
+cursor rather than `get_all`, which turned out to be a multi-get, not a
+scan (the draft was wrong about that). The retention sweep, PASETO on
+every export URL, and per-fetch disclosure logging shipped as drafted;
+`_since` and compartment exports are refused by name, per the slice.
 
 ## Open constraint: edge concurrency limits (SV4.2)
 
