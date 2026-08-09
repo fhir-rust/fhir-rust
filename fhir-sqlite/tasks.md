@@ -761,9 +761,9 @@ Native SQLite store, complete enough to embed. No PostgreSQL dependencies.
   (`M14.34`). *Accept:* 8 tests in `tests/upgrade.rs`, none needing a server;
   mutation-verified — skipping the backfill makes the seeded patient unfindable
   by their own name.
-  *Since closed elsewhere too:* MySQL, MariaDB and MSSQL now carry
-  `upgrade`/`backfill_norm` as well (audit **F-15**, closed everywhere it
-  can be; Oracle has a store but no `upgrade` built on it yet). Still true
+  *Since closed elsewhere too:* every other port now carries
+  `upgrade`/`backfill_norm` as well (audit **F-15**, closed on all six —
+  Oracle, the last, on 2026-08-09). Still true
   here: a SQLite database installed before `init` recorded the asset has
   nothing to diff and must be reloaded.
 - [x] **T91 Boolean token search matched nothing (audit F-71) — fixed

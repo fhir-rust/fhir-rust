@@ -52,7 +52,9 @@ check constraints — not JSON blobs.
 > - **No concurrency test.** `H5.4` (serialized `version_id`) is implemented
 >   via `SELECT … FOR UPDATE`, but no test races concurrent writers against
 >   it the way `fhir-mssql`'s and `fhir-mysql`'s `concurrency.rs` do.
-> - **No `redaction.rs`, no `upgrade`, no `backfill_norm`.**
+> - **No `redaction.rs`.** (`upgrade` and `backfill_norm` left this list
+>   2026-08-09 — `tests/upgrade.rs`, 9 live tests, closing **F-15**'s last
+>   port; see `M14.35`–`M14.37` for what Oracle made different about them.)
 > - **Transport security is undecided** (`O10.7`, `M14.22`) — the live tests
 >   above connect over a plain local port with no encryption configured
 >   either way.
@@ -161,8 +163,9 @@ on Rust types without ever emitting SQL. A CI gate checks that they have not
 diverged.
 
 `ddl.rs` and the store are both now written and live-verified. What remains
-is narrower: `R4.5`, a concurrency test, redaction, upgrade/backfill, and
-transport security — see "Still open" above.
+is narrower: `R4.5`, a concurrency test, redaction, and transport
+security — see "Still open" above. (Upgrade/backfill left this list
+2026-08-09.)
 
 ## Documentation
 

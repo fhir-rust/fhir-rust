@@ -69,10 +69,9 @@ crate, no `serve` binary, no REST suite. The first look found the MySQL
 contamination because that is what `fhir-mssql` was contaminated *with*; it took
 reading the clean port to notice that the fiction was older and shared.
 
-**F-15 is closed everywhere it can be**, and so is **F-07**. SQLite, MySQL,
-MariaDB, and now MSSQL all have `upgrade` and `backfill_norm`, each verified
-against a live engine; `fhir-oracle` has a store (**F-68**) but no `upgrade`
-built on it yet, so that arrives with the next pass on that port. Closing F-07
+**F-15 is closed on all six ports** (as of 2026-08-09), and so is **F-07**.
+Every port has `upgrade` and `backfill_norm`, each verified against a live
+engine; `fhir-oracle` was the last, built as **F-47**'s step 1. Closing F-07
 also emptied the shared-core gate's exemption list — **100 files identical
 across all six ports, nothing excused** (75→100 when the gate widened under
 **F-48**; an earlier revision of this paragraph said 65).
@@ -109,7 +108,7 @@ not a code fix).
 | [F-12](#f-12) | Medium | `spec/index.md` referenced `AGENTS.md` in every port; no such file existed | **fixed** |
 | [F-13](#f-13) | Medium | Sections 1–13 were duplicated across six ports | **fixed** |
 | [F-14](#f-14) | Low | `fhir-postgresql` had no dialect annex while the other five did | **fixed** |
-| [F-15](#f-15) | Low | `_norm` backfill is unavailable on four ports after a fold change | **fixed** in sqlite, mysql, mariadb, mssql (all live); oracle has a store now but no `upgrade` built on it yet |
+| [F-15](#f-15) | Low | `_norm` backfill is unavailable on four ports after a fold change | **fixed** on all six ports, each live-verified; oracle last, 2026-08-09 (**F-47** step 1) |
 | [F-16](#f-16) | **High** | The MSSQL and Oracle dialect annexes were the MySQL annex, unedited | **fixed** |
 | [F-17](#f-17) | Medium | `fhir-postgresql` TLS defaulted to unverified, violating `O10.7` | **fixed** 2026-08-03 — default is `Require`; the "breaking" premise was false, the crates are unpublished |
 | [F-18](#f-18) | Low | `fhir-postgresql` carried a SQL folding function nothing calls (never emitted — wording corrected) | **fixed** |
@@ -141,7 +140,7 @@ not a code fix).
 | [F-44](#f-44) | Medium | `check-shared-core.sh` aborted under `set -u` on the empty `EXEMPT` array — only reachable once a file diverged | **fixed** |
 | [F-45](#f-45) | Medium | The shared-core gate stopped at the store; `chain.rs` was 618 identical lines duplicated six times, unwatched | **fixed** — extracted to `fhir-store`, all six rewired |
 | [F-46](#f-46) | Medium | `U11` cannot reach the extension and deep tables: they have no columns in the map, and the cheaper workaround contradicts `U2b` | **fixed** 2026-08-02, verified live |
-| [F-47](#f-47) | Low | `path` and `v_kind` are bounded in practice but bound to unbounded types on mssql and oracle, so `U12` is unsatisfied; fixing it is a physical-schema migration for all six | open — **migration scheduled 2026-08-09**, six sequenced steps in the entry; step 1 is oracle's missing `upgrade` (the F-15 remainder) |
+| [F-47](#f-47) | Low | `path` and `v_kind` are bounded in practice but bound to unbounded types on mssql and oracle, so `U12` is unsatisfied; fixing it is a physical-schema migration for all six | open — **migration scheduled 2026-08-09**, six sequenced steps in the entry; step 1 (oracle's `upgrade`, the F-15 remainder) **done 2026-08-09** |
 | [F-48](#f-48) | Low | the shared-core gate did not watch `gen/tests/`, and could not while its normalization was line-based — rustfmt wraps by crate-name *length* | **fixed** 2026-08-02 — token-based verdict, 75→100 files |
 | [F-49](#f-49) | **High** | No workflow in this repository runs: all 20-odd sit under `<family>/.github/workflows/`, which GitHub does not read. Every "gated in CI" claim is unverified | **fixed** 2026-08-06 — root gates first (`gates.yml`), then every family's CI consolidated to root files with paths filters and working-directory defaults; first hosted run pending a push |
 | [F-50](#f-50) | Medium | The `U2a` reference rule attached an adjunct to `c_url`, which no index uses, while every port indexes `(c_type, c_id)` — 453 of R5's 1,947 search targets unindexable on Oracle | **fixed** 2026-08-02 — all six; gaps now 0 |
@@ -838,8 +837,8 @@ Oracle have no `upgrade` at all, so for them the migration is a full reload.
 Deploying the corrected fold against an existing database without backfilling
 leaves searches matching neither the old spelling nor the new — silently.
 
-**Disposition: fixed in `fhir-sqlite`, `fhir-mysql`, `fhir-mariadb`, and
-`fhir-mssql`; open for `fhir-oracle`.**
+**Disposition: fixed on all six ports.** `fhir-oracle`, the last, closed
+2026-08-09 (**F-47** step 1) — see the end of this entry.
 
 `fhir-sqlite` now has `upgrade` and `backfill_norm`, and `init` records the map
 asset that makes a diff possible at all (`M14.30`). Three things are SQLite's
@@ -926,9 +925,27 @@ going forward, not retroactively.
 patient unfindable by their own name, the same class of check as the other
 three ports.
 
-What remains is `fhir-oracle`, which has a store (**F-68**) but no `upgrade`
-built on it yet. That arrives with the next pass on that port; there is no
-separate upgrade task to schedule for it beyond that.
+**`fhir-oracle` now has it too** — the last port, closing this finding
+everywhere (2026-08-09, **F-47** step 1). Nine tests in
+`crates/fhir-oracle-store/tests/upgrade.rs`, the same suite shape as mssql's
+including `destructive_changes_succeed_with_the_flag`, green against live
+`gvenzl/oracle-free:23-slim-faststart` (run `--test-threads=1`: every test
+shares the one uppercase `R5` schema, `M14.5`). Three things are this
+engine's own, now normative in its annex (`spec/14-oracle-dialect.md`):
+
+| | |
+|---|---|
+| `M14.35` | **The upgrade is resumable, not transactional.** Oracle DDL implicitly commits, so a failed upgrade half-applies and that cannot be prevented — instead every statement the upgrade emits is wrapped in a PL/SQL block that swallows exactly the already-applied codes (`ORA-00955` name in use, `ORA-01430` column exists, `ORA-01408` already indexed; `ORA-00942`/`ORA-00904` for drops) and re-raises everything else, so the recovery for a partial upgrade is rerunning `upgrade`. The third answer to one problem: mssql's `M14.35` is one transaction, mysql's `M14.35` is reported-partial. |
+| `M14.36` | **The map asset cannot bind as one string.** ~1 MB of hex fails with `ORA-01461` even though the target column is a `CLOB` — the bind is what overflows — so meta values past the limit are stored as ≤3,000-char `<key>.<i>` chunk rows under a `chunks:N` sentinel and reassembled on read. Found live: `init` hit this the moment it first tried to store the asset. |
+| `M14.37` | **The backfill pages by ROWID keyset.** The fold source column is a `CLOB`, which can be neither `DISTINCT`ed nor `=`-compared (`ORA-00932`/`ORA-22848`), so the values-based loop the other five ports share is illegal here. Batches select `WHERE dst IS NULL` ordered by `ROWID`, update by `ROWID`, and commit per batch; an empty fold result is skipped because `''` is NULL on this engine (`M14.29a`) and writing one would leave the row eligible forever. |
+
+**Mutation-verified** (`T11.10`): with the backfill call inside `upgrade`
+disabled, `rows_written_before_the_folded_column_are_backfilled` fails — the
+seeded patient "Ámélie" becomes unfindable by `amelie`, which is literally
+this finding — and the suite is green again with it restored. As on every
+other port, an install predating the stored map asset is refused by name
+rather than guessed at: the finding is closed going forward, not
+retroactively.
 
 ## F-16
 
@@ -2755,6 +2772,8 @@ is live-verified:
 1. **Prerequisite: `fhir-oracle` gains `upgrade`/`backfill_norm`** — the
    F-15 remainder. Every later step assumes a working upgrade path on all
    six ports, and oracle is the port with the harder half of this migration.
+   **Done 2026-08-09**: 9 live tests, mutation-checked, three new annex
+   requirements (`M14.35`–`M14.37`) — the account is in F-15's entry.
 2. **The bound decision, as spec text.** The generator's maximum path length
    is the longest seen in R3–R6, not a bound; the migration needs a *bound*.
    Amend `U12` (and `M14` annexes where the type is named): `path` binds to

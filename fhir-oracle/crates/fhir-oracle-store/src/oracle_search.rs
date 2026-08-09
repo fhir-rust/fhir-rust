@@ -253,7 +253,9 @@ pub fn build_search_sql(
         order.push("p.\"id\" ASC".to_string());
     }
     sql.push_str(&format!(" ORDER BY {}", order.join(", ")));
-    sql.push_str(&format!(" OFFSET {offset} ROWS FETCH NEXT {count} ROWS ONLY"));
+    sql.push_str(&format!(
+        " OFFSET {offset} ROWS FETCH NEXT {count} ROWS ONLY"
+    ));
     Ok(CompiledQuery {
         sql,
         count_sql,
@@ -458,9 +460,10 @@ fn target_pred(
                 None | Some("text") => {
                     let lo = bind_str(binds, &folded);
                     match prefix_upper(&folded) {
-                        Some(hi) => {
-                            Ok(format!("({nc} >= {lo} AND {nc} < {})", bind_str(binds, &hi)))
-                        }
+                        Some(hi) => Ok(format!(
+                            "({nc} >= {lo} AND {nc} < {})",
+                            bind_str(binds, &hi)
+                        )),
                         None => Ok(format!("{nc} >= {lo}")),
                     }
                 }
@@ -496,11 +499,7 @@ fn target_pred(
                         bind_i64(binds, bool_token_as_i64(v))
                     )
                 } else {
-                    format!(
-                        "«c».{} = {}",
-                        quote_ident(col_or_hash),
-                        bind_str(binds, v)
-                    )
+                    format!("«c».{} = {}", quote_ident(col_or_hash), bind_str(binds, v))
                 }
             };
             match value.split_once('|') {
@@ -572,10 +571,18 @@ fn target_pred(
                 bind_str(binds, num)
             );
             if let (Some(sys), Some(sc)) = (sys.filter(|s| !s.is_empty()), system) {
-                pred = format!("({pred} AND «c».{} = {})", quote_ident(sc), bind_str(binds, sys));
+                pred = format!(
+                    "({pred} AND «c».{} = {})",
+                    quote_ident(sc),
+                    bind_str(binds, sys)
+                );
             }
             if let (Some(u), Some(cc)) = (unit.filter(|s| !s.is_empty()), code) {
-                pred = format!("({pred} AND «c».{} = {})", quote_ident(cc), bind_str(binds, u));
+                pred = format!(
+                    "({pred} AND «c».{} = {})",
+                    quote_ident(cc),
+                    bind_str(binds, u)
+                );
             }
             Ok(pred)
         }
@@ -626,7 +633,11 @@ fn target_pred(
                     quote_ident(h),
                     bind_bytes(binds, digest(value))
                 )),
-                None => Ok(format!("«c».{} = {}", quote_ident(col), bind_str(binds, value))),
+                None => Ok(format!(
+                    "«c».{} = {}",
+                    quote_ident(col),
+                    bind_str(binds, value)
+                )),
             }
         }
     }

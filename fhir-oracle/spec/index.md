@@ -50,8 +50,10 @@ Contributor guidance: [`../../AGENTS.md`](../../AGENTS.md).
 > **What is still open:** `R4.5` has no working mechanism on this port — the
 > only candidate named in the annex was tried live and removed after it broke
 > every read (`M14.19`). There is no `concurrency.rs` verifying `H5.4` under
-> contention, no `redaction.rs`, no `upgrade`/`backfill_norm`, and no map test
-> directory. Conformance level is **Store**, not Reference — see the
+> contention, no `redaction.rs`, and no map test directory.
+> (`upgrade`/`backfill_norm` left this list 2026-08-09 — `tests/upgrade.rs`,
+> 9 live tests, `M14.35`–`M14.37`, closing **F-15**'s last port.)
+> Conformance level is **Store**, not Reference — see the
 > [conformance matrix](../../spec/databases/conformance-matrix.md).
 
 ## What is decided, and what is not

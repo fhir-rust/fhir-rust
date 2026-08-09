@@ -16,7 +16,10 @@ Five things to know before editing anything here:
    (**F-68**, superseding **F-66**'s "compiles but never connected"):
    `tests/oracle_store.rs` runs the full CRUD/history/search/audit surface
    against a live `gvenzl/oracle-free:23-slim-faststart` — 7 of 7 tests
-   pass, 0 ignored. Getting there found and fixed five real defects — the
+   pass, 0 ignored — and `tests/upgrade.rs` adds 9 more (`upgrade`/
+   `backfill_norm`, 2026-08-09, closing **F-15**'s last port; run the live
+   suite with `--test-threads=1`, every test shares the one `R5` schema).
+   Getting there found and fixed five real defects — the
    sharpest one to remember: **Oracle folds an unquoted username to
    uppercase for session identity**, so `RelMap.schema` MUST be uppercase
    (`M14.5`) — the opposite of `r3`/`r4`/`r5` everywhere else. `R4.5` is an

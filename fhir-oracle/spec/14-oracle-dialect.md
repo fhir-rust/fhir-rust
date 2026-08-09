@@ -56,10 +56,13 @@ RFC 2119 keywords.
 >   `delete`/`history`/`vread`/`verify_audit`/`purge`/`log_access`/`search`
 >   surface was run against it in `tests/oracle_store.rs`: **7 of 7 tests
 >   pass, 0 ignored.** Getting there found and fixed five real defects — see
->   `M14.5`, `M14.19`, `M14.34`, and `audit.md` **F-68** for the account. Not
->   done: `R4.5` has no working mechanism (`M14.19`, regressed from
->   "presumed" to "confirmed absent"), no `concurrency.rs` verifies `H5.4`
->   under contention, no `redaction.rs`, and no `upgrade`/`backfill_norm`.
+>   `M14.5`, `M14.19`, `M14.34`, and `audit.md` **F-68** for the account.
+>   `upgrade`/`backfill_norm` followed on 2026-08-09 (**F-15**'s last port,
+>   **F-47** step 1): `tests/upgrade.rs`, 9 more live tests, and three new
+>   requirements, `M14.35`–`M14.37` below. Not done: `R4.5` has no working
+>   mechanism (`M14.19`, regressed from "presumed" to "confirmed absent"),
+>   no `concurrency.rs` verifies `H5.4` under contention, and no
+>   `redaction.rs`.
 > - **There are no map tests** — `crates/fhir-oracle-map/tests/` does not exist.
 >   The unit tests in `ddl.rs` are what exists.
 >
@@ -691,6 +694,51 @@ RFC 2119 keywords.
      `oracle_search.rs`'s `target_pred` MUST resolve the target column's
      `ColTy` before choosing a bind kind for a `Token` target — see that
      file's module doc.
+
+## Upgrade and backfill — decided (2026-08-09)
+
+`OracleStore::upgrade` and `backfill_norm` exist and are live-verified —
+`tests/upgrade.rs`, 9 tests against `gvenzl/oracle-free:23-slim-faststart`,
+closing this port's share of **F-15** (the last port) and **F-47** step 1.
+Three requirements are this engine's own:
+
+- **M14.35** **The upgrade is resumable, not transactional.** Oracle has no
+  transactional DDL — every DDL statement implicitly commits — so a failed
+  upgrade leaves everything before the failure applied, and that cannot be
+  prevented. What is required instead: every statement the upgrade applies
+  MUST tolerate having already run, so that the recovery for a partial
+  upgrade is simply running `upgrade` again. Oracle's `CREATE TABLE`,
+  `CREATE INDEX`, and `ALTER TABLE … ADD` have no `IF NOT EXISTS`, so each
+  statement is wrapped in a PL/SQL block that swallows exactly the
+  already-applied codes — `ORA-00955` (name in use), `ORA-01430` (column
+  exists), `ORA-01408` (column list already indexed), and for destructive
+  statements `ORA-00942`/`ORA-00904` (already gone) — and re-raises
+  everything else. `a_second_upgrade_is_a_no_op` verifies the property from
+  the outside. This is the third answer to the same problem: the SQL Server
+  annex's `M14.35` is one transaction, the MySQL annex's `M14.35` is
+  reported-partial; this port is partial-but-rerunnable.
+
+- **M14.36** **A meta value longer than the string bind limit MUST be
+  chunked.** The map asset `upgrade` diffs against is ~1 MB of hex, and
+  binding it as a single string parameter fails with `ORA-01461: can bind a
+  LONG value only for insert into a LONG column` — even though the target
+  column is a `CLOB`, the *bind* is what overflows. Values past the limit
+  are stored as `<key>.<i>` rows of at most 3,000 characters, with the base
+  key holding a `chunks:N` sentinel; reads reassemble, and a rewrite deletes
+  stale chunk rows first. Values that fit bind directly. Found live: `init`
+  hit this the moment it first tried to store the asset.
+
+- **M14.37** **The backfill pages by ROWID keyset, not by value.** The
+  source column of a fold is a `CLOB`, and a `CLOB` can be neither
+  `DISTINCT`ed nor `=`-compared (`ORA-00932`/`ORA-22848`), so the
+  values-based loop the other five ports share cannot run here.
+  `backfill_norm` instead selects `WHERE dst IS NULL AND src IS NOT NULL`
+  ordered by `ROWID` in bounded batches, updates each row by its `ROWID`,
+  and commits per batch — resumable, verified by
+  `the_backfill_is_resumable`. A fold whose result is empty MUST be skipped
+  rather than written: `''` is NULL on this engine (`M14.29a`'s root
+  cause), so writing it would leave `dst` NULL and the row eligible on
+  every pass, forever.
 
 ---
 

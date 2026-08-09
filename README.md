@@ -30,7 +30,7 @@ Six ports, one specification, one engine.
 | [`fhir-mysql`](fhir-mysql/) | MySQL 8.4 | **Store** |
 | [`fhir-mariadb`](fhir-mariadb/) | MariaDB 11.4 | **Store** |
 | [`fhir-mssql`](fhir-mssql/) | SQL Server | **Store** — live-verified against `azure-sql-edge`, incl. `upgrade` (**F-65**) |
-| [`fhir-oracle`](fhir-oracle/) | Oracle Database | **Store** — live-verified against `gvenzl/oracle-free` (**F-68**); no `upgrade`, `R4.5` open |
+| [`fhir-oracle`](fhir-oracle/) | Oracle Database | **Store** — live-verified against `gvenzl/oracle-free` (**F-68**), `upgrade`/backfill included (**F-15**, 2026-08-09); `R4.5` open |
 
 Those are conformance levels, defined in
 [`spec/00-conformance.md`](spec/databases/00-conformance.md). They are the honest version:

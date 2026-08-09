@@ -43,7 +43,10 @@ fn creds() -> Option<(String, String, String)> {
 fn sampled(want: &[&str]) -> Option<Arc<RelMap>> {
     let mut m = RelMap::bundled("r5").ok()?;
     m.resources.retain(|k, _| want.contains(&k.as_str()));
-    assert!(!m.resources.is_empty(), "none of {want:?} are in the r5 map");
+    assert!(
+        !m.resources.is_empty(),
+        "none of {want:?} are in the r5 map"
+    );
     m.schema = "R5".to_string();
     Some(Arc::new(m))
 }
@@ -136,7 +139,10 @@ async fn rewrite_replaces_children_and_bumps_the_version() {
     store.init("rw").await.expect("init");
     let audit = fhir_oracle_store::Audit::default();
 
-    store.put(&observation("obs-1", "final"), &audit).await.expect("v1");
+    store
+        .put(&observation("obs-1", "final"), &audit)
+        .await
+        .expect("v1");
 
     let mut v2 = observation("obs-1", "amended");
     v2["note"] = serde_json::from_str(r#"[{"text":"only"}]"#).expect("json");
@@ -168,8 +174,14 @@ async fn history_vread_delete_and_verify_audit() {
     store.init("hist").await.expect("init");
     let audit = fhir_oracle_store::Audit::default();
 
-    store.put(&observation("obs-1", "final"), &audit).await.expect("v1");
-    store.put(&observation("obs-1", "amended"), &audit).await.expect("v2");
+    store
+        .put(&observation("obs-1", "final"), &audit)
+        .await
+        .expect("v1");
+    store
+        .put(&observation("obs-1", "amended"), &audit)
+        .await
+        .expect("v2");
     let tomb = store
         .delete("Observation", "obs-1", &audit)
         .await
@@ -177,7 +189,10 @@ async fn history_vread_delete_and_verify_audit() {
         .expect("something was deleted");
     assert_eq!(tomb, 3);
 
-    let h = store.history("Observation", "obs-1").await.expect("history");
+    let h = store
+        .history("Observation", "obs-1")
+        .await
+        .expect("history");
     assert_eq!(h.len(), 3, "expected create, update, delete");
     assert_eq!(h[0].version_id, 3);
     assert_eq!(h[0].op, 'D');
@@ -185,7 +200,13 @@ async fn history_vread_delete_and_verify_audit() {
     assert_eq!(h[2].op, 'C');
     assert_eq!(h[1].op, 'U');
 
-    assert!(store.get("Observation", "obs-1").await.expect("get").is_none());
+    assert!(
+        store
+            .get("Observation", "obs-1")
+            .await
+            .expect("get")
+            .is_none()
+    );
     let v1 = store
         .vread("Observation", "obs-1", 1)
         .await
@@ -201,7 +222,10 @@ async fn history_vread_delete_and_verify_audit() {
     assert!(v3.resource.is_none());
 
     let breaks = store.verify_audit().await.expect("verify");
-    assert!(breaks.is_empty(), "a chain nobody touched reported breaks: {breaks:?}");
+    assert!(
+        breaks.is_empty(),
+        "a chain nobody touched reported breaks: {breaks:?}"
+    );
 
     store.drop_schema().await.expect("drop");
 }
@@ -215,15 +239,37 @@ async fn purge_erases_history_and_leaves_a_verifiable_hole() {
     store.init("purge").await.expect("init");
     let audit = fhir_oracle_store::Audit::default();
 
-    store.put(&observation("obs-1", "final"), &audit).await.expect("v1");
-    store.put(&observation("obs-1", "amended"), &audit).await.expect("v2");
-    assert_eq!(store.history("Observation", "obs-1").await.expect("h").len(), 2);
+    store
+        .put(&observation("obs-1", "final"), &audit)
+        .await
+        .expect("v1");
+    store
+        .put(&observation("obs-1", "amended"), &audit)
+        .await
+        .expect("v2");
+    assert_eq!(
+        store
+            .history("Observation", "obs-1")
+            .await
+            .expect("h")
+            .len(),
+        2
+    );
 
-    let report = store.purge("Observation", "obs-1", &audit).await.expect("purge");
+    let report = store
+        .purge("Observation", "obs-1", &audit)
+        .await
+        .expect("purge");
     assert!(report.existed);
     assert_eq!(report.versions_erased, 2);
 
-    assert!(store.get("Observation", "obs-1").await.expect("get").is_none());
+    assert!(
+        store
+            .get("Observation", "obs-1")
+            .await
+            .expect("get")
+            .is_none()
+    );
     assert!(
         store
             .vread("Observation", "obs-1", 1)
@@ -233,15 +279,24 @@ async fn purge_erases_history_and_leaves_a_verifiable_hole() {
         "an erased version must not still be readable"
     );
 
-    let h = store.history("Observation", "obs-1").await.expect("history");
+    let h = store
+        .history("Observation", "obs-1")
+        .await
+        .expect("history");
     assert_eq!(h.len(), 1, "expected exactly the tombstone");
     assert_eq!(h[0].op, 'P');
     assert!(h[0].resource.is_none());
 
     let breaks = store.verify_audit().await.expect("verify");
-    assert!(breaks.is_empty(), "a lawful erasure was reported as tampering: {breaks:?}");
+    assert!(
+        breaks.is_empty(),
+        "a lawful erasure was reported as tampering: {breaks:?}"
+    );
 
-    let again = store.purge("Observation", "nobody", &audit).await.expect("purge missing");
+    let again = store
+        .purge("Observation", "nobody", &audit)
+        .await
+        .expect("purge missing");
     assert!(!again.existed);
 
     store.drop_schema().await.expect("drop");
@@ -266,13 +321,27 @@ async fn search_by_token_and_family_name() {
     store.put(&patient, &audit).await.expect("put patient");
 
     let by_family = store
-        .search("Patient", &[("family".to_string(), "Aero".to_string())], 10, 0)
+        .search(
+            "Patient",
+            &[("family".to_string(), "Aero".to_string())],
+            10,
+            0,
+        )
         .await
         .expect("family search");
-    assert_eq!(by_family, vec!["example".to_string()], "fold-insensitive family search");
+    assert_eq!(
+        by_family,
+        vec!["example".to_string()],
+        "fold-insensitive family search"
+    );
 
     let by_active = store
-        .search("Patient", &[("active".to_string(), "true".to_string())], 10, 0)
+        .search(
+            "Patient",
+            &[("active".to_string(), "true".to_string())],
+            10,
+            0,
+        )
         .await
         .expect("token search");
     assert_eq!(by_active, vec!["example".to_string()]);

@@ -5,8 +5,8 @@
 > It is `fhir-postgresql`'s history with the crate name substituted. When these
 > entries were written this port had no store and no driver; it has both since
 > 2026-08-04 (**F-68** — a real store over the `oracle` ODPI-C driver,
-> live-verified against `gvenzl/oracle-free`, 7/7 tests; no `upgrade` yet, and
-> `R4.5` is a confirmed open gap). Entries below about a connector, TLS to the
+> live-verified against `gvenzl/oracle-free`, 7/7 tests, plus `upgrade`/
+> `backfill_norm` since 2026-08-09, **F-15**; `R4.5` is a confirmed open gap). Entries below about a connector, TLS to the
 > database, a live corpus round-trip, `jsonb`, advisory locks, or a
 > `fhir-oracle init --upgrade` still describe work that was **done in
 > `fhir-postgresql`, not here**. Audit **F-62**; banner corrected 2026-08-06

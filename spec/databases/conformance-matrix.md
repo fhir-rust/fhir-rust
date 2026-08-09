@@ -31,7 +31,7 @@ not about what its code contains.
 | `fhir-mysql` | **Store** | native store + search; **102** tests incl. round-trip-by-type, concurrency, redaction, upgrade+backfill and the new live TLS suite, green against live MySQL 8.4 (measured 2026-08-03). The corpus links this rests on could not resolve until **F-55** |
 | `fhir-mariadb` | **Store** | native store + search; same suites, **102** tests, green against live MariaDB 11.4 (measured 2026-08-03). The corpus links this rests on could not resolve until **F-55** |
 | `fhir-mssql` | **Store** | native store + search; **33** tests (13 `mssql_store.rs`, 2 `concurrency.rs`, 2 `redaction.rs`, 6 `roundtrip_types.rs`, 1 `ssl_live.rs`, 9 `upgrade.rs`) green against live `azure-sql-edge`, **0 ignored** (measured 2026-08-04, **F-65**; `upgrade.rs` added closing this port's share of **F-15**). `M3.15`/`M3.16`/`M3.17`/`M3.18`/`H5.4`/`R4.5` all now live-verified where they were previously untested or, for `R4.5`, briefly confirmed violated before being fixed in a same-day follow-up pass. `upgrade` is one transaction (`M14.35`) — T-SQL DDL is transactional, unlike MySQL/MariaDB, so a failed upgrade rolls back rather than half-applying. No `conditional_create_audited`, `put_audited`, or `transact_audited` |
-| `fhir-oracle` | **Store** | native store + search; **7** tests (`tests/oracle_store.rs`, `T11.2`) green against live `gvenzl/oracle-free:23-slim-faststart`, **0 ignored** (measured 2026-08-04, **F-68**). The DDL emitter was already Oracle and executed (**F-08**); this pass connected a store to it for the first time and found four real defects doing it — see the paragraph below. No `search_page` concurrency coverage, no `conditional_create_audited`/`put_audited`/`transact_audited`/`upgrade`/`backfill_norm`, and `R4.5` is a confirmed, not merely unverified, gap |
+| `fhir-oracle` | **Store** | native store + search; **16** tests (**7** `oracle_store.rs`, **9** `upgrade.rs`) green against live `gvenzl/oracle-free:23-slim-faststart`, **0 ignored**, run `--test-threads=1` (store measured 2026-08-04, **F-68**; `upgrade`+`backfill_norm` 2026-08-09, closing **F-15**'s last port). The DDL emitter was already Oracle and executed (**F-08**); connecting a store found four real defects (paragraph below), and the upgrade pass added three normative rules of its own (`M14.35`–`M14.37`: resumable non-transactional DDL, chunked meta past `ORA-01461`, ROWID-keyset backfill). No `search_page` concurrency coverage, no `conditional_create_audited`/`put_audited`/`transact_audited`, and `R4.5` is a confirmed, not merely unverified, gap |
 
 `fhir-mssql` moved from Scaffold to Store in the same pass that gave it a
 store at all: `search`/`search_full`/`search_page` were built and live-tested
@@ -81,7 +81,7 @@ column is `ColTy::Bool`.
 | Operation | pg | sqlite | mysql | mariadb | mssql | oracle |
 | --- | :-: | :-: | :-: | :-: | :-: | :-: |
 | `init` | • | • | • | • | • | • |
-| `init --upgrade` | • | • | • | • | • | — |
+| `init --upgrade` | • | • | • | • | • | • |
 | `put` | • | • | • | • | • | • |
 | `put_audited` | • | • | — | — | — | — |
 | `get` | • | • | • | • | • | • |
@@ -100,11 +100,12 @@ column is `ColTy::Bool`.
 | `emit_checkpoint` | • | • | — | — | — | — |
 | `chain_witness` | • | — | — | — | — | — |
 | `resign_history` | • | — | — | — | — | — |
-| `backfill_norm` | • | • | • | • | • | — |
+| `backfill_norm` | • | • | • | • | • | • |
 | `export` | — | — | — | — | — | — |
 
-The remaining `—` in the `init --upgrade`/`backfill_norm` rows is `fhir-oracle`,
-which has a store (**F-68**) but no `upgrade` built on it yet.
+The `init --upgrade`/`backfill_norm` rows are complete as of 2026-08-09:
+`fhir-oracle`, the last `—`, now has both — `tests/upgrade.rs`, 9 live
+tests; see this port's paragraph below and **F-15**, now closed on all six.
 
 `put_audited` and `delete_audited` have their own rows as of 2026-08-06: an
 earlier revision folded each into one cell with its plain sibling and showed
@@ -133,6 +134,21 @@ diff against — now fixed to store `map_asset`/`fhir_version` alongside it.
 Unlike `fhir-mysql`/`fhir-mariadb`, the DDL apply is one transaction: SQL
 Server's DDL is transactional, so a failed upgrade rolls back rather than
 half-applying (`M14.35`).
+
+`fhir-oracle` is `•` in both rows as of 2026-08-09 — the last port, fully
+closing **F-15** (and **F-47** step 1): `OracleStore::upgrade`/
+`backfill_norm`, live-verified by `tests/upgrade.rs` (9 tests,
+mutation-checked — skipping the backfill makes the seeded patient unfindable
+by their own name). Three things are this engine's own, now normative in its
+annex: the upgrade is **resumable rather than transactional** — Oracle has no
+transactional DDL, so every statement is wrapped to tolerate having already
+run and the recovery for a partial upgrade is rerunning `upgrade` (`M14.35`,
+the third answer after mssql's one-transaction and mysql's reported-partial);
+the ~1 MB map asset cannot bind as one string (`ORA-01461`) and is stored as
+chunked meta rows (`M14.36`); and the backfill pages by ROWID keyset because
+a `CLOB` source column can be neither `DISTINCT`ed nor `=`-compared
+(`ORA-00932`/`ORA-22848`, `M14.37`) — the values-based loop the other five
+ports share is illegal here.
 
 `fhir-sqlite`'s `transact_audited` returns `Unsupported` rather than emulating
 atomicity by compensation, which is the right answer: a FHIR transaction Bundle
@@ -199,19 +215,19 @@ live-confirmed.
 | `U10` annex record | n/a | n/a | n/a | n/a | • | • | `M14.32`/`M14.33`; `M14.26`/`M14.27` |
 | `P6.6` fold in Rust | • | • | • | • | • | • | `fold.rs` identical across ports |
 | `P6.8` parameter binding | • | • | • | • | — | — | fuzz seed corpus committed in all six |
-| `O10.4a` backfill on fold change | • | • | • | • | • | — | **F-15** fixed on sqlite, mysql, mariadb, mssql (live-verified, `tests/upgrade.rs`); oracle has a store now but no `upgrade` built on it yet |
+| `O10.4a` backfill on fold change | • | • | • | • | • | • | **F-15** fixed on all six ports, live-verified by a `tests/upgrade.rs` on each; oracle last, 2026-08-09 (**F-47** step 1) |
 | `O10.7` encrypted transport | • | — | • | • | ! | ? | all three networked ports **default to verifying**. pg since **F-17** (`tests/ssl_default.rs`); mysql/mariadb since **F-54**, which also had to enable the `rustls-tls` Cargo feature — `minimal` excluded TLS entirely. Live-verified on MySQL 8.4 and MariaDB 11.4 by asserting `VERIFY_IDENTITY` **rejects** a self-signed certificate; mutation-verified both ways. `—` for SQLite (embedded file, no connection); oracle `?` — the store exists now (**F-68**) but transport security is undecided (`M14.22`). mssql `!`, not unverified: `tests/ssl_live.rs` now proves the trust/no-trust *mechanism* works (`TrustServerCertificate=false` reproducibly rejects `azure-sql-edge`'s self-signed certificate; `=true` accepts it) — but the certificate-parsing code in that same dependency chain (`rustls-webpki 0.101.7`) carries three unpatched CVEs, now confirmed reaching the shipping `fhir-mssql-store` crate rather than only a dev-dependency as `deny.toml` used to (wrongly) claim. `native-tls` was tried as an escape and fails the handshake outright on this host. See **F-67** |
 | `O10.10` supply-chain evidence | • | • | • | • | • | • | `deny.toml` + CI in all six |
 | `O10.12` CI runs target engine | ~ | ~ | ~ | ~ | ~ | — | each port's CI now lives at the repository root (`<port>-ci.yml`, F-49 closed 2026-08-06) and provisions the right engine (mssql SQL Server 2022; oracle's gate stays removed rather than faked, F-06). Still `~`, not `•`: no hosted run has executed yet — the cells turn `•` when the first push runs them green |
 | `T11.1` corpus round-trip | • | • | • | • | ? | ? | |
-| `T11.2` live gate | • | • | • | • | • | • | mssql: 33 of 33 store-crate tests green against live `azure-sql-edge`, 0 `#[ignore]`d, plus the DDL test (an earlier revision said 23 — the pre-`upgrade.rs`/`ssl_live.rs` count, F-74). oracle: 7 of 7 store tests (`init`/`put`-`get`/rewrite/`history`-`vread`-`delete`-`verify_audit`/`purge`/`search`/`log_access`) green against live `gvenzl/oracle-free:23-slim-faststart`, 0 ignored (**F-68**) |
+| `T11.2` live gate | • | • | • | • | • | • | mssql: 33 of 33 store-crate tests green against live `azure-sql-edge`, 0 `#[ignore]`d, plus the DDL test (an earlier revision said 23 — the pre-`upgrade.rs`/`ssl_live.rs` count, F-74). oracle: 16 of 16 store-crate tests (7 `oracle_store.rs`: `init`/`put`-`get`/rewrite/`history`-`vread`-`delete`-`verify_audit`/`purge`/`search`/`log_access`; 9 `upgrade.rs`) green against live `gvenzl/oracle-free:23-slim-faststart`, 0 ignored, run `--test-threads=1` (**F-68**, **F-15**) |
 | `T11.6` concurrency adversarial | • | • | ~ | ~ | • | — | suites now on all five; mysql/mariadb cover torn reads and version assignment but cannot cover conditional ops or `If-Match` — neither is implemented there. mssql: both torn-read (`R4.5`) and version-assignment (`H5.4`) cases pass live, 0 `#[ignore]`d — the torn-read case failed on its first live run and is now fixed (**F-65**). oracle has no `concurrency.rs` yet — `R4.5` is a known-open gap there and `H5.4` is unverified under contention (see above) |
 | `T11.7` redaction | • | • | • | • | • | — | `redaction.rs` on all five; found **F-23** on three of them. mssql: run at `DEBUG`, not `TRACE` — `tiberius`'s own packet tracing logs raw row content at `TRACE`, outside this store's control, so that ceiling cannot be promised (see `redaction.rs`'s module doc). oracle has no `redaction.rs` yet |
 | `T11.8` audit assertions | • | ~ | ~ | ~ | • | ~ | corrected: all assert chain verification, disclosure logging, append-only, and erasure. Missing on sqlite/mysql/mariadb/oracle: per-algorithm independent tamper detection, and truncated-chain-vs-checkpoint. mssql now asserts per-algorithm detection across all **three** signals (sha256, sha3-256, hmac-sha256) — the hmac check did not exist before this pass (**F-65**) — but still has no checkpoint |
 | `T11.9` fuzzing run | ? | ? | ? | ? | ? | ? | targets committed; not shown to run in CI |
 | `T11.13` skips fail where promised | • | • | ? | ? | • | • | sqlite needs no server, so nothing skips; mysql/mariadb suites still self-skip without a DSN. mssql and oracle: `eprintln!` + return only when the three env vars are absent; once set, any real failure panics via `expect`/`assert!` rather than being swallowed |
 | `T11.14` ignored tests tracked | • | • | • | • | • | • | Oracle's eleven ignored tests have now been **replaced** with Oracle-asserting ones (**F-08**); the crate has 48 tests, 0 ignored |
-| `T11.15` tests are deterministic | ? | ? | ? | ? | ~ | ? | new requirement (**F-52**). mssql's `mssql_ddl.rs` specifically was flaky two runs in three, fixed, and now passes 5/5 in isolation — but running the *full* live suite (`scripts/db.sh test`, no `--test-threads=1`) against `azure-sql-edge` reproduced live-server contention twice while verifying the `upgrade`/`backfill_norm` work (**F-15**): a different unrelated test deadlocked (SQL Server error 1205) on one run, four `upgrade.rs` tests failed on another — both times every failing test passed cleanly rerun alone with `--test-threads=1`. So `~`, not `•`: individual tests are deterministic, the suite as a whole is not safe to run at full parallelism against one shared server instance. The others are `?` — not suspected, but no port has been run repeatedly enough to say |
+| `T11.15` tests are deterministic | ? | ? | ? | ? | ~ | ~ | new requirement (**F-52**). mssql's `mssql_ddl.rs` specifically was flaky two runs in three, fixed, and now passes 5/5 in isolation — but running the *full* live suite (`scripts/db.sh test`, no `--test-threads=1`) against `azure-sql-edge` reproduced live-server contention twice while verifying the `upgrade`/`backfill_norm` work (**F-15**): a different unrelated test deadlocked (SQL Server error 1205) on one run, four `upgrade.rs` tests failed on another — both times every failing test passed cleanly rerun alone with `--test-threads=1`. So `~`, not `•`: individual tests are deterministic, the suite as a whole is not safe to run at full parallelism against one shared server instance. oracle is `~` for the same reason: 16/16 green serially, but every test shares the one uppercase `R5` schema (`M14.5`), and a full-parallelism run against a fresh container failed 6 of 7 — run `--test-threads=1`. The others are `?` — not suspected, but no port has been run repeatedly enough to say |
 | `X15.1` shared core identical | • | • | • | • | • | • | `scripts/check-shared-core.sh`, 100 files, token-based (`X15.1a`, F-48). Gated in CI since `gates.yml` and its inputs were committed (`60bfcbe`); the per-family CI consolidation followed on 2026-08-06, closing **F-49** |
 | `X15.2` canonical form in Rust | • | • | • | • | • | • | **F-07** fixed — `canon.rs` ported into pg; gate now has 0 exemptions |
 | `X15.6` annex covers checklist | • | ~ | ~ | ~ | • | • | pg written (F-14), mssql/oracle rewritten (F-16); sqlite/mysql/mariadb annexes predate the checklist |
@@ -300,8 +316,9 @@ way mssql did, by connecting a store and running it (**F-68**).
   remains, in rough order: an actual `R4.5` fix (the annex now needs a new
   answer, not just a name — `M14.19`); a `concurrency.rs` to verify `H5.4`
   under contention, which the code already attempts via `FOR UPDATE`; a
-  `redaction.rs`; `upgrade`/`backfill_norm`; and `O10.7` transport security,
-  currently undecided (`M14.22`).
+  `redaction.rs`; and `O10.7` transport security, currently undecided
+  (`M14.22`). (`upgrade`/`backfill_norm` were on this list until
+  2026-08-09 — done and live-verified, closing **F-15**'s last port.)
 - **`fhir-postgresql` → clean Reference.** The chain pre-image now comes from
   `canon.rs` (**F-07** fixed, `M14.12`), the dead `_norm` SQL function is gone
   (**F-18** fixed), and the TLS default verifies (**F-17** fixed 2026-08-03,

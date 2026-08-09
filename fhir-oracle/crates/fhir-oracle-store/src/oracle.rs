@@ -52,9 +52,11 @@
 //! `verify_audit`, `purge`, `log_access`, `search`/`search_full` — the same
 //! surface `fhir-mssql-store` and `fhir-mysql-store` expose, all exercised by
 //! `tests/oracle_store.rs`. `search_page` exists and is called transitively
-//! but has no test calling it directly with a cursor. **Not written**,
-//! matching those ports: `conditional_create_audited`, `put_audited`,
-//! `upgrade`, `backfill_norm`.
+//! but has no test calling it directly with a cursor. `upgrade` and
+//! `backfill_norm` exist too (2026-08-09, closing this port's share of
+//! **F-15**), exercised by `tests/upgrade.rs` — see their doc comments for
+//! the three engine-specific rules (`M14.35`–`M14.37`). **Not written**,
+//! matching those ports: `conditional_create_audited`, `put_audited`.
 //!
 //! # Architecture, and why it differs from every other port but SQLite
 //!
@@ -109,8 +111,8 @@ use fhir_oracle_map::model::{ColTy, RelMap};
 use oracle::sql_type::{OracleType, ToSql};
 use oracle::{Connection, Row, SqlValue};
 
-use crate::pool::{self, OraclePool};
 use crate::StoreError;
+use crate::pool::{self, OraclePool};
 
 /// A history row's chain tip: `(version_id, sha256 link, sha3 link)`.
 type ChainTip = (i64, Option<Vec<u8>>, Option<Vec<u8>>);
@@ -134,6 +136,133 @@ fn quote_ident(s: &str) -> String {
 
 fn qualified(schema: &str, name: &str) -> String {
     format!("{}.{}", quote_ident(schema), quote_ident(name))
+}
+
+fn hex_encode(bytes: &[u8]) -> String {
+    bytes.iter().map(|b| format!("{b:02x}")).collect()
+}
+
+fn hex_decode(s: &str) -> Result<Vec<u8>, StoreError> {
+    if !s.len().is_multiple_of(2) {
+        return Err(StoreError::Other("bad hex asset".into()));
+    }
+    (0..s.len())
+        .step_by(2)
+        .map(|i| {
+            u8::from_str_radix(&s[i..i + 2], 16)
+                .map_err(|_| StoreError::Other("bad hex asset".into()))
+        })
+        .collect()
+}
+
+/// Write one meta value in chunks small enough to bind as `VARCHAR2` in SQL
+/// context (< 4000 bytes; `ORA-01461` otherwise — the map asset is around a
+/// megabyte of hex, far past any string-bind limit, and chunked rows sidestep
+/// the LOB-binding API entirely). The base key holds the chunk count; chunks
+/// live at `<key>.<i>`.
+fn write_meta_chunked(
+    conn: &Connection,
+    meta: &str,
+    key: &str,
+    value: &str,
+) -> Result<(), StoreError> {
+    const CHUNK: usize = 3000;
+    let merge = format!(
+        "MERGE INTO {meta} tgt USING (SELECT :1 AS k, :2 AS v FROM DUAL) src \
+         ON (tgt.\"key\" = src.k) \
+         WHEN MATCHED THEN UPDATE SET \"value\" = src.v \
+         WHEN NOT MATCHED THEN INSERT (\"key\", \"value\") VALUES (src.k, src.v)"
+    );
+    if value.len() <= CHUNK {
+        conn.execute(&merge, &[&key, &value]).map_err(db_err)?;
+        return Ok(());
+    }
+    // Stale chunks from a longer previous value must not survive the write.
+    conn.execute(
+        &format!("DELETE FROM {meta} WHERE \"key\" LIKE :1 || '.%'"),
+        &[&key],
+    )
+    .map_err(db_err)?;
+    let chunks: Vec<&str> = value
+        .as_bytes()
+        .chunks(CHUNK)
+        .map(|c| std::str::from_utf8(c).expect("hex is ASCII"))
+        .collect();
+    for (i, chunk) in chunks.iter().enumerate() {
+        let k = format!("{key}.{i}");
+        conn.execute(&merge, &[&k.as_str(), chunk])
+            .map_err(db_err)?;
+    }
+    let count = format!("chunks:{}", chunks.len());
+    conn.execute(&merge, &[&key, &count.as_str()])
+        .map_err(db_err)?;
+    Ok(())
+}
+
+/// Read a value `write_meta_chunked` wrote, reassembling chunks.
+fn read_meta_chunked(
+    conn: &Connection,
+    meta: &str,
+    key: &str,
+) -> Result<Option<String>, StoreError> {
+    let row = conn.query_row(
+        &format!("SELECT \"value\" FROM {meta} WHERE \"key\" = :1"),
+        &[&key],
+    );
+    let base: Option<String> = match row {
+        Ok(r) => r.get::<usize, Option<String>>(0).unwrap_or(None),
+        Err(_) => None,
+    };
+    let Some(base) = base else { return Ok(None) };
+    let Some(n) = base.strip_prefix("chunks:") else {
+        return Ok(Some(base));
+    };
+    let n: usize = n
+        .parse()
+        .map_err(|_| StoreError::Other("bad chunk count in meta".into()))?;
+    let mut out = String::new();
+    for i in 0..n {
+        let k = format!("{key}.{i}");
+        let chunk: Option<String> = match conn.query_row(
+            &format!("SELECT \"value\" FROM {meta} WHERE \"key\" = :1"),
+            &[&k.as_str()],
+        ) {
+            Ok(r) => r.get::<usize, Option<String>>(0).unwrap_or(None),
+            Err(_) => None,
+        };
+        let chunk = chunk.ok_or_else(|| {
+            StoreError::Other(format!("meta value {key:?} is missing chunk {i} of {n}"))
+        })?;
+        out.push_str(&chunk);
+    }
+    Ok(Some(out))
+}
+
+/// Wrap a statement so a rerun survives "already applied" (`M14.15`'s shape).
+///
+/// Oracle has no transactional DDL: a failed `upgrade` leaves everything
+/// before the failure applied, and the recovery is to run it again — which
+/// only works if every statement tolerates having already run. Statements
+/// `ddl.rs` emits pre-wrapped (`BEGIN\n  EXECUTE IMMEDIATE …`) pass through
+/// untouched: wrapping them again would nest `q'{…}'` literals, which cannot
+/// nest.
+fn resumable(stmt: &str, codes: &[i32]) -> String {
+    if stmt.starts_with("BEGIN\n  EXECUTE IMMEDIATE") {
+        return stmt.to_string();
+    }
+    assert!(
+        !stmt.contains("}'"),
+        "q'{{...}}' literal would terminate early: {stmt}"
+    );
+    let list = codes
+        .iter()
+        .map(std::string::ToString::to_string)
+        .collect::<Vec<_>>()
+        .join(", ");
+    format!(
+        "BEGIN\n  EXECUTE IMMEDIATE q'{{{stmt}}}';\n\
+         EXCEPTION WHEN OTHERS THEN\n  IF SQLCODE NOT IN ({list}) THEN RAISE; END IF;\nEND;"
+    )
 }
 
 /// A pool bound to one relational map.
@@ -222,16 +351,20 @@ impl OracleStore {
                 applied += 1;
             }
             // MERGE, Oracle's UPSERT, available well below the M14.2 floor.
-            conn.execute(
-                &format!(
-                    "MERGE INTO {meta} tgt USING (SELECT :1 AS k, :2 AS v FROM DUAL) src \
-                     ON (tgt.\"key\" = src.k) \
-                     WHEN MATCHED THEN UPDATE SET \"value\" = src.v \
-                     WHEN NOT MATCHED THEN INSERT (\"key\", \"value\") VALUES (src.k, src.v)"
-                ),
-                &[&"checksum", &checksum],
-            )
-            .map_err(db_err)?;
+            // The map asset itself is stored beside the checksum — it is what
+            // `upgrade` diffs against, and an install that records only the
+            // checksum cannot be upgraded later (the pre-F-15 mssql defect).
+            let asset_hex = hex_encode(
+                &map.to_gz_bytes()
+                    .map_err(|e| StoreError::Other(e.to_string()))?,
+            );
+            for (k, v) in [
+                ("checksum", checksum.as_str()),
+                ("fhir_version", map.fhir_version.as_str()),
+                ("map_asset", asset_hex.as_str()),
+            ] {
+                write_meta_chunked(&conn, &meta, k, v)?;
+            }
             conn.commit().map_err(db_err)?;
             Ok(applied)
         })
@@ -264,6 +397,241 @@ impl OracleStore {
         .map_err(join_err)?
     }
 
+    /// Upgrade an installed schema to this store's map (`O10.4a`, `L12`).
+    ///
+    /// Oracle has no transactional DDL: every statement autocommits, so a
+    /// failure leaves everything before it applied. The recovery is to run
+    /// `upgrade` again — every statement this method applies tolerates
+    /// having already run (`resumable`), so a rerun completes the remainder
+    /// rather than failing on what the first attempt achieved. That is this
+    /// dialect's half-applied-upgrade story, and the annex states it.
+    ///
+    /// The reconciliation step re-applies the **whole** current DDL with
+    /// every statement made resumable — new tables, their indexes, the
+    /// schema-wide objects, and the `CREATE OR REPLACE` triggers all
+    /// converge in one pass. On a full R5 install that is thousands of
+    /// swallowed `ORA-00955`s; an upgrade is rare enough that simple and
+    /// self-healing beats fast here.
+    ///
+    /// # Errors
+    /// If the schema is not installed, predates upgrade support (no stored
+    /// map asset), needs destructive changes without `allow_destructive`, a
+    /// column changed type (a migration somebody must design, `L12`), or on
+    /// a database failure.
+    pub async fn upgrade(
+        &self,
+        checksum: &str,
+        allow_destructive: bool,
+    ) -> Result<crate::UpgradeReport, StoreError> {
+        let pool = self.pool.clone();
+        let map = self.map.clone();
+        let checksum = checksum.to_string();
+        let (additive, destructive) =
+            tokio::task::spawn_blocking(move || -> Result<(usize, usize), StoreError> {
+                let conn = pool.get().map_err(db_err)?;
+                let meta = qualified(&map.schema, "fhir_oracle_meta");
+
+                // "Never installed" and "installed before the asset was
+                // recorded" have different remedies; distinguish them.
+                let installed: i64 = conn
+                    .query_row(
+                        "SELECT COUNT(*) FROM user_tables WHERE table_name = 'fhir_oracle_meta'",
+                        &[],
+                    )
+                    .map_err(db_err)?
+                    .get(0)
+                    .map_err(db_err)?;
+                if installed == 0 {
+                    return Err(StoreError::Other(format!(
+                        "schema {} is not installed",
+                        map.schema
+                    )));
+                }
+                let old_hex = read_meta_chunked(&conn, &meta, "map_asset")?;
+                let old_hex = old_hex.ok_or_else(|| {
+                    StoreError::Other(
+                        "installed schema predates upgrade support (no stored map asset); \
+                         reinstall with `init` to make later upgrades possible"
+                            .into(),
+                    )
+                })?;
+                let old_map = RelMap::from_gz_bytes(&hex_decode(&old_hex)?)
+                    .map_err(|e| StoreError::Other(format!("stored map asset unreadable: {e}")))?;
+
+                let (adds, drops) = diff_maps(&map, &old_map)?;
+                if !drops.is_empty() && !allow_destructive {
+                    return Err(StoreError::Other(format!(
+                        "upgrade requires {} destructive change(s); rerun with allow_destructive \
+                         (first: {})",
+                        drops.len(),
+                        drops.first().expect("non-empty")
+                    )));
+                }
+                let (n_add, n_drop) = (adds.len(), drops.len());
+
+                let apply = |stmt: &str, codes: &[i32]| -> Result<(), StoreError> {
+                    conn.execute(&resumable(stmt, codes), &[])
+                        .map(|_| ())
+                        .map_err(|e| StoreError::Other(format!("upgrade: {e}\n{stmt}")))
+                };
+
+                // 1. The additive diff: new tables and new columns.
+                for stmt in &adds {
+                    apply(stmt, &[-955, -1430])?;
+                }
+                // 2. Audit-envelope columns on history tables that predate
+                //    them — Oracle's ADD is not idempotent (ddl.rs's own
+                //    warning), so ORA-01430 is swallowed instead of diffed.
+                for rm in map.resources.values() {
+                    if let Some((_, hist)) =
+                        rm.find_table(fhir_oracle_map::model::TableKind::History)
+                    {
+                        for stmt in
+                            fhir_oracle_map::ddl::history_audit_columns(&map.schema, &hist.name)
+                        {
+                            apply(&stmt, &[-1430])?;
+                        }
+                    }
+                }
+                // 3. Reconcile everything else by re-applying the current DDL.
+                for stmt in fhir_oracle_map::ddl::ddl(&map) {
+                    apply(&stmt, &[-955, -1408, -1430])?;
+                }
+                // 4. Destructive last, each tolerating "already gone".
+                for stmt in &drops {
+                    apply(stmt, &[-942, -904])?;
+                }
+                // 5. Record what is now installed.
+                let new_hex = hex_encode(
+                    &map.to_gz_bytes()
+                        .map_err(|e| StoreError::Other(e.to_string()))?,
+                );
+                for (k, v) in [
+                    ("checksum", checksum.as_str()),
+                    ("fhir_version", map.fhir_version.as_str()),
+                    ("map_asset", new_hex.as_str()),
+                ] {
+                    write_meta_chunked(&conn, &meta, k, v)?;
+                }
+                conn.commit().map_err(db_err)?;
+                Ok((n_add, n_drop))
+            })
+            .await
+            .map_err(join_err)??;
+
+        let folded = self.backfill_norm().await?;
+        Ok(crate::UpgradeReport {
+            additive,
+            destructive,
+            folded,
+        })
+    }
+
+    /// Fill `_norm` columns rows written before them left NULL (`O10.4a`).
+    ///
+    /// ROWID-keyset batches, not DISTINCT source values: `DISTINCT` and `=`
+    /// are both illegal on a `CLOB` source (ORA-00932 / ORA-22848), and the
+    /// cursor guarantees progress even where a folded value is empty —
+    /// Oracle stores `''` as NULL, so under a values-based loop such a row
+    /// would match the `IS NULL` predicate forever. Resumable by
+    /// construction: the predicate is the work list, and batches commit as
+    /// they go.
+    ///
+    /// # Errors
+    /// On a database failure; a partial backfill is resumed by calling again.
+    pub async fn backfill_norm(&self) -> Result<usize, StoreError> {
+        const BATCH: usize = 500;
+        let pool = self.pool.clone();
+        let map = self.map.clone();
+        tokio::task::spawn_blocking(move || -> Result<usize, StoreError> {
+            let conn = pool.get().map_err(db_err)?;
+            let s = quote_ident(&map.schema);
+            let mut total = 0usize;
+            for rm in map.resources.values() {
+                for t in &rm.tables {
+                    for (src, dst) in &t.norm_cols {
+                        let table = quote_ident(&t.name);
+                        let src_c = quote_ident(src);
+                        let dst_c = quote_ident(dst);
+                        let update = format!(
+                            "UPDATE {s}.{table} SET {dst_c} = :1 \
+                             WHERE ROWID = CHARTOROWID(:2)"
+                        );
+                        let mut cursor: Option<String> = None;
+                        loop {
+                            let rows: Vec<(String, String)> = {
+                                let sql = match &cursor {
+                                    None => format!(
+                                        "SELECT ROWIDTOCHAR(ROWID), {src_c} FROM {s}.{table} \
+                                         WHERE {dst_c} IS NULL AND {src_c} IS NOT NULL \
+                                         ORDER BY ROWID FETCH FIRST {BATCH} ROWS ONLY"
+                                    ),
+                                    Some(_) => format!(
+                                        "SELECT ROWIDTOCHAR(ROWID), {src_c} FROM {s}.{table} \
+                                         WHERE {dst_c} IS NULL AND {src_c} IS NOT NULL \
+                                         AND ROWID > CHARTOROWID(:1) \
+                                         ORDER BY ROWID FETCH FIRST {BATCH} ROWS ONLY"
+                                    ),
+                                };
+                                let result = match &cursor {
+                                    None => conn.query(&sql, &[]),
+                                    Some(c) => conn.query(&sql, &[c]),
+                                }
+                                .map_err(db_err)?;
+                                let mut out = Vec::new();
+                                for row in result.flatten() {
+                                    let rid: String = row.get(0).map_err(db_err)?;
+                                    let v: String = row.get(1).map_err(db_err)?;
+                                    out.push((rid, v));
+                                }
+                                out
+                            };
+                            if rows.is_empty() {
+                                break;
+                            }
+                            let n = rows.len();
+                            for (rid, v) in &rows {
+                                let folded = fhir_oracle_map::fold::fold(v);
+                                // An empty fold stays NULL, exactly as the
+                                // write path leaves it.
+                                if !folded.is_empty() {
+                                    conn.execute(&update, &[&folded.as_str(), &rid.as_str()])
+                                        .map_err(db_err)?;
+                                    total += 1;
+                                }
+                            }
+                            conn.commit().map_err(db_err)?;
+                            cursor = Some(rows.last().expect("non-empty").0.clone());
+                            if n < BATCH {
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            Ok(total)
+        })
+        .await
+        .map_err(join_err)?
+    }
+
+    /// Execute one raw statement, for tests that must manufacture a state the
+    /// public surface refuses to produce — an install that predates the stored
+    /// map asset, for example. Not part of the store's contract.
+    #[doc(hidden)]
+    pub async fn exec_raw(&self, sql: &str) -> Result<(), StoreError> {
+        let pool = self.pool.clone();
+        let sql = sql.to_string();
+        tokio::task::spawn_blocking(move || {
+            let conn = pool.get().map_err(db_err)?;
+            conn.execute(&sql, &[]).map_err(db_err)?;
+            conn.commit().map_err(db_err)?;
+            Ok(())
+        })
+        .await
+        .map_err(join_err)?
+    }
+
     /// Drop every table this map generated, plus the schema-wide objects.
     ///
     /// # Errors
@@ -290,14 +658,24 @@ impl OracleStore {
                     let cname: String = row.get(0).unwrap_or_default();
                     let tname: String = row.get(1).unwrap_or_default();
                     let _ = conn.execute(
-                        &format!("ALTER TABLE {s}.{} DROP CONSTRAINT {}", quote_ident(&tname), quote_ident(&cname)),
+                        &format!(
+                            "ALTER TABLE {s}.{} DROP CONSTRAINT {}",
+                            quote_ident(&tname),
+                            quote_ident(&cname)
+                        ),
                         &[],
                     );
                 }
             }
             for rm in map.resources.values() {
                 for t in &rm.tables {
-                    let _ = conn.execute(&format!("DROP TABLE {s}.{} CASCADE CONSTRAINTS", quote_ident(&t.name)), &[]);
+                    let _ = conn.execute(
+                        &format!(
+                            "DROP TABLE {s}.{} CASCADE CONSTRAINTS",
+                            quote_ident(&t.name)
+                        ),
+                        &[],
+                    );
                 }
             }
             for t in [
@@ -360,7 +738,9 @@ impl OracleStore {
                     .ok_or_else(|| StoreError::Other(format!("{rtype} has no history table")))?,
             );
 
-            let outcome = put_in_tx(&conn, &keys, &s, &base, &hist, rm, &out, &id, &canon, &ts, &audit);
+            let outcome = put_in_tx(
+                &conn, &keys, &s, &base, &hist, rm, &out, &id, &canon, &ts, &audit,
+            );
             match &outcome {
                 Ok(_) => conn.commit().map_err(db_err)?,
                 Err(_) => {
@@ -416,7 +796,10 @@ fn put_in_tx(
     };
 
     let existed = conn
-        .query_row(&format!("SELECT 1 FROM {s}.{base} WHERE \"id\" = :1"), &[&id])
+        .query_row(
+            &format!("SELECT 1 FROM {s}.{base} WHERE \"id\" = :1"),
+            &[&id],
+        )
         .is_ok();
     if existed {
         conn.execute(&format!("DELETE FROM {s}.{base} WHERE \"id\" = :1"), &[&id])
@@ -424,7 +807,11 @@ fn put_in_tx(
     }
 
     // Base row first: every child has a foreign key to it.
-    let mut cols = vec!["\"id\"".to_string(), "\"version_id\"".to_string(), "\"last_updated\"".to_string()];
+    let mut cols = vec![
+        "\"id\"".to_string(),
+        "\"version_id\"".to_string(),
+        "\"last_updated\"".to_string(),
+    ];
     let mut vals: Vec<Bound> = vec![
         Bound::Str(Some(id.to_string())),
         Bound::I64(Some(version_id)),
@@ -456,7 +843,12 @@ fn put_in_tx(
         }
         let types: Vec<ColTy> = names
             .iter()
-            .map(|n| t.cols.iter().find(|c| &c.name == n).map_or(ColTy::Text, |c| c.ty))
+            .map(|n| {
+                t.cols
+                    .iter()
+                    .find(|c| &c.name == n)
+                    .map_or(ColTy::Text, |c| c.ty)
+            })
             .collect();
         let mut cols = vec!["\"rid\"".to_string(), "\"ords\"".to_string()];
         cols.extend(names.iter().map(|n| quote_ident(n)));
@@ -488,8 +880,18 @@ fn put_in_tx(
             let modifier = u8::from(e.modifier).to_string();
             let key = surrogate_key(&[id, &e.path, &ords, &modifier, &ext_ord, &e.leaf]);
             let cols = [
-                "\"key_hash\"", "\"rid\"", "\"path\"", "\"ords\"", "\"modifier\"", "\"ext_ord\"",
-                "\"url\"", "\"leaf\"", "\"v_kind\"", "\"v_text\"", "\"v_num\"", "\"v_bool\"",
+                "\"key_hash\"",
+                "\"rid\"",
+                "\"path\"",
+                "\"ords\"",
+                "\"modifier\"",
+                "\"ext_ord\"",
+                "\"url\"",
+                "\"leaf\"",
+                "\"v_kind\"",
+                "\"v_text\"",
+                "\"v_num\"",
+                "\"v_bool\"",
             ]
             .map(String::from)
             .to_vec();
@@ -517,8 +919,15 @@ fn put_in_tx(
             let ords = fmt_ords(&d.ords);
             let key = surrogate_key(&[id, &d.path, &ords, &d.leaf]);
             let cols = [
-                "\"key_hash\"", "\"rid\"", "\"path\"", "\"ords\"", "\"leaf\"", "\"v_kind\"",
-                "\"v_text\"", "\"v_num\"", "\"v_bool\"",
+                "\"key_hash\"",
+                "\"rid\"",
+                "\"path\"",
+                "\"ords\"",
+                "\"leaf\"",
+                "\"v_kind\"",
+                "\"v_text\"",
+                "\"v_num\"",
+                "\"v_bool\"",
             ]
             .map(String::from)
             .to_vec();
@@ -539,7 +948,9 @@ fn put_in_tx(
 
     if let Some((_, t)) = rm.find_table(fhir_oracle_map::model::TableKind::Contained) {
         for (ord, v) in &out.contained {
-            let cols = ["\"rid\"", "\"ord\"", "\"resource\""].map(String::from).to_vec();
+            let cols = ["\"rid\"", "\"ord\"", "\"resource\""]
+                .map(String::from)
+                .to_vec();
             let vals = vec![
                 Bound::Str(Some(id.to_string())),
                 Bound::I64(Some(i64::from(*ord))),
@@ -552,12 +963,26 @@ fn put_in_tx(
     let op = if existed { "U" } else { "C" };
     let pre = crate::chain::preimage(id, version_id, ts, op, Some(canon), &audit.actor);
     let (row_hash, row_sha3) = crate::chain::link(prev_256.as_deref(), prev_3.as_deref(), &pre);
-    let row_mac = keys.signing().map(|k| crate::chain::mac(k, prev_256.as_deref(), &pre));
+    let row_mac = keys
+        .signing()
+        .map(|k| crate::chain::mac(k, prev_256.as_deref(), &pre));
 
     let cols = [
-        "\"id\"", "\"version_id\"", "\"last_updated\"", "\"op\"", "\"resource\"", "\"actor\"",
-        "\"actor_source\"", "\"client\"", "\"request_id\"", "\"reason\"", "\"prev_hash\"",
-        "\"row_hash\"", "\"prev_hash_sha3\"", "\"row_hash_sha3\"", "\"row_mac\"",
+        "\"id\"",
+        "\"version_id\"",
+        "\"last_updated\"",
+        "\"op\"",
+        "\"resource\"",
+        "\"actor\"",
+        "\"actor_source\"",
+        "\"client\"",
+        "\"request_id\"",
+        "\"reason\"",
+        "\"prev_hash\"",
+        "\"row_hash\"",
+        "\"prev_hash_sha3\"",
+        "\"row_hash_sha3\"",
+        "\"row_mac\"",
     ]
     .map(String::from)
     .to_vec();
@@ -779,7 +1204,11 @@ impl OracleStore {
     /// # Errors
     /// If the resource type is unknown, a stored resource fails to parse, or
     /// on a database failure.
-    pub async fn history(&self, rtype: &str, id: &str) -> Result<Vec<crate::HistEntry>, StoreError> {
+    pub async fn history(
+        &self,
+        rtype: &str,
+        id: &str,
+    ) -> Result<Vec<crate::HistEntry>, StoreError> {
         let (s, hist) = self.hist_target(rtype)?;
         let pool = self.pool.clone();
         let id = id.to_string();
@@ -894,7 +1323,10 @@ fn delete_in_tx(
         &[&id],
     );
     let existed = conn
-        .query_row(&format!("SELECT 1 FROM {s}.{base} WHERE \"id\" = :1"), &[&id])
+        .query_row(
+            &format!("SELECT 1 FROM {s}.{base} WHERE \"id\" = :1"),
+            &[&id],
+        )
         .is_ok();
     if !existed {
         return Ok(None);
@@ -922,12 +1354,25 @@ fn delete_in_tx(
     let ts = utc_micros(std::time::SystemTime::now());
     let pre = crate::chain::preimage(id, version_id, &ts, "D", None, &audit.actor);
     let (row_hash, row_sha3) = crate::chain::link(prev_256.as_deref(), prev_3.as_deref(), &pre);
-    let row_mac = keys.signing().map(|k| crate::chain::mac(k, prev_256.as_deref(), &pre));
+    let row_mac = keys
+        .signing()
+        .map(|k| crate::chain::mac(k, prev_256.as_deref(), &pre));
 
     let cols = [
-        "\"id\"", "\"version_id\"", "\"last_updated\"", "\"op\"", "\"actor\"", "\"actor_source\"",
-        "\"client\"", "\"request_id\"", "\"reason\"", "\"prev_hash\"", "\"row_hash\"",
-        "\"prev_hash_sha3\"", "\"row_hash_sha3\"", "\"row_mac\"",
+        "\"id\"",
+        "\"version_id\"",
+        "\"last_updated\"",
+        "\"op\"",
+        "\"actor\"",
+        "\"actor_source\"",
+        "\"client\"",
+        "\"request_id\"",
+        "\"reason\"",
+        "\"prev_hash\"",
+        "\"row_hash\"",
+        "\"prev_hash_sha3\"",
+        "\"row_hash_sha3\"",
+        "\"row_mac\"",
     ]
     .map(String::from)
     .to_vec();
@@ -1096,9 +1541,17 @@ fn check_mac(
     use crate::chain::MacCheck;
 
     let own = keys.check(stored, prev_sha256, pre);
-    let verdict = match (&own, countersigns.get(&(rtype.to_string(), id.to_string(), version_id))) {
+    let verdict = match (
+        &own,
+        countersigns.get(&(rtype.to_string(), id.to_string(), version_id)),
+    ) {
         (MacCheck::Absent | MacCheck::Unverifiable { .. }, Some(have)) => match keys.signing() {
-            Some(k) if crate::chain::digests_equal(crate::chain::mac(k, prev_sha256, pre).as_bytes(), have.as_bytes()) => {
+            Some(k)
+                if crate::chain::digests_equal(
+                    crate::chain::mac(k, prev_sha256, pre).as_bytes(),
+                    have.as_bytes(),
+                ) =>
+            {
                 MacCheck::Ok
             }
             _ => own,
@@ -1107,7 +1560,13 @@ fn check_mac(
     };
 
     match verdict {
-        MacCheck::Mismatch => breaks.push(crate::ChainBreak::new(rtype, id, version_id, "hmac-sha256", "keyed tag does not match")),
+        MacCheck::Mismatch => breaks.push(crate::ChainBreak::new(
+            rtype,
+            id,
+            version_id,
+            "hmac-sha256",
+            "keyed tag does not match",
+        )),
         MacCheck::Ok | MacCheck::Absent => {}
         MacCheck::Unverifiable { key_id } => tracing::warn!(
             %rtype, %id, version_id, %key_id,
@@ -1156,7 +1615,10 @@ impl OracleStore {
 
             let result = (|| -> Result<crate::PurgeReport, StoreError> {
                 let existed = conn
-                    .query_row(&format!("SELECT 1 FROM {s}.{base} WHERE \"id\" = :1"), &[&id])
+                    .query_row(
+                        &format!("SELECT 1 FROM {s}.{base} WHERE \"id\" = :1"),
+                        &[&id],
+                    )
                     .is_ok();
 
                 // Counted before the delete, the same fix `fhir-mssql` needed
@@ -1165,7 +1627,10 @@ impl OracleStore {
                 // default rather than trusting a post-delete row count this
                 // port has never run either way.
                 let versions_erased: i64 = conn
-                    .query_row(&format!("SELECT COUNT(*) FROM {hist} WHERE \"id\" = :1"), &[&id])
+                    .query_row(
+                        &format!("SELECT COUNT(*) FROM {hist} WHERE \"id\" = :1"),
+                        &[&id],
+                    )
                     .ok()
                     .and_then(|r| r.get::<usize, Option<i64>>(0).unwrap_or(None))
                     .unwrap_or(0);
@@ -1203,9 +1668,18 @@ impl OracleStore {
                 let row_mac = keys.signing().map(|k| crate::chain::mac(k, None, &pre));
 
                 let cols = [
-                    "\"id\"", "\"version_id\"", "\"last_updated\"", "\"op\"", "\"actor\"",
-                    "\"actor_source\"", "\"client\"", "\"request_id\"", "\"reason\"",
-                    "\"row_hash\"", "\"row_hash_sha3\"", "\"row_mac\"",
+                    "\"id\"",
+                    "\"version_id\"",
+                    "\"last_updated\"",
+                    "\"op\"",
+                    "\"actor\"",
+                    "\"actor_source\"",
+                    "\"client\"",
+                    "\"request_id\"",
+                    "\"reason\"",
+                    "\"row_hash\"",
+                    "\"row_hash_sha3\"",
+                    "\"row_mac\"",
                 ]
                 .map(String::from)
                 .to_vec();
@@ -1225,7 +1699,10 @@ impl OracleStore {
                 ];
                 insert_row(&conn, &hist, &cols, &vals)?;
 
-                Ok(crate::PurgeReport { versions_erased: versions_erased as u64, existed })
+                Ok(crate::PurgeReport {
+                    versions_erased: versions_erased as u64,
+                    existed,
+                })
             })();
 
             match &result {
@@ -1236,7 +1713,10 @@ impl OracleStore {
             }
             // Belt and suspenders: if anything between setting the flag and
             // clearing it failed, the inline clear above was skipped.
-            let _ = conn.execute("BEGIN DBMS_APPLICATION_INFO.SET_CLIENT_INFO(:1); END;", &[&Option::<&str>::None]);
+            let _ = conn.execute(
+                "BEGIN DBMS_APPLICATION_INFO.SET_CLIENT_INFO(:1); END;",
+                &[&Option::<&str>::None],
+            );
             result
         })
         .await
@@ -1259,9 +1739,18 @@ impl OracleStore {
             let conn = pool.get().map_err(db_err)?;
             let s = quote_ident(&map.schema);
             let cols = [
-                "\"ts\"", "\"request_id\"", "\"actor\"", "\"actor_source\"", "\"client\"",
-                "\"interaction\"", "\"rtype\"", "\"id\"", "\"version_id\"", "\"outcome\"",
-                "\"result_count\"", "\"reason\"",
+                "\"ts\"",
+                "\"request_id\"",
+                "\"actor\"",
+                "\"actor_source\"",
+                "\"client\"",
+                "\"interaction\"",
+                "\"rtype\"",
+                "\"id\"",
+                "\"version_id\"",
+                "\"outcome\"",
+                "\"result_count\"",
+                "\"reason\"",
             ]
             .map(String::from)
             .to_vec();
@@ -1279,8 +1768,13 @@ impl OracleStore {
                 Bound::I64(rec.result_count),
                 Bound::Str(rec.audit.reason.clone()),
             ];
-            insert_row(&conn, &format!("{s}.\"fhir_oracle_access_log\""), &cols, &vals)
-                .map_err(|e| StoreError::Other(format!("log_access: {e}")))?;
+            insert_row(
+                &conn,
+                &format!("{s}.\"fhir_oracle_access_log\""),
+                &cols,
+                &vals,
+            )
+            .map_err(|e| StoreError::Other(format!("log_access: {e}")))?;
             conn.commit().map_err(db_err)?;
             Ok(())
         })
@@ -1309,8 +1803,13 @@ impl OracleStore {
         tokio::task::spawn_blocking(move || {
             let conn = pool.get().map_err(db_err)?;
             let log = qualified(&map.schema, "fhir_oracle_access_log");
-            let row = conn.query_row(&format!("SELECT COUNT(*) FROM {log}"), &[]).map_err(db_err)?;
-            Ok(row.get::<usize, Option<i64>>(0).unwrap_or(None).unwrap_or(0))
+            let row = conn
+                .query_row(&format!("SELECT COUNT(*) FROM {log}"), &[])
+                .map_err(db_err)?;
+            Ok(row
+                .get::<usize, Option<i64>>(0)
+                .unwrap_or(None)
+                .unwrap_or(0))
         })
         .await
         .map_err(join_err)?
@@ -1332,7 +1831,10 @@ impl OracleStore {
         count: i64,
         offset: i64,
     ) -> Result<Vec<String>, StoreError> {
-        Ok(self.search_page(rtype, params, count, offset, &[], false, None).await?.ids)
+        Ok(self
+            .search_page(rtype, params, count, offset, &[], false, None)
+            .await?
+            .ids)
     }
 
     /// A page plus, optionally, the total.
@@ -1349,7 +1851,8 @@ impl OracleStore {
         sort: &[crate::oracle_search::SortKey],
         want_total: bool,
     ) -> Result<crate::SearchOutcome, StoreError> {
-        self.search_page(rtype, params, count, offset, sort, want_total, None).await
+        self.search_page(rtype, params, count, offset, sort, want_total, None)
+            .await
     }
 
     /// A page, with an optional keyset cursor.
@@ -1380,15 +1883,24 @@ impl OracleStore {
                 .get(&rtype)
                 .ok_or_else(|| StoreError::Unsupported(format!("unknown resource type {rtype}")))?;
             let q = crate::oracle_search::build_search_sql(
-                &map, rm, &params, count, offset, &sort, after_id.as_deref(),
+                &map,
+                rm,
+                &params,
+                count,
+                offset,
+                &sort,
+                after_id.as_deref(),
             )?;
             let conn = pool.get().map_err(db_err)?;
 
             let total = if want_total {
-                let binds: Vec<crate::oracle_search::Bind> = q.binds.iter().take(q.count_binds).cloned().collect();
+                let binds: Vec<crate::oracle_search::Bind> =
+                    q.binds.iter().take(q.count_binds).cloned().collect();
                 let params: Vec<Bound> = binds.into_iter().map(bind_to_bound).collect();
                 let refs: Vec<&dyn ToSql> = params.iter().map(|b| b as &dyn ToSql).collect();
-                let row = conn.query_row(&q.count_sql, &refs).map_err(|e| StoreError::Other(format!("count: {e}\n{}", q.count_sql)))?;
+                let row = conn
+                    .query_row(&q.count_sql, &refs)
+                    .map_err(|e| StoreError::Other(format!("count: {e}\n{}", q.count_sql)))?;
                 row.get::<usize, Option<i64>>(0).unwrap_or(None)
             } else {
                 None
@@ -1396,11 +1908,17 @@ impl OracleStore {
 
             let params: Vec<Bound> = q.binds.iter().cloned().map(bind_to_bound).collect();
             let refs: Vec<&dyn ToSql> = params.iter().map(|b| b as &dyn ToSql).collect();
-            let rows = conn.query(&q.sql, &refs).map_err(|e| StoreError::Other(format!("search: {e}\n{}", q.sql)))?;
+            let rows = conn
+                .query(&q.sql, &refs)
+                .map_err(|e| StoreError::Other(format!("search: {e}\n{}", q.sql)))?;
             let mut ids = Vec::new();
             for row in rows {
                 let row = row.map_err(|e| StoreError::Other(format!("search: {e}\n{}", q.sql)))?;
-                ids.push(row.get::<usize, Option<String>>(0).unwrap_or(None).unwrap_or_default());
+                ids.push(
+                    row.get::<usize, Option<String>>(0)
+                        .unwrap_or(None)
+                        .unwrap_or_default(),
+                );
             }
             Ok(crate::SearchOutcome { ids, total })
         })
@@ -1496,7 +2014,9 @@ fn null_for_ty(ty: ColTy) -> Bound {
         ColTy::Digest => Bound::Bytes(None),
         ColTy::Timestamptz => Bound::Timestamp(None),
         ColTy::Date => Bound::CalDate(None),
-        ColTy::Numeric | ColTy::Text | ColTy::TextC | ColTy::TextIdx | ColTy::Jsonb => Bound::Str(None),
+        ColTy::Numeric | ColTy::Text | ColTy::TextC | ColTy::TextIdx | ColTy::Jsonb => {
+            Bound::Str(None)
+        }
     }
 }
 
@@ -1513,7 +2033,12 @@ fn null_for_ty(ty: ColTy) -> Bound {
 /// string removes the chance of qualifying twice — every caller now builds
 /// its own target the same way, rather than this function guessing which of
 /// two arguments already carries the schema.
-fn insert_row(conn: &Connection, target: &str, cols: &[String], vals: &[Bound]) -> Result<(), StoreError> {
+fn insert_row(
+    conn: &Connection,
+    target: &str,
+    cols: &[String],
+    vals: &[Bound],
+) -> Result<(), StoreError> {
     let placeholders: Vec<String> = (1..=vals.len()).map(|i| format!(":{i}")).collect();
     let sql = format!(
         "INSERT INTO {target} ({}) VALUES ({})",
@@ -1558,11 +2083,19 @@ fn parse_ords(s: &str) -> Result<Vec<i16>, StoreError> {
     }
     inner
         .split(',')
-        .map(|p| p.parse::<i16>().map_err(|e| StoreError::Other(format!("bad ords {s:?}: {e}"))))
+        .map(|p| {
+            p.parse::<i16>()
+                .map_err(|e| StoreError::Other(format!("bad ords {s:?}: {e}")))
+        })
         .collect()
 }
 
-fn leaf_from_cols(kind: &str, text: Option<String>, num: Option<String>, b: Option<bool>) -> fhir_oracle_map::value::LeafVal {
+fn leaf_from_cols(
+    kind: &str,
+    text: Option<String>,
+    num: Option<String>,
+    b: Option<bool>,
+) -> fhir_oracle_map::value::LeafVal {
     use fhir_oracle_map::value::LeafVal;
     match kind {
         "s" => LeafVal::Str(text.unwrap_or_default()),
@@ -1576,7 +2109,10 @@ fn leaf_from_cols(kind: &str, text: Option<String>, num: Option<String>, b: Opti
 /// stores (`M14.13`), not `VARCHAR2` — mirrors `fhir-mssql`'s `VARBINARY`
 /// choice and its own `ords_bytes_to_str`.
 fn ords_bytes_to_string(row: &Row, idx: usize) -> Result<String, StoreError> {
-    let bytes: Vec<u8> = row.get::<usize, Option<Vec<u8>>>(idx).unwrap_or(None).unwrap_or_default();
+    let bytes: Vec<u8> = row
+        .get::<usize, Option<Vec<u8>>>(idx)
+        .unwrap_or(None)
+        .unwrap_or_default();
     String::from_utf8(bytes).map_err(|e| StoreError::Other(format!("ords not utf8: {e}")))
 }
 
@@ -1589,8 +2125,14 @@ fn ords_bytes_to_string(row: &Row, idx: usize) -> Result<String, StoreError> {
 /// `Err` rather than panicking on its own mismatch, which is unverified.
 fn cell_text(row: &Row, idx: usize, ty: ColTy) -> Result<Option<String>, StoreError> {
     match ty {
-        ColTy::Bool => Ok(row.get::<usize, Option<i64>>(idx).map_err(db_err)?.map(|v| (v != 0).to_string())),
-        ColTy::Int | ColTy::BigInt => Ok(row.get::<usize, Option<i64>>(idx).map_err(db_err)?.map(|v| v.to_string())),
+        ColTy::Bool => Ok(row
+            .get::<usize, Option<i64>>(idx)
+            .map_err(db_err)?
+            .map(|v| (v != 0).to_string())),
+        ColTy::Int | ColTy::BigInt => Ok(row
+            .get::<usize, Option<i64>>(idx)
+            .map_err(db_err)?
+            .map(|v| v.to_string())),
         ColTy::Digest => Ok(row
             .get::<usize, Option<Vec<u8>>>(idx)
             .map_err(db_err)?
@@ -1655,10 +2197,16 @@ fn hist_entry(r: &Row) -> Result<crate::HistEntry, StoreError> {
         .unwrap_or(None)
         .map(|d| d.format("%Y-%m-%dT%H:%M:%S%.6f").to_string())
         .unwrap_or_default();
-    let op: String = r.get::<usize, Option<String>>(2).unwrap_or(None).unwrap_or_default();
+    let op: String = r
+        .get::<usize, Option<String>>(2)
+        .unwrap_or(None)
+        .unwrap_or_default();
     let raw: Option<String> = r.get(3).unwrap_or(None);
     let resource = match raw {
-        Some(t) => Some(serde_json::from_str(&t).map_err(|e| StoreError::Other(format!("history {version_id}: {e}")))?),
+        Some(t) => Some(
+            serde_json::from_str(&t)
+                .map_err(|e| StoreError::Other(format!("history {version_id}: {e}")))?,
+        ),
         None => None,
     };
     Ok(crate::HistEntry {
@@ -1667,4 +2215,72 @@ fn hist_entry(r: &Row) -> Result<crate::HistEntry, StoreError> {
         op: op.chars().next().unwrap_or('?'),
         resource,
     })
+}
+
+/// Diff the installed map against the current one, by name, across all
+/// resources. A column whose *type* changed is neither additive nor
+/// destructive: it is an error, because a type change means the shred writes
+/// a different value shape and rewriting stored data is a migration somebody
+/// must design (`L12`). `DROP TABLE … CASCADE CONSTRAINTS` makes drop order
+/// irrelevant on this engine — the clause drops referencing constraints with
+/// the table, unlike SQL Server's error 3726 (`M14.36` there).
+fn diff_maps(map: &RelMap, old_map: &RelMap) -> Result<(Vec<String>, Vec<String>), StoreError> {
+    use std::collections::{HashMap, HashSet};
+    let s = &map.schema;
+    let esc = quote_ident(s);
+    let (mut adds, mut destructive) = (Vec::new(), Vec::new());
+    let mut old_tables: HashMap<&str, &fhir_oracle_map::model::Table> = HashMap::new();
+    for rm in old_map.resources.values() {
+        for t in &rm.tables {
+            old_tables.insert(t.name.as_str(), t);
+        }
+    }
+    let mut new_names: HashSet<&str> = HashSet::new();
+    for rm in map.resources.values() {
+        for t in &rm.tables {
+            new_names.insert(t.name.as_str());
+            let Some(old_t) = old_tables.get(t.name.as_str()) else {
+                adds.push(fhir_oracle_map::ddl::create_table(s, rm, t));
+                continue;
+            };
+            let old_cols: HashMap<&str, ColTy> =
+                old_t.cols.iter().map(|c| (c.name.as_str(), c.ty)).collect();
+            let new_cols: HashSet<&str> = t.cols.iter().map(|c| c.name.as_str()).collect();
+            for c in &t.cols {
+                match old_cols.get(c.name.as_str()) {
+                    None => adds.push(format!(
+                        "ALTER TABLE {esc}.{} ADD ({} {})",
+                        quote_ident(&t.name),
+                        quote_ident(&c.name),
+                        fhir_oracle_map::ddl::col_sql(c.ty)
+                    )),
+                    Some(old_ty) if *old_ty != c.ty => {
+                        return Err(StoreError::Other(format!(
+                            "column {}.{} changed type {:?} → {:?}; manual migration required",
+                            t.name, c.name, old_ty, c.ty
+                        )));
+                    }
+                    Some(_) => {}
+                }
+            }
+            for name in old_cols.keys() {
+                if !new_cols.contains(name) {
+                    destructive.push(format!(
+                        "ALTER TABLE {esc}.{} DROP COLUMN {}",
+                        quote_ident(&t.name),
+                        quote_ident(name)
+                    ));
+                }
+            }
+        }
+    }
+    for name in old_tables.keys() {
+        if !new_names.contains(name) {
+            destructive.push(format!(
+                "DROP TABLE {esc}.{} CASCADE CONSTRAINTS",
+                quote_ident(name)
+            ));
+        }
+    }
+    Ok((adds, destructive))
 }

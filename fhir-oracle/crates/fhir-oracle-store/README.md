@@ -15,9 +15,10 @@ Part of **`fhir-oracle`**, which stores FHIR R3, R4 and R5 resources in Oracle D
 > **What is still missing:** `R4.5` (snapshot reads under concurrent
 > writers) has no working mechanism — the one candidate this port's annex
 > named was tried live and removed after it broke every read (`ORA-01466`).
-> There is no concurrency test verifying `H5.4` under contention, no
-> redaction test, and no `upgrade`/`backfill_norm`. Needs Oracle Instant
-> Client on the host to run at all — see the port README.
+> There is no concurrency test verifying `H5.4` under contention and no
+> redaction test. (`upgrade`/`backfill_norm` left this list 2026-08-09 —
+> `tests/upgrade.rs`, 9 live tests, closing **F-15**'s last port.) Needs
+> Oracle Instant Client on the host to run at all — see the port README.
 
 ## What is here
 

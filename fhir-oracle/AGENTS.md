@@ -48,7 +48,11 @@ schema-qualification bug (`ORA-00926`); a timestamp-binding bug
 Conformance level moved from Scaffold to **Store**. Not yet Reference: no
 `concurrency.rs` verifies `H5.4` under contention (the `SELECT … FOR UPDATE`
 mechanism is present, untested against racing writers), no `redaction.rs`,
-no `upgrade`/`backfill_norm`, and `R4.5` has no working answer at all. The
+and `R4.5` has no working answer at all. (`upgrade`/`backfill_norm` left
+this list 2026-08-09: `tests/upgrade.rs`, 9 live tests — resumable DDL
+`M14.35`, chunked meta `M14.36`, ROWID-keyset backfill `M14.37` — closing
+**F-15**'s last port. Run the live suite with `--test-threads=1`: every
+test shares the one uppercase `R5` schema, `M14.5`.) The
 eleven MySQL-asserting tests in `ddl.rs` are still `#[ignore]`d and still
 need replacing (`M14.25`, `T11.14`).
 

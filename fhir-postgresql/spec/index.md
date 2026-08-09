@@ -62,9 +62,9 @@ the spec: the `jsonb` binding, and a TLS default that does not verify.
   function that nothing calls, a residue of the pre-`P6.6` design that `L3`
   prohibits. Recorded as `M14.21`.
 - **F-02** — shared with the other ports; see the register. **F-11** is
-  resolved (monorepo merge, one remote) and **F-15** is closed everywhere it
-  can be — `upgrade`/`backfill_norm` exist in sqlite, mysql, mariadb and
-  mssql; oracle has no `upgrade` yet.
+  resolved (monorepo merge, one remote) and **F-15** is closed on all six
+  ports — `upgrade`/`backfill_norm` exist everywhere, oracle's arriving
+  last (2026-08-09).
 - **F-14** — no dialect annex. **Fixed:** the annex now exists.
 
 This port is Reference level because its test suite substantiates it:

@@ -37,7 +37,11 @@ pub type OraclePool = Arc<Pool>;
 /// # Errors
 /// If the pool cannot be built — including, on this host, "library not
 /// loaded" for `libclntsh`, since no Oracle Instant Client is installed.
-pub fn connect_pool(username: &str, password: &str, connect_string: &str) -> Result<OraclePool, crate::StoreError> {
+pub fn connect_pool(
+    username: &str,
+    password: &str,
+    connect_string: &str,
+) -> Result<OraclePool, crate::StoreError> {
     let mut builder = PoolBuilder::new(username, password, connect_string);
     // Small and fixed rather than tuned: this is unverified code with no
     // engine to tune against, and a wrong guess here is a performance

@@ -57,7 +57,13 @@ Not "planned and unstarted" — **absent**.
 - [ ] **A concurrency test.** `H5.4` (serialized `version_id`) is implemented
   via `SELECT … FOR UPDATE`, but no test races concurrent writers against it
   the way `fhir-mssql`'s and `fhir-mysql`'s `concurrency.rs` do.
-- [ ] **A redaction test**, `upgrade`, `backfill_norm`, or benchmarks.
+- [ ] **A redaction test**, or benchmarks.
+- [x] **`upgrade` / `backfill_norm`** — *done 2026-08-09* (**F-15**'s last
+  port, **F-47** step 1). Diffs the stored map asset, applies resumable DDL
+  (`M14.35`), chunks the meta asset past `ORA-01461` (`M14.36`), backfills
+  by ROWID keyset because a `CLOB` source cannot be value-compared
+  (`M14.37`). Live-verified: `tests/upgrade.rs`, 9 tests, mutation-checked
+  (skipping the backfill fails the seeded-patient search).
 - [ ] **A transport-security decision** (`O10.7`, `M14.22`) — the live tests
   connect over a plain local port with no encryption configured either way.
 - [ ] **A live CI gate.** The Oracle job was removed rather than faked
@@ -80,8 +86,9 @@ here.
 2. `concurrency.rs`, racing writers against `put`/`delete` to verify `H5.4`
    under contention, not just in sequence.
 3. `redaction.rs`.
-4. `upgrade` / `backfill_norm`.
-5. The transport-security decision (`O10.7`, `M14.22`).
+4. The transport-security decision (`O10.7`, `M14.22`).
+   (`upgrade`/`backfill_norm` was this list's item 4 until 2026-08-09 —
+   done, see above.)
 
 The [conformance matrix](../spec/databases/conformance-matrix.md) is the status
 document to trust. This file is a plan; it is not evidence (`C0.9`).

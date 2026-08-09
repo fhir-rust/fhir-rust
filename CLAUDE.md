@@ -131,8 +131,9 @@ Neither is, any longer.** Both reached **Store** level this project
 `gvenzl/oracle-free` respectively. Do not describe either as "no
 implementation" — check the [conformance
 matrix](spec/databases/conformance-matrix.md) for what actually remains
-(both still lack `upgrade`/`backfill_norm`; `fhir-oracle` additionally has
-no working `R4.5` mechanism and no concurrency test). Until 2026-07-31 both
+(as of 2026-08-09 both have `upgrade`/`backfill_norm` — **F-15** closed on
+all six ports; `fhir-oracle` still has no working `R4.5` mechanism and no
+concurrency test). Until 2026-07-31 both
 also provisioned **MySQL** in CI and in `scripts/db.sh` while invoking a
 test target that did not exist, so their database jobs could not pass at
 all (**F-06**, fixed): `fhir-mssql` now provisions SQL Server 2022 and fails
@@ -170,10 +171,10 @@ The shared core makes small changes large. A one-line fix in `fold.rs` is:
 1. six identical edits (rule 2),
 2. a spec check — does it change `L4`/`L6`, and is that a data migration
    (`L12`, `O10.4a`)?
-3. a backfill story per port — check the [conformance
-   matrix](spec/databases/conformance-matrix.md)'s `init --upgrade` row for
-   which ports currently have no `upgrade` at all (**F-15**; shrinking, not
-   fixed everywhere — verify before citing a count),
+3. a backfill story per port — all six ports have `upgrade`/`backfill_norm`
+   as of 2026-08-09 (**F-15** closed), so the question is each port's
+   dialect story (one transaction on mssql, resumable-rerunnable on oracle,
+   reported-partial on mysql/mariadb), not whether one exists,
 4. a mutation-verified test (`T11.10`, `L16`).
 
 Say so before starting, rather than discovering it at step 3.
