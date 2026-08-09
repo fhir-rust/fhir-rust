@@ -44,9 +44,13 @@ ports this service sits over.
   store that can hold one transaction across the operations, or a
   documented refusal.
 - [ ] **Type-level and system-level `_history`.** Only instance-level exists.
-- [ ] **`$export`** (`SV2.15`). Recorded as not provided; one of **F-58**'s
-  five gaps and one of the three §13 compliance rows that depends on this
-  crate.
+- [ ] **`$export`** (`SV2.15`). Recorded as not provided; the last F-58
+  feature gap and one of the three §13 compliance rows that depends on this
+  crate. **Design drafted with a recommendation** — [`plan.md`](plan.md):
+  defer until a deployment needs bulk egress (option C), then build the
+  conformant async slice on Loco's worker queue (option A); a synchronous
+  endpoint under the `$export` name is rejected outright. Awaiting the owner
+  decision.
 - [x] **Listener TLS posture** (`SV3.11`) — *stated and enforced 2026-08-07*.
   The requirement now lives in this crate's own spec (service obligations
   moved here with the `SV` restatement, not §10): loopback bind, or TLS

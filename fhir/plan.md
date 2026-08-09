@@ -45,9 +45,23 @@ Tracked as discrete tasks in [`tasks.md`](tasks.md); the plan-level view:
    completed 2026-08-09 (T11). What remains from the old plan is only R4B.
 3. **R4B** (spec 12 future work) — the only FHIR release published by HL7 and
    not modelled here. The generator and the adding-a-release procedure
-   (`doc/adding-a-release.md`) are proven by five releases; R4B is a
-   turn-the-crank exercise plus a name decision (`fhir-release-4b` does not
-   fit the numeric reservation scheme).
+   (`doc/adding-a-release.md`, budgeted at roughly an hour) are proven by
+   five releases; the definitions bundle is one documented download
+   (`hl7.org/fhir/R4B/definitions.json.zip` — not vendored yet). What blocks
+   it is the **name decision**, drafted here for the owner:
+   - *(a)* `fhir-release-4b`, feature `r4b`, module `fhir::r4b` — breaks the
+     numeric reservation scheme's pattern but says exactly what it is;
+     crates.io accepts the name, and none of the reservation crates
+     (`-1`, `-7`…`-10`) is disturbed. **Recommended**: the scheme exists to
+     reserve future numbers, not to forbid HL7's own naming, and `4b` is
+     what every FHIR implementer will search for.
+   - *(b)* Skip R4B entirely, recorded: it is R4 plus a small delta
+     (the `Medicinal*`→`…Definition` swap and a handful of resources), and
+     `fhir::convert` already moves documents between the neighbours it
+     shares. Costs nothing; leaves the one HL7-published gap standing.
+   - Not an option: shoehorning it into a numeric slot (`fhir-release-7` is
+     a reservation for a future *R7*, and `C0.5`-style permanence applies to
+     what the names promise).
 4. ~~mdBook deploy~~ — closed by decision (T46, 2026-08-06): the website is
    the published documentation surface; the book stays a CI-checked,
    read-from-checkout artifact. (Proptest closed the same day, T48 —

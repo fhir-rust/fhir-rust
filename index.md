@@ -149,6 +149,7 @@ the shared-core gate did not watch it (**F-45**).
 | | |
 | --- | --- |
 | [README](fhir-loco/README.md) | endpoints, running it, what belongs where |
+| [plan](fhir-loco/plan.md) | its design decisions, and the open ones (`$export`) |
 | [tasks](fhir-loco/tasks.md) | its work breakdown |
 | Specification | [`fhir-loco/spec/index.md`](fhir-loco/spec/index.md) — 4 sections, ids `SV1.x`–`SV4.x` |
 
