@@ -74,12 +74,14 @@ Not "planned and unstarted" — **absent**.
 
 - [ ] **`conditional_create_audited`, `put_audited`, `transact_audited`.** No
   optimistic concurrency, no conditional operations, no atomic Bundles.
-- [ ] **`path` to `NVARCHAR(path_bound)`** (`M14.37`, `U12a`) — decided
-  2026-08-09, corrected 2026-08-10. **Fresh installs bounded since F-47
-  step 3 (2026-08-10)**; what remains is step 4, converting existing
-  installs: pre-check `MAX(LEN)`, then `ALTER COLUMN` inside the
-  transactional upgrade. Until then an upgraded-in-place deployment keeps
-  `NVARCHAR(MAX)` and `U12` is not claimed for it.
+- [x] **`path` to `NVARCHAR(path_bound)`** (`M14.37`, `U12a`) — *done
+  2026-08-10* (**F-47** steps 3–4). Fresh installs bounded by
+  `create_table`; existing installs converted by `upgrade`
+  (`convert_path_columns`: catalog-driven, data pre-check, `ALTER COLUMN`
+  inside the transaction; widening additive, narrowing refused).
+  Live-verified: `tests/upgrade.rs` 12 tests incl. the three conversion
+  tests, mutation-checked (disabling the conversion fails the pre-U12a
+  test). `U12` now holds for `path` here; the matrix flip is step 6.
 - [ ] **Verification against full SQL Server.** Only `azure-sql-edge`
   (`M14.31`) — an arm64 subset of the product.
 - [ ] **`O10.7`.** The mechanism is confirmed live (`tests/ssl_live.rs`):

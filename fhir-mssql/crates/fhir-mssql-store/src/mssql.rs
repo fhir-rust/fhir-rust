@@ -405,11 +405,12 @@ impl MsSqlStore {
                 &destructive,
             )
             .await;
-        match result {
-            Ok(()) => {
+        let converted = match result {
+            Ok(n) => {
                 conn.simple_query("COMMIT TRANSACTION")
                     .await
                     .map_err(db_err)?;
+                n
             }
             Err(e) => {
                 // Transactional DDL: a rollback here genuinely undoes
@@ -417,12 +418,12 @@ impl MsSqlStore {
                 let _ = conn.simple_query("ROLLBACK TRANSACTION").await;
                 return Err(e);
             }
-        }
+        };
         drop(conn);
 
         let folded = self.backfill_norm().await?;
         Ok(crate::UpgradeReport {
-            additive: n_add,
+            additive: n_add + converted,
             destructive: n_drop,
             folded,
         })
@@ -441,7 +442,7 @@ impl MsSqlStore {
         checksum: &str,
         adds: &[String],
         destructive: &[String],
-    ) -> Result<(), StoreError> {
+    ) -> Result<usize, StoreError> {
         apply_stmts(conn, adds).await?;
 
         // Reconciliation: objects the per-resource diff cannot see. Computed
@@ -493,6 +494,11 @@ impl MsSqlStore {
         apply_stmts(conn, &reconcile).await?;
         apply_stmts(conn, destructive).await?;
 
+        // M14.37 (F-47 step 4): inside the transaction, so a refusal undoes
+        // the adds too — never a half-upgraded schema with an unconverted
+        // path.
+        let converted = self.convert_path_columns(conn, schema_name).await?;
+
         let new_hex = hex_encode(
             &self
                 .map
@@ -511,7 +517,104 @@ impl MsSqlStore {
             .await
             .map_err(db_err)?;
         }
-        Ok(())
+        Ok(converted)
+    }
+
+    /// `M14.37` (**F-47** step 4): bring every installed `[path]` column to
+    /// the map's recorded `path_bound` (`U12a`). Catalog-driven rather than
+    /// asset-driven — the catalog is what an existing deployment actually
+    /// has — so a second pass finds nothing left to convert, and a fresh
+    /// post-U12a install (already bounded by `create_table`) converts
+    /// nothing on its first upgrade either.
+    ///
+    /// Narrowing from `NVARCHAR(MAX)` pre-checks the data and refuses,
+    /// naming the rows, if any stored path exceeds the bound — such rows
+    /// predate the bound (`U12a` arrived with F-47) and rewriting them is a
+    /// migration somebody must design. Widening a bounded column is
+    /// additive and needs no check. Narrowing a *bounded* column is refused
+    /// outright: `U12a` says a recorded bound never shrinks in place.
+    async fn convert_path_columns(
+        &self,
+        conn: &mut pool::Connection,
+        schema_name: &str,
+    ) -> Result<usize, StoreError> {
+        let bound = self.map.path_bound();
+        if bound == 0 {
+            return Ok(0);
+        }
+        let rows = conn
+            .query(
+                "SELECT t.name, c.max_length FROM sys.columns c \
+                 JOIN sys.tables t ON t.object_id = c.object_id \
+                 JOIN sys.schemas s ON s.schema_id = t.schema_id \
+                 WHERE s.name = @P1 AND c.name = 'path'",
+                &[&schema_name],
+            )
+            .await
+            .map_err(db_err)?
+            .into_first_result()
+            .await
+            .map_err(db_err)?;
+        let mut todo: Vec<String> = Vec::new();
+        for r in &rows {
+            let Some(table) = r.get::<&str, _>(0) else {
+                continue;
+            };
+            // sys.columns.max_length is bytes: -1 for MAX, two per
+            // character for NVARCHAR(n).
+            let max_length: i16 = r.get(1).unwrap_or(-1);
+            let installed = if max_length < 0 {
+                None
+            } else {
+                Some(u32::from(max_length.unsigned_abs()) / 2)
+            };
+            match installed {
+                Some(n) if n == bound => {}
+                Some(n) if n > bound => {
+                    return Err(StoreError::Other(format!(
+                        "narrowing [{table}].[path] from NVARCHAR({n}) to \
+                         NVARCHAR({bound}) is a manual migration (U12a): a \
+                         recorded bound never shrinks in place"
+                    )));
+                }
+                _ => todo.push(table.to_string()),
+            }
+        }
+        let converted = todo.len();
+        for table in &todo {
+            let tq = qualified(schema_name, table);
+            let over = conn
+                .query(
+                    format!(
+                        "SELECT COUNT(*), MAX(CAST(LEN([path]) AS INT)) \
+                         FROM {tq} WHERE LEN([path]) > @P1"
+                    ),
+                    &[&i64::from(bound)],
+                )
+                .await
+                .map_err(db_err)?
+                .into_row()
+                .await
+                .map_err(db_err)?;
+            if let Some(r) = over {
+                let n: i32 = r.get(0).unwrap_or(0);
+                if n > 0 {
+                    let longest: i32 = r.get(1).unwrap_or(0);
+                    return Err(StoreError::Other(format!(
+                        "{tq} holds {n} row(s) whose [path] exceeds \
+                         path_bound {bound} (longest: {longest} characters); \
+                         they predate the bound and need a manual migration \
+                         (U12a)"
+                    )));
+                }
+            }
+            let stmt = format!(
+                "ALTER TABLE {tq} ALTER COLUMN [path] NVARCHAR({bound}) \
+                 NOT NULL"
+            );
+            apply_stmts(conn, std::slice::from_ref(&stmt)).await?;
+        }
+        Ok(converted)
     }
 
     /// Table names already present in this schema, so the schema-wide

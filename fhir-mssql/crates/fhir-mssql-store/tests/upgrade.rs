@@ -371,3 +371,162 @@ async fn upgrading_an_uninstalled_schema_says_it_is_not_installed() {
         .expect_err("nothing to upgrade");
     assert!(err.to_string().contains("not installed"), "got: {err}");
 }
+
+/// The map as a pre-`U12a` generator wrote it: no recorded `path_bound`,
+/// so `create_table` emits the legacy `NVARCHAR(MAX)` (`M14.37`).
+fn pre_bound(m: &RelMap) -> RelMap {
+    let mut m = m.clone();
+    for rm in m.resources.values_mut() {
+        rm.path_bound = 0;
+    }
+    m
+}
+
+/// **F-47 step 4.** A deployment installed before `U12a` has `[path]` at
+/// `NVARCHAR(MAX)`; the upgrade converts every such column to the map's
+/// recorded bound inside its transaction, and the stored rows survive.
+#[tokio::test]
+async fn a_pre_u12a_install_gets_its_path_columns_converted() {
+    let Some(full) = sampled("u12a", &["Patient"]) else {
+        eprintln!("skipping: no r5 relmap asset");
+        return;
+    };
+    let Some(dsn) = dsn() else {
+        eprintln!("skipping: set FHIR_MSSQL_TEST_DSN to run");
+        return;
+    };
+    let store = MsSqlStore::connect(&dsn, Arc::new(pre_bound(&full)))
+        .await
+        .expect("connect");
+    store.drop_schema().await.expect("drop");
+    store.init("old-sum").await.expect("init old");
+    store
+        .put(
+            &json!({"resourceType": "Patient", "id": "keep",
+                    "extension": [{"url": "http://x.example/e",
+                                   "valueString": "kept"}]}),
+            &fhir_mssql_store::Audit::default(),
+        )
+        .await
+        .expect("seed");
+
+    let store = MsSqlStore::connect(&dsn, Arc::new(full))
+        .await
+        .expect("connect");
+    let report = store.upgrade("new-sum", false).await.expect("upgrade");
+    assert!(
+        report.additive > 0,
+        "the path conversions count as additive work"
+    );
+
+    // The rows survived the ALTER, the extension row included.
+    let got = store
+        .get("Patient", "keep")
+        .await
+        .expect("get")
+        .expect("kept");
+    assert_eq!(got["extension"][0]["valueString"], "kept");
+
+    // Catalog-driven, so idempotent — and a zero here is also the proof the
+    // first pass really converted rather than merely counted: an unconverted
+    // column would be found and counted again.
+    let again = store.upgrade("new-sum-2", false).await.expect("second");
+    assert_eq!(again.additive, 0, "a converted schema reconverts nothing");
+}
+
+/// A stored path longer than the bound predates the bound by definition
+/// (`U12a` shreds refuse anything longer). The conversion refuses by name,
+/// the transaction undoes the whole upgrade, and removing the offending row
+/// lets the same upgrade succeed.
+#[tokio::test]
+async fn stored_paths_past_the_bound_refuse_the_conversion() {
+    let Some(full) = sampled("u12b", &["Patient"]) else {
+        eprintln!("skipping: no r5 relmap asset");
+        return;
+    };
+    let Some(dsn) = dsn() else {
+        eprintln!("skipping: set FHIR_MSSQL_TEST_DSN to run");
+        return;
+    };
+    let store = MsSqlStore::connect(&dsn, Arc::new(pre_bound(&full)))
+        .await
+        .expect("connect");
+    store.drop_schema().await.expect("drop");
+    store.init("old-sum").await.expect("init old");
+    store
+        .put(
+            &json!({"resourceType": "Patient", "id": "keep"}),
+            &fhir_mssql_store::Audit::default(),
+        )
+        .await
+        .expect("seed");
+    // A row only a pre-U12a deployment could hold: a 500-character path.
+    store
+        .exec_raw(
+            "INSERT INTO [u12b].[patient_ext] \
+             ([key_hash], [rid], [path], [ords], [modifier], [ext_ord], \
+              [url], [leaf], [v_kind], [v_text]) VALUES (\
+             0x0101010101010101010101010101010101010101010101010101010101010101, \
+             'keep', REPLICATE('p', 500), 0x, 0, 1, \
+             'http://x.example/e', 'valueString', 's', 'v')",
+        )
+        .await
+        .expect("plant the over-bound row");
+
+    let store = MsSqlStore::connect(&dsn, Arc::new(full))
+        .await
+        .expect("connect");
+    let err = store
+        .upgrade("new-sum", false)
+        .await
+        .expect_err("an over-bound stored path must refuse the conversion");
+    let msg = err.to_string();
+    assert!(
+        msg.contains("path_bound") && msg.contains("manual migration"),
+        "the refusal must name the bound and the remedy: {msg}"
+    );
+
+    // Rolled back, not half-applied: after removing the row, the identical
+    // call succeeds and performs the conversions.
+    store
+        .exec_raw("DELETE FROM [u12b].[patient_ext] WHERE LEN([path]) > 384")
+        .await
+        .expect("remove the offending row");
+    let report = store
+        .upgrade("new-sum", false)
+        .await
+        .expect("the rolled-back upgrade must succeed after cleanup");
+    assert!(report.additive > 0, "the conversions ran this time");
+}
+
+/// `U12a`: a recorded bound never shrinks in place — a smaller bound is a
+/// manual migration, refused before any DDL runs.
+#[tokio::test]
+async fn narrowing_a_bounded_path_refuses() {
+    let Some(full) = sampled("u12c", &["Patient"]) else {
+        eprintln!("skipping: no r5 relmap asset");
+        return;
+    };
+    let Some(dsn) = dsn() else {
+        eprintln!("skipping: set FHIR_MSSQL_TEST_DSN to run");
+        return;
+    };
+    let store = MsSqlStore::connect(&dsn, Arc::new(full.clone()))
+        .await
+        .expect("connect");
+    store.drop_schema().await.expect("drop");
+    store.init("full-sum").await.expect("init bounded");
+
+    let mut narrower = full;
+    for rm in narrower.resources.values_mut() {
+        rm.path_bound = 128;
+    }
+    let store = MsSqlStore::connect(&dsn, Arc::new(narrower))
+        .await
+        .expect("connect");
+    let err = store
+        .upgrade("narrow-sum", false)
+        .await
+        .expect_err("narrowing a bounded path must refuse");
+    assert!(err.to_string().contains("manual migration"), "got: {err}");
+}

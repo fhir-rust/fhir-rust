@@ -140,7 +140,7 @@ not a code fix).
 | [F-44](#f-44) | Medium | `check-shared-core.sh` aborted under `set -u` on the empty `EXEMPT` array — only reachable once a file diverged | **fixed** |
 | [F-45](#f-45) | Medium | The shared-core gate stopped at the store; `chain.rs` was 618 identical lines duplicated six times, unwatched | **fixed** — extracted to `fhir-store`, all six rewired |
 | [F-46](#f-46) | Medium | `U11` cannot reach the extension and deep tables: they have no columns in the map, and the cheaper workaround contradicts `U2b` | **fixed** 2026-08-02, verified live |
-| [F-47](#f-47) | Low | `path` is bound to unbounded types on mssql and oracle, so `U12` is unsatisfied; fixing it is a physical-schema migration for all six (the `v_kind` half proved moot, 2026-08-10) | open — **migration scheduled 2026-08-09**, six sequenced steps in the entry; steps 1–3 done (oracle's `upgrade` 2026-08-09; the `U12a` bound decision; the six-port shared-core change 2026-08-10 — fresh installs bounded, existing ones await steps 4–5) |
+| [F-47](#f-47) | Low | `path` is bound to unbounded types on mssql and oracle, so `U12` is unsatisfied; fixing it is a physical-schema migration for all six (the `v_kind` half proved moot, 2026-08-10) | open — **migration scheduled 2026-08-09**, six sequenced steps in the entry; steps 1–4 done (oracle's `upgrade`; the `U12a` bound decision; the shared-core change; mssql's live-verified conversion of existing installs 2026-08-10). Step 5 (oracle's conversion) then the close remain |
 | [F-48](#f-48) | Low | the shared-core gate did not watch `gen/tests/`, and could not while its normalization was line-based — rustfmt wraps by crate-name *length* | **fixed** 2026-08-02 — token-based verdict, 75→100 files |
 | [F-49](#f-49) | **High** | No workflow in this repository runs: all 20-odd sit under `<family>/.github/workflows/`, which GitHub does not read. Every "gated in CI" claim is unverified | **fixed** 2026-08-06 — root gates first (`gates.yml`), then every family's CI consolidated to root files with paths filters and working-directory defaults; first hosted run pending a push |
 | [F-50](#f-50) | Medium | The `U2a` reference rule attached an adjunct to `c_url`, which no index uses, while every port indexes `(c_type, c_id)` — 453 of R5's 1,947 search targets unindexable on Oracle | **fixed** 2026-08-02 — all six; gaps now 0 |
@@ -2851,6 +2851,19 @@ is live-verified:
    adjuncts" tail this step first carried is amended, 2026-08-10: no
    search filters `path` yet so the index MAY wait, and `path` never had
    adjuncts to drop.)
+   **Done 2026-08-10**: `convert_path_columns`, catalog-driven (what the
+   deployment actually has, not what the asset says), inside the upgrade
+   transaction. `MAX`→bound converts after a data pre-check that refuses,
+   naming rows and longest length, if anything stored exceeds the bound;
+   widening a bounded column is additive; narrowing one refuses (`U12a`:
+   a recorded bound never shrinks in place); conversions count in
+   `UpgradeReport.additive`. Live-verified against `azure-sql-edge`:
+   `tests/upgrade.rs` grew 9→12 (pre-U12a install converted with data
+   surviving and a second pass converting zero — which doubles as the
+   proof the first pass was real; over-bound row refuses, rolls the whole
+   upgrade back, and succeeds after cleanup; narrowing refuses), full
+   port live suite 36/36 serial, mutation-checked (`T11.10`: disabling
+   the conversion call fails the pre-U12a test).
 5. **`fhir-oracle` conversion path, live-verified**: Oracle cannot alter
    `CLOB` to `VARCHAR2` in place — add-column, copy, drop, rename, each
    statement autocommitting (no transactional DDL, `M14`), with the
