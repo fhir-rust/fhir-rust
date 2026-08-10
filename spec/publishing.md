@@ -31,10 +31,21 @@ name is **`fhir-loco`**. Both names were checked and are unregistered.
 
 | Family | Crates | Names on crates.io |
 | --- | --- | --- |
-| Model (`fhir/`) | 13 | 3 registered under current names; the 11 release crates registered under their **old** names only (see below) |
-| Databases (`fhir-<engine>/`) | 18 | all 18 available |
-| Persistence core (`fhir-store/`) | 1 | available |
-| HTTP surface (`fhir-loco/`) | 1 | available |
+| Model (`fhir/`) | 14 | all under current names since 2026-08-10 (the 11 renamed release crates re-registered; old `fhir-release-*` versions remain, immutable) |
+| Databases (`fhir-<engine>/`) | 18 | **all 18 published at 0.4.0** — measured live 2026-08-10; an earlier revision of this table said "available", which had gone stale |
+| Persistence core (`fhir-store/`) | 1 | **published at 0.1.0** (same correction) |
+| HTTP surface (`fhir-loco/`) | 1 | **published at 0.1.0** (same correction) |
+
+The database-family correction was found the hard way: the first hosted CI
+runs (2026-08-10) ran each port's published-divergence gate (`O10.11`,
+**F-35**'s script as a workflow step) and it failed on every crate this
+session touched — the shared-core `path_bound` change alone diverged all six
+`-map` and `-gen` crates from their published 0.4.0. The tree now clears
+every published number again: the eighteen port crates at **0.5.0** in
+lockstep (a public map-model field was added — breaking at 0.x),
+`fhir-store` **0.1.1**, `fhir-loco` **0.2.0**. Publishing those versions
+remains owner-gated; the gate only requires that a *published* version match
+its source, which a bump satisfies.
 
 **The 2026-08-10 rename changed this table's meaning** (owner-directed:
 `fhir-release-N` → `fhir-rN`, matching the module names). Measured live

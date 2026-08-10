@@ -2,7 +2,7 @@
 
 [package]
 name = "fhir-loco"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 license = "MIT OR Apache-2.0 OR BSD-3-Clause OR GPL-2.0-only OR GPL-3.0-only"
 description = "FHIR RESTful API server: Loco.rs, Axum, Tokio and Hyper over the fhir-* relational stores"
@@ -45,10 +45,10 @@ serde_urlencoded = "0.7"
 # The FHIR database crates. Path dependencies to the sibling repos: these are
 # libraries by design (each of those projects dropped its own server and CLI),
 # and this project is the HTTP surface they never had.
-fhir-sqlite-store = { path = "../fhir-sqlite/crates/fhir-sqlite-store", version = "0.4.0" }
-fhir-sqlite-map = { path = "../fhir-sqlite/crates/fhir-sqlite-map", version = "0.4.0" }
-fhir-postgresql-store = { path = "../fhir-postgresql/crates/fhir-postgresql-store", version = "0.4.0" }
-fhir-postgresql-map = { path = "../fhir-postgresql/crates/fhir-postgresql-map", version = "0.4.0" }
+fhir-sqlite-store = { path = "../fhir-sqlite/crates/fhir-sqlite-store", version = "0.5.0" }
+fhir-sqlite-map = { path = "../fhir-sqlite/crates/fhir-sqlite-map", version = "0.5.0" }
+fhir-postgresql-store = { path = "../fhir-postgresql/crates/fhir-postgresql-store", version = "0.5.0" }
+fhir-postgresql-map = { path = "../fhir-postgresql/crates/fhir-postgresql-map", version = "0.5.0" }
 tokio-postgres = "0.7"
 tokio = { version = "1.53", default-features = false, features = [
   "rt-multi-thread",
@@ -79,8 +79,8 @@ pasetors = { version = "0.8", default-features = false, features = ["v4", "std"]
 # Drives the admin Router directly (SV4.3 tests) — already in the tree via axum.
 tower = { version = "0.5", features = ["util"] }
 hex = "0.4"
-fhir-sqlite-map = { path = "../fhir-sqlite/crates/fhir-sqlite-map", version = "0.4.0" }
-fhir-sqlite-store = { path = "../fhir-sqlite/crates/fhir-sqlite-store", version = "0.4.0" }
+fhir-sqlite-map = { path = "../fhir-sqlite/crates/fhir-sqlite-map", version = "0.5.0" }
+fhir-sqlite-store = { path = "../fhir-sqlite/crates/fhir-sqlite-store", version = "0.5.0" }
 loco-rs = { workspace = true, features = ["testing"] }
 serial_test = { version = "3.5.0" }
 rstest = { version = "0.25" }

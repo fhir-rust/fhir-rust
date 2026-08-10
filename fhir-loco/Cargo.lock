@@ -1365,7 +1365,7 @@ checksum = "da7c62ceae207dd37ea5b845da6a0696c799f85e97da1ab5b7910be3c1c80223"
 
 [[package]]
 name = "fhir-loco"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "async-trait",
  "axum",
@@ -1394,7 +1394,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-postgresql-map"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "flate2",
  "serde",
@@ -1406,7 +1406,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-postgresql-store"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "deadpool-postgres",
  "fhir-postgresql-map",
@@ -1430,7 +1430,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-sqlite-map"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "flate2",
  "serde",
@@ -1442,7 +1442,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-sqlite-store"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "fhir-sqlite-map",
  "fhir-store",
@@ -1461,7 +1461,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-store"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "getrandom 0.3.4",
  "hmac 0.12.1",

@@ -10,7 +10,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.4.0"
+version = "0.5.0"
 keywords = ["fhir", "healthcare", "mysql", "hl7", "medical"]
 categories = ["database", "science", "data-structures"]
 edition = "2024"
@@ -19,9 +19,9 @@ repository = "https://github.com/fhir-rust/fhir-rust/"
 rust-version = "1.90"
 
 [workspace.dependencies]
-fhir-mysql-map = { path = "crates/fhir-mysql-map", version = "0.4.0" }
-fhir-mysql-gen = { path = "crates/fhir-mysql-gen", version = "0.4.0" }
-fhir-mysql-store = { path = "crates/fhir-mysql-store", version = "0.4.0" }
+fhir-mysql-map = { path = "crates/fhir-mysql-map", version = "0.5.0" }
+fhir-mysql-gen = { path = "crates/fhir-mysql-gen", version = "0.5.0" }
+fhir-mysql-store = { path = "crates/fhir-mysql-store", version = "0.5.0" }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["arbitrary_precision", "preserve_order"] }
 thiserror = "2"
