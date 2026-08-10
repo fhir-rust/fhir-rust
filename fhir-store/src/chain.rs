@@ -201,7 +201,8 @@ impl ChainKey {
         let Ok(hex) = std::env::var(format!("{prefix}_CHAIN_KEY")) else {
             return Ok(None);
         };
-        let id = std::env::var(format!("{prefix}_CHAIN_KEY_ID")).unwrap_or_else(|_| "k1".to_string());
+        let id =
+            std::env::var(format!("{prefix}_CHAIN_KEY_ID")).unwrap_or_else(|_| "k1".to_string());
         Self::from_hex(&id, &hex).map(Some)
     }
 
