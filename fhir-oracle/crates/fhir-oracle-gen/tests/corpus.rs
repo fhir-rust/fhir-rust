@@ -23,21 +23,29 @@ use serde_json::Value;
 /// "expected a real corpus" rather than skipping. A hardcoded absolute path
 /// makes a test pass, fail, or vanish depending on whose disk it runs on.
 fn corpus_root() -> Option<PathBuf> {
-    let candidates = [
-        std::env::var("FHIR_ORACLE_CORPUS_DIR")
-            .ok()
-            .map(PathBuf::from),
-        Some(workspace_root().join("corpus")),
-        // This monorepo: the model family ships the definitions and the full
-        // example corpus under `<ver>/`. Without this candidate the test
-        // skipped here as well — 7,400 examples that never ran, the same class
-        // of defect as F-39.
-        Some(PathBuf::from(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/../../../fhir/doc/fhir-specifications"
-        ))),
-    ];
-    candidates.into_iter().flatten().find(|p| p.exists())
+    if let Ok(dir) = std::env::var("FHIR_ORACLE_CORPUS_DIR") {
+        // Explicit intent: exists-but-empty fails loudly below.
+        return Some(PathBuf::from(dir));
+    }
+    let fetched = workspace_root().join("corpus");
+    if fetched.exists() {
+        return Some(fetched);
+    }
+    // This monorepo: the model family always ships the *definitions*, but
+    // the example corpora beside them are fetched and git-ignored — so the
+    // directory existing proves nothing. Require at least one example set
+    // before selecting it, or a fresh checkout selects an examples-less
+    // tree and trips the emptiness guard (found by the first hosted CI
+    // run, F-88's cousin). Without this candidate at all, the 7,400 local
+    // examples never ran — the F-39 class; both edges matter.
+    let model = PathBuf::from(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../../fhir/doc/fhir-specifications"
+    ));
+    ["r5", "r4", "r3", "stu3"]
+        .iter()
+        .any(|v| model.join(v).join("fhir-examples-json").exists())
+        .then_some(model)
 }
 
 /// The workspace root, derived from this crate's manifest rather than the
