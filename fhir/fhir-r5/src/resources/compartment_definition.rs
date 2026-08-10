@@ -344,8 +344,8 @@ pub struct CompartmentDefinitionResource {
     pub code_ext: Option<types::Element>,
 
     /// Search Parameter Name, or chained parameters
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub param: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub param: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`param`](Self::param) (FHIR `_param`).
     #[serde(rename = "_param")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

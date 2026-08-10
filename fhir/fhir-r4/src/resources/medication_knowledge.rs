@@ -94,8 +94,8 @@ pub struct MedicationKnowledge {
     pub amount: Option<types::Quantity>,
 
     /// Additional names for a medication
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub synonym: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub synonym: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`synonym`](Self::synonym) (FHIR `_synonym`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_synonym")]
@@ -334,8 +334,8 @@ pub struct MedicationKnowledgeAdministrationGuidelinesPatientCharacteristics {
         Option<MedicationKnowledgeAdministrationGuidelinesPatientCharacteristicsCharacteristic>,
 
     /// The specific characteristic
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub value: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`value`](Self::value) (FHIR `_value`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_value")]
@@ -356,7 +356,7 @@ struct MedicationKnowledgeAdministrationGuidelinesPatientCharacteristicsDe {
         MedicationKnowledgeAdministrationGuidelinesPatientCharacteristicsCharacteristic,
     >,
     #[serde(default)]
-    value: Vec<types::String>,
+    value: ::fhir_core::PrimVec<types::String>,
     #[serde(rename = "_value")]
     #[serde(default)]
     value_ext: Vec<Option<types::Element>>,

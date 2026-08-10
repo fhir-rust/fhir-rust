@@ -151,8 +151,8 @@ pub struct HealthcareService {
     pub eligibility_note_ext: Option<types::Element>,
 
     /// Program Names that categorize the service
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub program_name: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub program_name: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`program_name`](Self::program_name) (FHIR `_programName`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_programName")]
@@ -231,8 +231,8 @@ pub struct HealthcareServiceAvailableTime {
     pub modifier_extension: Vec<types::Extension>,
 
     /// mon | tue | wed | thu | fri | sat | sun
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub days_of_week: Vec<crate::coded::Coded<crate::r3::codes::DaysOfWeek>>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub days_of_week: ::fhir_core::PrimVec<crate::coded::Coded<crate::r3::codes::DaysOfWeek>>,
     /// Primitive extension sibling for [`days_of_week`](Self::days_of_week) (FHIR `_daysOfWeek`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_daysOfWeek")]

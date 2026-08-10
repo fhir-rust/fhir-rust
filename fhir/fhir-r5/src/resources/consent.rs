@@ -271,8 +271,8 @@ pub struct ConsentVerification {
     pub verified_with: Option<types::Reference>,
 
     /// When consent verified
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub verification_date: Vec<types::DateTime>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub verification_date: ::fhir_core::PrimVec<types::DateTime>,
     /// Primitive extension sibling for [`verification_date`](Self::verification_date) (FHIR `_verificationDate`).
     #[serde(rename = "_verificationDate")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

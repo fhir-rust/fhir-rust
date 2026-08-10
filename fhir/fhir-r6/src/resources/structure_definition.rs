@@ -217,8 +217,8 @@ pub struct StructureDefinition {
     pub context: Vec<StructureDefinitionContext>,
 
     /// FHIRPath invariants - when the extension can be used
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub context_invariant: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub context_invariant: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`context_invariant`](Self::context_invariant) (FHIR `_contextInvariant`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_contextInvariant")]
@@ -333,7 +333,7 @@ struct StructureDefinitionDe {
     #[serde(default)]
     context: Vec<StructureDefinitionContext>,
     #[serde(default)]
-    context_invariant: Vec<types::String>,
+    context_invariant: ::fhir_core::PrimVec<types::String>,
     #[serde(rename = "_contextInvariant")]
     #[serde(default)]
     context_invariant_ext: Vec<Option<types::Element>>,

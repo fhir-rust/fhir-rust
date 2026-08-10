@@ -131,8 +131,8 @@ pub struct SubstanceSourceMaterial {
     pub parent_substance_id: Vec<types::Identifier>,
 
     /// The parent substance of the Herbal Drug, or Herbal preparation
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub parent_substance_name: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub parent_substance_name: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`parent_substance_name`](Self::parent_substance_name) (FHIR `_parentSubstanceName`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_parentSubstanceName")]
@@ -149,8 +149,8 @@ pub struct SubstanceSourceMaterial {
 
     /// The place/region where the plant is harvested or the places/regions
     /// where the animal source material has its habitat
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub geographical_location: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub geographical_location: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`geographical_location`](Self::geographical_location) (FHIR `_geographicalLocation`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_geographicalLocation")]

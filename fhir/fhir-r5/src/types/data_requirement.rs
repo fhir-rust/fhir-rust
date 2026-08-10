@@ -60,8 +60,8 @@ pub struct DataRequirement {
     pub type_ext: Option<types::Element>,
 
     /// The profile of the required data
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub profile: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub profile: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`profile`](Self::profile) (FHIR `_profile`).
     #[serde(rename = "_profile")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -72,8 +72,8 @@ pub struct DataRequirement {
     pub subject: Option<DataRequirementSubject>,
 
     /// Indicates specific structure elements that are referenced by the knowledge module
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub must_support: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub must_support: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`must_support`](Self::must_support) (FHIR `_mustSupport`).
     #[serde(rename = "_mustSupport")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -112,14 +112,14 @@ struct DataRequirementDe {
     #[serde(rename = "_type")]
     type_ext: Option<types::Element>,
     #[serde(default)]
-    profile: Vec<types::Canonical>,
+    profile: ::fhir_core::PrimVec<types::Canonical>,
     #[serde(rename = "_profile")]
     #[serde(default)]
     profile_ext: Vec<Option<types::Element>>,
     #[serde(flatten)]
     subject: crate::r5::choice::Slot<DataRequirementSubject>,
     #[serde(default)]
-    must_support: Vec<types::String>,
+    must_support: ::fhir_core::PrimVec<types::String>,
     #[serde(rename = "_mustSupport")]
     #[serde(default)]
     must_support_ext: Vec<Option<types::Element>>,

@@ -117,8 +117,8 @@ pub struct ClinicalUseDefinition {
     pub population: Vec<types::Reference<crate::r6::resources::Group>>,
 
     /// Logic used by the clinical use definition
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub library: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub library: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`library`](Self::library) (FHIR `_library`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_library")]

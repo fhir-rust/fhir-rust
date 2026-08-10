@@ -80,8 +80,8 @@ pub struct NutritionOrder {
     pub identifier: Vec<types::Identifier>,
 
     /// Instantiates FHIR protocol or definition
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub instantiates_canonical: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub instantiates_canonical: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`instantiates_canonical`](Self::instantiates_canonical) (FHIR `_instantiatesCanonical`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_instantiatesCanonical")]

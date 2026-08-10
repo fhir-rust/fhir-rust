@@ -543,8 +543,8 @@ pub struct TerminologyCapabilitiesCodeSystemVersion {
     pub compositional_ext: Option<types::Element>,
 
     /// Language Displays supported
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub language: Vec<types::Code>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub language: ::fhir_core::PrimVec<types::Code>,
     /// Primitive extension sibling for [`language`](Self::language) (FHIR `_language`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_language")]
@@ -556,8 +556,8 @@ pub struct TerminologyCapabilitiesCodeSystemVersion {
     pub filter: Vec<TerminologyCapabilitiesCodeSystemVersionFilter>,
 
     /// Properties supported for $lookup
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub property: Vec<types::Code>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub property: ::fhir_core::PrimVec<types::Code>,
     /// Primitive extension sibling for [`property`](Self::property) (FHIR `_property`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_property")]

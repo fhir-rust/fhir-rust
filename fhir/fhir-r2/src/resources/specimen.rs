@@ -158,8 +158,8 @@ pub struct SpecimenCollection {
     pub collector: Option<types::Reference<crate::r2::resources::Practitioner>>,
 
     /// Collector comments
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub comment: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub comment: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`comment`](Self::comment) (FHIR `_comment`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_comment")]
@@ -191,7 +191,7 @@ struct SpecimenCollectionDe {
     modifier_extension: Vec<types::Extension>,
     collector: Option<types::Reference<crate::r2::resources::Practitioner>>,
     #[serde(default)]
-    comment: Vec<types::String>,
+    comment: ::fhir_core::PrimVec<types::String>,
     #[serde(rename = "_comment")]
     #[serde(default)]
     comment_ext: Vec<Option<types::Element>>,

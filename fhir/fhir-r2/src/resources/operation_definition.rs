@@ -180,8 +180,8 @@ pub struct OperationDefinition {
     pub system_ext: Option<types::Element>,
 
     /// Invoke at resource level for these type
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub r#type: Vec<crate::coded::Coded<crate::r2::codes::ResourceTypes>>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub r#type: ::fhir_core::PrimVec<crate::coded::Coded<crate::r2::codes::ResourceTypes>>,
     /// Primitive extension sibling for [`r#type`](Self::r#type) (FHIR `_type`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_type")]

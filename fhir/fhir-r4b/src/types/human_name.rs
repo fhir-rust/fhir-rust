@@ -69,8 +69,8 @@ pub struct HumanName {
     pub family_ext: Option<types::Element>,
 
     /// Given names (not always 'first'). Includes middle names
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub given: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub given: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`given`](Self::given) (FHIR `_given`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_given")]
@@ -78,8 +78,8 @@ pub struct HumanName {
     pub given_ext: Vec<Option<types::Element>>,
 
     /// Parts that come before the name
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub prefix: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub prefix: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`prefix`](Self::prefix) (FHIR `_prefix`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_prefix")]
@@ -87,8 +87,8 @@ pub struct HumanName {
     pub prefix_ext: Vec<Option<types::Element>>,
 
     /// Parts that come after the name
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub suffix: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub suffix: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`suffix`](Self::suffix) (FHIR `_suffix`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_suffix")]

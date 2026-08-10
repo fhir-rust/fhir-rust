@@ -116,8 +116,8 @@ pub struct MessageDefinition {
     pub title_ext: Option<types::Element>,
 
     /// Takes the place of
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub replaces: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub replaces: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`replaces`](Self::replaces) (FHIR `_replaces`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_replaces")]
@@ -200,8 +200,8 @@ pub struct MessageDefinition {
     pub base_ext: Option<types::Element>,
 
     /// Protocol/workflow this is part of
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub parent: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub parent: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`parent`](Self::parent) (FHIR `_parent`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_parent")]
@@ -279,7 +279,7 @@ struct MessageDefinitionDe {
     #[serde(rename = "_title")]
     title_ext: Option<types::Element>,
     #[serde(default)]
-    replaces: Vec<types::Canonical>,
+    replaces: ::fhir_core::PrimVec<types::Canonical>,
     #[serde(rename = "_replaces")]
     #[serde(default)]
     replaces_ext: Vec<Option<types::Element>>,
@@ -317,7 +317,7 @@ struct MessageDefinitionDe {
     #[serde(rename = "_base")]
     base_ext: Option<types::Element>,
     #[serde(default)]
-    parent: Vec<types::Canonical>,
+    parent: ::fhir_core::PrimVec<types::Canonical>,
     #[serde(rename = "_parent")]
     #[serde(default)]
     parent_ext: Vec<Option<types::Element>>,

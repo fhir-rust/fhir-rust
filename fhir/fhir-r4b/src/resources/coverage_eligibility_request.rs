@@ -305,8 +305,8 @@ pub struct CoverageEligibilityRequestItem {
     pub modifier_extension: Vec<types::Extension>,
 
     /// Applicable exception or supporting information
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub supporting_info_sequence: Vec<types::PositiveInt>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub supporting_info_sequence: ::fhir_core::PrimVec<types::PositiveInt>,
     /// Primitive extension sibling for [`supporting_info_sequence`](Self::supporting_info_sequence) (FHIR `_supportingInfoSequence`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_supportingInfoSequence")]

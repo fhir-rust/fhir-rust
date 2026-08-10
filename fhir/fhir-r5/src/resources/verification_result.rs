@@ -108,8 +108,8 @@ pub struct VerificationResult {
     pub target: Vec<types::Reference>,
 
     /// The fhirpath location(s) within the resource that was validated
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub target_location: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub target_location: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`target_location`](Self::target_location) (FHIR `_targetLocation`).
     #[serde(rename = "_targetLocation")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

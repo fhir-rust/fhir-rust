@@ -393,8 +393,8 @@ pub struct TestScriptMetadataCapability {
     pub destination_ext: Option<types::Element>,
 
     /// Links to the FHIR specification
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub link: Vec<types::Uri>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub link: ::fhir_core::PrimVec<types::Uri>,
     /// Primitive extension sibling for [`link`](Self::link) (FHIR `_link`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_link")]

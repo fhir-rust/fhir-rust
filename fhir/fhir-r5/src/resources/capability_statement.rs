@@ -191,16 +191,16 @@ pub struct CapabilityStatement {
     pub kind_ext: Option<types::Element>,
 
     /// Canonical URL of another capability statement this implements
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub instantiates: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub instantiates: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`instantiates`](Self::instantiates) (FHIR `_instantiates`).
     #[serde(rename = "_instantiates")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub instantiates_ext: Vec<Option<types::Element>>,
 
     /// Canonical URL of another capability statement this adds to
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub imports: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub imports: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`imports`](Self::imports) (FHIR `_imports`).
     #[serde(rename = "_imports")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -226,24 +226,24 @@ pub struct CapabilityStatement {
     pub format_ext: Vec<Option<types::Element>>,
 
     /// Patch formats supported
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub patch_format: Vec<types::Code>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub patch_format: ::fhir_core::PrimVec<types::Code>,
     /// Primitive extension sibling for [`patch_format`](Self::patch_format) (FHIR `_patchFormat`).
     #[serde(rename = "_patchFormat")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub patch_format_ext: Vec<Option<types::Element>>,
 
     /// Languages supported
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub accept_language: Vec<types::Code>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub accept_language: ::fhir_core::PrimVec<types::Code>,
     /// Primitive extension sibling for [`accept_language`](Self::accept_language) (FHIR `_acceptLanguage`).
     #[serde(rename = "_acceptLanguage")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub accept_language_ext: Vec<Option<types::Element>>,
 
     /// Implementation guides supported
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub implementation_guide: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub implementation_guide: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`implementation_guide`](Self::implementation_guide) (FHIR `_implementationGuide`).
     #[serde(rename = "_implementationGuide")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -330,12 +330,12 @@ struct CapabilityStatementDe {
     #[serde(rename = "_kind")]
     kind_ext: Option<types::Element>,
     #[serde(default)]
-    instantiates: Vec<types::Canonical>,
+    instantiates: ::fhir_core::PrimVec<types::Canonical>,
     #[serde(rename = "_instantiates")]
     #[serde(default)]
     instantiates_ext: Vec<Option<types::Element>>,
     #[serde(default)]
-    imports: Vec<types::Canonical>,
+    imports: ::fhir_core::PrimVec<types::Canonical>,
     #[serde(rename = "_imports")]
     #[serde(default)]
     imports_ext: Vec<Option<types::Element>>,
@@ -349,17 +349,17 @@ struct CapabilityStatementDe {
     #[serde(default)]
     format_ext: Vec<Option<types::Element>>,
     #[serde(default)]
-    patch_format: Vec<types::Code>,
+    patch_format: ::fhir_core::PrimVec<types::Code>,
     #[serde(rename = "_patchFormat")]
     #[serde(default)]
     patch_format_ext: Vec<Option<types::Element>>,
     #[serde(default)]
-    accept_language: Vec<types::Code>,
+    accept_language: ::fhir_core::PrimVec<types::Code>,
     #[serde(rename = "_acceptLanguage")]
     #[serde(default)]
     accept_language_ext: Vec<Option<types::Element>>,
     #[serde(default)]
-    implementation_guide: Vec<types::Canonical>,
+    implementation_guide: ::fhir_core::PrimVec<types::Canonical>,
     #[serde(rename = "_implementationGuide")]
     #[serde(default)]
     implementation_guide_ext: Vec<Option<types::Element>>,
@@ -604,8 +604,8 @@ pub struct CapabilityStatementRest {
     pub operation: Vec<CapabilityStatementRestResourceOperation>,
 
     /// Compartments served/used by system
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub compartment: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub compartment: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`compartment`](Self::compartment) (FHIR `_compartment`).
     #[serde(rename = "_compartment")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -708,8 +708,8 @@ pub struct CapabilityStatementRestResource {
     pub profile_ext: Option<types::Element>,
 
     /// Use-case specific profiles
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub supported_profile: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub supported_profile: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`supported_profile`](Self::supported_profile) (FHIR `_supportedProfile`).
     #[serde(rename = "_supportedProfile")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -775,24 +775,25 @@ pub struct CapabilityStatementRestResource {
     pub conditional_delete_ext: Option<types::Element>,
 
     /// literal | logical | resolves | enforced | local
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub reference_policy: Vec<crate::r5::coded::Coded<crate::r5::codes::ReferenceHandlingPolicy>>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub reference_policy:
+        ::fhir_core::PrimVec<crate::r5::coded::Coded<crate::r5::codes::ReferenceHandlingPolicy>>,
     /// Primitive extension sibling for [`reference_policy`](Self::reference_policy) (FHIR `_referencePolicy`).
     #[serde(rename = "_referencePolicy")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub reference_policy_ext: Vec<Option<types::Element>>,
 
     /// _include values supported by the server
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub search_include: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub search_include: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`search_include`](Self::search_include) (FHIR `_searchInclude`).
     #[serde(rename = "_searchInclude")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub search_include_ext: Vec<Option<types::Element>>,
 
     /// _revinclude values supported by the server
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub search_rev_include: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub search_rev_include: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`search_rev_include`](Self::search_rev_include) (FHIR `_searchRevInclude`).
     #[serde(rename = "_searchRevInclude")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

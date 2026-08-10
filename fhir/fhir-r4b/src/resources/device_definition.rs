@@ -110,8 +110,8 @@ pub struct DeviceDefinition {
     pub specialization: Vec<DeviceDefinitionSpecialization>,
 
     /// Available versions
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub version: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub version: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`version`](Self::version) (FHIR `_version`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_version")]
@@ -214,7 +214,7 @@ struct DeviceDefinitionDe {
     #[serde(default)]
     specialization: Vec<DeviceDefinitionSpecialization>,
     #[serde(default)]
-    version: Vec<types::String>,
+    version: ::fhir_core::PrimVec<types::String>,
     #[serde(rename = "_version")]
     #[serde(default)]
     version_ext: Vec<Option<types::Element>>,

@@ -97,8 +97,8 @@ pub struct InsuranceProduct {
     pub name_ext: Option<types::Element>,
 
     /// Alternate names
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub alias: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub alias: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`alias`](Self::alias) (FHIR `_alias`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_alias")]

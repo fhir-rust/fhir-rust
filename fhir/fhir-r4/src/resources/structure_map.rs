@@ -168,8 +168,8 @@ pub struct StructureMap {
     pub structure: Vec<StructureMapStructure>,
 
     /// Other maps used by this map (canonical URLs)
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub import: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub import: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`import`](Self::import) (FHIR `_import`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_import")]
@@ -661,8 +661,8 @@ pub struct StructureMapGroupRuleTarget {
     pub variable_ext: Option<types::Element>,
 
     /// first | share | last | collate
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub list_mode: Vec<crate::coded::Coded<crate::r4::codes::MapTargetListMode>>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub list_mode: ::fhir_core::PrimVec<crate::coded::Coded<crate::r4::codes::MapTargetListMode>>,
     /// Primitive extension sibling for [`list_mode`](Self::list_mode) (FHIR `_listMode`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_listMode")]

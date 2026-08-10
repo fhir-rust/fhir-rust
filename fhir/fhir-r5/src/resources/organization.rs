@@ -119,8 +119,8 @@ pub struct Organization {
     pub name_ext: Option<types::Element>,
 
     /// A list of alternate names that the organization is known as, or was known as in the past
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub alias: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub alias: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`alias`](Self::alias) (FHIR `_alias`).
     #[serde(rename = "_alias")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

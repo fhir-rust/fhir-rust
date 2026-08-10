@@ -145,8 +145,8 @@ pub struct Endpoint {
     pub address_ext: Option<types::Element>,
 
     /// Usage depends on the channel type
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub header: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub header: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`header`](Self::header) (FHIR `_header`).
     #[serde(rename = "_header")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -195,8 +195,8 @@ pub struct EndpointPayload {
 
     /// Mimetype to send. If not specified, the content could be anything
     /// (including no payload, if the connectionType defined this)
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub mime_type: Vec<types::Code>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub mime_type: ::fhir_core::PrimVec<types::Code>,
     /// Primitive extension sibling for [`mime_type`](Self::mime_type) (FHIR `_mimeType`).
     #[serde(rename = "_mimeType")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

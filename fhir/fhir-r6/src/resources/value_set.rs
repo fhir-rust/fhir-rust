@@ -449,8 +449,8 @@ pub struct ValueSetCompose {
     pub exclude: Vec<ValueSetComposeInclude>,
 
     /// Property to return if client doesn't override
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub property: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub property: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`property`](Self::property) (FHIR `_property`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_property")]
@@ -516,8 +516,8 @@ pub struct ValueSetComposeInclude {
     pub filter: Vec<ValueSetComposeIncludeFilter>,
 
     /// Select the contents included in this value set
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value_set: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub value_set: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`value_set`](Self::value_set) (FHIR `_valueSet`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_valueSet")]

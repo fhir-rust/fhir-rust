@@ -409,8 +409,8 @@ pub struct TestScriptMetadataCapability {
     pub description_ext: Option<types::Element>,
 
     /// Which origin server these requirements apply to
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub origin: Vec<types::Integer>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub origin: ::fhir_core::PrimVec<types::Integer>,
     /// Primitive extension sibling for [`origin`](Self::origin) (FHIR `_origin`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_origin")]
@@ -425,8 +425,8 @@ pub struct TestScriptMetadataCapability {
     pub destination_ext: Option<types::Element>,
 
     /// Links to the FHIR specification
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub link: Vec<types::Uri>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub link: ::fhir_core::PrimVec<types::Uri>,
     /// Primitive extension sibling for [`link`](Self::link) (FHIR `_link`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_link")]

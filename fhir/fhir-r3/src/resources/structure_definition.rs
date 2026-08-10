@@ -204,8 +204,8 @@ pub struct StructureDefinition {
     pub context_type_ext: Option<types::Element>,
 
     /// Where the extension can be used in instances
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub context: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub context: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`context`](Self::context) (FHIR `_context`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_context")]
@@ -213,8 +213,8 @@ pub struct StructureDefinition {
     pub context_ext: Vec<Option<types::Element>>,
 
     /// FHIRPath invariants - when the extension can be used
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub context_invariant: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub context_invariant: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`context_invariant`](Self::context_invariant) (FHIR `_contextInvariant`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_contextInvariant")]

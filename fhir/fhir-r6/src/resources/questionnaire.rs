@@ -117,8 +117,8 @@ pub struct Questionnaire {
     pub title_ext: Option<types::Element>,
 
     /// Based on Questionnaire
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub derived_from: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub derived_from: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`derived_from`](Self::derived_from) (FHIR `_derivedFrom`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_derivedFrom")]
@@ -140,8 +140,8 @@ pub struct Questionnaire {
     pub experimental_ext: Option<types::Element>,
 
     /// Resource that can be subject of QuestionnaireResponse
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub subject_type: Vec<types::Code>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub subject_type: ::fhir_core::PrimVec<types::Code>,
     /// Primitive extension sibling for [`subject_type`](Self::subject_type) (FHIR `_subjectType`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_subjectType")]
@@ -263,7 +263,7 @@ struct QuestionnaireDe {
     #[serde(rename = "_title")]
     title_ext: Option<types::Element>,
     #[serde(default)]
-    derived_from: Vec<types::Canonical>,
+    derived_from: ::fhir_core::PrimVec<types::Canonical>,
     #[serde(rename = "_derivedFrom")]
     #[serde(default)]
     derived_from_ext: Vec<Option<types::Element>>,
@@ -274,7 +274,7 @@ struct QuestionnaireDe {
     #[serde(rename = "_experimental")]
     experimental_ext: Option<types::Element>,
     #[serde(default)]
-    subject_type: Vec<types::Code>,
+    subject_type: ::fhir_core::PrimVec<types::Code>,
     #[serde(rename = "_subjectType")]
     #[serde(default)]
     subject_type_ext: Vec<Option<types::Element>>,

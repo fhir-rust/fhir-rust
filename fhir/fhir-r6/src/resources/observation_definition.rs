@@ -200,8 +200,8 @@ pub struct ObservationDefinition {
     pub effective_period: Option<types::Period>,
 
     /// Based on FHIR definition of another observation
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub derived_from_canonical: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub derived_from_canonical: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`derived_from_canonical`](Self::derived_from_canonical) (FHIR `_derivedFromCanonical`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_derivedFromCanonical")]
@@ -209,8 +209,8 @@ pub struct ObservationDefinition {
     pub derived_from_canonical_ext: Vec<Option<types::Element>>,
 
     /// Based on external definition
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub derived_from_uri: Vec<types::Uri>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub derived_from_uri: ::fhir_core::PrimVec<types::Uri>,
     /// Primitive extension sibling for [`derived_from_uri`](Self::derived_from_uri) (FHIR `_derivedFromUri`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_derivedFromUri")]
@@ -233,8 +233,9 @@ pub struct ObservationDefinition {
 
     /// Quantity | CodeableConcept | string | boolean | integer | Range | Ratio
     /// | SampledData | time | dateTime | Period
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub permitted_data_type: Vec<crate::coded::Coded<crate::r6::codes::PermittedDataType>>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub permitted_data_type:
+        ::fhir_core::PrimVec<crate::coded::Coded<crate::r6::codes::PermittedDataType>>,
     /// Primitive extension sibling for [`permitted_data_type`](Self::permitted_data_type) (FHIR `_permittedDataType`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_permittedDataType")]
@@ -358,12 +359,12 @@ struct ObservationDefinitionDe {
     last_review_date_ext: Option<types::Element>,
     effective_period: Option<types::Period>,
     #[serde(default)]
-    derived_from_canonical: Vec<types::Canonical>,
+    derived_from_canonical: ::fhir_core::PrimVec<types::Canonical>,
     #[serde(rename = "_derivedFromCanonical")]
     #[serde(default)]
     derived_from_canonical_ext: Vec<Option<types::Element>>,
     #[serde(default)]
-    derived_from_uri: Vec<types::Uri>,
+    derived_from_uri: ::fhir_core::PrimVec<types::Uri>,
     #[serde(rename = "_derivedFromUri")]
     #[serde(default)]
     derived_from_uri_ext: Vec<Option<types::Element>>,
@@ -374,7 +375,8 @@ struct ObservationDefinitionDe {
     category: Vec<types::CodeableConcept>,
     code: types::CodeableConcept,
     #[serde(default)]
-    permitted_data_type: Vec<crate::coded::Coded<crate::r6::codes::PermittedDataType>>,
+    permitted_data_type:
+        ::fhir_core::PrimVec<crate::coded::Coded<crate::r6::codes::PermittedDataType>>,
     #[serde(rename = "_permittedDataType")]
     #[serde(default)]
     permitted_data_type_ext: Vec<Option<types::Element>>,
@@ -514,8 +516,9 @@ pub struct ObservationDefinitionComponent {
 
     /// Quantity | CodeableConcept | string | boolean | integer | Range | Ratio
     /// | SampledData | time | dateTime | Period
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub permitted_data_type: Vec<crate::coded::Coded<crate::r6::codes::PermittedDataType>>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub permitted_data_type:
+        ::fhir_core::PrimVec<crate::coded::Coded<crate::r6::codes::PermittedDataType>>,
     /// Primitive extension sibling for [`permitted_data_type`](Self::permitted_data_type) (FHIR `_permittedDataType`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_permittedDataType")]

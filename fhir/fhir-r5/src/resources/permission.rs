@@ -107,8 +107,8 @@ pub struct Permission {
     pub asserter: Option<types::Reference>,
 
     /// The date(s) on which the permission was asserted by the asserter.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub date: Vec<types::DateTime>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub date: ::fhir_core::PrimVec<types::DateTime>,
     /// Primitive extension sibling for [`date`](Self::date) (FHIR `_date`).
     #[serde(rename = "_date")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

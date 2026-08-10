@@ -334,8 +334,8 @@ pub struct AuditEventAgent {
     pub location: Option<types::Reference<crate::r5::resources::Location>>,
 
     /// Policy that authorized the agent participation in the event
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub policy: Vec<types::Uri>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub policy: ::fhir_core::PrimVec<types::Uri>,
     /// Primitive extension sibling for [`policy`](Self::policy) (FHIR `_policy`).
     #[serde(rename = "_policy")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -367,7 +367,7 @@ struct AuditEventAgentDe {
     requestor_ext: Option<types::Element>,
     location: Option<types::Reference<crate::r5::resources::Location>>,
     #[serde(default)]
-    policy: Vec<types::Uri>,
+    policy: ::fhir_core::PrimVec<types::Uri>,
     #[serde(rename = "_policy")]
     #[serde(default)]
     policy_ext: Vec<Option<types::Element>>,

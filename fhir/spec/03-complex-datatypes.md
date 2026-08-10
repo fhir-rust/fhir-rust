@@ -26,7 +26,7 @@ FHIR.
   `#[serde_with::skip_serializing_none]`, and
   `#[serde(rename_all = "camelCase")]`.
 - **R3.2** Fields MUST use the cardinality mapping of spec 06
-  (`0..1`→`Option<T>`, `1..1`→`T`, `0..*`→`Vec<T>`, `1..*`→`vec1::Vec1<T>`).
+  (`0..1`→`Option<T>`, `1..1`→`T`, `0..*`→`Vec<T>` — `PrimVec<T>` for primitives, R6.7a —, `1..*`→`vec1::Vec1<T>`).
 - **R3.3** Field types MUST reference `types::X` (another datatype or a
   primitive), a nested backbone struct in the same file, or
   `::serde_json::Value` where the FHIR type is `Resource`/`DomainResource`.

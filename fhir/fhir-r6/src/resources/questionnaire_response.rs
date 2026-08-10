@@ -170,8 +170,8 @@ pub struct QuestionnaireResponseItem {
     pub link_id_ext: Option<types::Element>,
 
     /// ElementDefinition - details for the item
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub definition: Vec<types::Uri>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub definition: ::fhir_core::PrimVec<types::Uri>,
     /// Primitive extension sibling for [`definition`](Self::definition) (FHIR `_definition`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_definition")]

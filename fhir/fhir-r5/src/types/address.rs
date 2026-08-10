@@ -76,8 +76,8 @@ pub struct Address {
 
     /// The street address lines, in the order in which they appear on labels
     /// (e.g. street name, number, direction, or post office box).
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub line: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub line: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`line`](Self::line) (FHIR `_line`).
     #[serde(rename = "_line")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -132,7 +132,7 @@ mod tests {
             use1: None,
             r#type: None,
             text: None,
-            line: vec![],
+            line: ::fhir_core::PrimVec::new(),
             city: None,
             district: None,
             state: None,

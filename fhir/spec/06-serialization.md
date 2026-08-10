@@ -39,13 +39,30 @@ elements exist, never in how an element is mapped.
   | --- | --- |
   | `0..1` | `Option<T>` |
   | `1..1` | `T` |
-  | `0..*` | `Vec<T>` |
+  | `0..*` | `Vec<T>` — but `::fhir_core::PrimVec<T>` when `T` is a primitive (R6.7a) |
   | `1..*` | `vec1::Vec1<T>` |
 
 - **R6.7** A `Vec` field using `skip_serializing_if = "Vec::is_empty"` MUST also
   declare `#[serde(default)]`, so an omitted array deserializes to an empty
   `Vec` instead of erroring. (Serializing to `{}`/omitted but failing to
   deserialize it is a defect.)
+
+- **R6.7a** *(added 2026-08-10, audit **F-86**)* A repeating **primitive**
+  (`0..*`) MUST use `::fhir_core::PrimVec<T>`, not `Vec<T>`. FHIR JSON
+  represents such an element as parallel arrays, and a position carrying
+  only an extension is a **null** in the value array (`"event": [null]`
+  beside `"_event": [{…}]`) — a position `Vec<T>` cannot hold; the model
+  rejected it, and before F-87's fix then silently dropped the element.
+  `PrimVec` is transparently `Vec<Option<T>>`: `None` is the extension-only
+  placeholder, serialized back as the same `null`, so the wire form
+  round-trips exactly. The same `#[serde(default)]` rule as R6.7 applies,
+  with `PrimVec::is_empty` as the skip predicate.
+
+  Stated residual: a `1..*` repeating primitive keeps `vec1::Vec1<T>` and
+  its type-level non-emptiness, so an extension-only position in a
+  *required* repeating primitive remains unrepresentable. No example in
+  any official corpus (R2 spec suite, R3/R4/R4B/R5 full sets) uses that
+  shape; if one ever does, the refusal is loud (F-87), not silent.
 
 ### Field naming
 

@@ -88,8 +88,9 @@ pub struct ObservationDefinition {
 
     /// Quantity | CodeableConcept | string | boolean | integer | Range | Ratio
     /// | SampledData | time | dateTime | Period
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub permitted_data_type: Vec<crate::coded::Coded<crate::r4::codes::PermittedDataType>>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub permitted_data_type:
+        ::fhir_core::PrimVec<crate::coded::Coded<crate::r4::codes::PermittedDataType>>,
     /// Primitive extension sibling for [`permitted_data_type`](Self::permitted_data_type) (FHIR `_permittedDataType`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_permittedDataType")]

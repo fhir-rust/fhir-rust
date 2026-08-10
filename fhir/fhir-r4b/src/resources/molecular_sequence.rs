@@ -319,8 +319,8 @@ pub struct MolecularSequenceQualityRoc {
     pub modifier_extension: Vec<types::Extension>,
 
     /// Genotype quality score
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub score: Vec<types::Integer>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub score: ::fhir_core::PrimVec<types::Integer>,
     /// Primitive extension sibling for [`score`](Self::score) (FHIR `_score`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_score")]
@@ -329,8 +329,8 @@ pub struct MolecularSequenceQualityRoc {
 
     /// Roc score true positive numbers
     #[serde(rename = "numTP")]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub num_tp: Vec<types::Integer>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub num_tp: ::fhir_core::PrimVec<types::Integer>,
     /// Primitive extension sibling for [`num_tp`](Self::num_tp) (FHIR `_numTP`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_numTP")]
@@ -339,8 +339,8 @@ pub struct MolecularSequenceQualityRoc {
 
     /// Roc score false positive numbers
     #[serde(rename = "numFP")]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub num_fp: Vec<types::Integer>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub num_fp: ::fhir_core::PrimVec<types::Integer>,
     /// Primitive extension sibling for [`num_fp`](Self::num_fp) (FHIR `_numFP`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_numFP")]
@@ -349,8 +349,8 @@ pub struct MolecularSequenceQualityRoc {
 
     /// Roc score false negative numbers
     #[serde(rename = "numFN")]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub num_fn: Vec<types::Integer>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub num_fn: ::fhir_core::PrimVec<types::Integer>,
     /// Primitive extension sibling for [`num_fn`](Self::num_fn) (FHIR `_numFN`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_numFN")]
@@ -358,8 +358,8 @@ pub struct MolecularSequenceQualityRoc {
     pub num_fn_ext: Vec<Option<types::Element>>,
 
     /// Precision of the GQ score
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub precision: Vec<types::Decimal>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub precision: ::fhir_core::PrimVec<types::Decimal>,
     /// Primitive extension sibling for [`precision`](Self::precision) (FHIR `_precision`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_precision")]
@@ -367,8 +367,8 @@ pub struct MolecularSequenceQualityRoc {
     pub precision_ext: Vec<Option<types::Element>>,
 
     /// Sensitivity of the GQ score
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub sensitivity: Vec<types::Decimal>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub sensitivity: ::fhir_core::PrimVec<types::Decimal>,
     /// Primitive extension sibling for [`sensitivity`](Self::sensitivity) (FHIR `_sensitivity`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_sensitivity")]
@@ -376,8 +376,8 @@ pub struct MolecularSequenceQualityRoc {
     pub sensitivity_ext: Vec<Option<types::Element>>,
 
     /// FScore of the GQ score
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub f_measure: Vec<types::Decimal>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub f_measure: ::fhir_core::PrimVec<types::Decimal>,
     /// Primitive extension sibling for [`f_measure`](Self::f_measure) (FHIR `_fMeasure`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_fMeasure")]

@@ -583,8 +583,8 @@ pub struct ConformanceRest {
     pub operation: Vec<ConformanceRestOperation>,
 
     /// Compartments served/used by system
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub compartment: Vec<types::Uri>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub compartment: ::fhir_core::PrimVec<types::Uri>,
     /// Primitive extension sibling for [`compartment`](Self::compartment) (FHIR `_compartment`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_compartment")]
@@ -774,8 +774,8 @@ pub struct ConformanceRestResource {
     pub conditional_delete_ext: Option<types::Element>,
 
     /// _include values supported by the server
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub search_include: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub search_include: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`search_include`](Self::search_include) (FHIR `_searchInclude`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_searchInclude")]
@@ -783,8 +783,8 @@ pub struct ConformanceRestResource {
     pub search_include_ext: Vec<Option<types::Element>>,
 
     /// _revinclude values supported by the server
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub search_rev_include: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub search_rev_include: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`search_rev_include`](Self::search_rev_include) (FHIR `_searchRevInclude`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_searchRevInclude")]
@@ -913,8 +913,8 @@ pub struct ConformanceRestResourceSearchParam {
     pub documentation_ext: Option<types::Element>,
 
     /// Types of resource (if a resource reference)
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub target: Vec<crate::coded::Coded<crate::r2::codes::ResourceTypes>>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub target: ::fhir_core::PrimVec<crate::coded::Coded<crate::r2::codes::ResourceTypes>>,
     /// Primitive extension sibling for [`target`](Self::target) (FHIR `_target`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_target")]
@@ -923,8 +923,8 @@ pub struct ConformanceRestResourceSearchParam {
 
     /// missing | exact | contains | not | text | in | not-in | below | above |
     /// type
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub modifier: Vec<crate::coded::Coded<crate::r2::codes::SearchModifierCode>>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub modifier: ::fhir_core::PrimVec<crate::coded::Coded<crate::r2::codes::SearchModifierCode>>,
     /// Primitive extension sibling for [`modifier`](Self::modifier) (FHIR `_modifier`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_modifier")]
@@ -932,8 +932,8 @@ pub struct ConformanceRestResourceSearchParam {
     pub modifier_ext: Vec<Option<types::Element>>,
 
     /// Chained names supported
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub chain: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub chain: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`chain`](Self::chain) (FHIR `_chain`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_chain")]

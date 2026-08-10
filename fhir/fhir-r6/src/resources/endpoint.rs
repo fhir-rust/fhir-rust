@@ -130,8 +130,8 @@ pub struct Endpoint {
     pub address_ext: Option<types::Element>,
 
     /// Usage depends on the channel type
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub header: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub header: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`header`](Self::header) (FHIR `_header`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_header")]
@@ -181,8 +181,8 @@ pub struct EndpointPayload {
 
     /// Mimetype to send. If not specified, the content could be anything
     /// (including no payload, if the connectionType defined this)
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub mime_type: Vec<types::Code>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub mime_type: ::fhir_core::PrimVec<types::Code>,
     /// Primitive extension sibling for [`mime_type`](Self::mime_type) (FHIR `_mimeType`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_mimeType")]
@@ -190,8 +190,8 @@ pub struct EndpointPayload {
     pub mime_type_ext: Vec<Option<types::Element>>,
 
     /// The profile that is expected at this endpoint
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub profile_canonical: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub profile_canonical: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`profile_canonical`](Self::profile_canonical) (FHIR `_profileCanonical`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_profileCanonical")]
@@ -199,8 +199,8 @@ pub struct EndpointPayload {
     pub profile_canonical_ext: Vec<Option<types::Element>>,
 
     /// The non-fhir based profile that is expected at this endpoint
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub profile_uri: Vec<types::Uri>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub profile_uri: ::fhir_core::PrimVec<types::Uri>,
     /// Primitive extension sibling for [`profile_uri`](Self::profile_uri) (FHIR `_profileUri`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_profileUri")]

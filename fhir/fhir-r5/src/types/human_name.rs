@@ -72,24 +72,24 @@ pub struct HumanName {
     pub family_ext: Option<types::Element>,
 
     /// The given names, including first and middle names, in the order they should be used.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub given: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub given: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`given`](Self::given) (FHIR `_given`).
     #[serde(rename = "_given")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub given_ext: Vec<Option<types::Element>>,
 
     /// Parts that come before the name, such as titles (e.g. "Dr.", "Mr.").
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub prefix: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub prefix: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`prefix`](Self::prefix) (FHIR `_prefix`).
     #[serde(rename = "_prefix")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub prefix_ext: Vec<Option<types::Element>>,
 
     /// Parts that come after the name, such as generational or qualification suffixes (e.g. "Jr.", "MD").
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub suffix: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub suffix: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`suffix`](Self::suffix) (FHIR `_suffix`).
     #[serde(rename = "_suffix")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -111,9 +111,9 @@ mod tests {
             use1: None,
             text: None,
             family: None,
-            given: vec![],
-            prefix: vec![],
-            suffix: vec![],
+            given: ::fhir_core::PrimVec::new(),
+            prefix: ::fhir_core::PrimVec::new(),
+            suffix: ::fhir_core::PrimVec::new(),
             period: None,
             ..Default::default()
         };

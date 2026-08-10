@@ -261,8 +261,8 @@ pub struct Measure {
     pub improvement_notation_ext: Option<types::Element>,
 
     /// Defined terms used in the measure documentation
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub definition: Vec<types::Markdown>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub definition: ::fhir_core::PrimVec<types::Markdown>,
     /// Primitive extension sibling for [`definition`](Self::definition) (FHIR `_definition`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_definition")]

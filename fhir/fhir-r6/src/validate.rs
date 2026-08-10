@@ -33,7 +33,7 @@ impl From<ValidationIssue> for crate::r6::resources::operation_outcome::Operatio
             severity: Coded::Known(IssueSeverity::Error),
             code: Coded::Known(IssueType::Invalid),
             diagnostics: Some(types::String(issue.message)),
-            expression: vec![types::String(issue.path)],
+            expression: vec![types::String(issue.path)].into(),
             ..Default::default()
         }
     }
@@ -54,7 +54,10 @@ impl From<ValidationIssue> for crate::r6::resources::operation_outcome::Operatio
 ///
 /// let outcome: OperationOutcome = patient.validate().into();
 /// assert_eq!(outcome.issue.len(), 1);
-/// assert_eq!(outcome.issue[0].expression[0].0, "implicit_rules.uri");
+/// assert_eq!(
+///     outcome.issue[0].expression.first_value().unwrap().0,
+///     "implicit_rules.uri"
+/// );
 /// ```
 impl From<Vec<ValidationIssue>> for crate::r6::resources::operation_outcome::OperationOutcome {
     fn from(issues: Vec<ValidationIssue>) -> Self {

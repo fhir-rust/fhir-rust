@@ -54,8 +54,8 @@ pub struct DataRequirement {
     pub type_ext: Option<types::Element>,
 
     /// The profile of the required data
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub profile: Vec<types::Uri>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub profile: ::fhir_core::PrimVec<types::Uri>,
     /// Primitive extension sibling for [`profile`](Self::profile) (FHIR `_profile`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_profile")]
@@ -64,8 +64,8 @@ pub struct DataRequirement {
 
     /// Indicates that specific structure elements are referenced by the
     /// knowledge module
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub must_support: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub must_support: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`must_support`](Self::must_support) (FHIR `_mustSupport`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_mustSupport")]
@@ -127,8 +127,8 @@ pub struct DataRequirementCodeFilter {
     pub value_set: Option<DataRequirementCodeFilterValueSet>,
 
     /// What code is expected
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value_code: Vec<types::Code>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub value_code: ::fhir_core::PrimVec<types::Code>,
     /// Primitive extension sibling for [`value_code`](Self::value_code) (FHIR `_valueCode`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_valueCode")]
@@ -156,7 +156,7 @@ struct DataRequirementCodeFilterDe {
     #[serde(flatten)]
     value_set: crate::r3::choice::Slot<DataRequirementCodeFilterValueSet>,
     #[serde(default)]
-    value_code: Vec<types::Code>,
+    value_code: ::fhir_core::PrimVec<types::Code>,
     #[serde(rename = "_valueCode")]
     #[serde(default)]
     value_code_ext: Vec<Option<types::Element>>,

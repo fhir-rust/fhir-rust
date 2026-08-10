@@ -90,8 +90,8 @@ pub struct Permission {
     pub asserter: Option<types::Reference>,
 
     /// The date that permission was asserted
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub date: Vec<types::DateTime>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub date: ::fhir_core::PrimVec<types::DateTime>,
     /// Primitive extension sibling for [`date`](Self::date) (FHIR `_date`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_date")]
@@ -454,8 +454,8 @@ pub struct PermissionRuleLimit {
     pub tag: Vec<types::Coding>,
 
     /// What data elements that must be removed from the data
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub element: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub element: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`element`](Self::element) (FHIR `_element`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_element")]

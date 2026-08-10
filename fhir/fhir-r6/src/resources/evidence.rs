@@ -477,8 +477,8 @@ pub struct EvidenceCertainty {
     pub rating: Option<types::CodeableConcept>,
 
     /// Individual or group who did the rating
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub rater: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub rater: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`rater`](Self::rater) (FHIR `_rater`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_rater")]

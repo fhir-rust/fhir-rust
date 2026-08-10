@@ -116,8 +116,8 @@ pub struct SubscriptionTopic {
     pub title_ext: Option<types::Element>,
 
     /// Based on FHIR protocol or definition
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub derived_from: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub derived_from: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`derived_from`](Self::derived_from) (FHIR `_derivedFrom`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_derivedFrom")]
@@ -250,7 +250,7 @@ struct SubscriptionTopicDe {
     #[serde(rename = "_title")]
     title_ext: Option<types::Element>,
     #[serde(default)]
-    derived_from: Vec<types::Canonical>,
+    derived_from: ::fhir_core::PrimVec<types::Canonical>,
     #[serde(rename = "_derivedFrom")]
     #[serde(default)]
     derived_from_ext: Vec<Option<types::Element>>,
@@ -404,8 +404,8 @@ pub struct SubscriptionTopicTrigger {
     pub resource_ext: Option<types::Element>,
 
     /// create | update | delete
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub supported_interaction: Vec<types::Code>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub supported_interaction: ::fhir_core::PrimVec<types::Code>,
     /// Primitive extension sibling for [`supported_interaction`](Self::supported_interaction) (FHIR `_supportedInteraction`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_supportedInteraction")]
@@ -504,8 +504,8 @@ pub struct SubscriptionTopicTriggerCanFilterBy {
     pub filter_definition_ext: Option<types::Element>,
 
     /// eq | ne | gt | lt | ge | le | sa | eb | ap
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub comparator: Vec<crate::coded::Coded<crate::r6::codes::SearchComparator>>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub comparator: ::fhir_core::PrimVec<crate::coded::Coded<crate::r6::codes::SearchComparator>>,
     /// Primitive extension sibling for [`comparator`](Self::comparator) (FHIR `_comparator`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_comparator")]
@@ -514,8 +514,8 @@ pub struct SubscriptionTopicTriggerCanFilterBy {
 
     /// missing | exact | contains | not | text | in | not-in | below | above |
     /// type | identifier | of-type | code-text | text-advanced | iterate
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub modifier: Vec<crate::coded::Coded<crate::r6::codes::SearchModifierCode>>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub modifier: ::fhir_core::PrimVec<crate::coded::Coded<crate::r6::codes::SearchModifierCode>>,
     /// Primitive extension sibling for [`modifier`](Self::modifier) (FHIR `_modifier`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_modifier")]
@@ -567,8 +567,8 @@ pub struct SubscriptionTopicTriggerNotificationShape {
     pub resource_ext: Option<types::Element>,
 
     /// Include directives, rooted in the resource for this shape
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub include: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub include: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`include`](Self::include) (FHIR `_include`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_include")]
@@ -576,8 +576,8 @@ pub struct SubscriptionTopicTriggerNotificationShape {
     pub include_ext: Vec<Option<types::Element>>,
 
     /// Reverse include directives, rooted in the resource for this shape
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub rev_include: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub rev_include: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`rev_include`](Self::rev_include) (FHIR `_revInclude`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_revInclude")]

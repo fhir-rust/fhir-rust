@@ -56,6 +56,13 @@ Rules any representation must honour:
   pub given_ext: Vec<Option<types::Element>>,          // repeating (null-aligned)
   ```
 
+- **R9.1a** *(added 2026-08-10, audit **F-86**)* The **value array** of a
+  repeating primitive is `::fhir_core::PrimVec<T>` (R6.7a): a `null`
+  position is an extension-only placeholder whose `Element` lives at the
+  same index of the `_x` sibling. Constructing a placeholder with no
+  matching sibling entry is representable but meaningless; the serializer
+  writes the `null` faithfully rather than guessing.
+
 - **R9.2** Scalar primitives use `Option<Element>`; repeating primitives use
   `Vec<Option<Element>>` — an empty `Vec` means "no `_field` at all", and the
   inner `Option` is the per-position `null`.

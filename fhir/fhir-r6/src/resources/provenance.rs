@@ -93,8 +93,8 @@ pub struct Provenance {
     pub recorded_ext: Option<types::Element>,
 
     /// Policy or plan the activity was defined by
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub policy: Vec<types::Uri>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub policy: ::fhir_core::PrimVec<types::Uri>,
     /// Primitive extension sibling for [`policy`](Self::policy) (FHIR `_policy`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_policy")]
@@ -167,7 +167,7 @@ struct ProvenanceDe {
     #[serde(rename = "_recorded")]
     recorded_ext: Option<types::Element>,
     #[serde(default)]
-    policy: Vec<types::Uri>,
+    policy: ::fhir_core::PrimVec<types::Uri>,
     #[serde(rename = "_policy")]
     #[serde(default)]
     policy_ext: Vec<Option<types::Element>>,

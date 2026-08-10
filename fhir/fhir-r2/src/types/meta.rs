@@ -61,8 +61,8 @@ pub struct Meta {
     pub last_updated_ext: Option<types::Element>,
 
     /// Profiles this resource claims to conform to
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub profile: Vec<types::Uri>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub profile: ::fhir_core::PrimVec<types::Uri>,
     /// Primitive extension sibling for [`profile`](Self::profile) (FHIR `_profile`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_profile")]

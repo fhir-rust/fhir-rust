@@ -164,8 +164,8 @@ pub struct CapabilityStatement {
     pub kind_ext: Option<types::Element>,
 
     /// Canonical URL of another capability statement this implements
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub instantiates: Vec<types::Uri>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub instantiates: ::fhir_core::PrimVec<types::Uri>,
     /// Primitive extension sibling for [`instantiates`](Self::instantiates) (FHIR `_instantiates`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_instantiates")]
@@ -201,8 +201,8 @@ pub struct CapabilityStatement {
     pub format_ext: Vec<Option<types::Element>>,
 
     /// Patch formats supported
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub patch_format: Vec<types::Code>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub patch_format: ::fhir_core::PrimVec<types::Code>,
     /// Primitive extension sibling for [`patch_format`](Self::patch_format) (FHIR `_patchFormat`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_patchFormat")]
@@ -210,8 +210,8 @@ pub struct CapabilityStatement {
     pub patch_format_ext: Vec<Option<types::Element>>,
 
     /// Implementation guides supported
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub implementation_guide: Vec<types::Uri>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub implementation_guide: ::fhir_core::PrimVec<types::Uri>,
     /// Primitive extension sibling for [`implementation_guide`](Self::implementation_guide) (FHIR `_implementationGuide`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_implementationGuide")]
@@ -638,8 +638,8 @@ pub struct CapabilityStatementRest {
     pub operation: Vec<CapabilityStatementRestOperation>,
 
     /// Compartments served/used by system
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub compartment: Vec<types::Uri>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub compartment: ::fhir_core::PrimVec<types::Uri>,
     /// Primitive extension sibling for [`compartment`](Self::compartment) (FHIR `_compartment`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_compartment")]
@@ -843,8 +843,9 @@ pub struct CapabilityStatementRestResource {
     pub conditional_delete_ext: Option<types::Element>,
 
     /// literal | logical | resolves | enforced | local
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub reference_policy: Vec<crate::coded::Coded<crate::r3::codes::ReferenceHandlingPolicy>>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub reference_policy:
+        ::fhir_core::PrimVec<crate::coded::Coded<crate::r3::codes::ReferenceHandlingPolicy>>,
     /// Primitive extension sibling for [`reference_policy`](Self::reference_policy) (FHIR `_referencePolicy`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_referencePolicy")]
@@ -852,8 +853,8 @@ pub struct CapabilityStatementRestResource {
     pub reference_policy_ext: Vec<Option<types::Element>>,
 
     /// _include values supported by the server
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub search_include: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub search_include: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`search_include`](Self::search_include) (FHIR `_searchInclude`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_searchInclude")]
@@ -861,8 +862,8 @@ pub struct CapabilityStatementRestResource {
     pub search_include_ext: Vec<Option<types::Element>>,
 
     /// _revinclude values supported by the server
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub search_rev_include: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub search_rev_include: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`search_rev_include`](Self::search_rev_include) (FHIR `_searchRevInclude`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_searchRevInclude")]

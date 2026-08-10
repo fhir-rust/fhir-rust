@@ -108,8 +108,8 @@ pub struct SubstanceProtein {
     pub number_of_subunits_ext: Option<types::Element>,
 
     /// The disulphide bond between two cysteine residues shall be described, identifying the connecting residue positions
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub disulfide_linkage: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub disulfide_linkage: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`disulfide_linkage`](Self::disulfide_linkage) (FHIR `_disulfideLinkage`).
     #[serde(rename = "_disulfideLinkage")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

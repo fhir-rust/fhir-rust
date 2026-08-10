@@ -91,7 +91,7 @@
 //!     gender: Some(Coded::Known(AdministrativeGender::Male)),
 //!     name: vec![HumanName {
 //!         family: Some(FhirString("Chalmers".to_string())),
-//!         given: vec![FhirString("Peter".to_string())],
+//!         given: vec![FhirString("Peter".to_string())].into(),
 //!         ..Default::default()
 //!     }],
 //!     ..Default::default()

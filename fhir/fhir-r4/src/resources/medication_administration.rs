@@ -84,8 +84,8 @@ pub struct MedicationAdministration {
     pub identifier: Vec<types::Identifier>,
 
     /// Instantiates protocol or definition
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub instantiates: Vec<types::Uri>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub instantiates: ::fhir_core::PrimVec<types::Uri>,
     /// Primitive extension sibling for [`instantiates`](Self::instantiates) (FHIR `_instantiates`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_instantiates")]
@@ -184,7 +184,7 @@ struct MedicationAdministrationDe {
     #[serde(default)]
     identifier: Vec<types::Identifier>,
     #[serde(default)]
-    instantiates: Vec<types::Uri>,
+    instantiates: ::fhir_core::PrimVec<types::Uri>,
     #[serde(rename = "_instantiates")]
     #[serde(default)]
     instantiates_ext: Vec<Option<types::Element>>,

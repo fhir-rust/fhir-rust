@@ -132,8 +132,8 @@ pub struct ProcessRequest {
     pub item: Vec<ProcessRequestItem>,
 
     /// Resource type(s) to include
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub include: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub include: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`include`](Self::include) (FHIR `_include`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_include")]
@@ -141,8 +141,8 @@ pub struct ProcessRequest {
     pub include_ext: Vec<Option<types::Element>>,
 
     /// Resource type(s) to exclude
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub exclude: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub exclude: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`exclude`](Self::exclude) (FHIR `_exclude`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_exclude")]

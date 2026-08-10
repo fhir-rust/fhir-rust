@@ -200,8 +200,8 @@ pub struct TestScript {
     pub fixture: Vec<TestScriptFixture>,
 
     /// Reference of the validation profile
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub profile: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub profile: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`profile`](Self::profile) (FHIR `_profile`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_profile")]
@@ -299,7 +299,7 @@ struct TestScriptDe {
     #[serde(default)]
     fixture: Vec<TestScriptFixture>,
     #[serde(default)]
-    profile: Vec<types::Canonical>,
+    profile: ::fhir_core::PrimVec<types::Canonical>,
     #[serde(rename = "_profile")]
     #[serde(default)]
     profile_ext: Vec<Option<types::Element>>,
@@ -674,8 +674,8 @@ pub struct TestScriptMetadataCapability {
     pub description_ext: Option<types::Element>,
 
     /// Which origin server these requirements apply to
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub origin: Vec<types::Integer>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub origin: ::fhir_core::PrimVec<types::Integer>,
     /// Primitive extension sibling for [`origin`](Self::origin) (FHIR `_origin`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_origin")]
@@ -690,8 +690,8 @@ pub struct TestScriptMetadataCapability {
     pub destination_ext: Option<types::Element>,
 
     /// Links to the FHIR specification
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub link: Vec<types::Uri>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub link: ::fhir_core::PrimVec<types::Uri>,
     /// Primitive extension sibling for [`link`](Self::link) (FHIR `_link`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_link")]
@@ -1699,8 +1699,8 @@ pub struct TestScriptTestSystem {
     pub title_ext: Option<types::Element>,
 
     /// Features met by the test system
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub actor: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub actor: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`actor`](Self::actor) (FHIR `_actor`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_actor")]

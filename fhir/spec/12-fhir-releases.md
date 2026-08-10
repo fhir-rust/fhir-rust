@@ -195,7 +195,8 @@ the two trees must be edited differently.
   module `fhir::r4b`; the release table accommodated it without structural
   change, exactly as predicted. Its full-corpus gate surfaced two
   cross-release model defects the other corpora never exercised (audit
-  **F-86**, **F-87**).
+  **F-86**, **F-87**) — both fixed the same day (`R6.7a`; the shadow
+  deserializers).
   (R6 is already modelled and published, generated from its ballot draft under
   R12.14a; it will need regeneration, and promotion into the semver promise,
   when the final specification is published.)

@@ -580,8 +580,8 @@ pub struct ClaimInsurance {
     pub business_arrangement_ext: Option<types::Element>,
 
     /// Pre-Authorization/Determination Reference
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub pre_auth_ref: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub pre_auth_ref: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`pre_auth_ref`](Self::pre_auth_ref) (FHIR `_preAuthRef`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_preAuthRef")]
@@ -636,8 +636,8 @@ pub struct ClaimItem {
     pub sequence_ext: Option<types::Element>,
 
     /// Applicable careTeam members
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub care_team_link_id: Vec<types::PositiveInt>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub care_team_link_id: ::fhir_core::PrimVec<types::PositiveInt>,
     /// Primitive extension sibling for [`care_team_link_id`](Self::care_team_link_id) (FHIR `_careTeamLinkId`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_careTeamLinkId")]
@@ -645,8 +645,8 @@ pub struct ClaimItem {
     pub care_team_link_id_ext: Vec<Option<types::Element>>,
 
     /// Applicable diagnoses
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub diagnosis_link_id: Vec<types::PositiveInt>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub diagnosis_link_id: ::fhir_core::PrimVec<types::PositiveInt>,
     /// Primitive extension sibling for [`diagnosis_link_id`](Self::diagnosis_link_id) (FHIR `_diagnosisLinkId`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_diagnosisLinkId")]
@@ -654,8 +654,8 @@ pub struct ClaimItem {
     pub diagnosis_link_id_ext: Vec<Option<types::Element>>,
 
     /// Applicable procedures
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub procedure_link_id: Vec<types::PositiveInt>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub procedure_link_id: ::fhir_core::PrimVec<types::PositiveInt>,
     /// Primitive extension sibling for [`procedure_link_id`](Self::procedure_link_id) (FHIR `_procedureLinkId`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_procedureLinkId")]
@@ -663,8 +663,8 @@ pub struct ClaimItem {
     pub procedure_link_id_ext: Vec<Option<types::Element>>,
 
     /// Applicable exception and supporting information
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub information_link_id: Vec<types::PositiveInt>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub information_link_id: ::fhir_core::PrimVec<types::PositiveInt>,
     /// Primitive extension sibling for [`information_link_id`](Self::information_link_id) (FHIR `_informationLinkId`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_informationLinkId")]
@@ -746,22 +746,22 @@ struct ClaimItemDe {
     #[serde(rename = "_sequence")]
     sequence_ext: Option<types::Element>,
     #[serde(default)]
-    care_team_link_id: Vec<types::PositiveInt>,
+    care_team_link_id: ::fhir_core::PrimVec<types::PositiveInt>,
     #[serde(rename = "_careTeamLinkId")]
     #[serde(default)]
     care_team_link_id_ext: Vec<Option<types::Element>>,
     #[serde(default)]
-    diagnosis_link_id: Vec<types::PositiveInt>,
+    diagnosis_link_id: ::fhir_core::PrimVec<types::PositiveInt>,
     #[serde(rename = "_diagnosisLinkId")]
     #[serde(default)]
     diagnosis_link_id_ext: Vec<Option<types::Element>>,
     #[serde(default)]
-    procedure_link_id: Vec<types::PositiveInt>,
+    procedure_link_id: ::fhir_core::PrimVec<types::PositiveInt>,
     #[serde(rename = "_procedureLinkId")]
     #[serde(default)]
     procedure_link_id_ext: Vec<Option<types::Element>>,
     #[serde(default)]
-    information_link_id: Vec<types::PositiveInt>,
+    information_link_id: ::fhir_core::PrimVec<types::PositiveInt>,
     #[serde(rename = "_informationLinkId")]
     #[serde(default)]
     information_link_id_ext: Vec<Option<types::Element>>,

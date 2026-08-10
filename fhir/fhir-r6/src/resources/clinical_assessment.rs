@@ -137,8 +137,8 @@ pub struct ClinicalAssessment {
     pub change_pattern: Option<types::CodeableConcept>,
 
     /// Clinical Protocol followed
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub protocol: Vec<types::Uri>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub protocol: ::fhir_core::PrimVec<types::Uri>,
     /// Primitive extension sibling for [`protocol`](Self::protocol) (FHIR `_protocol`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_protocol")]
@@ -213,7 +213,7 @@ struct ClinicalAssessmentDe {
     problem: Vec<types::Reference>,
     change_pattern: Option<types::CodeableConcept>,
     #[serde(default)]
-    protocol: Vec<types::Uri>,
+    protocol: ::fhir_core::PrimVec<types::Uri>,
     #[serde(rename = "_protocol")]
     #[serde(default)]
     protocol_ext: Vec<Option<types::Element>>,

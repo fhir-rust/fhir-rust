@@ -57,6 +57,14 @@ against crates.io the same day:
   facade at 3.1.0. The F-87 fix followed the same afternoon: the six
   release crates republished at **3.0.1** and `fhir-derive-macros` at
   **1.4.0**, so no published version silently loses a choice element.
+  The F-86 fix closed the day: the six release crates and the facade at
+  **4.0.0** together (breaking — `0..*` primitives are now
+  `fhir_core::PrimVec<T>`, R6.7a), `fhir-core` **3.1.0**,
+  `fhir-derive-macros` **1.5.0**. Publishing the chain surfaced a real
+  ordering knot: `fhir-core`'s dev-dependency on the facade carried a
+  version, which a published crate must resolve from the registry — a
+  cycle, since the facade depends on `fhir-core`. It is now path-only,
+  like the release crates' equivalent, which cargo strips at publish.
 
 [`scripts/check-published-match.sh`](../scripts/check-published-match.sh)
 still enforces the invariant: a crate whose current name+version is on

@@ -119,8 +119,8 @@ pub struct ChargeItemDefinition {
     pub title_ext: Option<types::Element>,
 
     /// Underlying externally-defined charge item definition
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub derived_from_uri: Vec<types::Uri>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub derived_from_uri: ::fhir_core::PrimVec<types::Uri>,
     /// Primitive extension sibling for [`derived_from_uri`](Self::derived_from_uri) (FHIR `_derivedFromUri`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_derivedFromUri")]
@@ -129,8 +129,8 @@ pub struct ChargeItemDefinition {
 
     /// A larger definition of which this particular definition is a component
     /// or step
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub part_of: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub part_of: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`part_of`](Self::part_of) (FHIR `_partOf`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_partOf")]
@@ -139,8 +139,8 @@ pub struct ChargeItemDefinition {
 
     /// Completed or terminated request(s) whose function is taken by this new
     /// request
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub replaces: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub replaces: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`replaces`](Self::replaces) (FHIR `_replaces`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_replaces")]
@@ -284,17 +284,17 @@ struct ChargeItemDefinitionDe {
     #[serde(rename = "_title")]
     title_ext: Option<types::Element>,
     #[serde(default)]
-    derived_from_uri: Vec<types::Uri>,
+    derived_from_uri: ::fhir_core::PrimVec<types::Uri>,
     #[serde(rename = "_derivedFromUri")]
     #[serde(default)]
     derived_from_uri_ext: Vec<Option<types::Element>>,
     #[serde(default)]
-    part_of: Vec<types::Canonical>,
+    part_of: ::fhir_core::PrimVec<types::Canonical>,
     #[serde(rename = "_partOf")]
     #[serde(default)]
     part_of_ext: Vec<Option<types::Element>>,
     #[serde(default)]
-    replaces: Vec<types::Canonical>,
+    replaces: ::fhir_core::PrimVec<types::Canonical>,
     #[serde(rename = "_replaces")]
     #[serde(default)]
     replaces_ext: Vec<Option<types::Element>>,

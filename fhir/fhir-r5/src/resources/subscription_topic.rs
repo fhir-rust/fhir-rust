@@ -136,8 +136,8 @@ pub struct SubscriptionTopic {
     pub title_ext: Option<types::Element>,
 
     /// Based on FHIR protocol or definition
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub derived_from: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub derived_from: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`derived_from`](Self::derived_from) (FHIR `_derivedFrom`).
     #[serde(rename = "_derivedFrom")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -270,7 +270,7 @@ struct SubscriptionTopicDe {
     #[serde(rename = "_title")]
     title_ext: Option<types::Element>,
     #[serde(default)]
-    derived_from: Vec<types::Canonical>,
+    derived_from: ::fhir_core::PrimVec<types::Canonical>,
     #[serde(rename = "_derivedFrom")]
     #[serde(default)]
     derived_from_ext: Vec<Option<types::Element>>,
@@ -424,8 +424,8 @@ pub struct SubscriptionTopicResourceTrigger {
     pub resource_ext: Option<types::Element>,
 
     /// create | update | delete
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub supported_interaction: Vec<types::Code>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub supported_interaction: ::fhir_core::PrimVec<types::Code>,
     /// Primitive extension sibling for [`supported_interaction`](Self::supported_interaction) (FHIR `_supportedInteraction`).
     #[serde(rename = "_supportedInteraction")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -614,16 +614,18 @@ pub struct SubscriptionTopicCanFilterBy {
     pub filter_definition_ext: Option<types::Element>,
 
     /// eq | ne | gt | lt | ge | le | sa | eb | ap
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub comparator: Vec<crate::r5::coded::Coded<crate::r5::codes::SearchComparator>>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub comparator:
+        ::fhir_core::PrimVec<crate::r5::coded::Coded<crate::r5::codes::SearchComparator>>,
     /// Primitive extension sibling for [`comparator`](Self::comparator) (FHIR `_comparator`).
     #[serde(rename = "_comparator")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub comparator_ext: Vec<Option<types::Element>>,
 
     /// missing | exact | contains | not | text | in | not-in | below | above | type | identifier | of-type | code-text | text-advanced | iterate
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub modifier: Vec<crate::r5::coded::Coded<crate::r5::codes::SearchModifierCode>>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub modifier:
+        ::fhir_core::PrimVec<crate::r5::coded::Coded<crate::r5::codes::SearchModifierCode>>,
     /// Primitive extension sibling for [`modifier`](Self::modifier) (FHIR `_modifier`).
     #[serde(rename = "_modifier")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -670,16 +672,16 @@ pub struct SubscriptionTopicNotificationShape {
     pub resource_ext: Option<types::Element>,
 
     /// Include directives, rooted in the resource for this shape
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub include: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub include: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`include`](Self::include) (FHIR `_include`).
     #[serde(rename = "_include")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub include_ext: Vec<Option<types::Element>>,
 
     /// Reverse include directives, rooted in the resource for this shape
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub rev_include: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub rev_include: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`rev_include`](Self::rev_include) (FHIR `_revInclude`).
     #[serde(rename = "_revInclude")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

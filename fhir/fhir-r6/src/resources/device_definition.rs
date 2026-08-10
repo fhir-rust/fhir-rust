@@ -237,8 +237,8 @@ pub struct DeviceDefinition {
 
     /// Language code for the human-readable text strings produced by the
     /// device (all supported)
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub output_language: Vec<types::Code>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub output_language: ::fhir_core::PrimVec<types::Code>,
     /// Primitive extension sibling for [`output_language`](Self::output_language) (FHIR `_outputLanguage`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_outputLanguage")]
@@ -370,7 +370,7 @@ struct DeviceDefinitionDe {
     #[serde(default)]
     shelf_life_storage: Vec<types::ProductShelfLife>,
     #[serde(default)]
-    output_language: Vec<types::Code>,
+    output_language: ::fhir_core::PrimVec<types::Code>,
     #[serde(rename = "_outputLanguage")]
     #[serde(default)]
     output_language_ext: Vec<Option<types::Element>>,
@@ -600,8 +600,8 @@ pub struct DeviceDefinitionConformsTo {
 
     /// The specific form or variant of the standard, specification or formal
     /// guidance
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub version: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub version: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`version`](Self::version) (FHIR `_version`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_version")]

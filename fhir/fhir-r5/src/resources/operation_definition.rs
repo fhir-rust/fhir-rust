@@ -218,8 +218,8 @@ pub struct OperationDefinition {
     pub base_ext: Option<types::Element>,
 
     /// Types this operation applies to
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub resource: Vec<types::Code>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub resource: ::fhir_core::PrimVec<types::Code>,
     /// Primitive extension sibling for [`resource`](Self::resource) (FHIR `_resource`).
     #[serde(rename = "_resource")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -344,7 +344,7 @@ struct OperationDefinitionDe {
     #[serde(rename = "_base")]
     base_ext: Option<types::Element>,
     #[serde(default)]
-    resource: Vec<types::Code>,
+    resource: ::fhir_core::PrimVec<types::Code>,
     #[serde(rename = "_resource")]
     #[serde(default)]
     resource_ext: Vec<Option<types::Element>>,
@@ -488,8 +488,9 @@ pub struct OperationDefinitionParameter {
     pub use_ext: Option<types::Element>,
 
     /// instance | type | system
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub scope: Vec<crate::r5::coded::Coded<crate::r5::codes::OperationParameterScope>>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub scope:
+        ::fhir_core::PrimVec<crate::r5::coded::Coded<crate::r5::codes::OperationParameterScope>>,
     /// Primitive extension sibling for [`scope`](Self::scope) (FHIR `_scope`).
     #[serde(rename = "_scope")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -520,16 +521,16 @@ pub struct OperationDefinitionParameter {
     pub type_ext: Option<types::Element>,
 
     /// Allowed sub-type this parameter can have (if type is abstract)
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub allowed_type: Vec<crate::r5::coded::Coded<crate::r5::codes::FhirTypes>>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub allowed_type: ::fhir_core::PrimVec<crate::r5::coded::Coded<crate::r5::codes::FhirTypes>>,
     /// Primitive extension sibling for [`allowed_type`](Self::allowed_type) (FHIR `_allowedType`).
     #[serde(rename = "_allowedType")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub allowed_type_ext: Vec<Option<types::Element>>,
 
     /// If type is Reference | canonical, allowed targets. If type is 'Resource', then this constrains the allowed resource types
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub target_profile: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub target_profile: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`target_profile`](Self::target_profile) (FHIR `_targetProfile`).
     #[serde(rename = "_targetProfile")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -689,8 +690,8 @@ pub struct OperationDefinitionOverload {
     pub modifier_extension: Vec<types::Extension>,
 
     /// Name of parameter to include in overload
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub parameter_name: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub parameter_name: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`parameter_name`](Self::parameter_name) (FHIR `_parameterName`).
     #[serde(rename = "_parameterName")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

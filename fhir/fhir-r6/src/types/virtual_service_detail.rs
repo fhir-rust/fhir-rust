@@ -57,8 +57,8 @@ pub struct VirtualServiceDetail {
     pub address: Option<VirtualServiceDetailAddress>,
 
     /// Web address to see alternative connection details
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub additional_info: Vec<types::Url>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub additional_info: ::fhir_core::PrimVec<types::Url>,
     /// Primitive extension sibling for [`additional_info`](Self::additional_info) (FHIR `_additionalInfo`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_additionalInfo")]
@@ -90,7 +90,7 @@ struct VirtualServiceDetailDe {
     #[serde(flatten)]
     address: crate::r6::choice::Slot<VirtualServiceDetailAddress>,
     #[serde(default)]
-    additional_info: Vec<types::Url>,
+    additional_info: ::fhir_core::PrimVec<types::Url>,
     #[serde(rename = "_additionalInfo")]
     #[serde(default)]
     additional_info_ext: Vec<Option<types::Element>>,

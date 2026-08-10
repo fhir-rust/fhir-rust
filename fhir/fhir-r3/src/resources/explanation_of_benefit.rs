@@ -338,8 +338,8 @@ pub struct ExplanationOfBenefitAddItem {
     pub modifier_extension: Vec<types::Extension>,
 
     /// Service instances
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub sequence_link_id: Vec<types::PositiveInt>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub sequence_link_id: ::fhir_core::PrimVec<types::PositiveInt>,
     /// Primitive extension sibling for [`sequence_link_id`](Self::sequence_link_id) (FHIR `_sequenceLinkId`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_sequenceLinkId")]
@@ -363,8 +363,8 @@ pub struct ExplanationOfBenefitAddItem {
     pub fee: Option<types::Money>,
 
     /// List of note numbers which apply
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub note_number: Vec<types::PositiveInt>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub note_number: ::fhir_core::PrimVec<types::PositiveInt>,
     /// Primitive extension sibling for [`note_number`](Self::note_number) (FHIR `_noteNumber`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_noteNumber")]
@@ -432,8 +432,8 @@ pub struct ExplanationOfBenefitAddItemDetail {
     pub fee: Option<types::Money>,
 
     /// List of note numbers which apply
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub note_number: Vec<types::PositiveInt>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub note_number: ::fhir_core::PrimVec<types::PositiveInt>,
     /// Primitive extension sibling for [`note_number`](Self::note_number) (FHIR `_noteNumber`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_noteNumber")]
@@ -891,8 +891,8 @@ pub struct ExplanationOfBenefitInsurance {
     pub coverage: Option<types::Reference<crate::r3::resources::Coverage>>,
 
     /// Pre-Authorization/Determination Reference
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub pre_auth_ref: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub pre_auth_ref: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`pre_auth_ref`](Self::pre_auth_ref) (FHIR `_preAuthRef`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_preAuthRef")]
@@ -944,8 +944,8 @@ pub struct ExplanationOfBenefitItem {
     pub sequence_ext: Option<types::Element>,
 
     /// Applicable careteam members
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub care_team_link_id: Vec<types::PositiveInt>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub care_team_link_id: ::fhir_core::PrimVec<types::PositiveInt>,
     /// Primitive extension sibling for [`care_team_link_id`](Self::care_team_link_id) (FHIR `_careTeamLinkId`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_careTeamLinkId")]
@@ -953,8 +953,8 @@ pub struct ExplanationOfBenefitItem {
     pub care_team_link_id_ext: Vec<Option<types::Element>>,
 
     /// Applicable diagnoses
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub diagnosis_link_id: Vec<types::PositiveInt>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub diagnosis_link_id: ::fhir_core::PrimVec<types::PositiveInt>,
     /// Primitive extension sibling for [`diagnosis_link_id`](Self::diagnosis_link_id) (FHIR `_diagnosisLinkId`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_diagnosisLinkId")]
@@ -962,8 +962,8 @@ pub struct ExplanationOfBenefitItem {
     pub diagnosis_link_id_ext: Vec<Option<types::Element>>,
 
     /// Applicable procedures
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub procedure_link_id: Vec<types::PositiveInt>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub procedure_link_id: ::fhir_core::PrimVec<types::PositiveInt>,
     /// Primitive extension sibling for [`procedure_link_id`](Self::procedure_link_id) (FHIR `_procedureLinkId`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_procedureLinkId")]
@@ -971,8 +971,8 @@ pub struct ExplanationOfBenefitItem {
     pub procedure_link_id_ext: Vec<Option<types::Element>>,
 
     /// Applicable exception and supporting information
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub information_link_id: Vec<types::PositiveInt>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub information_link_id: ::fhir_core::PrimVec<types::PositiveInt>,
     /// Primitive extension sibling for [`information_link_id`](Self::information_link_id) (FHIR `_informationLinkId`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_informationLinkId")]
@@ -1038,8 +1038,8 @@ pub struct ExplanationOfBenefitItem {
     pub encounter: Vec<types::Reference<crate::r3::resources::Encounter>>,
 
     /// List of note numbers which apply
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub note_number: Vec<types::PositiveInt>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub note_number: ::fhir_core::PrimVec<types::PositiveInt>,
     /// Primitive extension sibling for [`note_number`](Self::note_number) (FHIR `_noteNumber`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_noteNumber")]
@@ -1067,22 +1067,22 @@ struct ExplanationOfBenefitItemDe {
     #[serde(rename = "_sequence")]
     sequence_ext: Option<types::Element>,
     #[serde(default)]
-    care_team_link_id: Vec<types::PositiveInt>,
+    care_team_link_id: ::fhir_core::PrimVec<types::PositiveInt>,
     #[serde(rename = "_careTeamLinkId")]
     #[serde(default)]
     care_team_link_id_ext: Vec<Option<types::Element>>,
     #[serde(default)]
-    diagnosis_link_id: Vec<types::PositiveInt>,
+    diagnosis_link_id: ::fhir_core::PrimVec<types::PositiveInt>,
     #[serde(rename = "_diagnosisLinkId")]
     #[serde(default)]
     diagnosis_link_id_ext: Vec<Option<types::Element>>,
     #[serde(default)]
-    procedure_link_id: Vec<types::PositiveInt>,
+    procedure_link_id: ::fhir_core::PrimVec<types::PositiveInt>,
     #[serde(rename = "_procedureLinkId")]
     #[serde(default)]
     procedure_link_id_ext: Vec<Option<types::Element>>,
     #[serde(default)]
-    information_link_id: Vec<types::PositiveInt>,
+    information_link_id: ::fhir_core::PrimVec<types::PositiveInt>,
     #[serde(rename = "_informationLinkId")]
     #[serde(default)]
     information_link_id_ext: Vec<Option<types::Element>>,
@@ -1111,7 +1111,7 @@ struct ExplanationOfBenefitItemDe {
     #[serde(default)]
     encounter: Vec<types::Reference<crate::r3::resources::Encounter>>,
     #[serde(default)]
-    note_number: Vec<types::PositiveInt>,
+    note_number: ::fhir_core::PrimVec<types::PositiveInt>,
     #[serde(rename = "_noteNumber")]
     #[serde(default)]
     note_number_ext: Vec<Option<types::Element>>,
@@ -1296,8 +1296,8 @@ pub struct ExplanationOfBenefitItemDetail {
     pub udi: Vec<types::Reference<crate::r3::resources::Device>>,
 
     /// List of note numbers which apply
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub note_number: Vec<types::PositiveInt>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub note_number: ::fhir_core::PrimVec<types::PositiveInt>,
     /// Primitive extension sibling for [`note_number`](Self::note_number) (FHIR `_noteNumber`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_noteNumber")]
@@ -1396,8 +1396,8 @@ pub struct ExplanationOfBenefitItemDetailSubDetail {
     pub udi: Vec<types::Reference<crate::r3::resources::Device>>,
 
     /// List of note numbers which apply
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub note_number: Vec<types::PositiveInt>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub note_number: ::fhir_core::PrimVec<types::PositiveInt>,
     /// Primitive extension sibling for [`note_number`](Self::note_number) (FHIR `_noteNumber`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_noteNumber")]

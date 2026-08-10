@@ -179,8 +179,8 @@ pub struct SubscriptionChannel {
     pub payload_ext: Option<types::Element>,
 
     /// Usage depends on the channel type
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub header: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub header: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`header`](Self::header) (FHIR `_header`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_header")]

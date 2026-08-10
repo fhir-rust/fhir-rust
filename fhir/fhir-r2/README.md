@@ -62,13 +62,13 @@ let patient = Patient {
     id: Some(types::Id("pat-1".to_string())),
     // DSTU2 lets a family name repeat; STU3 onwards do not.
     name: vec![types::HumanName {
-        family: vec![types::String("Doe".to_string())],
-        given: vec![types::String("Jane".to_string())],
+        family: vec![types::String("Doe".to_string())].into(),
+        given: vec![types::String("Jane".to_string())].into(),
         ..Default::default()
     }],
     ..Default::default()
 };
-assert_eq!(patient.name[0].family[0].0, "Doe");
+assert_eq!(patient.name[0].family.first_value().unwrap().0, "Doe");
 ```
 
 Every release exposes the same module shape — `types`, `resources`, `codes`,
@@ -100,7 +100,7 @@ let wire = r#"{"resourceType":"Patient","id":"pat-1","active":true,
 //    time — `resourceType` selects the variant.
 let resource: Resource = serde_json::from_str(wire).expect("valid resource");
 let Resource::Patient(patient) = resource else { panic!("expected a Patient") };
-assert_eq!(patient.name[0].family[0].0, "Doe");
+assert_eq!(patient.name[0].family.first_value().unwrap().0, "Doe");
 
 // 2. Validate: primitive formats, required bindings, cardinality.
 assert!(patient.validate().is_empty());

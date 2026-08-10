@@ -193,9 +193,10 @@ pub struct DeviceDefinition {
 
     /// lot-number | manufactured-date | serial-number | expiration-date | biological-source | software-version
     #[serde(rename = "productionIdentifierInUDI")]
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub production_identifier_in_udi:
-        Vec<crate::r5::coded::Coded<crate::r5::codes::DeviceProductidentifierinudi>>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub production_identifier_in_udi: ::fhir_core::PrimVec<
+        crate::r5::coded::Coded<crate::r5::codes::DeviceProductidentifierinudi>,
+    >,
     /// Primitive extension sibling for
     /// [`production_identifier_in_udi`](Self::production_identifier_in_udi)
     /// (FHIR `_productionIdentifierInUDI`).
@@ -499,8 +500,8 @@ pub struct DeviceDefinitionConformsTo {
     pub specification: types::CodeableConcept,
 
     /// The specific form or variant of the standard, specification or formal guidance
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub version: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub version: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`version`](Self::version) (FHIR `_version`).
     #[serde(rename = "_version")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

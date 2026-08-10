@@ -109,8 +109,8 @@ pub struct SubstanceProtein {
     /// by the abbreviation of the amino acids involved. The disulfide linkage
     /// positions shall actually contain the amino acid Cysteine at the
     /// respective positions
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub disulfide_linkage: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub disulfide_linkage: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`disulfide_linkage`](Self::disulfide_linkage) (FHIR `_disulfideLinkage`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_disulfideLinkage")]

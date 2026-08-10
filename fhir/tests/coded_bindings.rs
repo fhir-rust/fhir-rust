@@ -61,11 +61,11 @@ fn event_timing_recovers_meal_relative_codes() {
         let parsed: fhir::r5::types::Timing = ::serde_json::from_str(&json).expect("deserialize");
         let when = &parsed.repeat.as_ref().expect("repeat").when;
         assert_eq!(when.len(), 1, "{code}");
+        let first = when.first_value().expect("a value, not a placeholder");
         assert!(
-            matches!(when[0], Coded::Known(_)),
+            matches!(first, Coded::Known(_)),
             "{code} fell back to Unknown — the event-timing value set is not \
-             fully resolved: {:?}",
-            when[0]
+             fully resolved: {first:?}"
         );
         assert_eq!(
             ::serde_json::to_string(&parsed).expect("serialize"),

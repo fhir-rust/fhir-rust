@@ -99,8 +99,8 @@ pub struct Location {
 
     /// A list of alternate names that the location is known as, or was known
     /// as, in the past
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub alias: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub alias: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`alias`](Self::alias) (FHIR `_alias`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_alias")]
@@ -198,8 +198,8 @@ pub struct LocationHoursOfOperation {
     pub modifier_extension: Vec<types::Extension>,
 
     /// mon | tue | wed | thu | fri | sat | sun
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub days_of_week: Vec<crate::coded::Coded<crate::r4::codes::DaysOfWeek>>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub days_of_week: ::fhir_core::PrimVec<crate::coded::Coded<crate::r4::codes::DaysOfWeek>>,
     /// Primitive extension sibling for [`days_of_week`](Self::days_of_week) (FHIR `_daysOfWeek`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_daysOfWeek")]

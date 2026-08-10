@@ -80,8 +80,8 @@ pub struct ChargeItem {
     pub identifier: Option<types::Identifier>,
 
     /// Defining information about the code of this charge item
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub definition: Vec<types::Uri>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub definition: ::fhir_core::PrimVec<types::Uri>,
     /// Primitive extension sibling for [`definition`](Self::definition) (FHIR `_definition`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_definition")]
@@ -199,7 +199,7 @@ struct ChargeItemDe {
     modifier_extension: Vec<types::Extension>,
     identifier: Option<types::Identifier>,
     #[serde(default)]
-    definition: Vec<types::Uri>,
+    definition: ::fhir_core::PrimVec<types::Uri>,
     #[serde(rename = "_definition")]
     #[serde(default)]
     definition_ext: Vec<Option<types::Element>>,

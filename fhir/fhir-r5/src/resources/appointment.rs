@@ -352,8 +352,8 @@ pub struct AppointmentRecurrenceTemplate {
     pub occurrence_count_ext: Option<types::Element>,
 
     /// Specific dates for a recurring set of appointments (no template)
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub occurrence_date: Vec<types::Date>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub occurrence_date: ::fhir_core::PrimVec<types::Date>,
     /// Primitive extension sibling for [`occurrence_date`](Self::occurrence_date) (FHIR `_occurrenceDate`).
     #[serde(rename = "_occurrenceDate")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -369,16 +369,16 @@ pub struct AppointmentRecurrenceTemplate {
     pub yearly_template: Option<AppointmentRecurrenceTemplateYearlyTemplate>,
 
     /// Any dates that should be excluded from the series
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub excluding_date: Vec<types::Date>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub excluding_date: ::fhir_core::PrimVec<types::Date>,
     /// Primitive extension sibling for [`excluding_date`](Self::excluding_date) (FHIR `_excludingDate`).
     #[serde(rename = "_excludingDate")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub excluding_date_ext: Vec<Option<types::Element>>,
 
     /// Any recurrence IDs that should be excluded from the recurrence
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub excluding_recurrence_id: Vec<types::PositiveInt>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub excluding_recurrence_id: ::fhir_core::PrimVec<types::PositiveInt>,
     /// Primitive extension sibling for [`excluding_recurrence_id`](Self::excluding_recurrence_id) (FHIR `_excludingRecurrenceId`).
     #[serde(rename = "_excludingRecurrenceId")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

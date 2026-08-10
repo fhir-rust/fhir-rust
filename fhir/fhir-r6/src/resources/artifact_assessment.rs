@@ -303,8 +303,8 @@ pub struct ArtifactAssessmentContent {
     pub author: Vec<types::Reference>,
 
     /// What the comment is directed to
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub path: Vec<types::Uri>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub path: ::fhir_core::PrimVec<types::Uri>,
     /// Primitive extension sibling for [`path`](Self::path) (FHIR `_path`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_path")]

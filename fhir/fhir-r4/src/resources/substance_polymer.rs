@@ -85,8 +85,8 @@ pub struct SubstancePolymer {
     pub copolymer_connectivity: Vec<types::CodeableConcept>,
 
     /// Todo
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub modification: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub modification: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`modification`](Self::modification) (FHIR `_modification`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_modification")]

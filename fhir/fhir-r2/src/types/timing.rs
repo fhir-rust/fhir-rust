@@ -47,8 +47,8 @@ pub struct Timing {
     pub extension: Vec<types::Extension>,
 
     /// When the event occurs
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub event: Vec<types::DateTime>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub event: ::fhir_core::PrimVec<types::DateTime>,
     /// Primitive extension sibling for [`event`](Self::event) (FHIR `_event`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_event")]

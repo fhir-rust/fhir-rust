@@ -585,8 +585,8 @@ pub struct CoverageEligibilityResponseError {
     pub code: types::CodeableConcept,
 
     /// FHIRPath of element(s) related to issue
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub expression: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub expression: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`expression`](Self::expression) (FHIR `_expression`).
     #[serde(rename = "_expression")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

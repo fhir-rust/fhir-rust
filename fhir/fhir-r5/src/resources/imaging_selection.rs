@@ -264,8 +264,8 @@ pub struct ImagingSelectionInstance {
     pub sop_class: Option<types::Coding>,
 
     /// The selected subset of the SOP Instance
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub subset: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub subset: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`subset`](Self::subset) (FHIR `_subset`).
     #[serde(rename = "_subset")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

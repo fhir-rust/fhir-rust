@@ -233,8 +233,8 @@ pub struct ActivityDefinition {
     pub related_artifact: Vec<types::RelatedArtifact>,
 
     /// Logic used by the activity definition
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub library: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub library: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`library`](Self::library) (FHIR `_library`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_library")]
@@ -420,7 +420,7 @@ struct ActivityDefinitionDe {
     #[serde(default)]
     related_artifact: Vec<types::RelatedArtifact>,
     #[serde(default)]
-    library: Vec<types::Canonical>,
+    library: ::fhir_core::PrimVec<types::Canonical>,
     #[serde(rename = "_library")]
     #[serde(default)]
     library_ext: Vec<Option<types::Element>>,

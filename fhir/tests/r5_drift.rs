@@ -72,6 +72,9 @@ const SANCTIONED: &[Sanctioned] = &[
 
 fn normalize(ty: &str) -> String {
     let ty: String = ty.split_whitespace().collect();
+    // rustfmt adds a trailing comma when it wraps a generic argument list;
+    // `Foo<X,>` and `Foo<X>` are the same type.
+    let ty = ty.replace(",>", ">");
     ty.replace("::vec1::", "vec1::")
         .replace("crate::r5::coded::", "crate::coded::")
         .replace("crate::r5::codes::", "codes::")

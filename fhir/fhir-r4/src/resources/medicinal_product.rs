@@ -93,8 +93,8 @@ pub struct MedicinalProduct {
 
     /// Whether the Medicinal Product is subject to special measures for
     /// regulatory reasons
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub special_measures: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub special_measures: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`special_measures`](Self::special_measures) (FHIR `_specialMeasures`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_specialMeasures")]

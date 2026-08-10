@@ -27,6 +27,9 @@
 /// The FHIR `decimal` primitive, preserving the precision it was given.
 pub mod decimal;
 
+/// The value array of a repeating FHIR primitive (audit F-86).
+pub mod primvec;
+
 /// The [`Validate`](validate::Validate) trait and [`ValidationIssue`](validate::ValidationIssue).
 pub mod validate;
 
@@ -61,3 +64,5 @@ pub mod xml;
 /// An async FHIR REST client, generic over the release (feature `client`).
 #[cfg(feature = "client")]
 pub mod client;
+
+pub use primvec::PrimVec;

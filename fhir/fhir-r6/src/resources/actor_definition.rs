@@ -201,8 +201,8 @@ pub struct ActorDefinition {
     pub documentation_ext: Option<types::Element>,
 
     /// Reference to more information about the actor
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub reference: Vec<types::Url>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub reference: ::fhir_core::PrimVec<types::Url>,
     /// Primitive extension sibling for [`reference`](Self::reference) (FHIR `_reference`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_reference")]
@@ -210,8 +210,8 @@ pub struct ActorDefinition {
     pub reference_ext: Vec<Option<types::Element>>,
 
     /// Parent actor definition
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub base_definition: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub base_definition: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`base_definition`](Self::base_definition) (FHIR `_baseDefinition`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_baseDefinition")]
@@ -290,12 +290,12 @@ struct ActorDefinitionDe {
     #[serde(rename = "_documentation")]
     documentation_ext: Option<types::Element>,
     #[serde(default)]
-    reference: Vec<types::Url>,
+    reference: ::fhir_core::PrimVec<types::Url>,
     #[serde(rename = "_reference")]
     #[serde(default)]
     reference_ext: Vec<Option<types::Element>>,
     #[serde(default)]
-    base_definition: Vec<types::Canonical>,
+    base_definition: ::fhir_core::PrimVec<types::Canonical>,
     #[serde(rename = "_baseDefinition")]
     #[serde(default)]
     base_definition_ext: Vec<Option<types::Element>>,

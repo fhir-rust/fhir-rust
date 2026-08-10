@@ -994,8 +994,8 @@ pub struct CitationCitedArtifactPublicationForm {
     pub last_revision_date_ext: Option<types::Element>,
 
     /// Language(s) in which this form of the article is published
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub language: Vec<types::Code>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub language: ::fhir_core::PrimVec<types::Code>,
     /// Primitive extension sibling for [`language`](Self::language) (FHIR `_language`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_language")]

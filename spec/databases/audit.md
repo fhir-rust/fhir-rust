@@ -184,7 +184,7 @@ type-/system-level history, multi-port wiring, is tracked in that crate's
 | [F-83](#f-83) | Low | `fhir-oracle`'s book lacks the F-56 banner that root `CLAUDE.md` says all six books carry | **fixed** 2026-08-06 |
 | [F-84](#f-84) | Medium | **All six** ports' `publish.yml` iterate a `fhir-<engine>-server` crate and a CLI crate, and all six `release.yml` build a `fhir-<engine>` binary — none of which has ever existed (wider than first recorded: not just the two former scaffolds) | **fixed** 2026-08-06 — publish loops corrected in all six; the six binary-release workflows deleted outright |
 | [F-85](#f-85) | Medium | `fhir-oracle` refused every root-level extension outright (`ORA-01400`): the empty attach path binds as NULL (`''` is NULL) against `"path" CLOB NOT NULL` — a US-Core-style Patient could not be stored at all | **fixed** 2026-08-10 — bounded `"path"` is nullable (`M14.39`), NULL means the empty path; fresh installs via `create_table`, existing ones via F-47 step 5's conversion; live-verified both ways |
-| [F-86](#f-86) | Medium | The `fhir/` model family (every release, R2–R6 and R4B) rejects FHIR JSON's null-padded primitive arrays (`"event": [null]` beside `_event`): repeating primitives are `Vec<T>` and cannot hold a placeholder position | open — found 2026-08-10 by R4B's full-corpus gate; the other corpora use the omit-the-value-array form and never exercised it. Representation decision needed (`Vec<Option<T>>` or equivalent) — an API-affecting change across six release crates |
+| [F-86](#f-86) | Medium | The `fhir/` model family (every release, R2–R6 and R4B) rejects FHIR JSON's null-padded primitive arrays (`"event": [null]` beside `_event`): repeating primitives are `Vec<T>` and cannot hold a placeholder position | **fixed** 2026-08-10 (owner-directed: a dedicated container) — `0..*` primitives are now `fhir_core::PrimVec<T>` (`R6.7a`), a transparent `Vec<Option<T>>` whose `None` is the extension-only placeholder; the nine R4B corpus examples round-trip and left the allowlist at the gate's own demand. Stated residual: `1..*` primitives keep `Vec1` and its type-level non-emptiness, so an ext-only position there stays unrepresentable (loudly refused, F-87; no corpus example uses it) |
 | [F-87](#f-87) | **High** | A choice element (`timing[x]` and kin) whose content fails to parse is **silently dropped** — the resource deserializes "successfully" minus the element, data loss masquerading as success | **fixed** 2026-08-10, same day — every choice-bearing struct now deserializes through a generated shadow whose choice fields are non-`Option` `choice::Slot`s, so a present-but-invalid element errors loudly; all six release crates, five corpora green |
 
 ## What remains, and why
@@ -5005,6 +5005,29 @@ Since F-87's same-day fix, the failure mode is honest: such a document is
 **refused with a loud error** rather than parsed minus its element. The
 ext-only primitive-choice form (`_valueX` with no `valueX`) is likewise
 refused by name — it is this finding's other unrepresentable shape.
+
+**Fixed 2026-08-10, the same day, owner-directed: a dedicated container.**
+`fhir_core::PrimVec<T>` (spec `R6.7a`, `R9.1a`) is the value array as the
+wire defines it — transparently `Vec<Option<T>>`, `None` the
+extension-only placeholder, serialized back as the same `null` so the wire
+form round-trips exactly. Every `0..*` primitive field in all six release
+crates now uses it: the emitter switches on the repeating-extension
+sibling, the `Builder`/emptiness derives treat `PrimVec` like `Vec`, and
+construction stays ergonomic (`vec![…].into()`, `.values()` skips
+placeholders). Five trees regenerated; R5's hand tree converted
+field-by-field with the drift gate as referee — it caught the first splice
+being wrong in *both* directions (missed `Coded<…>` repeating codes;
+over-converted same-named complex fields in `TestScript`, `ValueSet`,
+`DeviceDefinition`) and the comparator learned that rustfmt's trailing
+comma in a wrapped generic is formatting, not drift. The gate then
+demanded the R4B allowlist shrink: all nine null-padded examples
+round-trip, so `KNOWN_FAILURES` is empty again.
+
+**Stated residual** (also in `R6.7a`): `1..*` repeating primitives keep
+`vec1::Vec1<T>` and its compile-time non-emptiness, so an extension-only
+position in a *required* repeating primitive remains unrepresentable. No
+example in any official corpus uses that shape; if one ever arrives it is
+refused loudly (F-87), never silently dropped.
 
 ## F-87
 

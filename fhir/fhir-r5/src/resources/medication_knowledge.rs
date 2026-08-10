@@ -117,8 +117,8 @@ pub struct MedicationKnowledge {
     pub intended_jurisdiction: Vec<types::CodeableConcept>,
 
     /// A name associated with the medication being described, such as a brand, generic, or synonym name
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub name: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub name: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`name`](Self::name) (FHIR `_name`).
     #[serde(rename = "_name")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

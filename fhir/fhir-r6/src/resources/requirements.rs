@@ -184,8 +184,8 @@ pub struct Requirements {
     pub copyright_label_ext: Option<types::Element>,
 
     /// Other set of Requirements this builds on
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub derived_from: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub derived_from: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`derived_from`](Self::derived_from) (FHIR `_derivedFrom`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_derivedFrom")]
@@ -198,8 +198,8 @@ pub struct Requirements {
 
     /// External artifact (rule/document etc. that) created this set of
     /// requirements
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub reference: Vec<types::Url>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub reference: ::fhir_core::PrimVec<types::Url>,
     /// Primitive extension sibling for [`reference`](Self::reference) (FHIR `_reference`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_reference")]
@@ -280,14 +280,14 @@ struct RequirementsDe {
     #[serde(rename = "_copyrightLabel")]
     copyright_label_ext: Option<types::Element>,
     #[serde(default)]
-    derived_from: Vec<types::Canonical>,
+    derived_from: ::fhir_core::PrimVec<types::Canonical>,
     #[serde(rename = "_derivedFrom")]
     #[serde(default)]
     derived_from_ext: Vec<Option<types::Element>>,
     #[serde(default)]
     imports: Vec<RequirementsImports>,
     #[serde(default)]
-    reference: Vec<types::Url>,
+    reference: ::fhir_core::PrimVec<types::Url>,
     #[serde(rename = "_reference")]
     #[serde(default)]
     reference_ext: Vec<Option<types::Element>>,
@@ -444,8 +444,8 @@ pub struct RequirementsImports {
     pub reference_ext: Option<types::Element>,
 
     /// Statement key
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub key: Vec<types::Id>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub key: ::fhir_core::PrimVec<types::Id>,
     /// Primitive extension sibling for [`key`](Self::key) (FHIR `_key`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_key")]
@@ -503,8 +503,9 @@ pub struct RequirementsStatement {
     pub label_ext: Option<types::Element>,
 
     /// SHALL | SHOULD | MAY | SHOULD-NOT | SHALL-NOT
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub conformance: Vec<crate::coded::Coded<crate::r6::codes::ConformanceExpectation>>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub conformance:
+        ::fhir_core::PrimVec<crate::coded::Coded<crate::r6::codes::ConformanceExpectation>>,
     /// Primitive extension sibling for [`conformance`](Self::conformance) (FHIR `_conformance`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_conformance")]
@@ -534,8 +535,8 @@ pub struct RequirementsStatement {
     pub part_of: Option<RequirementsStatementPartOf>,
 
     /// Design artifact that satisfies this requirement
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub satisfied_by: Vec<types::Url>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub satisfied_by: ::fhir_core::PrimVec<types::Url>,
     /// Primitive extension sibling for [`satisfied_by`](Self::satisfied_by) (FHIR `_satisfiedBy`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_satisfiedBy")]
@@ -543,8 +544,8 @@ pub struct RequirementsStatement {
     pub satisfied_by_ext: Vec<Option<types::Element>>,
 
     /// External artifact (rule/document etc. that) created this requirement
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub reference: Vec<types::Url>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub reference: ::fhir_core::PrimVec<types::Url>,
     /// Primitive extension sibling for [`reference`](Self::reference) (FHIR `_reference`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_reference")]
@@ -556,8 +557,8 @@ pub struct RequirementsStatement {
     pub source: Vec<types::Reference>,
 
     /// Key of relevant actor
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub actor: Vec<types::Id>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub actor: ::fhir_core::PrimVec<types::Id>,
     /// Primitive extension sibling for [`actor`](Self::actor) (FHIR `_actor`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_actor")]

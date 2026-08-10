@@ -64,8 +64,9 @@ pub struct ElementDefinition {
     pub path_ext: Option<types::Element>,
 
     /// xmlAttr | xmlText | typeAttr | cdaText | xhtml
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub representation: Vec<crate::r5::coded::Coded<crate::r5::codes::PropertyRepresentation>>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub representation:
+        ::fhir_core::PrimVec<crate::r5::coded::Coded<crate::r5::codes::PropertyRepresentation>>,
     /// Primitive extension sibling for [`representation`](Self::representation) (FHIR `_representation`).
     #[serde(rename = "_representation")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -121,8 +122,8 @@ pub struct ElementDefinition {
     pub requirements_ext: Option<types::Element>,
 
     /// Other names
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub alias: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub alias: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`alias`](Self::alias) (FHIR `_alias`).
     #[serde(rename = "_alias")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -196,8 +197,8 @@ pub struct ElementDefinition {
     pub max_length_ext: Option<types::Element>,
 
     /// Reference to invariant about presence
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub condition: Vec<types::Id>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub condition: ::fhir_core::PrimVec<types::Id>,
     /// Primitive extension sibling for [`condition`](Self::condition) (FHIR `_condition`).
     #[serde(rename = "_condition")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -214,8 +215,8 @@ pub struct ElementDefinition {
     pub must_have_value_ext: Option<types::Element>,
 
     /// Extensions that are allowed to replace a primitive value
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value_alternatives: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub value_alternatives: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`value_alternatives`](Self::value_alternatives) (FHIR `_valueAlternatives`).
     #[serde(rename = "_valueAlternatives")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -265,7 +266,8 @@ struct ElementDefinitionDe {
     #[serde(rename = "_path")]
     path_ext: Option<types::Element>,
     #[serde(default)]
-    representation: Vec<crate::r5::coded::Coded<crate::r5::codes::PropertyRepresentation>>,
+    representation:
+        ::fhir_core::PrimVec<crate::r5::coded::Coded<crate::r5::codes::PropertyRepresentation>>,
     #[serde(rename = "_representation")]
     #[serde(default)]
     representation_ext: Vec<Option<types::Element>>,
@@ -294,7 +296,7 @@ struct ElementDefinitionDe {
     #[serde(rename = "_requirements")]
     requirements_ext: Option<types::Element>,
     #[serde(default)]
-    alias: Vec<types::String>,
+    alias: ::fhir_core::PrimVec<types::String>,
     #[serde(rename = "_alias")]
     #[serde(default)]
     alias_ext: Vec<Option<types::Element>>,
@@ -332,7 +334,7 @@ struct ElementDefinitionDe {
     #[serde(rename = "_maxLength")]
     max_length_ext: Option<types::Element>,
     #[serde(default)]
-    condition: Vec<types::Id>,
+    condition: ::fhir_core::PrimVec<types::Id>,
     #[serde(rename = "_condition")]
     #[serde(default)]
     condition_ext: Vec<Option<types::Element>>,
@@ -342,7 +344,7 @@ struct ElementDefinitionDe {
     #[serde(rename = "_mustHaveValue")]
     must_have_value_ext: Option<types::Element>,
     #[serde(default)]
-    value_alternatives: Vec<types::Canonical>,
+    value_alternatives: ::fhir_core::PrimVec<types::Canonical>,
     #[serde(rename = "_valueAlternatives")]
     #[serde(default)]
     value_alternatives_ext: Vec<Option<types::Element>>,
@@ -613,24 +615,25 @@ pub struct ElementDefinitionType {
     pub code_ext: Option<types::Element>,
 
     /// Profiles (StructureDefinition or IG) - one must apply
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub profile: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub profile: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`profile`](Self::profile) (FHIR `_profile`).
     #[serde(rename = "_profile")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub profile_ext: Vec<Option<types::Element>>,
 
     /// Profile on the Reference/canonical target - one must apply
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub target_profile: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub target_profile: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`target_profile`](Self::target_profile) (FHIR `_targetProfile`).
     #[serde(rename = "_targetProfile")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub target_profile_ext: Vec<Option<types::Element>>,
 
     /// contained | referenced | bundled - how aggregated
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub aggregation: Vec<crate::r5::coded::Coded<crate::r5::codes::ResourceAggregationMode>>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub aggregation:
+        ::fhir_core::PrimVec<crate::r5::coded::Coded<crate::r5::codes::ResourceAggregationMode>>,
     /// Primitive extension sibling for [`aggregation`](Self::aggregation) (FHIR `_aggregation`).
     #[serde(rename = "_aggregation")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

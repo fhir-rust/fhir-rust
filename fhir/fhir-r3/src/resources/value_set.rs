@@ -299,8 +299,8 @@ pub struct ValueSetComposeInclude {
     pub filter: Vec<ValueSetComposeIncludeFilter>,
 
     /// Select only contents included in this value set
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub value_set: Vec<types::Uri>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub value_set: ::fhir_core::PrimVec<types::Uri>,
     /// Primitive extension sibling for [`value_set`](Self::value_set) (FHIR `_valueSet`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_valueSet")]

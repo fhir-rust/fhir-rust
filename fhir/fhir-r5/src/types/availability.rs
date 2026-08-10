@@ -98,8 +98,8 @@ pub struct AvailabilityAvailableTime {
     pub extension: Vec<types::Extension>,
 
     /// mon | tue | wed | thu | fri | sat | sun
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub days_of_week: Vec<crate::r5::coded::Coded<crate::r5::codes::DaysOfWeek>>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub days_of_week: ::fhir_core::PrimVec<crate::r5::coded::Coded<crate::r5::codes::DaysOfWeek>>,
     /// Primitive extension sibling for [`days_of_week`](Self::days_of_week) (FHIR `_daysOfWeek`).
     #[serde(rename = "_daysOfWeek")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

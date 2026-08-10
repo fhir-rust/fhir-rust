@@ -216,7 +216,7 @@ fn ele_1_check(fields: &Fields) -> Option<proc_macro2::TokenStream> {
         };
         match path.path.segments.last()?.ident.to_string().as_str() {
             "Option" => emptiness.push(quote! { self.#ident.is_none() }),
-            "Vec" => emptiness.push(quote! { self.#ident.is_empty() }),
+            "Vec" | "PrimVec" => emptiness.push(quote! { self.#ident.is_empty() }),
             // A `Vec1` is never empty and anything else is a required field:
             // either way this struct always has a child, so there is nothing
             // to check.
@@ -402,6 +402,12 @@ fn to_camel(s: &str) -> String {
 /// Whether a field type is a bare `Vec<…>` (not `Option<Vec<…>>`).
 fn is_bare_vec(ty: &syn::Type) -> bool {
     matches!(ty, syn::Type::Path(p) if p.path.segments.last().is_some_and(|s| s.ident == "Vec"))
+}
+
+/// A repeating primitive's value array (`::fhir_core::PrimVec<T>`, F-86):
+/// like a `Vec` for builder and emptiness purposes — defaults to empty.
+fn is_prim_vec(ty: &syn::Type) -> bool {
+    matches!(ty, syn::Type::Path(p) if p.path.segments.last().is_some_and(|s| s.ident == "PrimVec"))
 }
 
 fn struct_field_stmts(
@@ -795,8 +801,9 @@ pub fn derive_builder(input: TokenStream) -> TokenStream {
                 }
             });
             build_fields.push(quote! { #ident: self.#ident });
-        } else if is_bare_vec(ty) {
-            // Repeating field: builder holds the `Vec` directly (default empty).
+        } else if is_bare_vec(ty) || is_prim_vec(ty) {
+            // Repeating field (`Vec`, or a repeating primitive's `PrimVec`,
+            // F-86): builder holds it directly (default empty).
             builder_fields.push(quote! { #ident: #ty });
             setters.push(quote! {
                 #[must_use]

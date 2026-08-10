@@ -170,8 +170,8 @@ pub struct SearchParameter {
     pub xpath_usage_ext: Option<types::Element>,
 
     /// Types of resource (if a resource reference)
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub target: Vec<crate::coded::Coded<crate::r2::codes::ResourceTypes>>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub target: ::fhir_core::PrimVec<crate::coded::Coded<crate::r2::codes::ResourceTypes>>,
     /// Primitive extension sibling for [`target`](Self::target) (FHIR `_target`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_target")]

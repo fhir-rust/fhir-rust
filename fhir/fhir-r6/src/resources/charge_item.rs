@@ -86,8 +86,8 @@ pub struct ChargeItem {
     pub identifier: Vec<types::Identifier>,
 
     /// Defining information about the code of this charge item
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub definition_uri: Vec<types::Uri>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub definition_uri: ::fhir_core::PrimVec<types::Uri>,
     /// Primitive extension sibling for [`definition_uri`](Self::definition_uri) (FHIR `_definitionUri`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_definitionUri")]
@@ -95,8 +95,8 @@ pub struct ChargeItem {
     pub definition_uri_ext: Vec<Option<types::Element>>,
 
     /// Resource defining the code of this ChargeItem
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub definition_canonical: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub definition_canonical: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`definition_canonical`](Self::definition_canonical) (FHIR `_definitionCanonical`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_definitionCanonical")]
@@ -214,12 +214,12 @@ struct ChargeItemDe {
     #[serde(default)]
     identifier: Vec<types::Identifier>,
     #[serde(default)]
-    definition_uri: Vec<types::Uri>,
+    definition_uri: ::fhir_core::PrimVec<types::Uri>,
     #[serde(rename = "_definitionUri")]
     #[serde(default)]
     definition_uri_ext: Vec<Option<types::Element>>,
     #[serde(default)]
-    definition_canonical: Vec<types::Canonical>,
+    definition_canonical: ::fhir_core::PrimVec<types::Canonical>,
     #[serde(rename = "_definitionCanonical")]
     #[serde(default)]
     definition_canonical_ext: Vec<Option<types::Element>>,

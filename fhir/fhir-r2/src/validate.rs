@@ -39,7 +39,7 @@ impl From<ValidationIssue> for crate::r2::resources::operation_outcome::Operatio
             // DSTU2 has no `expression`; that arrived in R3. `location` is
             // its predecessor and carries the same information, so the path
             // is still reported rather than dropped.
-            location: vec![types::String(issue.path)],
+            location: vec![types::String(issue.path)].into(),
             ..Default::default()
         }
     }
@@ -63,7 +63,10 @@ impl From<ValidationIssue> for crate::r2::resources::operation_outcome::Operatio
 ///
 /// let outcome: OperationOutcome = patient.validate().into();
 /// assert_eq!(outcome.issue.len(), 1);
-/// assert_eq!(outcome.issue[0].location[0].0, "implicit_rules.uri");
+/// assert_eq!(
+///     outcome.issue[0].location.first_value().unwrap().0,
+///     "implicit_rules.uri"
+/// );
 /// ```
 impl From<Vec<ValidationIssue>> for crate::r2::resources::operation_outcome::OperationOutcome {
     fn from(issues: Vec<ValidationIssue>) -> Self {

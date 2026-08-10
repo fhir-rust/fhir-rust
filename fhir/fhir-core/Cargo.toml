@@ -1,7 +1,7 @@
 [package]
 name = "fhir-core"
 description = "Release-independent core for the FHIR crates: decimal, validation, coded values, builders, temporal parsing, XML, and the REST client."
-version = "3.0.1"
+version = "3.1.0"
 edition = "2024"
 rust-version = "1.88"
 license = "MIT OR Apache-2.0 OR BSD-3-Clause OR GPL-2.0-only OR GPL-3.0-only"
@@ -44,7 +44,11 @@ quick-xml = { version = "0.41", optional = true }
 # dev-dependencies separately, so the cycle is legal and nothing ships.
 # Before this, `cargo test -p fhir-core --doc` could not compile 13 doctests
 # and no CI invocation ran them at all.
-fhir = { path = "..", version = "3.0.0" }
+# Path-only, like the release crates' dev-dependency on the facade: cargo
+# strips a versionless path dev-dep at publish, which is what breaks the
+# publish-order cycle (the facade depends on this crate, and this crate's
+# doctests demonstrate it through the facade).
+fhir = { path = ".." }
 
 [lints.rust]
 unsafe_code = "forbid"

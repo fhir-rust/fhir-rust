@@ -75,8 +75,8 @@ pub struct Address {
     pub text_ext: Option<types::Element>,
 
     /// Street name, number, direction & P.O. Box etc.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub line: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub line: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`line`](Self::line) (FHIR `_line`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_line")]

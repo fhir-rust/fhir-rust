@@ -116,8 +116,9 @@ pub struct AllergyIntolerance {
     pub r#type: Option<types::CodeableConcept>,
 
     /// food | medication | environment | biologic
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub category: Vec<crate::r5::coded::Coded<crate::r5::codes::AllergyIntoleranceCategory>>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub category:
+        ::fhir_core::PrimVec<crate::r5::coded::Coded<crate::r5::codes::AllergyIntoleranceCategory>>,
     /// Primitive extension sibling for [`category`](Self::category) (FHIR `_category`).
     #[serde(rename = "_category")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -193,7 +194,8 @@ struct AllergyIntoleranceDe {
     verification_status: Option<types::CodeableConcept>,
     r#type: Option<types::CodeableConcept>,
     #[serde(default)]
-    category: Vec<crate::r5::coded::Coded<crate::r5::codes::AllergyIntoleranceCategory>>,
+    category:
+        ::fhir_core::PrimVec<crate::r5::coded::Coded<crate::r5::codes::AllergyIntoleranceCategory>>,
     #[serde(rename = "_category")]
     #[serde(default)]
     category_ext: Vec<Option<types::Element>>,

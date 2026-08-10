@@ -169,8 +169,8 @@ pub struct ImplementationGuide {
     pub global: Vec<ImplementationGuideGlobal>,
 
     /// Image, css, script, etc.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub binary: Vec<types::Uri>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub binary: ::fhir_core::PrimVec<types::Uri>,
     /// Primitive extension sibling for [`binary`](Self::binary) (FHIR `_binary`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_binary")]
@@ -509,8 +509,8 @@ pub struct ImplementationGuidePage {
     pub kind_ext: Option<types::Element>,
 
     /// Kind of resource to include in the list
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub r#type: Vec<crate::coded::Coded<crate::r3::codes::ResourceTypes>>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub r#type: ::fhir_core::PrimVec<crate::coded::Coded<crate::r3::codes::ResourceTypes>>,
     /// Primitive extension sibling for [`r#type`](Self::r#type) (FHIR `_type`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_type")]
@@ -518,8 +518,8 @@ pub struct ImplementationGuidePage {
     pub type_ext: Vec<Option<types::Element>>,
 
     /// Name of package to include
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub package: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub package: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`package`](Self::package) (FHIR `_package`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_package")]

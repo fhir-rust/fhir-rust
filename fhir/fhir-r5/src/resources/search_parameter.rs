@@ -225,8 +225,8 @@ pub struct SearchParameter {
     pub constraint_ext: Option<types::Element>,
 
     /// Types of resource (if a resource reference)
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub target: Vec<types::Code>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub target: ::fhir_core::PrimVec<types::Code>,
     /// Primitive extension sibling for [`target`](Self::target) (FHIR `_target`).
     #[serde(rename = "_target")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -245,24 +245,26 @@ pub struct SearchParameter {
     pub multiple_and_ext: Option<types::Element>,
 
     /// eq | ne | gt | lt | ge | le | sa | eb | ap
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub comparator: Vec<crate::r5::coded::Coded<crate::r5::codes::SearchComparator>>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub comparator:
+        ::fhir_core::PrimVec<crate::r5::coded::Coded<crate::r5::codes::SearchComparator>>,
     /// Primitive extension sibling for [`comparator`](Self::comparator) (FHIR `_comparator`).
     #[serde(rename = "_comparator")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub comparator_ext: Vec<Option<types::Element>>,
 
     /// missing | exact | contains | not | text | in | not-in | below | above | type | identifier | of-type | code-text | text-advanced | iterate
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub modifier: Vec<crate::r5::coded::Coded<crate::r5::codes::SearchModifierCode>>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub modifier:
+        ::fhir_core::PrimVec<crate::r5::coded::Coded<crate::r5::codes::SearchModifierCode>>,
     /// Primitive extension sibling for [`modifier`](Self::modifier) (FHIR `_modifier`).
     #[serde(rename = "_modifier")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub modifier_ext: Vec<Option<types::Element>>,
 
     /// Chained names supported
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub chain: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub chain: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`chain`](Self::chain) (FHIR `_chain`).
     #[serde(rename = "_chain")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -360,7 +362,7 @@ struct SearchParameterDe {
     #[serde(rename = "_constraint")]
     constraint_ext: Option<types::Element>,
     #[serde(default)]
-    target: Vec<types::Code>,
+    target: ::fhir_core::PrimVec<types::Code>,
     #[serde(rename = "_target")]
     #[serde(default)]
     target_ext: Vec<Option<types::Element>>,
@@ -371,17 +373,17 @@ struct SearchParameterDe {
     #[serde(rename = "_multipleAnd")]
     multiple_and_ext: Option<types::Element>,
     #[serde(default)]
-    comparator: Vec<crate::r5::coded::Coded<crate::r5::codes::SearchComparator>>,
+    comparator: ::fhir_core::PrimVec<crate::r5::coded::Coded<crate::r5::codes::SearchComparator>>,
     #[serde(rename = "_comparator")]
     #[serde(default)]
     comparator_ext: Vec<Option<types::Element>>,
     #[serde(default)]
-    modifier: Vec<crate::r5::coded::Coded<crate::r5::codes::SearchModifierCode>>,
+    modifier: ::fhir_core::PrimVec<crate::r5::coded::Coded<crate::r5::codes::SearchModifierCode>>,
     #[serde(rename = "_modifier")]
     #[serde(default)]
     modifier_ext: Vec<Option<types::Element>>,
     #[serde(default)]
-    chain: Vec<types::String>,
+    chain: ::fhir_core::PrimVec<types::String>,
     #[serde(rename = "_chain")]
     #[serde(default)]
     chain_ext: Vec<Option<types::Element>>,

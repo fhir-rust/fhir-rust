@@ -661,8 +661,8 @@ pub struct ImplementationGuideDefinitionResource {
     pub reference: types::Reference,
 
     /// Versions this applies to (if different to IG)
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub fhir_version: Vec<crate::coded::Coded<crate::r6::codes::FhirVersion>>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub fhir_version: ::fhir_core::PrimVec<crate::coded::Coded<crate::r6::codes::FhirVersion>>,
     /// Primitive extension sibling for [`fhir_version`](Self::fhir_version) (FHIR `_fhirVersion`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_fhirVersion")]
@@ -691,8 +691,8 @@ pub struct ImplementationGuideDefinitionResource {
     pub is_example_ext: Option<types::Element>,
 
     /// Profile(s) this is an example of
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub profile: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub profile: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`profile`](Self::profile) (FHIR `_profile`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_profile")]
@@ -925,8 +925,8 @@ pub struct ImplementationGuideManifest {
     pub page: Vec<ImplementationGuideManifestPage>,
 
     /// Image within the IG
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub image: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub image: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`image`](Self::image) (FHIR `_image`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_image")]
@@ -934,8 +934,8 @@ pub struct ImplementationGuideManifest {
     pub image_ext: Vec<Option<types::Element>>,
 
     /// Additional linkable file in IG
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub other: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub other: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`other`](Self::other) (FHIR `_other`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_other")]
@@ -993,8 +993,8 @@ pub struct ImplementationGuideManifestPage {
     pub title_ext: Option<types::Element>,
 
     /// Anchor available on the page
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub anchor: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub anchor: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`anchor`](Self::anchor) (FHIR `_anchor`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_anchor")]
@@ -1051,8 +1051,8 @@ pub struct ImplementationGuideManifestResource {
     pub is_example_ext: Option<types::Element>,
 
     /// Profile(s) this is an example of
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub profile: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub profile: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`profile`](Self::profile) (FHIR `_profile`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_profile")]

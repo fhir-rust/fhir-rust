@@ -167,8 +167,8 @@ pub struct ExampleScenario {
     pub process: Vec<ExampleScenarioProcess>,
 
     /// Another nested workflow
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub workflow: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub workflow: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`workflow`](Self::workflow) (FHIR `_workflow`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_workflow")]

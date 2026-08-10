@@ -148,16 +148,16 @@ pub struct OperationOutcomeIssue {
     pub diagnostics_ext: Option<types::Element>,
 
     /// Deprecated: Path of element(s) related to issue
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub location: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub location: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`location`](Self::location) (FHIR `_location`).
     #[serde(rename = "_location")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub location_ext: Vec<Option<types::Element>>,
 
     /// FHIRPath of element(s) related to issue
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub expression: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub expression: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`expression`](Self::expression) (FHIR `_expression`).
     #[serde(rename = "_expression")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

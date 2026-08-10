@@ -255,8 +255,8 @@ pub struct Measure {
     pub related_artifact: Vec<types::RelatedArtifact>,
 
     /// Logic used by the measure
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub library: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub library: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`library`](Self::library) (FHIR `_library`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_library")]
@@ -451,7 +451,7 @@ struct MeasureDe {
     #[serde(default)]
     related_artifact: Vec<types::RelatedArtifact>,
     #[serde(default)]
-    library: Vec<types::Canonical>,
+    library: ::fhir_core::PrimVec<types::Canonical>,
     #[serde(rename = "_library")]
     #[serde(default)]
     library_ext: Vec<Option<types::Element>>,
@@ -693,8 +693,8 @@ pub struct MeasureGroup {
     pub improvement_notation_guidance_ext: Option<types::Element>,
 
     /// Logic used by the measure group
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub library: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub library: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`library`](Self::library) (FHIR `_library`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_library")]
@@ -748,7 +748,7 @@ struct MeasureGroupDe {
     #[serde(rename = "_improvementNotationGuidance")]
     improvement_notation_guidance_ext: Option<types::Element>,
     #[serde(default)]
-    library: Vec<types::Canonical>,
+    library: ::fhir_core::PrimVec<types::Canonical>,
     #[serde(rename = "_library")]
     #[serde(default)]
     library_ext: Vec<Option<types::Element>>,

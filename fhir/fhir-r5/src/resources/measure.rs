@@ -254,8 +254,8 @@ pub struct Measure {
     pub related_artifact: Vec<types::RelatedArtifact>,
 
     /// Canonical references to the Library resources that hold the measure's computable logic, such as CQL.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub library: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub library: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`library`](Self::library) (FHIR `_library`).
     #[serde(rename = "_library")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -421,7 +421,7 @@ struct MeasureDe {
     #[serde(default)]
     related_artifact: Vec<types::RelatedArtifact>,
     #[serde(default)]
-    library: Vec<types::Canonical>,
+    library: ::fhir_core::PrimVec<types::Canonical>,
     #[serde(rename = "_library")]
     #[serde(default)]
     library_ext: Vec<Option<types::Element>>,
@@ -665,8 +665,8 @@ pub struct MeasureGroup {
     pub improvement_notation: Option<types::CodeableConcept>,
 
     /// Logic used by the measure group
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub library: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub library: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`library`](Self::library) (FHIR `_library`).
     #[serde(rename = "_library")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -710,7 +710,7 @@ struct MeasureGroupDe {
     rate_aggregation_ext: Option<types::Element>,
     improvement_notation: Option<types::CodeableConcept>,
     #[serde(default)]
-    library: Vec<types::Canonical>,
+    library: ::fhir_core::PrimVec<types::Canonical>,
     #[serde(rename = "_library")]
     #[serde(default)]
     library_ext: Vec<Option<types::Element>>,

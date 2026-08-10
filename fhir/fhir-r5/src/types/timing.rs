@@ -58,8 +58,8 @@ pub struct Timing {
     pub modifier_extension: Vec<types::Extension>,
 
     /// When the event occurs
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub event: Vec<types::DateTime>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub event: ::fhir_core::PrimVec<types::DateTime>,
     /// Primitive extension sibling for [`event`](Self::event) (FHIR `_event`).
     #[serde(rename = "_event")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -171,24 +171,24 @@ pub struct TimingRepeat {
     pub period_unit_ext: Option<types::Element>,
 
     /// mon | tue | wed | thu | fri | sat | sun
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub day_of_week: Vec<crate::r5::coded::Coded<crate::r5::codes::DaysOfWeek>>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub day_of_week: ::fhir_core::PrimVec<crate::r5::coded::Coded<crate::r5::codes::DaysOfWeek>>,
     /// Primitive extension sibling for [`day_of_week`](Self::day_of_week) (FHIR `_dayOfWeek`).
     #[serde(rename = "_dayOfWeek")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub day_of_week_ext: Vec<Option<types::Element>>,
 
     /// Time of day for action
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub time_of_day: Vec<types::Time>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub time_of_day: ::fhir_core::PrimVec<types::Time>,
     /// Primitive extension sibling for [`time_of_day`](Self::time_of_day) (FHIR `_timeOfDay`).
     #[serde(rename = "_timeOfDay")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub time_of_day_ext: Vec<Option<types::Element>>,
 
     /// Code for time period of occurrence
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub when: Vec<crate::r5::coded::Coded<crate::r5::codes::EventTiming>>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub when: ::fhir_core::PrimVec<crate::r5::coded::Coded<crate::r5::codes::EventTiming>>,
     /// Primitive extension sibling for [`when`](Self::when) (FHIR `_when`).
     #[serde(rename = "_when")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -240,17 +240,17 @@ struct TimingRepeatDe {
     #[serde(rename = "_periodUnit")]
     period_unit_ext: Option<types::Element>,
     #[serde(default)]
-    day_of_week: Vec<crate::r5::coded::Coded<crate::r5::codes::DaysOfWeek>>,
+    day_of_week: ::fhir_core::PrimVec<crate::r5::coded::Coded<crate::r5::codes::DaysOfWeek>>,
     #[serde(rename = "_dayOfWeek")]
     #[serde(default)]
     day_of_week_ext: Vec<Option<types::Element>>,
     #[serde(default)]
-    time_of_day: Vec<types::Time>,
+    time_of_day: ::fhir_core::PrimVec<types::Time>,
     #[serde(rename = "_timeOfDay")]
     #[serde(default)]
     time_of_day_ext: Vec<Option<types::Element>>,
     #[serde(default)]
-    when: Vec<crate::r5::coded::Coded<crate::r5::codes::EventTiming>>,
+    when: ::fhir_core::PrimVec<crate::r5::coded::Coded<crate::r5::codes::EventTiming>>,
     #[serde(rename = "_when")]
     #[serde(default)]
     when_ext: Vec<Option<types::Element>>,

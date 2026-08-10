@@ -71,8 +71,8 @@ pub struct Meta {
     pub source_ext: Option<types::Element>,
 
     /// Profiles this resource claims to conform to
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub profile: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub profile: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`profile`](Self::profile) (FHIR `_profile`).
     #[serde(rename = "_profile")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

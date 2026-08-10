@@ -193,8 +193,8 @@ pub struct SearchParameter {
     pub xpath_usage_ext: Option<types::Element>,
 
     /// Types of resource (if a resource reference)
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub target: Vec<crate::coded::Coded<crate::r3::codes::ResourceTypes>>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub target: ::fhir_core::PrimVec<crate::coded::Coded<crate::r3::codes::ResourceTypes>>,
     /// Primitive extension sibling for [`target`](Self::target) (FHIR `_target`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_target")]
@@ -202,8 +202,8 @@ pub struct SearchParameter {
     pub target_ext: Vec<Option<types::Element>>,
 
     /// eq | ne | gt | lt | ge | le | sa | eb | ap
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub comparator: Vec<crate::coded::Coded<crate::r3::codes::SearchComparator>>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub comparator: ::fhir_core::PrimVec<crate::coded::Coded<crate::r3::codes::SearchComparator>>,
     /// Primitive extension sibling for [`comparator`](Self::comparator) (FHIR `_comparator`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_comparator")]
@@ -212,8 +212,8 @@ pub struct SearchParameter {
 
     /// missing | exact | contains | not | text | in | not-in | below | above |
     /// type
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub modifier: Vec<crate::coded::Coded<crate::r3::codes::SearchModifierCode>>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub modifier: ::fhir_core::PrimVec<crate::coded::Coded<crate::r3::codes::SearchModifierCode>>,
     /// Primitive extension sibling for [`modifier`](Self::modifier) (FHIR `_modifier`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_modifier")]
@@ -221,8 +221,8 @@ pub struct SearchParameter {
     pub modifier_ext: Vec<Option<types::Element>>,
 
     /// Chained names supported
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub chain: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub chain: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`chain`](Self::chain) (FHIR `_chain`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_chain")]

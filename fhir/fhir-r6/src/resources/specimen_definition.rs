@@ -113,8 +113,8 @@ pub struct SpecimenDefinition {
     pub title_ext: Option<types::Element>,
 
     /// Based on FHIR definition of another SpecimenDefinition
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub derived_from_canonical: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub derived_from_canonical: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`derived_from_canonical`](Self::derived_from_canonical) (FHIR `_derivedFromCanonical`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_derivedFromCanonical")]
@@ -122,8 +122,8 @@ pub struct SpecimenDefinition {
     pub derived_from_canonical_ext: Vec<Option<types::Element>>,
 
     /// Based on external definition
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub derived_from_uri: Vec<types::Uri>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub derived_from_uri: ::fhir_core::PrimVec<types::Uri>,
     /// Primitive extension sibling for [`derived_from_uri`](Self::derived_from_uri) (FHIR `_derivedFromUri`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_derivedFromUri")]
@@ -278,12 +278,12 @@ struct SpecimenDefinitionDe {
     #[serde(rename = "_title")]
     title_ext: Option<types::Element>,
     #[serde(default)]
-    derived_from_canonical: Vec<types::Canonical>,
+    derived_from_canonical: ::fhir_core::PrimVec<types::Canonical>,
     #[serde(rename = "_derivedFromCanonical")]
     #[serde(default)]
     derived_from_canonical_ext: Vec<Option<types::Element>>,
     #[serde(default)]
-    derived_from_uri: Vec<types::Uri>,
+    derived_from_uri: ::fhir_core::PrimVec<types::Uri>,
     #[serde(rename = "_derivedFromUri")]
     #[serde(default)]
     derived_from_uri_ext: Vec<Option<types::Element>>,

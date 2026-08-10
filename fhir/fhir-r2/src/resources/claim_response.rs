@@ -211,8 +211,8 @@ pub struct ClaimResponseAddItem {
     pub modifier_extension: Vec<types::Extension>,
 
     /// Service instances
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub sequence_link_id: Vec<types::PositiveInt>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub sequence_link_id: ::fhir_core::PrimVec<types::PositiveInt>,
     /// Primitive extension sibling for [`sequence_link_id`](Self::sequence_link_id) (FHIR `_sequenceLinkId`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_sequenceLinkId")]
@@ -226,8 +226,8 @@ pub struct ClaimResponseAddItem {
     pub fee: Option<types::Quantity>,
 
     /// List of note numbers which apply
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub note_number_link_id: Vec<types::PositiveInt>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub note_number_link_id: ::fhir_core::PrimVec<types::PositiveInt>,
     /// Primitive extension sibling for [`note_number_link_id`](Self::note_number_link_id) (FHIR `_noteNumberLinkId`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_noteNumberLinkId")]
@@ -450,8 +450,8 @@ pub struct ClaimResponseCoverage {
     pub relationship: types::Coding,
 
     /// Pre-Authorization/Determination Reference
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub pre_auth_ref: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub pre_auth_ref: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`pre_auth_ref`](Self::pre_auth_ref) (FHIR `_preAuthRef`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_preAuthRef")]
@@ -568,8 +568,8 @@ pub struct ClaimResponseItem {
     pub sequence_link_id_ext: Option<types::Element>,
 
     /// List of note numbers which apply
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub note_number: Vec<types::PositiveInt>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub note_number: ::fhir_core::PrimVec<types::PositiveInt>,
     /// Primitive extension sibling for [`note_number`](Self::note_number) (FHIR `_noteNumber`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_noteNumber")]

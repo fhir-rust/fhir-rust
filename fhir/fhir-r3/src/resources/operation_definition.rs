@@ -181,8 +181,8 @@ pub struct OperationDefinition {
     pub base: Option<types::Reference<crate::r3::resources::OperationDefinition>>,
 
     /// Types this operation applies to
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub resource: Vec<crate::coded::Coded<crate::r3::codes::ResourceTypes>>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub resource: ::fhir_core::PrimVec<crate::coded::Coded<crate::r3::codes::ResourceTypes>>,
     /// Primitive extension sibling for [`resource`](Self::resource) (FHIR `_resource`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_resource")]
@@ -257,8 +257,8 @@ pub struct OperationDefinitionOverload {
     pub modifier_extension: Vec<types::Extension>,
 
     /// Name of parameter to include in overload
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub parameter_name: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub parameter_name: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`parameter_name`](Self::parameter_name) (FHIR `_parameterName`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_parameterName")]

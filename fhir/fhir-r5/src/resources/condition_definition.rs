@@ -214,8 +214,8 @@ pub struct ConditionDefinition {
     pub has_stage_ext: Option<types::Element>,
 
     /// Formal Definition for the condition
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub definition: Vec<types::Uri>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub definition: ::fhir_core::PrimVec<types::Uri>,
     /// Primitive extension sibling for [`definition`](Self::definition) (FHIR `_definition`).
     #[serde(rename = "_definition")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -318,7 +318,7 @@ struct ConditionDefinitionDe {
     #[serde(rename = "_hasStage")]
     has_stage_ext: Option<types::Element>,
     #[serde(default)]
-    definition: Vec<types::Uri>,
+    definition: ::fhir_core::PrimVec<types::Uri>,
     #[serde(rename = "_definition")]
     #[serde(default)]
     definition_ext: Vec<Option<types::Element>>,

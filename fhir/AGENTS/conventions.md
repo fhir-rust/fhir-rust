@@ -63,7 +63,7 @@ Map the FHIR `ElementDefinition` `(min, max)` to Rust wrappers:
 | --- | --- |
 | `0..1` | `Option<T>` |
 | `1..1` | `T` |
-| `0..*` | `Vec<T>` |
+| `0..*` | `Vec<T>` — `::fhir_core::PrimVec<T>` when `T` is a primitive |
 | `1..*` | `vec1::Vec1<T>` |
 
 `T` is a `types::Pascal(code)` (e.g. `types::CodeableConcept`), a nested
@@ -74,6 +74,11 @@ backbone struct, or `::serde_json::Value` for polymorphic `Resource` slots.
   mandatory: without it an omitted array serializes to nothing but fails to
   deserialize (a real round-trip bug we have already hit). Construct with
   `vec![…]`, not `Some(vec![…])`; read as a slice, no `Option` unwrap.
+- **`0..*` primitives → `::fhir_core::PrimVec<T>`** (spec R6.7a, audit
+  F-86): the wire's value array may hold `null` placeholders for
+  extension-only positions, which `Vec<T>` cannot represent. Construct
+  with `vec![…].into()`; read values with `.values()` (placeholders
+  skipped) or positions with `.iter()`.
 - **`1..*` → [`vec1::Vec1<T>`](https://docs.rs/vec1)** (non-empty), so "at least
   one" is a compile-time property. These structs lose `Default` (see above).
 

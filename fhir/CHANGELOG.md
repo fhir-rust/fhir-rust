@@ -5,6 +5,21 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.0.0 — 2026-08-10
+
+- **F-86 fixed** (monorepo audit) — **breaking**: every `0..*` primitive
+  field changes type from `Vec<T>` to `::fhir_core::PrimVec<T>` (spec
+  R6.7a), the value array as the wire defines it: a transparent
+  `Vec<Option<T>>` whose `None` is an extension-only placeholder — the
+  JSON `null` in `"event": [null]` beside `"_event": [{…}]`, which
+  `Vec<T>` could not hold. Migration: construct with `vec![…].into()`,
+  read values with `.values()` (placeholders skipped) or positions with
+  `.iter()`. `1..*` primitives keep `vec1::Vec1<T>` (stated residual in
+  R6.7a). The nine R4B corpus examples that exposed the gap now
+  round-trip, and the corpus allowlist is empty again.
+- `fhir-core` 3.1.0 adds `PrimVec` (additive); the six release crates and
+  the facade go to 4.0.0 together.
+
 ## Release crates 3.0.1, fhir-derive-macros 1.4.0 — 2026-08-10
 
 - **F-87 fixed** (monorepo audit; High): a `value[x]`/choice element whose

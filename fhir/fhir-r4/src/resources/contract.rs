@@ -171,8 +171,8 @@ pub struct Contract {
     pub subtitle_ext: Option<types::Element>,
 
     /// Acronym or short name
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub alias: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub alias: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`alias`](Self::alias) (FHIR `_alias`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_alias")]
@@ -292,7 +292,7 @@ struct ContractDe {
     #[serde(rename = "_subtitle")]
     subtitle_ext: Option<types::Element>,
     #[serde(default)]
-    alias: Vec<types::String>,
+    alias: ::fhir_core::PrimVec<types::String>,
     #[serde(rename = "_alias")]
     #[serde(default)]
     alias_ext: Vec<Option<types::Element>>,
@@ -891,8 +891,8 @@ pub struct ContractTermAction {
     pub intent: types::CodeableConcept,
 
     /// Pointer to specific item
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub link_id: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub link_id: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`link_id`](Self::link_id) (FHIR `_linkId`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_linkId")]
@@ -906,8 +906,8 @@ pub struct ContractTermAction {
     pub context: Option<types::Reference>,
 
     /// Pointer to specific item
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub context_link_id: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub context_link_id: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`context_link_id`](Self::context_link_id) (FHIR `_contextLinkId`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_contextLinkId")]
@@ -924,8 +924,8 @@ pub struct ContractTermAction {
     pub requester: Vec<types::Reference>,
 
     /// Pointer to specific item
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub requester_link_id: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub requester_link_id: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`requester_link_id`](Self::requester_link_id) (FHIR `_requesterLinkId`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_requesterLinkId")]
@@ -943,8 +943,8 @@ pub struct ContractTermAction {
     pub performer: Option<types::Reference>,
 
     /// Pointer to specific item
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub performer_link_id: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub performer_link_id: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`performer_link_id`](Self::performer_link_id) (FHIR `_performerLinkId`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_performerLinkId")]
@@ -960,8 +960,8 @@ pub struct ContractTermAction {
     pub reason_reference: Vec<types::Reference>,
 
     /// Why action is to be performed
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub reason: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub reason: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`reason`](Self::reason) (FHIR `_reason`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_reason")]
@@ -969,8 +969,8 @@ pub struct ContractTermAction {
     pub reason_ext: Vec<Option<types::Element>>,
 
     /// Pointer to specific item
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub reason_link_id: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub reason_link_id: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`reason_link_id`](Self::reason_link_id) (FHIR `_reasonLinkId`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_reasonLinkId")]
@@ -982,8 +982,8 @@ pub struct ContractTermAction {
     pub note: Vec<types::Annotation>,
 
     /// Action restriction numbers
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub security_label_number: Vec<types::UnsignedInt>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub security_label_number: ::fhir_core::PrimVec<types::UnsignedInt>,
     /// Primitive extension sibling for [`security_label_number`](Self::security_label_number) (FHIR `_securityLabelNumber`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_securityLabelNumber")]
@@ -1007,14 +1007,14 @@ struct ContractTermActionDe {
     subject: Vec<ContractTermActionSubject>,
     intent: types::CodeableConcept,
     #[serde(default)]
-    link_id: Vec<types::String>,
+    link_id: ::fhir_core::PrimVec<types::String>,
     #[serde(rename = "_linkId")]
     #[serde(default)]
     link_id_ext: Vec<Option<types::Element>>,
     status: types::CodeableConcept,
     context: Option<types::Reference>,
     #[serde(default)]
-    context_link_id: Vec<types::String>,
+    context_link_id: ::fhir_core::PrimVec<types::String>,
     #[serde(rename = "_contextLinkId")]
     #[serde(default)]
     context_link_id_ext: Vec<Option<types::Element>>,
@@ -1023,7 +1023,7 @@ struct ContractTermActionDe {
     #[serde(default)]
     requester: Vec<types::Reference>,
     #[serde(default)]
-    requester_link_id: Vec<types::String>,
+    requester_link_id: ::fhir_core::PrimVec<types::String>,
     #[serde(rename = "_requesterLinkId")]
     #[serde(default)]
     requester_link_id_ext: Vec<Option<types::Element>>,
@@ -1032,7 +1032,7 @@ struct ContractTermActionDe {
     performer_role: Option<types::CodeableConcept>,
     performer: Option<types::Reference>,
     #[serde(default)]
-    performer_link_id: Vec<types::String>,
+    performer_link_id: ::fhir_core::PrimVec<types::String>,
     #[serde(rename = "_performerLinkId")]
     #[serde(default)]
     performer_link_id_ext: Vec<Option<types::Element>>,
@@ -1041,19 +1041,19 @@ struct ContractTermActionDe {
     #[serde(default)]
     reason_reference: Vec<types::Reference>,
     #[serde(default)]
-    reason: Vec<types::String>,
+    reason: ::fhir_core::PrimVec<types::String>,
     #[serde(rename = "_reason")]
     #[serde(default)]
     reason_ext: Vec<Option<types::Element>>,
     #[serde(default)]
-    reason_link_id: Vec<types::String>,
+    reason_link_id: ::fhir_core::PrimVec<types::String>,
     #[serde(rename = "_reasonLinkId")]
     #[serde(default)]
     reason_link_id_ext: Vec<Option<types::Element>>,
     #[serde(default)]
     note: Vec<types::Annotation>,
     #[serde(default)]
-    security_label_number: Vec<types::UnsignedInt>,
+    security_label_number: ::fhir_core::PrimVec<types::UnsignedInt>,
     #[serde(rename = "_securityLabelNumber")]
     #[serde(default)]
     security_label_number_ext: Vec<Option<types::Element>>,
@@ -1217,8 +1217,8 @@ pub struct ContractTermAsset {
     pub text_ext: Option<types::Element>,
 
     /// Pointer to asset text
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub link_id: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub link_id: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`link_id`](Self::link_id) (FHIR `_linkId`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_linkId")]
@@ -1230,8 +1230,8 @@ pub struct ContractTermAsset {
     pub answer: Vec<ContractTermOfferAnswer>,
 
     /// Asset restriction numbers
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub security_label_number: Vec<types::UnsignedInt>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub security_label_number: ::fhir_core::PrimVec<types::UnsignedInt>,
     /// Primitive extension sibling for [`security_label_number`](Self::security_label_number) (FHIR `_securityLabelNumber`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_securityLabelNumber")]
@@ -1388,8 +1388,8 @@ pub struct ContractTermAssetValuedItem {
     pub recipient: Option<types::Reference>,
 
     /// Pointer to specific item
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub link_id: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub link_id: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`link_id`](Self::link_id) (FHIR `_linkId`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_linkId")]
@@ -1397,8 +1397,8 @@ pub struct ContractTermAssetValuedItem {
     pub link_id_ext: Vec<Option<types::Element>>,
 
     /// Security Labels that define affected terms
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub security_label_number: Vec<types::UnsignedInt>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub security_label_number: ::fhir_core::PrimVec<types::UnsignedInt>,
     /// Primitive extension sibling for [`security_label_number`](Self::security_label_number) (FHIR `_securityLabelNumber`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_securityLabelNumber")]
@@ -1438,12 +1438,12 @@ struct ContractTermAssetValuedItemDe {
     responsible: Option<types::Reference>,
     recipient: Option<types::Reference>,
     #[serde(default)]
-    link_id: Vec<types::String>,
+    link_id: ::fhir_core::PrimVec<types::String>,
     #[serde(rename = "_linkId")]
     #[serde(default)]
     link_id_ext: Vec<Option<types::Element>>,
     #[serde(default)]
-    security_label_number: Vec<types::UnsignedInt>,
+    security_label_number: ::fhir_core::PrimVec<types::UnsignedInt>,
     #[serde(rename = "_securityLabelNumber")]
     #[serde(default)]
     security_label_number_ext: Vec<Option<types::Element>>,
@@ -1548,8 +1548,8 @@ pub struct ContractTermOffer {
     pub text_ext: Option<types::Element>,
 
     /// Pointer to text
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub link_id: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub link_id: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`link_id`](Self::link_id) (FHIR `_linkId`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_linkId")]
@@ -1557,8 +1557,8 @@ pub struct ContractTermOffer {
     pub link_id_ext: Vec<Option<types::Element>>,
 
     /// Offer restriction numbers
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub security_label_number: Vec<types::UnsignedInt>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub security_label_number: ::fhir_core::PrimVec<types::UnsignedInt>,
     /// Primitive extension sibling for [`security_label_number`](Self::security_label_number) (FHIR `_securityLabelNumber`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_securityLabelNumber")]
@@ -1703,8 +1703,8 @@ pub struct ContractTermSecurityLabel {
     pub modifier_extension: Vec<types::Extension>,
 
     /// Link to Security Labels
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub number: Vec<types::UnsignedInt>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub number: ::fhir_core::PrimVec<types::UnsignedInt>,
     /// Primitive extension sibling for [`number`](Self::number) (FHIR `_number`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_number")]

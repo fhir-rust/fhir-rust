@@ -109,24 +109,24 @@ pub struct NutritionOrder {
     pub identifier: Vec<types::Identifier>,
 
     /// Instantiates FHIR protocol or definition
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub instantiates_canonical: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub instantiates_canonical: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`instantiates_canonical`](Self::instantiates_canonical) (FHIR `_instantiatesCanonical`).
     #[serde(rename = "_instantiatesCanonical")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub instantiates_canonical_ext: Vec<Option<types::Element>>,
 
     /// Instantiates external protocol or definition
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub instantiates_uri: Vec<types::Uri>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub instantiates_uri: ::fhir_core::PrimVec<types::Uri>,
     /// Primitive extension sibling for [`instantiates_uri`](Self::instantiates_uri) (FHIR `_instantiatesUri`).
     #[serde(rename = "_instantiatesUri")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub instantiates_uri_ext: Vec<Option<types::Element>>,
 
     /// Instantiates protocol or definition
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub instantiates: Vec<types::Uri>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub instantiates: ::fhir_core::PrimVec<types::Uri>,
     /// Primitive extension sibling for [`instantiates`](Self::instantiates) (FHIR `_instantiates`).
     #[serde(rename = "_instantiates")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

@@ -189,8 +189,8 @@ pub struct Questionnaire {
     pub code: Vec<types::Coding>,
 
     /// Resource that can be subject of QuestionnaireResponse
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub subject_type: Vec<crate::coded::Coded<crate::r3::codes::ResourceTypes>>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub subject_type: ::fhir_core::PrimVec<crate::coded::Coded<crate::r3::codes::ResourceTypes>>,
     /// Primitive extension sibling for [`subject_type`](Self::subject_type) (FHIR `_subjectType`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_subjectType")]

@@ -250,8 +250,8 @@ pub struct ActivityDefinition {
     pub related_artifact: Vec<types::RelatedArtifact>,
 
     /// Logic used by the activity definition
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub library: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub library: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`library`](Self::library) (FHIR `_library`).
     #[serde(rename = "_library")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -321,24 +321,24 @@ pub struct ActivityDefinition {
     pub body_site: Vec<types::CodeableConcept>,
 
     /// What specimens are required to perform this action
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub specimen_requirement: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub specimen_requirement: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`specimen_requirement`](Self::specimen_requirement) (FHIR `_specimenRequirement`).
     #[serde(rename = "_specimenRequirement")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub specimen_requirement_ext: Vec<Option<types::Element>>,
 
     /// What observations are required to perform this action
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub observation_requirement: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub observation_requirement: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`observation_requirement`](Self::observation_requirement) (FHIR `_observationRequirement`).
     #[serde(rename = "_observationRequirement")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub observation_requirement_ext: Vec<Option<types::Element>>,
 
     /// What observations must be produced by this action
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub observation_result_requirement: Vec<types::Canonical>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub observation_result_requirement: ::fhir_core::PrimVec<types::Canonical>,
     /// Primitive extension sibling for [`observation_result_requirement`](Self::observation_result_requirement) (FHIR `_observationResultRequirement`).
     #[serde(rename = "_observationResultRequirement")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -447,7 +447,7 @@ struct ActivityDefinitionDe {
     #[serde(default)]
     related_artifact: Vec<types::RelatedArtifact>,
     #[serde(default)]
-    library: Vec<types::Canonical>,
+    library: ::fhir_core::PrimVec<types::Canonical>,
     #[serde(rename = "_library")]
     #[serde(default)]
     library_ext: Vec<Option<types::Element>>,
@@ -482,17 +482,17 @@ struct ActivityDefinitionDe {
     #[serde(default)]
     body_site: Vec<types::CodeableConcept>,
     #[serde(default)]
-    specimen_requirement: Vec<types::Canonical>,
+    specimen_requirement: ::fhir_core::PrimVec<types::Canonical>,
     #[serde(rename = "_specimenRequirement")]
     #[serde(default)]
     specimen_requirement_ext: Vec<Option<types::Element>>,
     #[serde(default)]
-    observation_requirement: Vec<types::Canonical>,
+    observation_requirement: ::fhir_core::PrimVec<types::Canonical>,
     #[serde(rename = "_observationRequirement")]
     #[serde(default)]
     observation_requirement_ext: Vec<Option<types::Element>>,
     #[serde(default)]
-    observation_result_requirement: Vec<types::Canonical>,
+    observation_result_requirement: ::fhir_core::PrimVec<types::Canonical>,
     #[serde(rename = "_observationResultRequirement")]
     #[serde(default)]
     observation_result_requirement_ext: Vec<Option<types::Element>>,

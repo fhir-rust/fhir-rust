@@ -100,8 +100,8 @@ pub struct ProdCharacteristic {
 
     /// Where applicable, the color can be specified An appropriate controlled
     /// vocabulary shall be used The term and the term identifier shall be used
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub color: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub color: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`color`](Self::color) (FHIR `_color`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_color")]
@@ -109,8 +109,8 @@ pub struct ProdCharacteristic {
     pub color_ext: Vec<Option<types::Element>>,
 
     /// Where applicable, the imprint can be specified as text
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub imprint: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub imprint: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`imprint`](Self::imprint) (FHIR `_imprint`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_imprint")]

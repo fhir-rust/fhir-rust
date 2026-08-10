@@ -254,8 +254,8 @@ pub struct ClaimCoverage {
     pub relationship: types::Coding,
 
     /// Pre-Authorization/Determination Reference
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub pre_auth_ref: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub pre_auth_ref: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`pre_auth_ref`](Self::pre_auth_ref) (FHIR `_preAuthRef`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_preAuthRef")]
@@ -364,8 +364,8 @@ pub struct ClaimItem {
     pub provider: Option<types::Reference<crate::r2::resources::Practitioner>>,
 
     /// Diagnosis Link
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub diagnosis_link_id: Vec<types::PositiveInt>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub diagnosis_link_id: ::fhir_core::PrimVec<types::PositiveInt>,
     /// Primitive extension sibling for [`diagnosis_link_id`](Self::diagnosis_link_id) (FHIR `_diagnosisLinkId`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_diagnosisLinkId")]

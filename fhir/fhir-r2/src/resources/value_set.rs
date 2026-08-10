@@ -407,8 +407,8 @@ pub struct ValueSetCompose {
     pub modifier_extension: Vec<types::Extension>,
 
     /// Import the contents of another value set
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub import: Vec<types::Uri>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub import: ::fhir_core::PrimVec<types::Uri>,
     /// Primitive extension sibling for [`import`](Self::import) (FHIR `_import`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_import")]

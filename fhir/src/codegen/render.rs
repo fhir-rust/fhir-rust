@@ -194,7 +194,11 @@ fn render_shadow(structure: &StructPlan, version: Version) -> String {
             }
             Wrapper::Vec => {
                 out.push_str("    #[serde(default)]\n");
-                let _ = writeln!(out, "    {}: Vec<{inner}>,", field.ident);
+                if field.sibling.as_ref().is_some_and(|s| s.is_multiple) {
+                    let _ = writeln!(out, "    {}: ::fhir_core::PrimVec<{inner}>,", field.ident);
+                } else {
+                    let _ = writeln!(out, "    {}: Vec<{inner}>,", field.ident);
+                }
             }
             Wrapper::Vec1 => {
                 let _ = writeln!(out, "    {}: ::vec1::Vec1<{inner}>,", field.ident);
@@ -386,8 +390,23 @@ fn render_field(field: &FieldPlan) -> String {
             let _ = writeln!(out, "    pub {}: {inner},", field.ident);
         }
         Wrapper::Vec => {
-            out.push_str("    #[serde(default, skip_serializing_if = \"Vec::is_empty\")]\n");
-            let _ = writeln!(out, "    pub {}: Vec<{inner}>,", field.ident);
+            if field.sibling.as_ref().is_some_and(|s| s.is_multiple) {
+                // A repeating primitive: the wire's value array may hold
+                // `null` placeholders for extension-only positions, which a
+                // `Vec<T>` cannot represent (F-86).
+                out.push_str(
+                    "    #[serde(default, skip_serializing_if = \
+                     \"::fhir_core::PrimVec::is_empty\")]\n",
+                );
+                let _ = writeln!(
+                    out,
+                    "    pub {}: ::fhir_core::PrimVec<{inner}>,",
+                    field.ident
+                );
+            } else {
+                out.push_str("    #[serde(default, skip_serializing_if = \"Vec::is_empty\")]\n");
+                let _ = writeln!(out, "    pub {}: Vec<{inner}>,", field.ident);
+            }
         }
         Wrapper::Vec1 => {
             let _ = writeln!(out, "    pub {}: ::vec1::Vec1<{inner}>,", field.ident);

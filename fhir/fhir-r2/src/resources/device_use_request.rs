@@ -103,8 +103,8 @@ pub struct DeviceUseRequest {
     pub indication: Vec<types::CodeableConcept>,
 
     /// Notes or comments
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub notes: Vec<types::String>,
+    #[serde(default, skip_serializing_if = "::fhir_core::PrimVec::is_empty")]
+    pub notes: ::fhir_core::PrimVec<types::String>,
     /// Primitive extension sibling for [`notes`](Self::notes) (FHIR `_notes`):
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_notes")]
@@ -175,7 +175,7 @@ struct DeviceUseRequestDe {
     #[serde(default)]
     indication: Vec<types::CodeableConcept>,
     #[serde(default)]
-    notes: Vec<types::String>,
+    notes: ::fhir_core::PrimVec<types::String>,
     #[serde(rename = "_notes")]
     #[serde(default)]
     notes_ext: Vec<Option<types::Element>>,
