@@ -8,7 +8,14 @@
 # Any unpatched advisory fails the build. When one has no fix yet, add it
 # here with a dated note rather than lowering the bar globally.
 yanked = "deny"
-ignore = []
+ignore = [
+    # rustls-pemfile 2.x is archived (unmaintained); pulled transitively by
+    # mysql_async 0.34, which has no released fix yet. It parses local PEM
+    # files handed to it by configuration — not attacker-controlled input on
+    # any path this port exposes. Re-evaluate when mysql_async moves to
+    # rustls-pki-types' parser (as fhir-postgresql already did directly).
+    "RUSTSEC-2025-0134",
+]
 
 [licenses]
 # Permissive licences only. Anything copyleft in a linked dependency would
@@ -23,6 +30,10 @@ allow = [
     "Unicode-3.0",
     "Zlib",
     "CC0-1.0",
+    # webpki-roots ships Mozilla's CA certificate *data* under the Community
+    # Data License Agreement; it is a permissive data licence, and the data
+    # is the public trust store, not code.
+    "CDLA-Permissive-2.0",
     "MPL-2.0",
 ]
 confidence-threshold = 0.9
@@ -37,3 +48,12 @@ wildcards = "deny"
 unknown-registry = "deny"
 unknown-git = "deny"
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+
+# webpki 0.22 predates SPDX metadata in its manifest; its stated terms are
+# ISC-style (the LICENSE file in the crate). Clarified rather than allowed
+# blind, so a future license change in a new version is still caught.
+[[licenses.clarify]]
+name = "webpki"
+version = "0.22.4"
+expression = "ISC"
+license-files = [{ path = "LICENSE", hash = 0x001c7e6c }]

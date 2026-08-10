@@ -146,8 +146,10 @@ jobs:
           # live test self-skipped ("spec missing" — the env pointed at an
           # unrooted path). A skip on CI is indistinguishable from a pass
           # unless something looks, so something looks.
-          if grep -q "skipping:" live-tests.log; then
-            grep "skipping:" live-tests.log | sort -u
+          # The bench is opt-in by design (FHIR_POSTGRESQL_BENCH=<n>); its
+          # skip is a decision, not a missing input.
+          if grep "skipping:" live-tests.log | grep -v "FHIR_POSTGRESQL_BENCH" | grep -q .; then
+            grep "skipping:" live-tests.log | grep -v "FHIR_POSTGRESQL_BENCH" | sort -u
             echo "::error::live tests skipped on CI; the gate would be green while testing nothing"
             exit 1
           fi

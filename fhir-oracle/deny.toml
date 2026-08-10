@@ -8,7 +8,12 @@
 # Any unpatched advisory fails the build. When one has no fix yet, add it
 # here with a dated note rather than lowering the bar globally.
 yanked = "deny"
-ignore = []
+ignore = [
+    # `paste` is archived (unmaintained); a build-time proc-macro pulled by
+    # the `oracle` ODPI-C binding, which has not yet replaced it. It runs at
+    # compile time in trusted source, never in the shipped store.
+    "RUSTSEC-2024-0436",
+]
 
 [licenses]
 # Permissive licences only. Anything copyleft in a linked dependency would
