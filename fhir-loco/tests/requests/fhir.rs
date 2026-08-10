@@ -428,6 +428,122 @@ async fn search_returns_a_bundle_and_respects_paging() {
 
 #[tokio::test]
 #[serial]
+async fn include_and_revinclude_resolve_references() {
+    store_ready().await;
+    request::<App, _, _>(|request, _ctx| async move {
+        for (path, body) in [
+            (
+                "/r5/Practitioner/prac-inc",
+                r#"{"resourceType":"Practitioner","id":"prac-inc"}"#.to_string(),
+            ),
+            (
+                "/r5/Patient/pt-inc",
+                r#"{"resourceType":"Patient","id":"pt-inc",
+                    "name":[{"family":"Includeme"}],
+                    "generalPractitioner":[{"reference":"Practitioner/prac-inc"}]}"#
+                    .to_string(),
+            ),
+            (
+                "/r5/Encounter/enc-inc",
+                r#"{"resourceType":"Encounter","id":"enc-inc","status":"completed",
+                    "subject":{"reference":"Patient/pt-inc"}}"#
+                    .to_string(),
+            ),
+        ] {
+            let res = request
+                .put(path)
+                .add_header("content-type", FHIR_JSON)
+                .add_header("authorization", &bearer("dr-who"))
+                .text(body)
+                .await;
+            assert!(res.status_code().is_success(), "seed {path}");
+        }
+
+        // _include resolves the forward reference; modes distinguish the
+        // match from the inclusion (SV2.16).
+        let res = request
+            .get("/r5/Patient?family=Includeme&_include=Patient:general-practitioner")
+            .await;
+        assert_eq!(res.status_code(), 200);
+        let body = body_of(&res.text());
+        let entries = body["entry"].as_array().expect("entries");
+        assert_eq!(entries.len(), 2, "{body}");
+        assert_eq!(entries[0]["resource"]["resourceType"], "Patient");
+        assert_eq!(entries[0]["search"]["mode"], "match");
+        assert_eq!(entries[1]["resource"]["resourceType"], "Practitioner");
+        assert_eq!(entries[1]["search"]["mode"], "include");
+
+        // A target-type filter that matches nothing filters the include out
+        // without failing the search.
+        let res = request
+            .get("/r5/Patient?family=Includeme&_include=Patient:general-practitioner:Organization")
+            .await;
+        let body = body_of(&res.text());
+        assert_eq!(body["entry"].as_array().map(Vec::len), Some(1), "{body}");
+
+        // _revinclude finds what points here.
+        let res = request
+            .get("/r5/Patient?family=Includeme&_revinclude=Encounter:subject")
+            .await;
+        assert_eq!(res.status_code(), 200);
+        let body = body_of(&res.text());
+        let entries = body["entry"].as_array().expect("entries");
+        assert_eq!(entries.len(), 2, "{body}");
+        assert_eq!(entries[1]["resource"]["resourceType"], "Encounter");
+        assert_eq!(entries[1]["search"]["mode"], "include");
+    })
+    .await;
+}
+
+#[tokio::test]
+#[serial]
+async fn includes_are_refused_by_name_never_dropped() {
+    // A silently dropped include returns less than the client asked for
+    // while looking complete — every invalid form refuses (SV2.16).
+    store_ready().await;
+    request::<App, _, _>(|request, _ctx| async move {
+        for (query, expect) in [
+            ("_include=Observation:subject", "source type"),
+            ("_include=Patient:family", "not a reference parameter"),
+            ("_include:iterate=Patient:link", "iterate"),
+            ("_revinclude=Nonexistent:subject", "unknown resource type"),
+            ("_include=Patient", "expected <type>:<param>"),
+        ] {
+            let res = request.get(&format!("/r5/Patient?{query}")).await;
+            assert_eq!(res.status_code(), 400, "{query} must refuse");
+            let body = res.text();
+            assert!(
+                body.contains(expect),
+                "{query}: refusal must name the problem ({expect:?}): {body}"
+            );
+        }
+    })
+    .await;
+}
+
+#[tokio::test]
+#[serial]
+async fn metadata_declares_search_includes() {
+    store_ready().await;
+    request::<App, _, _>(|request, _ctx| async move {
+        let res = request.get("/r5/metadata").await;
+        let body = body_of(&res.text());
+        let resources = body["rest"][0]["resource"].as_array().expect("resources");
+        let patient = resources
+            .iter()
+            .find(|r| r["type"] == "Patient")
+            .expect("Patient declared");
+        let includes = patient["searchInclude"].as_array().expect("searchInclude");
+        assert!(
+            includes.contains(&serde_json::json!("Patient:general-practitioner")),
+            "the compiled reference parameters must be discoverable (SV2.16): {includes:?}"
+        );
+    })
+    .await;
+}
+
+#[tokio::test]
+#[serial]
 async fn reads_are_recorded_as_disclosures() {
     // "Who looked at this patient" is usually an audit's first question, and the
     // read path is where recording it is easiest to forget — it was missing here

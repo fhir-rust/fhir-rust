@@ -219,8 +219,25 @@ async fn metadata(Path(version): Path<String>) -> AxumResponse {
     let mut types: Vec<serde_json::Value> = store
         .map()
         .resources
-        .keys()
-        .map(|t| {
+        .iter()
+        .map(|(t, rm)| {
+            // SV2.16: exactly the reference parameters the map compiled.
+            // searchRevInclude stays undeclared — reference columns are
+            // untyped here, so the honest list is every reference parameter
+            // of every type, thousands of entries serving nobody.
+            let search_include: Vec<String> = rm
+                .search
+                .iter()
+                .filter(|d| {
+                    d.targets.iter().any(|tg| {
+                        matches!(
+                            tg.kind,
+                            fhir_sqlite_map::model::TargetKind::Reference { .. }
+                        )
+                    })
+                })
+                .map(|d| format!("{t}:{}", d.code))
+                .collect();
             // Every interaction this router actually serves. `A7.12` is
             // usually read as "do not declare what you cannot do", and the
             // reverse was true here: the routes have carried `POST`, `PUT` and
@@ -240,6 +257,7 @@ async fn metadata(Path(version): Path<String>) -> AxumResponse {
                 // If-None-Exist is served (SV2.14); a conformance-driven
                 // client discovers it here rather than by trying it.
                 "conditionalCreate": true,
+                "searchInclude": search_include,
             })
         })
         .collect();
@@ -628,6 +646,79 @@ async fn delete_(
     }
 }
 
+/// `SV2.16`: more included resources than this refuses the request.
+const INCLUDE_CAP: i64 = 1000;
+
+/// Parse and validate one `_include`/`_revinclude` value (`SV2.16`):
+/// `<type>:<param>` with an optional third segment. Everything invalid is
+/// refused **by name** — a silently dropped include returns less than the
+/// client asked for while looking complete.
+fn include_spec(
+    store: &fhir_sqlite_store::sqlite::SqliteStore,
+    spec: &str,
+    rev: bool,
+    searched: &str,
+) -> Result<(String, String, Option<String>), Box<AxumResponse>> {
+    let what = if rev { "_revinclude" } else { "_include" };
+    let refuse = |msg: String| {
+        Err(Box::new(outcome(
+            StatusCode::BAD_REQUEST,
+            "error",
+            "not-supported",
+            &msg,
+        )))
+    };
+    let parts: Vec<&str> = spec.split(':').collect();
+    if parts.contains(&"iterate") {
+        return refuse(format!(
+            "{what}={spec}: iterated includes (:iterate) are not served (SV2.16)"
+        ));
+    }
+    let [src, param, rest @ ..] = parts.as_slice() else {
+        return refuse(format!("{what}={spec}: expected <type>:<param> (SV2.16)"));
+    };
+    if rest.len() > 1 {
+        return refuse(format!(
+            "{what}={spec}: expected <type>:<param>[:<target-type>] (SV2.16)"
+        ));
+    }
+    let target = rest.first().map(|s| (*s).to_string());
+    if !rev && *src != searched {
+        return refuse(format!(
+            "{what}={spec}: the source type must be the searched type \
+             {searched} (SV2.16)"
+        ));
+    }
+    if rev {
+        if let Some(t) = &target {
+            if t != searched {
+                return refuse(format!(
+                    "{what}={spec}: the target type of a _revinclude is the \
+                     searched type {searched} (SV2.16)"
+                ));
+            }
+        }
+    }
+    let Some(rm) = store.map().resources.get(*src) else {
+        return refuse(format!("{what}={spec}: unknown resource type {src}"));
+    };
+    let Some(def) = rm.search.iter().find(|d| d.code == *param) else {
+        return refuse(format!(
+            "{what}={spec}: {src} has no search parameter {param:?}"
+        ));
+    };
+    let is_ref = def
+        .targets
+        .iter()
+        .any(|t| matches!(t.kind, fhir_sqlite_map::model::TargetKind::Reference { .. }));
+    if !is_ref {
+        return refuse(format!(
+            "{what}={spec}: {param:?} is not a reference parameter (SV2.16)"
+        ));
+    }
+    Ok(((*src).to_string(), (*param).to_string(), target))
+}
+
 /// `GET /{version}/{type}?name=value…` — search.
 #[debug_handler]
 async fn search(
@@ -646,11 +737,25 @@ async fn search(
     let mut offset: i64 = 0;
     let mut want_total = false;
     let mut criteria: Vec<(String, String)> = Vec::new();
+    let mut includes: Vec<String> = Vec::new();
+    let mut revincludes: Vec<String> = Vec::new();
     for (k, v) in params {
         match k.as_str() {
             "_count" => count = v.parse().unwrap_or(50).clamp(1, 1000),
             "_offset" => offset = v.parse().unwrap_or(0).max(0),
             "_total" => want_total = v != "none",
+            "_include" => includes.push(v),
+            "_revinclude" => revincludes.push(v),
+            // Iteration is transitive closure; refusing by name beats
+            // pretending to bound it (SV2.16).
+            "_include:iterate" | "_revinclude:iterate" => {
+                return outcome(
+                    StatusCode::BAD_REQUEST,
+                    "error",
+                    "not-supported",
+                    "iterated includes (:iterate) are not served (SV2.16)",
+                );
+            }
             _ => criteria.push((k, v)),
         }
     }
@@ -661,16 +766,88 @@ async fn search(
         Ok(p) => p,
         Err(e) => return store_error(e),
     };
-    let mut entries = Vec::with_capacity(page.ids.len());
+    // SV2.16: includes are computed from this page's matches, deduplicated,
+    // and never repeat a match.
+    let mut included: std::collections::BTreeSet<(String, String)> =
+        std::collections::BTreeSet::new();
+    for spec in &includes {
+        let (_, param, target) = match include_spec(store, spec, false, &rtype) {
+            Ok(t) => t,
+            Err(r) => return *r,
+        };
+        let pairs = match store.refs_of(&rtype, &page.ids, &param).await {
+            Ok(p) => p,
+            Err(e) => return store_error(e),
+        };
+        for (t, id) in pairs {
+            if target.as_deref().is_none_or(|f| f == t) {
+                included.insert((t, id));
+            }
+        }
+    }
+    for spec in &revincludes {
+        let (src, param, _) = match include_spec(store, spec, true, &rtype) {
+            Ok(t) => t,
+            Err(r) => return *r,
+        };
+        for id in &page.ids {
+            let hits = match store
+                .search(
+                    &src,
+                    &[(param.clone(), format!("{rtype}/{id}"))],
+                    INCLUDE_CAP + 1,
+                    0,
+                )
+                .await
+            {
+                Ok(h) => h,
+                Err(e) => return store_error(e),
+            };
+            for hid in hits {
+                included.insert((src.clone(), hid));
+            }
+        }
+    }
+    for id in &page.ids {
+        included.remove(&(rtype.clone(), id.clone()));
+    }
+    if included.len() > usize::try_from(INCLUDE_CAP).unwrap_or(usize::MAX) {
+        // A truncated include silently returns less than it claims; refusing
+        // names the cap instead (SV2.16, C0.11's shape).
+        return outcome(
+            StatusCode::BAD_REQUEST,
+            "error",
+            "too-costly",
+            &format!(
+                "this search would include more than {INCLUDE_CAP} resources; \
+                 narrow it (SV2.16)"
+            ),
+        );
+    }
+
+    let mut entries = Vec::with_capacity(page.ids.len() + included.len());
     for id in &page.ids {
         match store.get(&rtype, id).await {
             Ok(Some(resource)) => entries.push(serde_json::json!({
                 "fullUrl": format!("/{version}/{rtype}/{id}"),
                 "resource": resource,
+                "search": { "mode": "match" },
             })),
             // A result that vanished between the search and the read is a race,
             // not a failure: skip it rather than fail the page.
             Ok(None) => tracing::debug!(%rtype, %id, "search hit disappeared before read"),
+            Err(e) => return store_error(e),
+        }
+    }
+    for (t, id) in &included {
+        match store.get(t, id).await {
+            Ok(Some(resource)) => entries.push(serde_json::json!({
+                "fullUrl": format!("/{version}/{t}/{id}"),
+                "resource": resource,
+                "search": { "mode": "include" },
+            })),
+            // Dangling references are data, not a request error (SV2.16).
+            Ok(None) => tracing::debug!(%t, %id, "included reference does not resolve"),
             Err(e) => return store_error(e),
         }
     }

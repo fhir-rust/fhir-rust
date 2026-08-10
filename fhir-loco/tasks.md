@@ -36,8 +36,19 @@ ports this service sits over.
   `metadata_declares_conditional_create`. Closes one of **F-58**'s five
   named gaps; `conditional_delete_audited` still has no HTTP verb (a DELETE
   with criteria is a separate spec decision, not part of `SV2.14`).
-- [ ] **`_include` / `_revinclude`.** `refs_of` exists in the store; no HTTP
-  wiring.
+- [x] **`_include` / `_revinclude`** (`SV2.16`) — *done 2026-08-10*.
+  Forward includes ride the store's `refs_of`, reverse ones its reference
+  search (`Type/id` values); entries carry `search.mode`
+  (`match`/`include`), the included set dedups and never repeats a match,
+  and every invalid form — wrong source type, non-reference parameter,
+  `:iterate`, unknown type — is **refused by name**, never dropped. Cap:
+  more than 1,000 included resources refuses with `too-costly`. The
+  CapabilityStatement declares `searchInclude` exactly from the compiled
+  map (`searchRevInclude` deliberately undeclared — untyped reference
+  columns, see `SV2.16`). Tests:
+  `include_and_revinclude_resolve_references`,
+  `includes_are_refused_by_name_never_dropped`,
+  `metadata_declares_search_includes`.
 - [ ] **Transaction Bundles.** `fhir-sqlite`'s `transact_audited`
   deliberately returns `Unsupported` — atomicity by compensation was
   rejected because it would claim an atomicity it does not have. Needs a

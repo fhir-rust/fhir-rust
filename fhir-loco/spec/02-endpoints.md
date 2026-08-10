@@ -159,6 +159,53 @@
   *Served since 2026-08-09; until then this requirement recorded the gap —
   the last of **F-58**'s feature gaps.*
 
+## Search includes
+
+- **SV2.16** `_include` and `_revinclude` MUST be served on type-level
+  search, in exactly this slice — each edge stated rather than implied:
+
+  - `_include=<type>:<param>` resolves the references the **matched**
+    resources hold in `<param>`. `<type>` MUST equal the searched type; a
+    mismatch is refused by name (`SV2.13`'s principle). An optional third
+    segment (`_include=Patient:general-practitioner:Practitioner`) filters
+    the resolved references to that target type.
+  - `_revinclude=<type>:<param>` adds the resources of `<type>` whose
+    reference parameter `<param>` points at a matched resource. A third
+    segment, if present, MUST equal the searched type — on `_revinclude`
+    it names what the parameter points at, which here is always the
+    searched type.
+  - `<param>` MUST be a reference search parameter of `<type>`; anything
+    else — an unknown parameter, a non-reference parameter, a malformed
+    value — is refused by name, never ignored: a silently dropped include
+    returns less than the client asked for while looking complete.
+  - `:iterate` is refused by name. Iteration is transitive closure, and a
+    server that cannot bound it should not pretend to.
+  - Only **relative** references (`Type/id`) resolve. Absolute URLs, `urn:`
+    values and `#fragment` references are stored in a separate column and
+    are not followed.
+  - Included entries carry `search.mode = "include"`; matches carry
+    `"match"`. The included set is deduplicated, and a resource that is
+    already a match is not repeated as an include. A reference to a
+    resource that does not exist is skipped: dangling references are data,
+    not a request error.
+  - Includes are computed from the **current page's** matches (the standard
+    reading of includes under paging).
+  - More than **1,000** included resources refuses the request with `400`
+    `too-costly`, naming the cap — a truncated include silently returns
+    less than it claims (`C0.11`'s shape).
+  - Included resources are reads and land in the search's disclosure
+    record's count (`PR12.5`).
+  - The CapabilityStatement declares `searchInclude` per resource, exactly
+    the reference parameters the map compiled (`SV2.9`).
+    `searchRevInclude` is deliberately undeclared: reference columns here
+    are untyped — any reference parameter may point at any type — so the
+    honest list is every reference parameter of every type crossed with
+    every resource, which is thousands of entries serving nobody. The
+    operation is served; this paragraph is its declaration.
+
+  *Served since 2026-08-10; until then `_include`/`_revinclude` were
+  refused as unknown search parameters (**F-58**).*
+
 ---
 
 Part of the [fhir-loco specification](index.md).

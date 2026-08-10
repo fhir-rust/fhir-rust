@@ -159,11 +159,14 @@ values; anything else is logged and answered with a generic 500.
 
 ## Status
 
-SQLite only. Read, vread, create, update, delete, search, and history work and
-have been exercised end to end against a real database. Not implemented:
-conditional create/delete (`If-None-Exist`), `_include`/`_revinclude`,
-transaction Bundles — the store refuses those explicitly rather than pretending —
-and type- or system-level history.
+SQLite only. Read, vread, create, update, delete, search (including
+`_include`/`_revinclude`, `SV2.16`), instance history, conditional create
+(`SV2.14`), and system-level `$export` (`SV2.15`) work and have been
+exercised end to end against a real database. (Until 2026-08-10 this
+paragraph still listed conditional create as unimplemented — stale since
+2026-08-07.) Not implemented: conditional delete over HTTP, transaction
+Bundles — the store refuses those explicitly rather than pretending — and
+type- or system-level history.
 
 The MySQL and MariaDB stores are still being written in their own repositories;
 when they are ready they mount the same way, since the interface is the same.

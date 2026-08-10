@@ -76,12 +76,16 @@ also emptied the shared-core gate's exemption list — **100 files identical
 across all six ports, nothing excused** (75→100 when the gate widened under
 **F-48**; an earlier revision of this paragraph said 65).
 
-What is left open, as of 2026-08-10: **F-51** (narrowed by **F-68**),
-**F-58** (`fhir-loco`'s remaining `SV` gaps), and **F-67** (the TLS advisory
-exposure in `fhir-mssql-store`, which is a risk-acceptance decision, not a
-code fix). **F-47** left this list 2026-08-10: its six-step physical-schema
-migration ran to completion (the entry has the step-by-step account), and
-step 5 surfaced and fixed **F-85** on the way.
+What is left open, as of 2026-08-10: **F-51** (narrowed by **F-68**) and
+**F-67** (the TLS advisory exposure in `fhir-mssql-store`, which is a
+risk-acceptance decision, not a code fix). **F-47** left this list
+2026-08-10: its six-step physical-schema migration ran to completion (the
+entry has the step-by-step account), and step 5 surfaced and fixed **F-85**
+on the way. (An earlier revision of this list also carried **F-58**, which
+had already closed 2026-08-09 — `fhir-loco`'s remaining feature work,
+`_include`/`_revinclude` since served (`SV2.16`), transaction Bundles,
+type-/system-level history, multi-port wiring, is tracked in that crate's
+`tasks.md`, not by this register.)
 
 ## Severity
 
