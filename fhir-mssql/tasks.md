@@ -81,7 +81,7 @@ Not "planned and unstarted" — **absent**.
   inside the transaction; widening additive, narrowing refused).
   Live-verified: `tests/upgrade.rs` 12 tests incl. the three conversion
   tests, mutation-checked (disabling the conversion fails the pre-U12a
-  test). `U12` now holds for `path` here; the matrix flip is step 6.
+  test). `U12` holds for `path` here; matrix flipped, **F-47 closed**.
 - [ ] **Verification against full SQL Server.** Only `azure-sql-edge`
   (`M14.31`) — an arm64 subset of the product.
 - [ ] **`O10.7`.** The mechanism is confirmed live (`tests/ssl_live.rs`):

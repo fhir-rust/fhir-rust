@@ -67,8 +67,8 @@ Not "planned and unstarted" — **absent**.
   extensions were uninsertable (`ORA-01400`); bounded `"path"` is now
   nullable, NULL = the empty path (`M14.39`). Live-verified: 84/84 serial
   incl. `tests/root_extension.rs` and a real partial-failure rerun;
-  mutation-checked. `U12` holds for `path` here; the matrix flip is
-  step 6.
+  mutation-checked. `U12` holds for `path` here; matrix flipped,
+  **F-47 closed**.
 - [x] **`upgrade` / `backfill_norm`** — *done 2026-08-09* (**F-15**'s last
   port, **F-47** step 1). Diffs the stored map asset, applies resumable DDL
   (`M14.35`), chunks the meta asset past `ORA-01461` (`M14.36`), backfills

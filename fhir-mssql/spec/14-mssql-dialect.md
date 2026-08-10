@@ -467,7 +467,8 @@ Stated explicitly, because `X15.6` treats silence as a defect rather than as
   refusal undoes everything (`M14.35`). Widening a bounded column is
   additive; narrowing one is refused (`U12a`: a recorded bound never
   shrinks in place). This port now satisfies `U12` for `path` on both
-  fresh and upgraded deployments; the matrix flip is F-47 step 6.
+  fresh and upgraded deployments; flipped in the matrix 2026-08-10 —
+  **F-47 is closed**.
 
   Today `create_table` hardcodes `path` as `NVARCHAR(MAX)`, which cannot
   be part of an index key (`M14.15`). (Corrected 2026-08-10: an earlier

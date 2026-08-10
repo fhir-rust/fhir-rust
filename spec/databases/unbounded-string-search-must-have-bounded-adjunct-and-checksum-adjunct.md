@@ -234,7 +234,8 @@ rather than in `ddl.rs`. This section is that conclusion made normative.
   adjuncts and why the others did not need them.
 
 - **U12a** **`path`'s bound is the map's to compute and record** (decided
-  2026-08-09, **F-47** step 2; the physical adoption is F-47 steps 3–5).
+  2026-08-09, **F-47** step 2; the physical adoption — F-47 steps 3–5 —
+  completed 2026-08-10, and the finding is closed).
 
   `path` is *almost* bounded by construction: an attach path is a chain of
   JSON property names the map already knows, a nested extension grows the

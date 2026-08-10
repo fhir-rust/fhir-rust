@@ -755,7 +755,8 @@ Three requirements are this engine's own:
   copy pre-checks the data and refuses, naming rows, if anything stored
   exceeds the bound; widening a bounded column is additive; narrowing one
   is refused (`U12a`). This port now satisfies `U12` for `path` on both
-  fresh and upgraded deployments; the matrix flip is F-47 step 6.
+  fresh and upgraded deployments; flipped in the matrix 2026-08-10 —
+  **F-47 is closed**.
 
 - **M14.39** **The empty attach path is stored as NULL, and `"path"` is
   therefore nullable — on this engine only.** `''` is NULL here
