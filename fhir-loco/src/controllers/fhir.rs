@@ -71,9 +71,7 @@ fn fhir_json(
 /// duplicated status-code logic — and getting status codes right is this
 /// layer's only real job.
 #[allow(clippy::result_large_err)]
-pub(crate) fn version_of(
-    v: &str,
-) -> Result<&'static std::sync::Arc<fhir_sqlite_store::sqlite::SqliteStore>, AxumResponse> {
+pub(crate) fn version_of(v: &str) -> Result<&'static store::AnyStore, AxumResponse> {
     let Some(versions) = store::versions() else {
         return Err(outcome(
             StatusCode::SERVICE_UNAVAILABLE,
@@ -296,8 +294,8 @@ async fn metadata(Path(version): Path<String>) -> AxumResponse {
 /// request in the caller's own terms. Everything else may name schema objects or
 /// stored values, so it is logged and answered with a generic 500 — the detail
 /// belongs in an operator's log, not a response body.
-fn store_error(e: fhir_sqlite_store::StoreError) -> AxumResponse {
-    use fhir_sqlite_store::StoreError as E;
+fn store_error(e: store::StoreFailure) -> AxumResponse {
+    use store::StoreFailure as E;
     match e {
         E::Unsupported(msg) => outcome(StatusCode::BAD_REQUEST, "error", "not-supported", &msg),
         E::Conflict { expected, found } => outcome(
@@ -397,7 +395,7 @@ fn bundle(kind: &str, entries: Vec<serde_json::Value>, total: Option<i64>) -> se
 // would be easiest to miss.
 #[allow(clippy::too_many_arguments)]
 pub(crate) async fn disclose(
-    store: &fhir_sqlite_store::sqlite::SqliteStore,
+    store: &store::AnyStore,
     headers: &HeaderMap,
     interaction: &str,
     rtype: Option<&str>,
@@ -658,7 +656,7 @@ const INCLUDE_CAP: i64 = 1000;
 /// refused **by name** — a silently dropped include returns less than the
 /// client asked for while looking complete.
 fn include_spec(
-    store: &fhir_sqlite_store::sqlite::SqliteStore,
+    store: &store::AnyStore,
     spec: &str,
     rev: bool,
     searched: &str,
@@ -764,7 +762,7 @@ async fn search(
         }
     }
     let page = match store
-        .search_full(&rtype, &criteria, count, offset, &[], want_total)
+        .search_full(&rtype, &criteria, count, offset, want_total)
         .await
     {
         Ok(p) => p,

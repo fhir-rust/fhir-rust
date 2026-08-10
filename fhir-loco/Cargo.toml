@@ -47,6 +47,9 @@ serde_urlencoded = "0.7"
 # and this project is the HTTP surface they never had.
 fhir-sqlite-store = { path = "../fhir-sqlite/crates/fhir-sqlite-store", version = "0.4.0" }
 fhir-sqlite-map = { path = "../fhir-sqlite/crates/fhir-sqlite-map", version = "0.4.0" }
+fhir-postgresql-store = { path = "../fhir-postgresql/crates/fhir-postgresql-store", version = "0.4.0" }
+fhir-postgresql-map = { path = "../fhir-postgresql/crates/fhir-postgresql-map", version = "0.4.0" }
+tokio-postgres = "0.7"
 tokio = { version = "1.53", default-features = false, features = [
   "rt-multi-thread",
 ] }

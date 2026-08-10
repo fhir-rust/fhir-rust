@@ -103,13 +103,21 @@ ports this service sits over.
   tests: the four `admin::tests` incl.
   `ready_refuses_without_a_mounted_store` and
   `buckets_are_cumulative_and_p99_answerable`.
-- [ ] **Multi-port wiring.** Only `fhir-sqlite` is wired (`Cargo.toml`). All
-  six ports now have stores, but the HTTP-facing surface this crate calls —
-  `status`, `get_versioned`, `get_all`, `put_audited` — exists in full only
-  in `fhir-sqlite`; `fhir-postgresql` has all but `get_versioned`, and
-  mysql/mariadb/mssql/oracle have none of the four. `store::init` also
-  still holds the stores in a process-global `OnceLock` (`src/store.rs`),
-  which wants revisiting when a second backend is mounted.
+- [x] **Multi-port wiring: `fhir-postgresql` mounted** (`SV1.10`) — *done
+  2026-08-10*. `AnyStore` (an enum, deliberately not a trait object)
+  serves the whole HTTP surface over either engine; `FHIR_LOCO_BACKEND`
+  selects at boot. `fhir-postgresql` gained the two missing pieces —
+  `history_page` and `installed_checksum` (plus `access_log_len`), each
+  live-tested in its own suite — and the map introspection problem is
+  solved at mount time: the pg map's bytes re-parse as `fhir_sqlite_map`'s
+  token-identical model (`X15.1`), so `AnyStore::map` has one type. The
+  `OnceLock` note is resolved by *when* the choice happens: backend picked
+  at boot, one immutable version map per process. End-to-end proof:
+  `tests/pg_backend.rs` (separate binary, separate process) runs CRUD,
+  search with modes, type-level history, and the 410/404 distinction over
+  live PostgreSQL through HTTP. mysql/mariadb/mssql/oracle remain
+  unwired — none has the audited-write surface this crate calls; the
+  matrix rows say exactly what each lacks.
 
 The [conformance matrix](../spec/databases/conformance-matrix.md) is the status
 document to trust. This file is a plan; it is not evidence (`C0.9`).

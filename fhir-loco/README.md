@@ -161,7 +161,8 @@ values; anything else is logged and answered with a generic 500.
 
 ## Status
 
-SQLite only. Read, vread, create, update, delete, search (including
+SQLite by default; PostgreSQL by configuration (`SV1.10`). Read, vread,
+create, update, delete, search (including
 `_include`/`_revinclude`, `SV2.16`), history at instance, type and system
 level (`SV2.17`), conditional create (`SV2.14`), and system-level
 `$export` (`SV2.15`) work and have been exercised end to end against a
@@ -170,8 +171,14 @@ create as unimplemented — stale since 2026-08-07.) Not implemented:
 conditional delete over HTTP, and transaction Bundles — the store refuses
 those explicitly rather than pretending.
 
-The MySQL and MariaDB stores are still being written in their own repositories;
-when they are ready they mount the same way, since the interface is the same.
+`FHIR_LOCO_BACKEND=postgresql` (with `FHIR_LOCO_PG_DSN` and the postgres
+relmap assets in `FHIR_LOCO_ASSETS`) mounts `fhir-postgresql` instead —
+same HTTP surface, verified end to end by `tests/pg_backend.rs` against a
+live server (`SV1.10`). The other four ports are not wired: none carries
+the audited-write surface this crate calls. (Until 2026-08-10 this
+paragraph said the MySQL and MariaDB stores were "still being written in
+their own repositories" — stale twice over: all six ports have had stores
+since F-65/F-68, and they live in this monorepo, not sibling repos.)
 
 `serde_json` is built with `arbitrary_precision`, and that is not a preference:
 without it a FHIR `decimal` of `9.60` is parsed into an `f64` and handed back as

@@ -79,9 +79,12 @@ async fn store_ready() {
     s.init("test").await.expect("install schema");
     drop(s);
 
-    fhir_loco::store::init(db.to_str().expect("utf-8"), assets.to_str().expect("utf-8"))
-        .await
-        .expect("mount");
+    fhir_loco::store::init(fhir_loco::store::BackendConfig::Sqlite {
+        db_path: db.to_str().expect("utf-8"),
+        assets_dir: assets.to_str().expect("utf-8"),
+    })
+    .await
+    .expect("mount");
     let _ = ONCE.set(());
 }
 

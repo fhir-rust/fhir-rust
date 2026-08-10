@@ -26,7 +26,7 @@ not about what its code contains.
 
 | Port | Level | Basis |
 | --- | --- | --- |
-| `fhir-postgresql` | **Reference** | full store, 10 test files (`audit`, `bench`, `chain_portability`, `concurrency`, `live`, `m2_semantics`, `redaction`, `search_semantics`, `ssl_default`, `upgrade`), 22 test functions. Live PostgreSQL 18 gate **re-run 2026-08-03**: 1,200 live corpus round-trips (400 per release), 0 failures. Until **F-55** that gate could not resolve its inputs at all — `db.sh` pointed at the ancestor project's path — so the live half of this level had no evidence in this repository |
+| `fhir-postgresql` | **Reference** | full store, 11 test files (`audit`, `bench`, `chain_portability`, `concurrency`, `history_page`, `live`, `m2_semantics`, `redaction`, `search_semantics`, `ssl_default`, `upgrade`), 24 test functions. Live PostgreSQL 18 gate **re-run 2026-08-03**: 1,200 live corpus round-trips (400 per release), 0 failures. Until **F-55** that gate could not resolve its inputs at all — `db.sh` pointed at the ancestor project's path — so the live half of this level had no evidence in this repository |
 | `fhir-sqlite` | **Store**, nearing Reference | native store; tests incl. concurrency, redaction, round-trip-by-type, and upgrade+backfill, none needing a server; some operations return `Unsupported`. A boolean-token search defect (`active=true` silently matching nothing — SQLite's TEXT/INTEGER affinity rule never converts the word `"true"`) was found and fixed 2026-08-04, **F-71**, adding one test |
 | `fhir-mysql` | **Store** | native store + search; **102** tests incl. round-trip-by-type, concurrency, redaction, upgrade+backfill and the new live TLS suite, green against live MySQL 8.4 (measured 2026-08-03). The corpus links this rests on could not resolve until **F-55** |
 | `fhir-mariadb` | **Store** | native store + search; same suites, **102** tests, green against live MariaDB 11.4 (measured 2026-08-03). The corpus links this rests on could not resolve until **F-55** |
@@ -88,7 +88,7 @@ column is `ColTy::Bool`.
 | `delete` | • | • | • | • | • | • |
 | `delete_audited` | • | • | — | — | — | — |
 | `history` | • | • | • | • | • | • |
-| `history_page` (type/system) | — | • | — | — | — | — | added 2026-08-10 for `fhir-loco`'s `SV2.17`; merged per-type history, newest first, `_since` at-or-after |
+| `history_page` (type/system) | • | • | — | — | — | — | added 2026-08-10 for `fhir-loco`'s `SV2.17`; merged per-type history, newest first, `_since` at-or-after. pg's landed with the multi-port wiring (`SV1.10`), live-tested |
 | `vread` | • | • | • | • | • | • |
 | `search` / `search_full` | • | • | • | • | • | • |
 | `search_page` (cursor) | • | • | • | • | • | ~ |

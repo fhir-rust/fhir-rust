@@ -74,7 +74,28 @@ impl Hooks for App {
 
         let db = std::env::var("FHIR_LOCO_DB").unwrap_or_else(|_| "fhir.sqlite".to_string());
         let assets = std::env::var("FHIR_LOCO_ASSETS").unwrap_or_else(|_| "assets".to_string());
-        match crate::store::init(&db, &assets).await {
+        let backend = std::env::var("FHIR_LOCO_BACKEND").unwrap_or_else(|_| "sqlite".to_string());
+        let pg_dsn = std::env::var("FHIR_LOCO_PG_DSN").ok();
+        let cfg = match backend.as_str() {
+            "sqlite" => crate::store::BackendConfig::Sqlite {
+                db_path: &db,
+                assets_dir: &assets,
+            },
+            "postgresql" => crate::store::BackendConfig::Postgres {
+                dsn: pg_dsn.as_deref().ok_or_else(|| {
+                    loco_rs::Error::Message(
+                        "FHIR_LOCO_BACKEND=postgresql needs FHIR_LOCO_PG_DSN".to_string(),
+                    )
+                })?,
+                assets_dir: &assets,
+            },
+            other => {
+                return Err(loco_rs::Error::Message(format!(
+                    "unknown FHIR_LOCO_BACKEND {other:?} (sqlite | postgresql)"
+                )));
+            }
+        };
+        match crate::store::init(cfg).await {
             Ok(v) if v.mounted().is_empty() => tracing::warn!(
                 db = %db, assets = %assets,
                 "no installed FHIR schemas found; serving metadata only"

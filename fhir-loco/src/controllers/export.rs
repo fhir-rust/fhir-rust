@@ -194,7 +194,7 @@ async fn kickoff(
     };
     jobs().lock().expect("registry").insert(id.clone(), job);
 
-    let store = Arc::clone(store);
+    let store = store.clone();
     let worker_id = id.clone();
     tokio::spawn(async move {
         run_export(&store, &worker_id, &types, &dir, &cancelled).await;
@@ -211,7 +211,7 @@ async fn kickoff(
 /// per type that has any resources. Each read is a store-level snapshot read;
 /// the export as a whole is **not** one snapshot, and the spec says so.
 async fn run_export(
-    store: &fhir_sqlite_store::sqlite::SqliteStore,
+    store: &crate::store::AnyStore,
     id: &str,
     types: &[String],
     dir: &std::path::Path,
@@ -229,7 +229,7 @@ async fn run_export(
         let mut after: Option<String> = None;
         loop {
             let page = match store
-                .search_page(rtype, &[], 500, 0, &[], false, after.as_deref())
+                .search_page(rtype, &[], 500, 0, false, after.as_deref())
                 .await
             {
                 Ok(p) => p,

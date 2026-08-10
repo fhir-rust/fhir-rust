@@ -1293,6 +1293,113 @@ impl Store {
     }
 
     /// The full history of one id, newest first.
+    /// The stored `map_checksum`, or `None` when the schema (or its meta
+    /// table) is not installed. The mount probe `fhir-loco` uses: `Some`
+    /// means "installed, serve it", `None` means "do not mount".
+    pub async fn installed_checksum(&self) -> Result<Option<String>, StoreError> {
+        let s = &self.map.schema;
+        let client = self.pool.get().await?;
+        let reg: Option<String> = client
+            .query_one(
+                "SELECT to_regclass($1)::text",
+                &[&format!("\"{s}\".\"fhir_postgresql_meta\"")],
+            )
+            .await?
+            .get(0);
+        if reg.is_none() {
+            return Ok(None);
+        }
+        let row = client
+            .query_opt(
+                &format!(
+                    "SELECT \"value\" FROM \"{s}\".\"fhir_postgresql_meta\" \
+                     WHERE \"key\" = 'map_checksum'"
+                ),
+                &[],
+            )
+            .await?;
+        Ok(row.map(|r| r.get(0)))
+    }
+
+    /// History across one type, or every mapped type (`rtype` `None`),
+    /// newest first — the store half of type-/system-level `_history`
+    /// (`fhir-loco`'s `SV2.17`), same semantics as `fhir-sqlite`'s.
+    ///
+    /// Returns at most `count` `(rtype, id, entry)` rows, ordered by
+    /// `last_updated` then `version_id`, both descending. `since` keeps
+    /// versions written **at or after** that instant, cast by the engine
+    /// (`$1::timestamptz`), so an unparseable instant errors rather than
+    /// comparing as text. Entries merge across per-type queries by the
+    /// text image of `last_updated` — one session, one time zone, one
+    /// format, so text order is time order. No cursor: the newest `count`
+    /// entries, an honest slice rather than an approximate page.
+    pub async fn history_page(
+        &self,
+        rtype: Option<&str>,
+        count: i64,
+        since: Option<&str>,
+    ) -> Result<Vec<(String, String, HistEntry)>, StoreError> {
+        let types: Vec<&str> = match rtype {
+            Some(t) => {
+                // Validate up front so an unknown type refuses by name.
+                let _ = self.rm(t)?;
+                vec![t]
+            }
+            None => self.map.resources.keys().map(String::as_str).collect(),
+        };
+        let count = count.clamp(1, 1000);
+        let s = &self.map.schema;
+        let client = self.pool.get().await?;
+        let mut out: Vec<(String, String, HistEntry)> = Vec::new();
+        for t in types {
+            let rm = self.rm(t)?;
+            let hist = &rm.find_table(TableKind::History).expect("history").1.name;
+            let filter = if since.is_some() {
+                " WHERE \"last_updated\" >= ($1::text)::timestamptz"
+            } else {
+                ""
+            };
+            let sql = format!(
+                "SELECT \"id\", \"version_id\", \"last_updated\"::text, \"op\", \
+                 \"resource\"::text FROM \"{s}\".\"{hist}\"{filter} \
+                 ORDER BY \"last_updated\" DESC, \"version_id\" DESC LIMIT {count}"
+            );
+            let rows = match since {
+                Some(v) => client.query(&sql, &[&v]).await?,
+                None => client.query(&sql, &[]).await?,
+            };
+            for row in rows {
+                let id: String = row.get(0);
+                let version_id: i64 = row.get(1);
+                let last_updated: String = row.get(2);
+                let op: String = row.get(3);
+                let raw: Option<String> = row.get(4);
+                let resource = match raw {
+                    Some(txt) => Some(serde_json::from_str(&txt).map_err(|e| {
+                        StoreError::Other(format!("history {t}/{id}/{version_id}: {e}"))
+                    })?),
+                    None => None,
+                };
+                out.push((
+                    t.to_string(),
+                    id,
+                    HistEntry {
+                        version_id,
+                        last_updated,
+                        op: op.chars().next().unwrap_or('?'),
+                        resource,
+                    },
+                ));
+            }
+        }
+        out.sort_by(|a, b| {
+            (b.2.last_updated.as_str(), b.2.version_id)
+                .cmp(&(a.2.last_updated.as_str(), a.2.version_id))
+        });
+        out.truncate(usize::try_from(count).unwrap_or(usize::MAX));
+        Ok(out)
+    }
+
     pub async fn history(&self, rtype: &str, id: &str) -> Result<Vec<HistEntry>, StoreError> {
         let rm = self.rm(rtype)?;
         let s = &self.map.schema;
@@ -2162,6 +2269,20 @@ impl Store {
     /// `(actor, interaction, outcome)`.
     ///
     /// This is how an operator answers "who has looked at this patient".
+    /// Total disclosure-log rows — the observability hook `fhir-loco`'s
+    /// tests use, matching `fhir-sqlite`'s method of the same name.
+    pub async fn access_log_len(&self) -> Result<i64, StoreError> {
+        let s = &self.map.schema;
+        let client = self.pool.get().await?;
+        let row = client
+            .query_one(
+                &format!("SELECT COUNT(*) FROM \"{s}\".\"fhir_postgresql_access_log\""),
+                &[],
+            )
+            .await?;
+        Ok(row.get(0))
+    }
+
     pub async fn access_log_for(
         &self,
         rtype: &str,
