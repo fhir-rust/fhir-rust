@@ -95,7 +95,11 @@ fuzz_target!(|data: &[u8]| {
     // real SQL but not the sentinel SQL got there from the value itself, not
     // from the structure.
     fn sentinel_of(v: &str) -> String {
-        const PREFIXES: [&str; 8] = ["ge", "le", "gt", "lt", "ne", "eq", "sa", "eb"];
+        // Prefixes that steer the builder's branch and must survive the
+        // flattening: comparison operators, and `urn:` (a reference value
+        // that routes to the URL column — CI's fuzzer found the sentinel
+        // flipping that branch and flagging a legitimate difference).
+        const PREFIXES: [&str; 9] = ["ge", "le", "gt", "lt", "ne", "eq", "sa", "eb", "urn:"];
         let keep = PREFIXES
             .iter()
             .find(|p| v.starts_with(**p))
