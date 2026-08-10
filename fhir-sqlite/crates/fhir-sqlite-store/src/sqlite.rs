@@ -1695,6 +1695,95 @@ impl SqliteStore {
         .map_err(join_err)?
     }
 
+    /// History across one type, or every mapped type (`rtype` `None`),
+    /// newest first — the store half of type-/system-level `_history`
+    /// (`fhir-loco`'s `SV2.17` is the HTTP slice over it).
+    ///
+    /// Returns at most `count` `(rtype, id, entry)` rows, ordered by
+    /// `last_updated` then `version_id`, both descending. `since` keeps
+    /// versions written **at or after** that instant (FHIR `_since`),
+    /// compared textually — every stored `last_updated` is RFC 3339 UTC
+    /// from one writer, so lexical and chronological order agree. There is
+    /// no cursor: the result is the newest `count` entries, an honest
+    /// slice rather than an approximate page.
+    pub async fn history_page(
+        &self,
+        rtype: Option<&str>,
+        count: i64,
+        since: Option<&str>,
+    ) -> Result<Vec<(String, String, crate::HistEntry)>, StoreError> {
+        self.attach().await?;
+        let targets: Vec<(String, String)> = match rtype {
+            Some(t) => vec![(t.to_string(), self.hist_target(t)?.1)],
+            None => {
+                let mut v = Vec::new();
+                for t in self.map.resources.keys() {
+                    v.push((t.clone(), self.hist_target(t)?.1));
+                }
+                v
+            }
+        };
+        let count = count.clamp(1, 1000);
+        let schema = self.map.schema.clone();
+        let since = since.map(str::to_string);
+        let conn = self.conn.clone();
+        tokio::task::spawn_blocking(
+            move || -> Result<Vec<(String, String, crate::HistEntry)>, StoreError> {
+                let c = conn.blocking_lock();
+                let s = escape_ident(&schema);
+                type Raw = (String, i64, String, String, Option<String>);
+                let mut out: Vec<(String, String, crate::HistEntry)> = Vec::new();
+                for (t, hist) in &targets {
+                    let filter = if since.is_some() {
+                        " WHERE \"last_updated\" >= ?1"
+                    } else {
+                        ""
+                    };
+                    let sql = format!(
+                        "SELECT \"id\", \"version_id\", \"last_updated\", \"op\", \
+                         \"resource\" FROM \"{s}\".\"{hist}\"{filter} \
+                         ORDER BY \"last_updated\" DESC, \"version_id\" DESC LIMIT {count}"
+                    );
+                    let mut st = c.prepare(&sql).map_err(sqlite_err)?;
+                    let map_row = |r: &rusqlite::Row<'_>| -> rusqlite::Result<Raw> {
+                        Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?))
+                    };
+                    let rows: Vec<rusqlite::Result<Raw>> = match &since {
+                        Some(v) => st.query_map([v], map_row).map_err(sqlite_err)?.collect(),
+                        None => st.query_map([], map_row).map_err(sqlite_err)?.collect(),
+                    };
+                    for row in rows {
+                        let (id, version_id, last_updated, op, raw) = row.map_err(sqlite_err)?;
+                        let resource = match raw {
+                            Some(txt) => Some(serde_json::from_str(&txt).map_err(|e| {
+                                StoreError::Other(format!("history {t}/{id}/{version_id}: {e}"))
+                            })?),
+                            None => None,
+                        };
+                        out.push((
+                            t.clone(),
+                            id,
+                            crate::HistEntry {
+                                version_id,
+                                last_updated,
+                                op: op.chars().next().unwrap_or('?'),
+                                resource,
+                            },
+                        ));
+                    }
+                }
+                out.sort_by(|a, b| {
+                    (b.2.last_updated.as_str(), b.2.version_id)
+                        .cmp(&(a.2.last_updated.as_str(), a.2.version_id))
+                });
+                out.truncate(usize::try_from(count).unwrap_or(usize::MAX));
+                Ok(out)
+            },
+        )
+        .await
+        .map_err(join_err)?
+    }
+
     /// One specific version, as it was stored.
     ///
     /// Read from history rather than reassembled from the live tables, which is

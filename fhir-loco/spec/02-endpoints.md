@@ -206,6 +206,38 @@
   *Served since 2026-08-10; until then `_include`/`_revinclude` were
   refused as unknown search parameters (**F-58**).*
 
+## Type- and system-level history
+
+- **SV2.17** `GET /{version}/{type}/_history` and `GET /{version}/_history`
+  MUST be served, in exactly this slice:
+
+  - Entries are **newest first** (`last_updated`, then `version_id`, both
+    descending), deletions included as entries with no resource — history
+    that hid its deletions would not be an audit trail (`H5.1`, `H5.2`).
+  - `_count` bounds the result (default 50, clamped to 1–1,000). **There
+    is no continuation link**: the response is the newest `_count` entries
+    and says nothing about older ones. An honest bounded slice beats an
+    approximate pager; a real cursor is future work, not an implied
+    promise.
+  - `_since` keeps versions written **at or after** the given instant
+    (FHIR's definition). It MUST parse as RFC 3339; anything else is
+    refused — a malformed instant silently compared as text would return
+    wrong slices while looking right.
+  - Every other parameter is **refused by name** (`SV2.13`'s principle) —
+    `_at`, `_list`, and anything unknown. A silently dropped filter
+    returns more than was asked.
+  - The scope is a disclosure-logged read (`PR12.5`): one record per
+    request, with the entry count.
+  - The CapabilityStatement declares `history-type` on every resource and
+    `history-system` on the REST endpoint (`SV2.9`).
+
+  The store half is `fhir-sqlite`'s `history_page`, which merges the
+  per-type history tables newest-first; instance-level `_history` is
+  unchanged (`SV2.4`'s neighbours).
+
+  *Served since 2026-08-10; until then only instance-level history
+  existed (a gap `tasks.md` tracked from F-58's account).*
+
 ---
 
 Part of the [fhir-loco specification](index.md).

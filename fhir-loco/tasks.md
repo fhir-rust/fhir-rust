@@ -54,7 +54,17 @@ ports this service sits over.
   rejected because it would claim an atomicity it does not have. Needs a
   store that can hold one transaction across the operations, or a
   documented refusal.
-- [ ] **Type-level and system-level `_history`.** Only instance-level exists.
+- [x] **Type-level and system-level `_history`** (`SV2.17`) — *done
+  2026-08-10*. `GET /{version}/{type}/_history` and `GET
+  /{version}/_history` over `fhir-sqlite`'s new `history_page` (merged
+  per-type history tables, newest first, deletions included). `_count`
+  bounds the slice — no continuation link, stated honestly; `_since` is
+  at-or-after and must parse RFC 3339; every other parameter refused by
+  name. CapabilityStatement declares `history-instance`/`history-type`
+  per resource and `history-system` on the endpoint. Tests:
+  `type_and_system_history_serve_the_stated_slice`,
+  `metadata_declares_history_scopes` here, plus the two store-level
+  `history_page` tests in `fhir-sqlite`.
 - [x] **`$export`** (`SV2.15`) — *done 2026-08-09, owner-directed (option
   A)*. System-level async Bulk Data: kick-off (202 + `Content-Location`,
   `Prefer: respond-async` required), status polling with `X-Progress`, a

@@ -151,7 +151,16 @@ async fn metadata_declares_every_interaction_the_router_serves() {
             .filter_map(|i| i["code"].as_str())
             .collect();
         // Keep this list in step with `controllers::fhir::routes`.
-        for want in ["read", "vread", "search-type", "create", "update", "delete"] {
+        for want in [
+            "read",
+            "vread",
+            "search-type",
+            "create",
+            "update",
+            "delete",
+            "history-instance",
+            "history-type",
+        ] {
             assert!(
                 declared.contains(&want),
                 "the router serves `{want}` but the CapabilityStatement does not \
@@ -537,6 +546,139 @@ async fn metadata_declares_search_includes() {
         assert!(
             includes.contains(&serde_json::json!("Patient:general-practitioner")),
             "the compiled reference parameters must be discoverable (SV2.16): {includes:?}"
+        );
+    })
+    .await;
+}
+
+#[tokio::test]
+#[serial]
+async fn type_and_system_history_serve_the_stated_slice() {
+    store_ready().await;
+    request::<App, _, _>(|request, _ctx| async move {
+        // Two versions of one patient, then a created-and-deleted basic —
+        // history must show all of it, newest first, deletions included.
+        for (method_put, path, body) in [
+            (
+                true,
+                "/r5/Patient/hist-p",
+                r#"{"resourceType":"Patient","id":"hist-p"}"#,
+            ),
+            (
+                true,
+                "/r5/Patient/hist-p",
+                r#"{"resourceType":"Patient","id":"hist-p","active":true}"#,
+            ),
+            (
+                true,
+                "/r5/Basic/hist-b",
+                r#"{"resourceType":"Basic","id":"hist-b","code":{"text":"x"}}"#,
+            ),
+        ] {
+            assert!(method_put);
+            let res = request
+                .put(path)
+                .add_header("content-type", FHIR_JSON)
+                .add_header("authorization", &bearer("dr-who"))
+                .text(body.to_string())
+                .await;
+            assert!(res.status_code().is_success(), "seed {path}");
+        }
+        let res = request
+            .delete("/r5/Basic/hist-b")
+            .add_header("authorization", &bearer("dr-who"))
+            .await;
+        assert!(res.status_code().is_success(), "delete hist-b");
+
+        // Type-level: only that type, newest first, the deletion present as
+        // an entry with no resource.
+        let res = request.get("/r5/Basic/_history").await;
+        assert_eq!(res.status_code(), 200);
+        let body = body_of(&res.text());
+        assert_eq!(body["type"], "history");
+        let entries = body["entry"].as_array().expect("entries");
+        assert_eq!(entries.len(), 2, "{body}");
+        assert_eq!(entries[0]["request"]["method"], "DELETE");
+        assert!(
+            entries[0].get("resource").is_none(),
+            "a deletion carries no content"
+        );
+        assert_eq!(entries[1]["request"]["method"], "POST");
+
+        // System-level spans types; _count bounds it.
+        let res = request.get("/r5/_history?_count=100").await;
+        assert_eq!(res.status_code(), 200);
+        let body = body_of(&res.text());
+        let entries = body["entry"].as_array().expect("entries");
+        let types: std::collections::BTreeSet<&str> = entries
+            .iter()
+            .map(|e| {
+                e["request"]["url"]
+                    .as_str()
+                    .unwrap()
+                    .split('/')
+                    .next()
+                    .unwrap()
+            })
+            .collect();
+        assert!(
+            types.contains("Patient") && types.contains("Basic"),
+            "system history must span types: {types:?}"
+        );
+        let res = request.get("/r5/_history?_count=1").await;
+        assert_eq!(
+            body_of(&res.text())["entry"].as_array().map(Vec::len),
+            Some(1)
+        );
+
+        // _since far in the future is empty; malformed _since and unknown
+        // parameters are refused by name, never dropped (SV2.17).
+        let res = request
+            .get("/r5/_history?_since=9999-01-01T00:00:00Z")
+            .await;
+        assert_eq!(
+            body_of(&res.text())["entry"].as_array().map(Vec::len),
+            Some(0)
+        );
+        let res = request.get("/r5/_history?_since=yesterday").await;
+        assert_eq!(res.status_code(), 400);
+        assert!(res.text().contains("RFC 3339"));
+        let res = request.get("/r5/Basic/_history?_at=2026").await;
+        assert_eq!(res.status_code(), 400);
+        assert!(res.text().contains("_at"), "{}", res.text());
+    })
+    .await;
+}
+
+#[tokio::test]
+#[serial]
+async fn metadata_declares_history_scopes() {
+    store_ready().await;
+    request::<App, _, _>(|request, _ctx| async move {
+        let body = body_of(&request.get("/r5/metadata").await.text());
+        let rest = &body["rest"][0];
+        let system: Vec<&str> = rest["interaction"]
+            .as_array()
+            .expect("rest interaction")
+            .iter()
+            .filter_map(|i| i["code"].as_str())
+            .collect();
+        assert!(system.contains(&"history-system"), "{system:?}");
+        let patient = rest["resource"]
+            .as_array()
+            .expect("resources")
+            .iter()
+            .find(|r| r["type"] == "Patient")
+            .expect("Patient");
+        let declared: Vec<&str> = patient["interaction"]
+            .as_array()
+            .expect("interactions")
+            .iter()
+            .filter_map(|i| i["code"].as_str())
+            .collect();
+        assert!(
+            declared.contains(&"history-type") && declared.contains(&"history-instance"),
+            "{declared:?}"
         );
     })
     .await;

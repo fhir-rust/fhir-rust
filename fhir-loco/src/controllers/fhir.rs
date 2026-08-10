@@ -253,6 +253,8 @@ async fn metadata(Path(version): Path<String>) -> AxumResponse {
                     { "code": "create" },
                     { "code": "update" },
                     { "code": "delete" },
+                    { "code": "history-instance" },
+                    { "code": "history-type" },
                 ],
                 // If-None-Exist is served (SV2.14); a conformance-driven
                 // client discovers it here rather than by trying it.
@@ -274,6 +276,8 @@ async fn metadata(Path(version): Path<String>) -> AxumResponse {
         "software": { "name": "fhir-loco", "version": env!("CARGO_PKG_VERSION") },
         "rest": [{
             "mode": "server",
+            // Whole-system history is served (SV2.17).
+            "interaction": [{ "code": "history-system" }],
             "resource": types,
             // System-level Bulk Data export is served (SV2.15); a
             // conformance-driven client discovers it here (SV2.9).
@@ -932,10 +936,116 @@ async fn history(
     }
 }
 
+/// `GET /{version}/{type}/_history` (`SV2.17`).
+#[debug_handler]
+async fn type_history(
+    Path((version, rtype)): Path<(String, String)>,
+    Query(params): Query<Vec<(String, String)>>,
+    headers: HeaderMap,
+) -> AxumResponse {
+    scoped_history(version, Some(rtype), params, headers).await
+}
+
+/// `GET /{version}/_history` (`SV2.17`).
+#[debug_handler]
+async fn system_history(
+    Path(version): Path<String>,
+    Query(params): Query<Vec<(String, String)>>,
+    headers: HeaderMap,
+) -> AxumResponse {
+    scoped_history(version, None, params, headers).await
+}
+
+async fn scoped_history(
+    version: String,
+    rtype: Option<String>,
+    params: Vec<(String, String)>,
+    headers: HeaderMap,
+) -> AxumResponse {
+    let store = match version_of(&version) {
+        Ok(s) => s,
+        Err(r) => return r,
+    };
+    let mut count: i64 = 50;
+    let mut since: Option<String> = None;
+    for (k, v) in params {
+        match k.as_str() {
+            "_count" => count = v.parse().unwrap_or(50).clamp(1, 1000),
+            "_since" => {
+                // A malformed instant silently compared as text would return
+                // wrong slices while looking right (SV2.17).
+                if chrono::DateTime::parse_from_rfc3339(&v).is_err() {
+                    return outcome(
+                        StatusCode::BAD_REQUEST,
+                        "error",
+                        "invalid",
+                        &format!("_since must be an RFC 3339 instant, got {v:?} (SV2.17)"),
+                    );
+                }
+                since = Some(v);
+            }
+            other => {
+                // A silently dropped filter returns more than was asked.
+                return outcome(
+                    StatusCode::BAD_REQUEST,
+                    "error",
+                    "not-supported",
+                    &format!("history does not serve parameter {other:?} (SV2.17)"),
+                );
+            }
+        }
+    }
+    let rows = match store
+        .history_page(rtype.as_deref(), count, since.as_deref())
+        .await
+    {
+        Ok(r) => r,
+        Err(e) => return store_error(e),
+    };
+    let out: Vec<serde_json::Value> = rows
+        .iter()
+        .map(|(t, id, e)| {
+            let method = match e.op {
+                'C' => "POST",
+                'D' | 'X' => "DELETE",
+                _ => "PUT",
+            };
+            let mut entry = serde_json::json!({
+                "fullUrl": format!("/{version}/{t}/{id}"),
+                "request": { "method": method, "url": format!("{t}/{id}") },
+                "response": {
+                    "status": if e.resource.is_some() { "200" } else { "204" },
+                    "etag": format!("W/\"{}\"", e.version_id),
+                    "lastModified": e.last_updated,
+                },
+            });
+            if let (Some(r), Some(o)) = (&e.resource, entry.as_object_mut()) {
+                o.insert("resource".to_string(), r.clone());
+            }
+            entry
+        })
+        .collect();
+    let total = i64::try_from(out.len()).ok();
+    disclose(
+        store,
+        &headers,
+        "history",
+        rtype.as_deref(),
+        None,
+        None,
+        "ok",
+        total,
+    )
+    .await;
+    fhir_json(StatusCode::OK, &bundle("history", out, total), None)
+}
+
 pub fn routes() -> Routes {
     Routes::new()
         .add("/{version}/metadata", get(metadata))
+        .add("/{version}/_history", get(system_history))
         .add("/{version}/{rtype}", get(search).post(create))
+        .add("/{version}/{rtype}/_history", get(type_history))
         .add(
             "/{version}/{rtype}/{id}",
             get(read).put(update).delete(delete_),
