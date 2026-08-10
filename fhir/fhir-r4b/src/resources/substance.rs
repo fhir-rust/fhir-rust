@@ -130,6 +130,7 @@ pub struct Substance {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "SubstanceIngredientDe")]
 #[fhir_version("r4b")]
 pub struct SubstanceIngredient {
     /// Unique id for inter-element referencing
@@ -150,6 +151,31 @@ pub struct SubstanceIngredient {
     /// The `Substance.ingredient.substance[x]` choice element (1..1); see [`SubstanceIngredientSubstance`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub substance: Option<SubstanceIngredientSubstance>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SubstanceIngredientDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    quantity: Option<types::Ratio>,
+    #[serde(flatten)]
+    substance: crate::r4b::choice::Slot<SubstanceIngredientSubstance>,
+}
+
+impl ::core::convert::From<SubstanceIngredientDe> for SubstanceIngredient {
+    fn from(v: SubstanceIngredientDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            quantity: v.quantity,
+            substance: v.substance.0,
+        }
+    }
 }
 
 /// Substance may be used to describe a kind of substance, or a specific

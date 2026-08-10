@@ -39,6 +39,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "GuidanceResponseDe")]
 #[fhir_version("r4b")]
 pub struct GuidanceResponse {
     /// Logical id of this artifact
@@ -137,6 +138,86 @@ pub struct GuidanceResponse {
     /// Additional required data
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub data_requirement: Vec<types::DataRequirement>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct GuidanceResponseDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r4b::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    request_identifier: Option<types::Identifier>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    #[serde(flatten)]
+    module: crate::r4b::choice::Slot<GuidanceResponseModule>,
+    status: crate::coded::Coded<crate::r4b::codes::GuidanceResponseStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    subject: Option<types::Reference>,
+    encounter: Option<types::Reference<crate::r4b::resources::Encounter>>,
+    occurrence_date_time: Option<types::DateTime>,
+    #[serde(rename = "_occurrenceDateTime")]
+    occurrence_date_time_ext: Option<types::Element>,
+    performer: Option<types::Reference<crate::r4b::resources::Device>>,
+    #[serde(default)]
+    reason_code: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    reason_reference: Vec<types::Reference>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+    #[serde(default)]
+    evaluation_message: Vec<types::Reference<crate::r4b::resources::OperationOutcome>>,
+    output_parameters: Option<types::Reference<crate::r4b::resources::Parameters>>,
+    result: Option<types::Reference>,
+    #[serde(default)]
+    data_requirement: Vec<types::DataRequirement>,
+}
+
+impl ::core::convert::From<GuidanceResponseDe> for GuidanceResponse {
+    fn from(v: GuidanceResponseDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            request_identifier: v.request_identifier,
+            identifier: v.identifier,
+            module: v.module.0,
+            status: v.status,
+            status_ext: v.status_ext,
+            subject: v.subject,
+            encounter: v.encounter,
+            occurrence_date_time: v.occurrence_date_time,
+            occurrence_date_time_ext: v.occurrence_date_time_ext,
+            performer: v.performer,
+            reason_code: v.reason_code,
+            reason_reference: v.reason_reference,
+            note: v.note,
+            evaluation_message: v.evaluation_message,
+            output_parameters: v.output_parameters,
+            result: v.result,
+            data_requirement: v.data_requirement,
+        }
+    }
 }
 
 /// The `GuidanceResponse.module[x]` choice element (see `spec/11-choice-types.md`).

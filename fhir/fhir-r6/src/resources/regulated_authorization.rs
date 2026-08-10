@@ -179,6 +179,7 @@ pub struct RegulatedAuthorization {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "RegulatedAuthorizationCaseDe")]
 #[fhir_version("r6")]
 pub struct RegulatedAuthorizationCase {
     /// Unique id for inter-element referencing
@@ -210,6 +211,38 @@ pub struct RegulatedAuthorizationCase {
     /// within the longer running case or procedure
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub application: Vec<RegulatedAuthorizationCase>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RegulatedAuthorizationCaseDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    identifier: Option<types::Identifier>,
+    r#type: Option<types::CodeableConcept>,
+    status: Option<types::CodeableConcept>,
+    #[serde(flatten)]
+    date: crate::r6::choice::Slot<RegulatedAuthorizationCaseDate>,
+    #[serde(default)]
+    application: Vec<RegulatedAuthorizationCase>,
+}
+
+impl ::core::convert::From<RegulatedAuthorizationCaseDe> for RegulatedAuthorizationCase {
+    fn from(v: RegulatedAuthorizationCaseDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            r#type: v.r#type,
+            status: v.status,
+            date: v.date.0,
+            application: v.application,
+        }
+    }
 }
 
 /// The `RegulatedAuthorization.case.date[x]` choice element (see `spec/11-choice-types.md`).

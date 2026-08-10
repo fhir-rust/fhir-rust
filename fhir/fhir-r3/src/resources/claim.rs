@@ -209,6 +209,7 @@ pub struct Claim {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ClaimAccidentDe")]
 #[fhir_version("r3")]
 pub struct ClaimAccident {
     /// xml:id (or equivalent in JSON)
@@ -236,6 +237,36 @@ pub struct ClaimAccident {
     /// The `Claim.accident.location[x]` choice element (0..1); see [`ClaimAccidentLocation`].
     #[serde(flatten)]
     pub location: Option<ClaimAccidentLocation>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ClaimAccidentDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    date: types::Date,
+    #[serde(rename = "_date")]
+    date_ext: Option<types::Element>,
+    r#type: Option<types::CodeableConcept>,
+    #[serde(flatten)]
+    location: crate::r3::choice::Slot<ClaimAccidentLocation>,
+}
+
+impl ::core::convert::From<ClaimAccidentDe> for ClaimAccident {
+    fn from(v: ClaimAccidentDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            date: v.date,
+            date_ext: v.date_ext,
+            r#type: v.r#type,
+            location: v.location.0,
+        }
+    }
 }
 
 /// The members of the team who provided the overall service as well as their
@@ -320,6 +351,7 @@ pub struct ClaimCareTeam {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ClaimDiagnosisDe")]
 #[fhir_version("r3")]
 pub struct ClaimDiagnosis {
     /// xml:id (or equivalent in JSON)
@@ -353,6 +385,39 @@ pub struct ClaimDiagnosis {
     pub package_code: Option<types::CodeableConcept>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ClaimDiagnosisDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    sequence: types::PositiveInt,
+    #[serde(rename = "_sequence")]
+    sequence_ext: Option<types::Element>,
+    #[serde(flatten)]
+    diagnosis: crate::r3::choice::Slot<ClaimDiagnosisDiagnosis>,
+    #[serde(default)]
+    r#type: Vec<types::CodeableConcept>,
+    package_code: Option<types::CodeableConcept>,
+}
+
+impl ::core::convert::From<ClaimDiagnosisDe> for ClaimDiagnosis {
+    fn from(v: ClaimDiagnosisDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            sequence: v.sequence,
+            sequence_ext: v.sequence_ext,
+            diagnosis: v.diagnosis.0,
+            r#type: v.r#type,
+            package_code: v.package_code,
+        }
+    }
+}
+
 /// Additional information codes regarding exceptions, special considerations,
 /// the condition, situation, prior or concurrent issues. Often there are
 /// mutiple jurisdiction specific valuesets which are required.
@@ -377,6 +442,7 @@ pub struct ClaimDiagnosis {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ClaimInformationDe")]
 #[fhir_version("r3")]
 pub struct ClaimInformation {
     /// xml:id (or equivalent in JSON)
@@ -415,6 +481,43 @@ pub struct ClaimInformation {
 
     /// Reason associated with the information
     pub reason: Option<types::CodeableConcept>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ClaimInformationDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    sequence: types::PositiveInt,
+    #[serde(rename = "_sequence")]
+    sequence_ext: Option<types::Element>,
+    category: types::CodeableConcept,
+    code: Option<types::CodeableConcept>,
+    #[serde(flatten)]
+    timing: crate::r3::choice::Slot<ClaimInformationTiming>,
+    #[serde(flatten)]
+    value: crate::r3::choice::Slot<ClaimInformationValue>,
+    reason: Option<types::CodeableConcept>,
+}
+
+impl ::core::convert::From<ClaimInformationDe> for ClaimInformation {
+    fn from(v: ClaimInformationDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            sequence: v.sequence,
+            sequence_ext: v.sequence_ext,
+            category: v.category,
+            code: v.code,
+            timing: v.timing.0,
+            value: v.value.0,
+            reason: v.reason,
+        }
+    }
 }
 
 /// Financial instrument by which payment information for health care.
@@ -511,6 +614,7 @@ pub struct ClaimInsurance {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ClaimItemDe")]
 #[fhir_version("r3")]
 pub struct ClaimItem {
     /// xml:id (or equivalent in JSON)
@@ -628,6 +732,102 @@ pub struct ClaimItem {
     /// Additional items
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub detail: Vec<ClaimItemDetail>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ClaimItemDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    sequence: types::PositiveInt,
+    #[serde(rename = "_sequence")]
+    sequence_ext: Option<types::Element>,
+    #[serde(default)]
+    care_team_link_id: Vec<types::PositiveInt>,
+    #[serde(rename = "_careTeamLinkId")]
+    #[serde(default)]
+    care_team_link_id_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    diagnosis_link_id: Vec<types::PositiveInt>,
+    #[serde(rename = "_diagnosisLinkId")]
+    #[serde(default)]
+    diagnosis_link_id_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    procedure_link_id: Vec<types::PositiveInt>,
+    #[serde(rename = "_procedureLinkId")]
+    #[serde(default)]
+    procedure_link_id_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    information_link_id: Vec<types::PositiveInt>,
+    #[serde(rename = "_informationLinkId")]
+    #[serde(default)]
+    information_link_id_ext: Vec<Option<types::Element>>,
+    revenue: Option<types::CodeableConcept>,
+    category: Option<types::CodeableConcept>,
+    service: Option<types::CodeableConcept>,
+    #[serde(default)]
+    modifier: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    program_code: Vec<types::CodeableConcept>,
+    #[serde(flatten)]
+    serviced: crate::r3::choice::Slot<ClaimItemServiced>,
+    #[serde(flatten)]
+    location: crate::r3::choice::Slot<ClaimItemLocation>,
+    quantity: Option<types::Quantity>,
+    unit_price: Option<types::Money>,
+    factor: Option<types::Decimal>,
+    #[serde(rename = "_factor")]
+    factor_ext: Option<types::Element>,
+    net: Option<types::Money>,
+    #[serde(default)]
+    udi: Vec<types::Reference<crate::r3::resources::Device>>,
+    body_site: Option<types::CodeableConcept>,
+    #[serde(default)]
+    sub_site: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    encounter: Vec<types::Reference<crate::r3::resources::Encounter>>,
+    #[serde(default)]
+    detail: Vec<ClaimItemDetail>,
+}
+
+impl ::core::convert::From<ClaimItemDe> for ClaimItem {
+    fn from(v: ClaimItemDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            sequence: v.sequence,
+            sequence_ext: v.sequence_ext,
+            care_team_link_id: v.care_team_link_id,
+            care_team_link_id_ext: v.care_team_link_id_ext,
+            diagnosis_link_id: v.diagnosis_link_id,
+            diagnosis_link_id_ext: v.diagnosis_link_id_ext,
+            procedure_link_id: v.procedure_link_id,
+            procedure_link_id_ext: v.procedure_link_id_ext,
+            information_link_id: v.information_link_id,
+            information_link_id_ext: v.information_link_id_ext,
+            revenue: v.revenue,
+            category: v.category,
+            service: v.service,
+            modifier: v.modifier,
+            program_code: v.program_code,
+            serviced: v.serviced.0,
+            location: v.location.0,
+            quantity: v.quantity,
+            unit_price: v.unit_price,
+            factor: v.factor,
+            factor_ext: v.factor_ext,
+            net: v.net,
+            udi: v.udi,
+            body_site: v.body_site,
+            sub_site: v.sub_site,
+            encounter: v.encounter,
+            detail: v.detail,
+        }
+    }
 }
 
 /// Second tier of goods and services.
@@ -861,6 +1061,7 @@ pub struct ClaimPayee {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ClaimProcedureDe")]
 #[fhir_version("r3")]
 pub struct ClaimProcedure {
     /// xml:id (or equivalent in JSON)
@@ -892,6 +1093,39 @@ pub struct ClaimProcedure {
     /// The `Claim.procedure.procedure[x]` choice element (1..1); see [`ClaimProcedureProcedure`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub procedure: Option<ClaimProcedureProcedure>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ClaimProcedureDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    sequence: types::PositiveInt,
+    #[serde(rename = "_sequence")]
+    sequence_ext: Option<types::Element>,
+    date: Option<types::DateTime>,
+    #[serde(rename = "_date")]
+    date_ext: Option<types::Element>,
+    #[serde(flatten)]
+    procedure: crate::r3::choice::Slot<ClaimProcedureProcedure>,
+}
+
+impl ::core::convert::From<ClaimProcedureDe> for ClaimProcedure {
+    fn from(v: ClaimProcedureDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            sequence: v.sequence,
+            sequence_ext: v.sequence_ext,
+            date: v.date,
+            date_ext: v.date_ext,
+            procedure: v.procedure.0,
+        }
+    }
 }
 
 /// Other claims which are related to this claim such as prior claim versions

@@ -38,6 +38,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "AllergyIntoleranceDe")]
 #[fhir_version("r4")]
 pub struct AllergyIntolerance {
     /// Logical id of this artifact
@@ -149,6 +150,96 @@ pub struct AllergyIntolerance {
     /// Adverse Reaction Events linked to exposure to substance
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub reaction: Vec<AllergyIntoleranceReaction>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AllergyIntoleranceDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r4::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    clinical_status: Option<types::CodeableConcept>,
+    verification_status: Option<types::CodeableConcept>,
+    r#type: Option<crate::coded::Coded<crate::r4::codes::AllergyIntoleranceType>>,
+    #[serde(rename = "_type")]
+    type_ext: Option<types::Element>,
+    #[serde(default)]
+    category: Vec<crate::coded::Coded<crate::r4::codes::AllergyIntoleranceCategory>>,
+    #[serde(rename = "_category")]
+    #[serde(default)]
+    category_ext: Vec<Option<types::Element>>,
+    criticality: Option<crate::coded::Coded<crate::r4::codes::AllergyIntoleranceCriticality>>,
+    #[serde(rename = "_criticality")]
+    criticality_ext: Option<types::Element>,
+    code: Option<types::CodeableConcept>,
+    patient: types::Reference<crate::r4::resources::Patient>,
+    encounter: Option<types::Reference<crate::r4::resources::Encounter>>,
+    #[serde(flatten)]
+    onset: crate::r4::choice::Slot<AllergyIntoleranceOnset>,
+    recorded_date: Option<types::DateTime>,
+    #[serde(rename = "_recordedDate")]
+    recorded_date_ext: Option<types::Element>,
+    recorder: Option<types::Reference>,
+    asserter: Option<types::Reference>,
+    last_occurrence: Option<types::DateTime>,
+    #[serde(rename = "_lastOccurrence")]
+    last_occurrence_ext: Option<types::Element>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+    #[serde(default)]
+    reaction: Vec<AllergyIntoleranceReaction>,
+}
+
+impl ::core::convert::From<AllergyIntoleranceDe> for AllergyIntolerance {
+    fn from(v: AllergyIntoleranceDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            clinical_status: v.clinical_status,
+            verification_status: v.verification_status,
+            r#type: v.r#type,
+            type_ext: v.type_ext,
+            category: v.category,
+            category_ext: v.category_ext,
+            criticality: v.criticality,
+            criticality_ext: v.criticality_ext,
+            code: v.code,
+            patient: v.patient,
+            encounter: v.encounter,
+            onset: v.onset.0,
+            recorded_date: v.recorded_date,
+            recorded_date_ext: v.recorded_date_ext,
+            recorder: v.recorder,
+            asserter: v.asserter,
+            last_occurrence: v.last_occurrence,
+            last_occurrence_ext: v.last_occurrence_ext,
+            note: v.note,
+            reaction: v.reaction,
+        }
+    }
 }
 
 /// Details about each adverse reaction event linked to exposure to the

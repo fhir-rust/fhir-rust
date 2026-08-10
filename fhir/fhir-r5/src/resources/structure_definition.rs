@@ -62,6 +62,7 @@ use fhir_derive_macros::Validate;
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "StructureDefinitionDe")]
 pub struct StructureDefinition {
     /// Logical id of this artifact
     pub id: Option<types::String>,
@@ -249,6 +250,168 @@ pub struct StructureDefinition {
 
     /// Differential view listing only the elements that differ from the base definition
     pub differential: Option<StructureDefinitionDifferential>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct StructureDefinitionDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r5::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    url: types::Uri,
+    #[serde(rename = "_url")]
+    url_ext: Option<types::Element>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    version: Option<types::String>,
+    #[serde(rename = "_version")]
+    version_ext: Option<types::Element>,
+    #[serde(flatten)]
+    version_algorithm: crate::r5::choice::Slot<StructureDefinitionVersionAlgorithm>,
+    name: types::String,
+    #[serde(rename = "_name")]
+    name_ext: Option<types::Element>,
+    title: Option<types::String>,
+    #[serde(rename = "_title")]
+    title_ext: Option<types::Element>,
+    status: crate::r5::coded::Coded<crate::r5::codes::PublicationStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    experimental: Option<types::Boolean>,
+    #[serde(rename = "_experimental")]
+    experimental_ext: Option<types::Element>,
+    date: Option<types::DateTime>,
+    #[serde(rename = "_date")]
+    date_ext: Option<types::Element>,
+    publisher: Option<types::String>,
+    #[serde(rename = "_publisher")]
+    publisher_ext: Option<types::Element>,
+    #[serde(default)]
+    contact: Vec<types::ContactDetail>,
+    description: Option<types::Markdown>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    #[serde(default)]
+    use_context: Vec<types::UsageContext>,
+    #[serde(default)]
+    jurisdiction: Vec<types::CodeableConcept>,
+    purpose: Option<types::Markdown>,
+    #[serde(rename = "_purpose")]
+    purpose_ext: Option<types::Element>,
+    copyright: Option<types::Markdown>,
+    #[serde(rename = "_copyright")]
+    copyright_ext: Option<types::Element>,
+    copyright_label: Option<types::String>,
+    #[serde(rename = "_copyrightLabel")]
+    copyright_label_ext: Option<types::Element>,
+    #[serde(default)]
+    keyword: Vec<types::Coding>,
+    fhir_version: Option<crate::r5::coded::Coded<crate::r5::codes::FhirVersion>>,
+    #[serde(rename = "_fhirVersion")]
+    fhir_version_ext: Option<types::Element>,
+    #[serde(default)]
+    mapping: Vec<StructureDefinitionMapping>,
+    kind: crate::r5::coded::Coded<crate::r5::codes::StructureDefinitionKind>,
+    #[serde(rename = "_kind")]
+    kind_ext: Option<types::Element>,
+    r#abstract: types::Boolean,
+    #[serde(rename = "_abstract")]
+    abstract_ext: Option<types::Element>,
+    #[serde(default)]
+    context: Vec<StructureDefinitionContext>,
+    #[serde(default)]
+    context_invariant: Vec<types::String>,
+    #[serde(rename = "_contextInvariant")]
+    #[serde(default)]
+    context_invariant_ext: Vec<Option<types::Element>>,
+    r#type: types::Uri,
+    #[serde(rename = "_type")]
+    type_ext: Option<types::Element>,
+    base_definition: Option<types::Canonical>,
+    #[serde(rename = "_baseDefinition")]
+    base_definition_ext: Option<types::Element>,
+    derivation: Option<crate::r5::coded::Coded<crate::r5::codes::TypeDerivationRule>>,
+    #[serde(rename = "_derivation")]
+    derivation_ext: Option<types::Element>,
+    snapshot: Option<StructureDefinitionSnapshot>,
+    differential: Option<StructureDefinitionDifferential>,
+}
+
+impl ::core::convert::From<StructureDefinitionDe> for StructureDefinition {
+    fn from(v: StructureDefinitionDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            url: v.url,
+            url_ext: v.url_ext,
+            identifier: v.identifier,
+            version: v.version,
+            version_ext: v.version_ext,
+            version_algorithm: v.version_algorithm.0,
+            name: v.name,
+            name_ext: v.name_ext,
+            title: v.title,
+            title_ext: v.title_ext,
+            status: v.status,
+            status_ext: v.status_ext,
+            experimental: v.experimental,
+            experimental_ext: v.experimental_ext,
+            date: v.date,
+            date_ext: v.date_ext,
+            publisher: v.publisher,
+            publisher_ext: v.publisher_ext,
+            contact: v.contact,
+            description: v.description,
+            description_ext: v.description_ext,
+            use_context: v.use_context,
+            jurisdiction: v.jurisdiction,
+            purpose: v.purpose,
+            purpose_ext: v.purpose_ext,
+            copyright: v.copyright,
+            copyright_ext: v.copyright_ext,
+            copyright_label: v.copyright_label,
+            copyright_label_ext: v.copyright_label_ext,
+            keyword: v.keyword,
+            fhir_version: v.fhir_version,
+            fhir_version_ext: v.fhir_version_ext,
+            mapping: v.mapping,
+            kind: v.kind,
+            kind_ext: v.kind_ext,
+            r#abstract: v.r#abstract,
+            abstract_ext: v.abstract_ext,
+            context: v.context,
+            context_invariant: v.context_invariant,
+            context_invariant_ext: v.context_invariant_ext,
+            r#type: v.r#type,
+            type_ext: v.type_ext,
+            base_definition: v.base_definition,
+            base_definition_ext: v.base_definition_ext,
+            derivation: v.derivation,
+            derivation_ext: v.derivation_ext,
+            snapshot: v.snapshot,
+            differential: v.differential,
+        }
+    }
 }
 
 /// External specification that the content is mapped to.

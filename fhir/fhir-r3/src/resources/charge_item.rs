@@ -38,6 +38,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ChargeItemDe")]
 #[fhir_version("r3")]
 pub struct ChargeItem {
     /// Logical id of this artifact
@@ -176,6 +177,115 @@ pub struct ChargeItem {
     /// Further information supporting the this charge
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub supporting_information: Vec<types::Reference>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ChargeItemDe {
+    id: Option<types::Id>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r3::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    identifier: Option<types::Identifier>,
+    #[serde(default)]
+    definition: Vec<types::Uri>,
+    #[serde(rename = "_definition")]
+    #[serde(default)]
+    definition_ext: Vec<Option<types::Element>>,
+    status: crate::coded::Coded<crate::r3::codes::ChargeitemStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    #[serde(default)]
+    part_of: Vec<types::Reference<crate::r3::resources::ChargeItem>>,
+    code: types::CodeableConcept,
+    subject: types::Reference,
+    context: Option<types::Reference>,
+    #[serde(flatten)]
+    occurrence: crate::r3::choice::Slot<ChargeItemOccurrence>,
+    #[serde(default)]
+    participant: Vec<ChargeItemParticipant>,
+    performing_organization: Option<types::Reference<crate::r3::resources::Organization>>,
+    requesting_organization: Option<types::Reference<crate::r3::resources::Organization>>,
+    quantity: Option<types::Quantity>,
+    #[serde(default)]
+    bodysite: Vec<types::CodeableConcept>,
+    factor_override: Option<types::Decimal>,
+    #[serde(rename = "_factorOverride")]
+    factor_override_ext: Option<types::Element>,
+    price_override: Option<types::Money>,
+    override_reason: Option<types::String>,
+    #[serde(rename = "_overrideReason")]
+    override_reason_ext: Option<types::Element>,
+    enterer: Option<types::Reference>,
+    entered_date: Option<types::DateTime>,
+    #[serde(rename = "_enteredDate")]
+    entered_date_ext: Option<types::Element>,
+    #[serde(default)]
+    reason: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    service: Vec<types::Reference>,
+    #[serde(default)]
+    account: Vec<types::Reference<crate::r3::resources::Account>>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+    #[serde(default)]
+    supporting_information: Vec<types::Reference>,
+}
+
+impl ::core::convert::From<ChargeItemDe> for ChargeItem {
+    fn from(v: ChargeItemDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            definition: v.definition,
+            definition_ext: v.definition_ext,
+            status: v.status,
+            status_ext: v.status_ext,
+            part_of: v.part_of,
+            code: v.code,
+            subject: v.subject,
+            context: v.context,
+            occurrence: v.occurrence.0,
+            participant: v.participant,
+            performing_organization: v.performing_organization,
+            requesting_organization: v.requesting_organization,
+            quantity: v.quantity,
+            bodysite: v.bodysite,
+            factor_override: v.factor_override,
+            factor_override_ext: v.factor_override_ext,
+            price_override: v.price_override,
+            override_reason: v.override_reason,
+            override_reason_ext: v.override_reason_ext,
+            enterer: v.enterer,
+            entered_date: v.entered_date,
+            entered_date_ext: v.entered_date_ext,
+            reason: v.reason,
+            service: v.service,
+            account: v.account,
+            note: v.note,
+            supporting_information: v.supporting_information,
+        }
+    }
 }
 
 /// Indicates who or what performed or participated in the charged service.

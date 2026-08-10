@@ -34,6 +34,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "CoverageEligibilityRequestDe")]
 #[fhir_version("r4")]
 pub struct CoverageEligibilityRequest {
     /// Logical id of this artifact
@@ -131,6 +132,86 @@ pub struct CoverageEligibilityRequest {
     /// Item to be evaluated for eligibiity
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub item: Vec<CoverageEligibilityRequestItem>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CoverageEligibilityRequestDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r4::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    status: crate::coded::Coded<crate::r4::codes::FmStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    priority: Option<types::CodeableConcept>,
+    purpose: ::vec1::Vec1<crate::coded::Coded<crate::r4::codes::EligibilityrequestPurpose>>,
+    #[serde(rename = "_purpose")]
+    #[serde(default)]
+    purpose_ext: Vec<Option<types::Element>>,
+    patient: types::Reference<crate::r4::resources::Patient>,
+    #[serde(flatten)]
+    serviced: crate::r4::choice::Slot<CoverageEligibilityRequestServiced>,
+    created: types::DateTime,
+    #[serde(rename = "_created")]
+    created_ext: Option<types::Element>,
+    enterer: Option<types::Reference>,
+    provider: Option<types::Reference>,
+    insurer: types::Reference<crate::r4::resources::Organization>,
+    facility: Option<types::Reference<crate::r4::resources::Location>>,
+    #[serde(default)]
+    supporting_info: Vec<CoverageEligibilityRequestSupportingInfo>,
+    #[serde(default)]
+    insurance: Vec<CoverageEligibilityRequestInsurance>,
+    #[serde(default)]
+    item: Vec<CoverageEligibilityRequestItem>,
+}
+
+impl ::core::convert::From<CoverageEligibilityRequestDe> for CoverageEligibilityRequest {
+    fn from(v: CoverageEligibilityRequestDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            status: v.status,
+            status_ext: v.status_ext,
+            priority: v.priority,
+            purpose: v.purpose,
+            purpose_ext: v.purpose_ext,
+            patient: v.patient,
+            serviced: v.serviced.0,
+            created: v.created,
+            created_ext: v.created_ext,
+            enterer: v.enterer,
+            provider: v.provider,
+            insurer: v.insurer,
+            facility: v.facility,
+            supporting_info: v.supporting_info,
+            insurance: v.insurance,
+            item: v.item,
+        }
+    }
 }
 
 /// Financial instruments for reimbursement for the health care products and
@@ -285,6 +366,7 @@ pub struct CoverageEligibilityRequestItem {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "CoverageEligibilityRequestItemDiagnosisDe")]
 #[fhir_version("r4")]
 pub struct CoverageEligibilityRequestItemDiagnosis {
     /// Unique id for inter-element referencing
@@ -302,6 +384,31 @@ pub struct CoverageEligibilityRequestItemDiagnosis {
     /// The `CoverageEligibilityRequest.item.diagnosis.diagnosis[x]` choice element (0..1); see [`CoverageEligibilityRequestItemDiagnosisDiagnosis`].
     #[serde(flatten)]
     pub diagnosis: Option<CoverageEligibilityRequestItemDiagnosisDiagnosis>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CoverageEligibilityRequestItemDiagnosisDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    diagnosis: crate::r4::choice::Slot<CoverageEligibilityRequestItemDiagnosisDiagnosis>,
+}
+
+impl ::core::convert::From<CoverageEligibilityRequestItemDiagnosisDe>
+    for CoverageEligibilityRequestItemDiagnosis
+{
+    fn from(v: CoverageEligibilityRequestItemDiagnosisDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            diagnosis: v.diagnosis.0,
+        }
+    }
 }
 
 /// Additional information codes regarding exceptions, special considerations,

@@ -236,6 +236,7 @@ pub struct EvidenceVariable {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "EvidenceVariableCategoryDe")]
 #[fhir_version("r4b")]
 pub struct EvidenceVariableCategory {
     /// Unique id for inter-element referencing
@@ -262,6 +263,34 @@ pub struct EvidenceVariableCategory {
     pub value: Option<EvidenceVariableCategoryValue>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct EvidenceVariableCategoryDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    name: Option<types::String>,
+    #[serde(rename = "_name")]
+    name_ext: Option<types::Element>,
+    #[serde(flatten)]
+    value: crate::r4b::choice::Slot<EvidenceVariableCategoryValue>,
+}
+
+impl ::core::convert::From<EvidenceVariableCategoryDe> for EvidenceVariableCategory {
+    fn from(v: EvidenceVariableCategoryDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            name: v.name,
+            name_ext: v.name_ext,
+            value: v.value.0,
+        }
+    }
+}
+
 /// A characteristic that defines the members of the evidence element. Multiple
 /// characteristics are applied with "and" semantics.
 ///
@@ -285,6 +314,7 @@ pub struct EvidenceVariableCategory {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "EvidenceVariableCharacteristicDe")]
 #[fhir_version("r4b")]
 pub struct EvidenceVariableCharacteristic {
     /// Unique id for inter-element referencing
@@ -333,6 +363,50 @@ pub struct EvidenceVariableCharacteristic {
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_groupMeasure")]
     pub group_measure_ext: Option<types::Element>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct EvidenceVariableCharacteristicDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    description: Option<types::String>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    #[serde(flatten)]
+    definition: crate::r4b::choice::Slot<EvidenceVariableCharacteristicDefinition>,
+    method: Option<types::CodeableConcept>,
+    device: Option<types::Reference>,
+    exclude: Option<types::Boolean>,
+    #[serde(rename = "_exclude")]
+    exclude_ext: Option<types::Element>,
+    time_from_start: Option<EvidenceVariableCharacteristicTimeFromStart>,
+    group_measure: Option<crate::coded::Coded<crate::r4b::codes::GroupMeasure>>,
+    #[serde(rename = "_groupMeasure")]
+    group_measure_ext: Option<types::Element>,
+}
+
+impl ::core::convert::From<EvidenceVariableCharacteristicDe> for EvidenceVariableCharacteristic {
+    fn from(v: EvidenceVariableCharacteristicDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            description: v.description,
+            description_ext: v.description_ext,
+            definition: v.definition.0,
+            method: v.method,
+            device: v.device,
+            exclude: v.exclude,
+            exclude_ext: v.exclude_ext,
+            time_from_start: v.time_from_start,
+            group_measure: v.group_measure,
+            group_measure_ext: v.group_measure_ext,
+        }
+    }
 }
 
 /// Indicates duration, period, or point of observation from the participant's

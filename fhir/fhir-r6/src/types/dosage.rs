@@ -139,6 +139,7 @@ pub struct Dosage {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "DosageDoseAndRateDe")]
 #[fhir_version("r6")]
 pub struct DosageDoseAndRate {
     /// Unique id for inter-element referencing
@@ -160,6 +161,31 @@ pub struct DosageDoseAndRate {
     /// The `Dosage.doseAndRate.rate[x]` choice element (0..1); see [`DosageDoseAndRateRate`].
     #[serde(flatten)]
     pub rate: Option<DosageDoseAndRateRate>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DosageDoseAndRateDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    r#type: Option<types::CodeableConcept>,
+    #[serde(flatten)]
+    dose: crate::r6::choice::Slot<DosageDoseAndRateDose>,
+    #[serde(flatten)]
+    rate: crate::r6::choice::Slot<DosageDoseAndRateRate>,
+}
+
+impl ::core::convert::From<DosageDoseAndRateDe> for DosageDoseAndRate {
+    fn from(v: DosageDoseAndRateDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            r#type: v.r#type,
+            dose: v.dose.0,
+            rate: v.rate.0,
+        }
+    }
 }
 
 /// The `Dosage.doseAndRate.dose[x]` choice element (see `spec/11-choice-types.md`).

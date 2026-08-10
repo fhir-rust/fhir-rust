@@ -63,6 +63,7 @@ use fhir_derive_macros::Validate;
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ProcedureDe")]
 pub struct Procedure {
     /// Logical id of this artifact
     pub id: Option<types::String>,
@@ -212,6 +213,131 @@ pub struct Procedure {
     /// Extra information relevant to the procedure
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub supporting_info: Vec<types::Reference>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ProcedureDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r5::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    #[serde(default)]
+    instantiates_canonical: Vec<types::Canonical>,
+    #[serde(rename = "_instantiatesCanonical")]
+    #[serde(default)]
+    instantiates_canonical_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    instantiates_uri: Vec<types::Uri>,
+    #[serde(rename = "_instantiatesUri")]
+    #[serde(default)]
+    instantiates_uri_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    based_on: Vec<types::Reference>,
+    #[serde(default)]
+    part_of: Vec<types::Reference>,
+    status: crate::r5::coded::Coded<crate::r5::codes::EventStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    status_reason: Option<types::CodeableConcept>,
+    #[serde(default)]
+    category: Vec<types::CodeableConcept>,
+    code: Option<types::CodeableConcept>,
+    subject: types::Reference,
+    focus: Option<types::Reference>,
+    encounter: Option<types::Reference<crate::r5::resources::Encounter>>,
+    #[serde(flatten)]
+    occurrence: crate::r5::choice::Slot<ProcedureOccurrence>,
+    recorded: Option<types::DateTime>,
+    #[serde(rename = "_recorded")]
+    recorded_ext: Option<types::Element>,
+    recorder: Option<types::Reference>,
+    #[serde(flatten)]
+    reported: crate::r5::choice::Slot<ProcedureReported>,
+    #[serde(default)]
+    performer: Vec<ProcedurePerformer>,
+    location: Option<types::Reference<crate::r5::resources::Location>>,
+    #[serde(default)]
+    reason: Vec<types::CodeableReference>,
+    #[serde(default)]
+    body_site: Vec<types::CodeableConcept>,
+    outcome: Option<types::CodeableConcept>,
+    #[serde(default)]
+    report: Vec<types::Reference>,
+    #[serde(default)]
+    complication: Vec<types::CodeableReference>,
+    #[serde(default)]
+    follow_up: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+    #[serde(default)]
+    focal_device: Vec<ProcedureFocalDevice>,
+    #[serde(default)]
+    used: Vec<types::CodeableReference>,
+    #[serde(default)]
+    supporting_info: Vec<types::Reference>,
+}
+
+impl ::core::convert::From<ProcedureDe> for Procedure {
+    fn from(v: ProcedureDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            instantiates_canonical: v.instantiates_canonical,
+            instantiates_canonical_ext: v.instantiates_canonical_ext,
+            instantiates_uri: v.instantiates_uri,
+            instantiates_uri_ext: v.instantiates_uri_ext,
+            based_on: v.based_on,
+            part_of: v.part_of,
+            status: v.status,
+            status_ext: v.status_ext,
+            status_reason: v.status_reason,
+            category: v.category,
+            code: v.code,
+            subject: v.subject,
+            focus: v.focus,
+            encounter: v.encounter,
+            occurrence: v.occurrence.0,
+            recorded: v.recorded,
+            recorded_ext: v.recorded_ext,
+            recorder: v.recorder,
+            reported: v.reported.0,
+            performer: v.performer,
+            location: v.location,
+            reason: v.reason,
+            body_site: v.body_site,
+            outcome: v.outcome,
+            report: v.report,
+            complication: v.complication,
+            follow_up: v.follow_up,
+            note: v.note,
+            focal_device: v.focal_device,
+            used: v.used,
+            supporting_info: v.supporting_info,
+        }
+    }
 }
 
 /// Who performed the procedure and what they did.

@@ -154,6 +154,7 @@ pub struct Medication {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MedicationIngredientDe")]
 pub struct MedicationIngredient {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -178,6 +179,36 @@ pub struct MedicationIngredient {
     /// The `Medication.ingredient.strength[x]` choice element (0..1); see [`MedicationIngredientStrength`].
     #[serde(flatten)]
     pub strength: Option<MedicationIngredientStrength>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MedicationIngredientDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    item: types::CodeableReference,
+    is_active: Option<types::Boolean>,
+    #[serde(rename = "_isActive")]
+    is_active_ext: Option<types::Element>,
+    #[serde(flatten)]
+    strength: crate::r5::choice::Slot<MedicationIngredientStrength>,
+}
+
+impl ::core::convert::From<MedicationIngredientDe> for MedicationIngredient {
+    fn from(v: MedicationIngredientDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            item: v.item,
+            is_active: v.is_active,
+            is_active_ext: v.is_active_ext,
+            strength: v.strength.0,
+        }
+    }
 }
 
 /// Details about the packaged medication, such as the lot number assigned to the

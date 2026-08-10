@@ -37,6 +37,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "VisionPrescriptionDe")]
 #[fhir_version("r3")]
 pub struct VisionPrescription {
     /// Logical id of this artifact
@@ -109,6 +110,68 @@ pub struct VisionPrescription {
     /// Vision supply authorization
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub dispense: Vec<VisionPrescriptionDispense>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct VisionPrescriptionDe {
+    id: Option<types::Id>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r3::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    status: Option<crate::coded::Coded<crate::r3::codes::FmStatus>>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    patient: Option<types::Reference<crate::r3::resources::Patient>>,
+    encounter: Option<types::Reference<crate::r3::resources::Encounter>>,
+    date_written: Option<types::DateTime>,
+    #[serde(rename = "_dateWritten")]
+    date_written_ext: Option<types::Element>,
+    prescriber: Option<types::Reference<crate::r3::resources::Practitioner>>,
+    #[serde(flatten)]
+    reason: crate::r3::choice::Slot<VisionPrescriptionReason>,
+    #[serde(default)]
+    dispense: Vec<VisionPrescriptionDispense>,
+}
+
+impl ::core::convert::From<VisionPrescriptionDe> for VisionPrescription {
+    fn from(v: VisionPrescriptionDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            status: v.status,
+            status_ext: v.status_ext,
+            patient: v.patient,
+            encounter: v.encounter,
+            date_written: v.date_written,
+            date_written_ext: v.date_written_ext,
+            prescriber: v.prescriber,
+            reason: v.reason.0,
+            dispense: v.dispense,
+        }
+    }
 }
 
 /// Deals with details of the dispense part of the supply specification.

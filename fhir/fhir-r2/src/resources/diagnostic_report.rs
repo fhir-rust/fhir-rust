@@ -38,6 +38,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "DiagnosticReportDe")]
 #[fhir_version("r2")]
 pub struct DiagnosticReport {
     /// Logical id of this artifact
@@ -149,6 +150,95 @@ pub struct DiagnosticReport {
     /// Entire report as issued
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub presented_form: Vec<types::Attachment>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DiagnosticReportDe {
+    id: Option<types::Id>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r2::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    status: crate::coded::Coded<crate::r2::codes::DiagnosticReportStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    category: Option<types::CodeableConcept>,
+    code: types::CodeableConcept,
+    subject: types::Reference,
+    encounter: Option<types::Reference<crate::r2::resources::Encounter>>,
+    #[serde(flatten)]
+    effective: crate::r2::choice::Slot<DiagnosticReportEffective>,
+    issued: types::Instant,
+    #[serde(rename = "_issued")]
+    issued_ext: Option<types::Element>,
+    performer: types::Reference,
+    #[serde(default)]
+    request: Vec<types::Reference>,
+    #[serde(default)]
+    specimen: Vec<types::Reference<crate::r2::resources::Specimen>>,
+    #[serde(default)]
+    result: Vec<types::Reference<crate::r2::resources::Observation>>,
+    #[serde(default)]
+    imaging_study: Vec<types::Reference>,
+    #[serde(default)]
+    image: Vec<DiagnosticReportImage>,
+    conclusion: Option<types::String>,
+    #[serde(rename = "_conclusion")]
+    conclusion_ext: Option<types::Element>,
+    #[serde(default)]
+    coded_diagnosis: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    presented_form: Vec<types::Attachment>,
+}
+
+impl ::core::convert::From<DiagnosticReportDe> for DiagnosticReport {
+    fn from(v: DiagnosticReportDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            status: v.status,
+            status_ext: v.status_ext,
+            category: v.category,
+            code: v.code,
+            subject: v.subject,
+            encounter: v.encounter,
+            effective: v.effective.0,
+            issued: v.issued,
+            issued_ext: v.issued_ext,
+            performer: v.performer,
+            request: v.request,
+            specimen: v.specimen,
+            result: v.result,
+            imaging_study: v.imaging_study,
+            image: v.image,
+            conclusion: v.conclusion,
+            conclusion_ext: v.conclusion_ext,
+            coded_diagnosis: v.coded_diagnosis,
+            presented_form: v.presented_form,
+        }
+    }
 }
 
 /// A list of key images associated with this report. The images are generally

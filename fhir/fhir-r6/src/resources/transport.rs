@@ -219,6 +219,7 @@ pub struct Transport {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "TransportInputDe")]
 #[fhir_version("r6")]
 pub struct TransportInput {
     /// Unique id for inter-element referencing
@@ -239,6 +240,31 @@ pub struct TransportInput {
     /// The `Transport.input.value[x]` choice element (1..1); see [`TransportInputValue`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub value: Option<TransportInputValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct TransportInputDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: types::CodeableConcept,
+    #[serde(flatten)]
+    value: crate::r6::choice::Slot<TransportInputValue>,
+}
+
+impl ::core::convert::From<TransportInputDe> for TransportInput {
+    fn from(v: TransportInputDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            value: v.value.0,
+        }
+    }
 }
 
 /// Outputs produced by the Transport.
@@ -263,6 +289,7 @@ pub struct TransportInput {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "TransportOutputDe")]
 #[fhir_version("r6")]
 pub struct TransportOutput {
     /// Unique id for inter-element referencing
@@ -283,6 +310,31 @@ pub struct TransportOutput {
     /// The `Transport.output.value[x]` choice element (1..1); see [`TransportOutputValue`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub value: Option<TransportOutputValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct TransportOutputDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: types::CodeableConcept,
+    #[serde(flatten)]
+    value: crate::r6::choice::Slot<TransportOutputValue>,
+}
+
+impl ::core::convert::From<TransportOutputDe> for TransportOutput {
+    fn from(v: TransportOutputDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            value: v.value.0,
+        }
+    }
 }
 
 /// If the Transport.focus is a request resource and the transport is seeking

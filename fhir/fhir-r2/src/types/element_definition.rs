@@ -37,6 +37,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ElementDefinitionDe")]
 #[fhir_version("r2")]
 pub struct ElementDefinition {
     /// xml:id (or equivalent in JSON)
@@ -234,6 +235,155 @@ pub struct ElementDefinition {
     pub mapping: Vec<ElementDefinitionMapping>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ElementDefinitionDe {
+    id: Option<types::Id>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    path: types::String,
+    #[serde(rename = "_path")]
+    path_ext: Option<types::Element>,
+    #[serde(default)]
+    representation: Vec<types::Code>,
+    #[serde(rename = "_representation")]
+    #[serde(default)]
+    representation_ext: Vec<Option<types::Element>>,
+    name: Option<types::String>,
+    #[serde(rename = "_name")]
+    name_ext: Option<types::Element>,
+    label: Option<types::String>,
+    #[serde(rename = "_label")]
+    label_ext: Option<types::Element>,
+    #[serde(default)]
+    code: Vec<types::Coding>,
+    slicing: Option<ElementDefinitionSlicing>,
+    short: Option<types::String>,
+    #[serde(rename = "_short")]
+    short_ext: Option<types::Element>,
+    definition: Option<types::Markdown>,
+    #[serde(rename = "_definition")]
+    definition_ext: Option<types::Element>,
+    comments: Option<types::Markdown>,
+    #[serde(rename = "_comments")]
+    comments_ext: Option<types::Element>,
+    requirements: Option<types::Markdown>,
+    #[serde(rename = "_requirements")]
+    requirements_ext: Option<types::Element>,
+    #[serde(default)]
+    alias: Vec<types::String>,
+    #[serde(rename = "_alias")]
+    #[serde(default)]
+    alias_ext: Vec<Option<types::Element>>,
+    min: Option<types::Integer>,
+    #[serde(rename = "_min")]
+    min_ext: Option<types::Element>,
+    max: Option<types::String>,
+    #[serde(rename = "_max")]
+    max_ext: Option<types::Element>,
+    base: Option<ElementDefinitionBase>,
+    #[serde(default)]
+    r#type: Vec<ElementDefinitionType>,
+    name_reference: Option<types::String>,
+    #[serde(rename = "_nameReference")]
+    name_reference_ext: Option<types::Element>,
+    #[serde(flatten)]
+    default_value: crate::r2::choice::Slot<ElementDefinitionDefaultValue>,
+    meaning_when_missing: Option<types::Markdown>,
+    #[serde(rename = "_meaningWhenMissing")]
+    meaning_when_missing_ext: Option<types::Element>,
+    #[serde(flatten)]
+    fixed: crate::r2::choice::Slot<ElementDefinitionFixed>,
+    #[serde(flatten)]
+    pattern: crate::r2::choice::Slot<ElementDefinitionPattern>,
+    #[serde(flatten)]
+    example: crate::r2::choice::Slot<ElementDefinitionExample>,
+    #[serde(flatten)]
+    min_value: crate::r2::choice::Slot<ElementDefinitionMinValue>,
+    #[serde(flatten)]
+    max_value: crate::r2::choice::Slot<ElementDefinitionMaxValue>,
+    max_length: Option<types::Integer>,
+    #[serde(rename = "_maxLength")]
+    max_length_ext: Option<types::Element>,
+    #[serde(default)]
+    condition: Vec<types::Id>,
+    #[serde(rename = "_condition")]
+    #[serde(default)]
+    condition_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    constraint: Vec<ElementDefinitionConstraint>,
+    must_support: Option<types::Boolean>,
+    #[serde(rename = "_mustSupport")]
+    must_support_ext: Option<types::Element>,
+    is_modifier: Option<types::Boolean>,
+    #[serde(rename = "_isModifier")]
+    is_modifier_ext: Option<types::Element>,
+    is_summary: Option<types::Boolean>,
+    #[serde(rename = "_isSummary")]
+    is_summary_ext: Option<types::Element>,
+    binding: Option<ElementDefinitionBinding>,
+    #[serde(default)]
+    mapping: Vec<ElementDefinitionMapping>,
+}
+
+impl ::core::convert::From<ElementDefinitionDe> for ElementDefinition {
+    fn from(v: ElementDefinitionDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            path: v.path,
+            path_ext: v.path_ext,
+            representation: v.representation,
+            representation_ext: v.representation_ext,
+            name: v.name,
+            name_ext: v.name_ext,
+            label: v.label,
+            label_ext: v.label_ext,
+            code: v.code,
+            slicing: v.slicing,
+            short: v.short,
+            short_ext: v.short_ext,
+            definition: v.definition,
+            definition_ext: v.definition_ext,
+            comments: v.comments,
+            comments_ext: v.comments_ext,
+            requirements: v.requirements,
+            requirements_ext: v.requirements_ext,
+            alias: v.alias,
+            alias_ext: v.alias_ext,
+            min: v.min,
+            min_ext: v.min_ext,
+            max: v.max,
+            max_ext: v.max_ext,
+            base: v.base,
+            r#type: v.r#type,
+            name_reference: v.name_reference,
+            name_reference_ext: v.name_reference_ext,
+            default_value: v.default_value.0,
+            meaning_when_missing: v.meaning_when_missing,
+            meaning_when_missing_ext: v.meaning_when_missing_ext,
+            fixed: v.fixed.0,
+            pattern: v.pattern.0,
+            example: v.example.0,
+            min_value: v.min_value.0,
+            max_value: v.max_value.0,
+            max_length: v.max_length,
+            max_length_ext: v.max_length_ext,
+            condition: v.condition,
+            condition_ext: v.condition_ext,
+            constraint: v.constraint,
+            must_support: v.must_support,
+            must_support_ext: v.must_support_ext,
+            is_modifier: v.is_modifier,
+            is_modifier_ext: v.is_modifier_ext,
+            is_summary: v.is_summary,
+            is_summary_ext: v.is_summary_ext,
+            binding: v.binding,
+            mapping: v.mapping,
+        }
+    }
+}
+
 /// Information about the base definition of the element, provided to make it
 /// unncessary for tools to trace the deviation of the element through the
 /// derived and related profiles. This information is only provided where the
@@ -314,6 +464,7 @@ pub struct ElementDefinitionBase {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ElementDefinitionBindingDe")]
 #[fhir_version("r2")]
 pub struct ElementDefinitionBinding {
     /// xml:id (or equivalent in JSON)
@@ -341,6 +492,36 @@ pub struct ElementDefinitionBinding {
     /// The `ElementDefinition.binding.valueSet[x]` choice element (0..1); see [`ElementDefinitionBindingValueSet`].
     #[serde(flatten)]
     pub value_set: Option<ElementDefinitionBindingValueSet>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ElementDefinitionBindingDe {
+    id: Option<types::Id>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    strength: crate::coded::Coded<crate::r2::codes::BindingStrength>,
+    #[serde(rename = "_strength")]
+    strength_ext: Option<types::Element>,
+    description: Option<types::String>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    #[serde(flatten)]
+    value_set: crate::r2::choice::Slot<ElementDefinitionBindingValueSet>,
+}
+
+impl ::core::convert::From<ElementDefinitionBindingDe> for ElementDefinitionBinding {
+    fn from(v: ElementDefinitionBindingDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            strength: v.strength,
+            strength_ext: v.strength_ext,
+            description: v.description,
+            description_ext: v.description_ext,
+            value_set: v.value_set.0,
+        }
+    }
 }
 
 /// Formal constraints such as co-occurrence and other constraints that can be

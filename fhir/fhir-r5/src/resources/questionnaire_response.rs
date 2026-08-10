@@ -234,6 +234,7 @@ pub struct QuestionnaireResponseItem {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "QuestionnaireResponseItemAnswerDe")]
 pub struct QuestionnaireResponseItemAnswer {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -253,6 +254,32 @@ pub struct QuestionnaireResponseItemAnswer {
     /// Child items of question
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub item: Vec<QuestionnaireResponseItem>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct QuestionnaireResponseItemAnswerDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    value: crate::r5::choice::Slot<QuestionnaireResponseItemAnswerValue>,
+    #[serde(default)]
+    item: Vec<QuestionnaireResponseItem>,
+}
+
+impl ::core::convert::From<QuestionnaireResponseItemAnswerDe> for QuestionnaireResponseItemAnswer {
+    fn from(v: QuestionnaireResponseItemAnswerDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            value: v.value.0,
+            item: v.item,
+        }
+    }
 }
 
 #[cfg(test)]

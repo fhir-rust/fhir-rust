@@ -407,6 +407,7 @@ pub struct TestReportSetupActionAssert {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "TestReportSetupActionAssertRequirementDe")]
 pub struct TestReportSetupActionAssertRequirement {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -422,6 +423,31 @@ pub struct TestReportSetupActionAssertRequirement {
     /// The `TestReport.setup.action.assert.requirement.link[x]` choice element (0..1); see [`TestReportSetupActionAssertRequirementLink`].
     #[serde(flatten)]
     pub link: Option<TestReportSetupActionAssertRequirementLink>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct TestReportSetupActionAssertRequirementDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    link: crate::r5::choice::Slot<TestReportSetupActionAssertRequirementLink>,
+}
+
+impl ::core::convert::From<TestReportSetupActionAssertRequirementDe>
+    for TestReportSetupActionAssertRequirement
+{
+    fn from(v: TestReportSetupActionAssertRequirementDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            link: v.link.0,
+        }
+    }
 }
 
 /// A test executed from the test script.

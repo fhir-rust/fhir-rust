@@ -39,6 +39,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "TriggerDefinitionDe")]
 #[fhir_version("r4b")]
 pub struct TriggerDefinition {
     /// Unique id for inter-element referencing
@@ -74,6 +75,41 @@ pub struct TriggerDefinition {
 
     /// Whether the event triggers (boolean expression)
     pub condition: Option<types::Expression>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct TriggerDefinitionDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    r#type: crate::coded::Coded<crate::r4b::codes::TriggerType>,
+    #[serde(rename = "_type")]
+    type_ext: Option<types::Element>,
+    name: Option<types::String>,
+    #[serde(rename = "_name")]
+    name_ext: Option<types::Element>,
+    #[serde(flatten)]
+    timing: crate::r4b::choice::Slot<TriggerDefinitionTiming>,
+    #[serde(default)]
+    data: Vec<types::DataRequirement>,
+    condition: Option<types::Expression>,
+}
+
+impl ::core::convert::From<TriggerDefinitionDe> for TriggerDefinition {
+    fn from(v: TriggerDefinitionDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            r#type: v.r#type,
+            type_ext: v.type_ext,
+            name: v.name,
+            name_ext: v.name_ext,
+            timing: v.timing.0,
+            data: v.data,
+            condition: v.condition,
+        }
+    }
 }
 
 /// The `TriggerDefinition.timing[x]` choice element (see `spec/11-choice-types.md`).

@@ -39,6 +39,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ProductShelfLifeDe")]
 #[fhir_version("r6")]
 pub struct ProductShelfLife {
     /// Unique id for inter-element referencing
@@ -74,6 +75,34 @@ pub struct ProductShelfLife {
     /// controlled term identifier shall be specified
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub special_precautions_for_storage: Vec<types::CodeableConcept>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ProductShelfLifeDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: Option<types::CodeableConcept>,
+    #[serde(flatten)]
+    period: crate::r6::choice::Slot<ProductShelfLifePeriod>,
+    #[serde(default)]
+    special_precautions_for_storage: Vec<types::CodeableConcept>,
+}
+
+impl ::core::convert::From<ProductShelfLifeDe> for ProductShelfLife {
+    fn from(v: ProductShelfLifeDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            period: v.period.0,
+            special_precautions_for_storage: v.special_precautions_for_storage,
+        }
+    }
 }
 
 /// The `ProductShelfLife.period[x]` choice element (see `spec/11-choice-types.md`).

@@ -38,6 +38,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "OperationDefinitionDe")]
 #[fhir_version("r6")]
 pub struct OperationDefinition {
     /// Logical id of this artifact
@@ -275,6 +276,186 @@ pub struct OperationDefinition {
     /// Define overloaded variants for when generating code
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub overload: Vec<OperationDefinitionOverload>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct OperationDefinitionDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r6::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    url: Option<types::Uri>,
+    #[serde(rename = "_url")]
+    url_ext: Option<types::Element>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    version: Option<types::String>,
+    #[serde(rename = "_version")]
+    version_ext: Option<types::Element>,
+    #[serde(flatten)]
+    version_algorithm: crate::r6::choice::Slot<OperationDefinitionVersionAlgorithm>,
+    name: types::String,
+    #[serde(rename = "_name")]
+    name_ext: Option<types::Element>,
+    title: Option<types::String>,
+    #[serde(rename = "_title")]
+    title_ext: Option<types::Element>,
+    status: crate::coded::Coded<crate::r6::codes::PublicationStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    kind: crate::coded::Coded<crate::r6::codes::OperationKind>,
+    #[serde(rename = "_kind")]
+    kind_ext: Option<types::Element>,
+    experimental: Option<types::Boolean>,
+    #[serde(rename = "_experimental")]
+    experimental_ext: Option<types::Element>,
+    date: Option<types::DateTime>,
+    #[serde(rename = "_date")]
+    date_ext: Option<types::Element>,
+    publisher: Option<types::String>,
+    #[serde(rename = "_publisher")]
+    publisher_ext: Option<types::Element>,
+    #[serde(default)]
+    contact: Vec<types::ContactDetail>,
+    description: Option<types::Markdown>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    #[serde(default)]
+    use_context: Vec<types::UsageContext>,
+    #[serde(default)]
+    jurisdiction: Vec<types::CodeableConcept>,
+    purpose: Option<types::Markdown>,
+    #[serde(rename = "_purpose")]
+    purpose_ext: Option<types::Element>,
+    copyright: Option<types::Markdown>,
+    #[serde(rename = "_copyright")]
+    copyright_ext: Option<types::Element>,
+    copyright_label: Option<types::String>,
+    #[serde(rename = "_copyrightLabel")]
+    copyright_label_ext: Option<types::Element>,
+    affects_state: Option<types::Boolean>,
+    #[serde(rename = "_affectsState")]
+    affects_state_ext: Option<types::Element>,
+    synchronicity: Option<types::Code>,
+    #[serde(rename = "_synchronicity")]
+    synchronicity_ext: Option<types::Element>,
+    code: types::Code,
+    #[serde(rename = "_code")]
+    code_ext: Option<types::Element>,
+    comment: Option<types::Markdown>,
+    #[serde(rename = "_comment")]
+    comment_ext: Option<types::Element>,
+    base: Option<types::Canonical>,
+    #[serde(rename = "_base")]
+    base_ext: Option<types::Element>,
+    #[serde(default)]
+    resource: Vec<types::Code>,
+    #[serde(rename = "_resource")]
+    #[serde(default)]
+    resource_ext: Vec<Option<types::Element>>,
+    system: types::Boolean,
+    #[serde(rename = "_system")]
+    system_ext: Option<types::Element>,
+    r#type: types::Boolean,
+    #[serde(rename = "_type")]
+    type_ext: Option<types::Element>,
+    instance: types::Boolean,
+    #[serde(rename = "_instance")]
+    instance_ext: Option<types::Element>,
+    input_profile: Option<types::Canonical>,
+    #[serde(rename = "_inputProfile")]
+    input_profile_ext: Option<types::Element>,
+    output_profile: Option<types::Canonical>,
+    #[serde(rename = "_outputProfile")]
+    output_profile_ext: Option<types::Element>,
+    #[serde(default)]
+    parameter: Vec<OperationDefinitionParameter>,
+    #[serde(default)]
+    overload: Vec<OperationDefinitionOverload>,
+}
+
+impl ::core::convert::From<OperationDefinitionDe> for OperationDefinition {
+    fn from(v: OperationDefinitionDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            url: v.url,
+            url_ext: v.url_ext,
+            identifier: v.identifier,
+            version: v.version,
+            version_ext: v.version_ext,
+            version_algorithm: v.version_algorithm.0,
+            name: v.name,
+            name_ext: v.name_ext,
+            title: v.title,
+            title_ext: v.title_ext,
+            status: v.status,
+            status_ext: v.status_ext,
+            kind: v.kind,
+            kind_ext: v.kind_ext,
+            experimental: v.experimental,
+            experimental_ext: v.experimental_ext,
+            date: v.date,
+            date_ext: v.date_ext,
+            publisher: v.publisher,
+            publisher_ext: v.publisher_ext,
+            contact: v.contact,
+            description: v.description,
+            description_ext: v.description_ext,
+            use_context: v.use_context,
+            jurisdiction: v.jurisdiction,
+            purpose: v.purpose,
+            purpose_ext: v.purpose_ext,
+            copyright: v.copyright,
+            copyright_ext: v.copyright_ext,
+            copyright_label: v.copyright_label,
+            copyright_label_ext: v.copyright_label_ext,
+            affects_state: v.affects_state,
+            affects_state_ext: v.affects_state_ext,
+            synchronicity: v.synchronicity,
+            synchronicity_ext: v.synchronicity_ext,
+            code: v.code,
+            code_ext: v.code_ext,
+            comment: v.comment,
+            comment_ext: v.comment_ext,
+            base: v.base,
+            base_ext: v.base_ext,
+            resource: v.resource,
+            resource_ext: v.resource_ext,
+            system: v.system,
+            system_ext: v.system_ext,
+            r#type: v.r#type,
+            type_ext: v.type_ext,
+            instance: v.instance,
+            instance_ext: v.instance_ext,
+            input_profile: v.input_profile,
+            input_profile_ext: v.input_profile_ext,
+            output_profile: v.output_profile,
+            output_profile_ext: v.output_profile_ext,
+            parameter: v.parameter,
+            overload: v.overload,
+        }
+    }
 }
 
 /// Defines an appropriate combination of parameters to use when invoking this

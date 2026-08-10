@@ -62,6 +62,7 @@ use fhir_derive_macros::Validate;
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "NutritionIntakeDe")]
 pub struct NutritionIntake {
     /// Logical id of this artifact
     pub id: Option<types::String>,
@@ -182,6 +183,110 @@ pub struct NutritionIntake {
     /// Further information about the consumption
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub note: Vec<types::Annotation>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct NutritionIntakeDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r5::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    #[serde(default)]
+    instantiates_canonical: Vec<types::Canonical>,
+    #[serde(rename = "_instantiatesCanonical")]
+    #[serde(default)]
+    instantiates_canonical_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    instantiates_uri: Vec<types::Uri>,
+    #[serde(rename = "_instantiatesUri")]
+    #[serde(default)]
+    instantiates_uri_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    based_on: Vec<types::Reference>,
+    #[serde(default)]
+    part_of: Vec<types::Reference>,
+    status: crate::r5::coded::Coded<crate::r5::codes::EventStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    #[serde(default)]
+    status_reason: Vec<types::CodeableConcept>,
+    code: Option<types::CodeableConcept>,
+    subject: types::Reference,
+    encounter: Option<types::Reference<crate::r5::resources::Encounter>>,
+    #[serde(flatten)]
+    occurrence: crate::r5::choice::Slot<NutritionIntakeOccurrence>,
+    recorded: Option<types::DateTime>,
+    #[serde(rename = "_recorded")]
+    recorded_ext: Option<types::Element>,
+    #[serde(flatten)]
+    reported: crate::r5::choice::Slot<NutritionIntakeReported>,
+    consumed_item: vec1::Vec1<NutritionIntakeConsumedItem>,
+    #[serde(default)]
+    ingredient_label: Vec<NutritionIntakeIngredientLabel>,
+    #[serde(default)]
+    performer: Vec<NutritionIntakePerformer>,
+    location: Option<types::Reference<crate::r5::resources::Location>>,
+    #[serde(default)]
+    derived_from: Vec<types::Reference>,
+    #[serde(default)]
+    reason: Vec<types::CodeableReference>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+}
+
+impl ::core::convert::From<NutritionIntakeDe> for NutritionIntake {
+    fn from(v: NutritionIntakeDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            instantiates_canonical: v.instantiates_canonical,
+            instantiates_canonical_ext: v.instantiates_canonical_ext,
+            instantiates_uri: v.instantiates_uri,
+            instantiates_uri_ext: v.instantiates_uri_ext,
+            based_on: v.based_on,
+            part_of: v.part_of,
+            status: v.status,
+            status_ext: v.status_ext,
+            status_reason: v.status_reason,
+            code: v.code,
+            subject: v.subject,
+            encounter: v.encounter,
+            occurrence: v.occurrence.0,
+            recorded: v.recorded,
+            recorded_ext: v.recorded_ext,
+            reported: v.reported.0,
+            consumed_item: v.consumed_item,
+            ingredient_label: v.ingredient_label,
+            performer: v.performer,
+            location: v.location,
+            derived_from: v.derived_from,
+            reason: v.reason,
+            note: v.note,
+        }
+    }
 }
 
 /// What food or fluid product or item was consumed.

@@ -353,6 +353,7 @@ pub struct InventoryItemAssociation {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "InventoryItemCharacteristicDe")]
 pub struct InventoryItemCharacteristic {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -371,6 +372,31 @@ pub struct InventoryItemCharacteristic {
     /// The `InventoryItem.characteristic.value[x]` choice element (0..1); see [`InventoryItemCharacteristicValue`].
     #[serde(flatten)]
     pub value: Option<InventoryItemCharacteristicValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct InventoryItemCharacteristicDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    characteristic_type: types::CodeableConcept,
+    #[serde(flatten)]
+    value: crate::r5::choice::Slot<InventoryItemCharacteristicValue>,
+}
+
+impl ::core::convert::From<InventoryItemCharacteristicDe> for InventoryItemCharacteristic {
+    fn from(v: InventoryItemCharacteristicDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            characteristic_type: v.characteristic_type,
+            value: v.value.0,
+        }
+    }
 }
 
 /// Instances or occurrences of the product.

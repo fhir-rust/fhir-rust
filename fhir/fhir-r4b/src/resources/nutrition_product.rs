@@ -292,6 +292,7 @@ pub struct NutritionProductNutrient {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "NutritionProductProductCharacteristicDe")]
 #[fhir_version("r4b")]
 pub struct NutritionProductProductCharacteristic {
     /// Unique id for inter-element referencing
@@ -312,6 +313,33 @@ pub struct NutritionProductProductCharacteristic {
     /// The `NutritionProduct.productCharacteristic.value[x]` choice element (1..1); see [`NutritionProductProductCharacteristicValue`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub value: Option<NutritionProductProductCharacteristicValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct NutritionProductProductCharacteristicDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: types::CodeableConcept,
+    #[serde(flatten)]
+    value: crate::r4b::choice::Slot<NutritionProductProductCharacteristicValue>,
+}
+
+impl ::core::convert::From<NutritionProductProductCharacteristicDe>
+    for NutritionProductProductCharacteristic
+{
+    fn from(v: NutritionProductProductCharacteristicDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            value: v.value.0,
+        }
+    }
 }
 
 /// The `NutritionProduct.productCharacteristic.value[x]` choice element (see `spec/11-choice-types.md`).

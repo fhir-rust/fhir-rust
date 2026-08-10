@@ -41,6 +41,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "PlanDefinitionDe")]
 #[fhir_version("r4")]
 pub struct PlanDefinition {
     /// Logical id of this artifact
@@ -253,6 +254,168 @@ pub struct PlanDefinition {
     pub action: Vec<PlanDefinitionAction>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PlanDefinitionDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r4::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    url: Option<types::Uri>,
+    #[serde(rename = "_url")]
+    url_ext: Option<types::Element>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    version: Option<types::String>,
+    #[serde(rename = "_version")]
+    version_ext: Option<types::Element>,
+    name: Option<types::String>,
+    #[serde(rename = "_name")]
+    name_ext: Option<types::Element>,
+    title: Option<types::String>,
+    #[serde(rename = "_title")]
+    title_ext: Option<types::Element>,
+    subtitle: Option<types::String>,
+    #[serde(rename = "_subtitle")]
+    subtitle_ext: Option<types::Element>,
+    r#type: Option<types::CodeableConcept>,
+    status: crate::coded::Coded<crate::r4::codes::PublicationStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    experimental: Option<types::Boolean>,
+    #[serde(rename = "_experimental")]
+    experimental_ext: Option<types::Element>,
+    #[serde(flatten)]
+    subject: crate::r4::choice::Slot<PlanDefinitionSubject>,
+    date: Option<types::DateTime>,
+    #[serde(rename = "_date")]
+    date_ext: Option<types::Element>,
+    publisher: Option<types::String>,
+    #[serde(rename = "_publisher")]
+    publisher_ext: Option<types::Element>,
+    #[serde(default)]
+    contact: Vec<types::ContactDetail>,
+    description: Option<types::Markdown>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    #[serde(default)]
+    use_context: Vec<types::UsageContext>,
+    #[serde(default)]
+    jurisdiction: Vec<types::CodeableConcept>,
+    purpose: Option<types::Markdown>,
+    #[serde(rename = "_purpose")]
+    purpose_ext: Option<types::Element>,
+    usage: Option<types::String>,
+    #[serde(rename = "_usage")]
+    usage_ext: Option<types::Element>,
+    copyright: Option<types::Markdown>,
+    #[serde(rename = "_copyright")]
+    copyright_ext: Option<types::Element>,
+    approval_date: Option<types::Date>,
+    #[serde(rename = "_approvalDate")]
+    approval_date_ext: Option<types::Element>,
+    last_review_date: Option<types::Date>,
+    #[serde(rename = "_lastReviewDate")]
+    last_review_date_ext: Option<types::Element>,
+    effective_period: Option<types::Period>,
+    #[serde(default)]
+    topic: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    author: Vec<types::ContactDetail>,
+    #[serde(default)]
+    editor: Vec<types::ContactDetail>,
+    #[serde(default)]
+    reviewer: Vec<types::ContactDetail>,
+    #[serde(default)]
+    endorser: Vec<types::ContactDetail>,
+    #[serde(default)]
+    related_artifact: Vec<types::RelatedArtifact>,
+    #[serde(default)]
+    library: Vec<types::Canonical>,
+    #[serde(rename = "_library")]
+    #[serde(default)]
+    library_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    goal: Vec<PlanDefinitionGoal>,
+    #[serde(default)]
+    action: Vec<PlanDefinitionAction>,
+}
+
+impl ::core::convert::From<PlanDefinitionDe> for PlanDefinition {
+    fn from(v: PlanDefinitionDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            url: v.url,
+            url_ext: v.url_ext,
+            identifier: v.identifier,
+            version: v.version,
+            version_ext: v.version_ext,
+            name: v.name,
+            name_ext: v.name_ext,
+            title: v.title,
+            title_ext: v.title_ext,
+            subtitle: v.subtitle,
+            subtitle_ext: v.subtitle_ext,
+            r#type: v.r#type,
+            status: v.status,
+            status_ext: v.status_ext,
+            experimental: v.experimental,
+            experimental_ext: v.experimental_ext,
+            subject: v.subject.0,
+            date: v.date,
+            date_ext: v.date_ext,
+            publisher: v.publisher,
+            publisher_ext: v.publisher_ext,
+            contact: v.contact,
+            description: v.description,
+            description_ext: v.description_ext,
+            use_context: v.use_context,
+            jurisdiction: v.jurisdiction,
+            purpose: v.purpose,
+            purpose_ext: v.purpose_ext,
+            usage: v.usage,
+            usage_ext: v.usage_ext,
+            copyright: v.copyright,
+            copyright_ext: v.copyright_ext,
+            approval_date: v.approval_date,
+            approval_date_ext: v.approval_date_ext,
+            last_review_date: v.last_review_date,
+            last_review_date_ext: v.last_review_date_ext,
+            effective_period: v.effective_period,
+            topic: v.topic,
+            author: v.author,
+            editor: v.editor,
+            reviewer: v.reviewer,
+            endorser: v.endorser,
+            related_artifact: v.related_artifact,
+            library: v.library,
+            library_ext: v.library_ext,
+            goal: v.goal,
+            action: v.action,
+        }
+    }
+}
+
 /// An action or group of actions to be taken as part of the plan.
 ///
 /// # Examples
@@ -275,6 +438,7 @@ pub struct PlanDefinition {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "PlanDefinitionActionDe")]
 #[fhir_version("r4")]
 pub struct PlanDefinitionAction {
     /// Unique id for inter-element referencing
@@ -437,6 +601,132 @@ pub struct PlanDefinitionAction {
     /// A sub-action
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub action: Vec<PlanDefinitionAction>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PlanDefinitionActionDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    prefix: Option<types::String>,
+    #[serde(rename = "_prefix")]
+    prefix_ext: Option<types::Element>,
+    title: Option<types::String>,
+    #[serde(rename = "_title")]
+    title_ext: Option<types::Element>,
+    description: Option<types::String>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    text_equivalent: Option<types::String>,
+    #[serde(rename = "_textEquivalent")]
+    text_equivalent_ext: Option<types::Element>,
+    priority: Option<crate::coded::Coded<crate::r4::codes::RequestPriority>>,
+    #[serde(rename = "_priority")]
+    priority_ext: Option<types::Element>,
+    #[serde(default)]
+    code: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    reason: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    documentation: Vec<types::RelatedArtifact>,
+    #[serde(default)]
+    goal_id: Vec<types::Id>,
+    #[serde(rename = "_goalId")]
+    #[serde(default)]
+    goal_id_ext: Vec<Option<types::Element>>,
+    #[serde(flatten)]
+    subject: crate::r4::choice::Slot<PlanDefinitionActionSubject>,
+    #[serde(default)]
+    trigger: Vec<types::TriggerDefinition>,
+    #[serde(default)]
+    condition: Vec<PlanDefinitionActionCondition>,
+    #[serde(default)]
+    input: Vec<types::DataRequirement>,
+    #[serde(default)]
+    output: Vec<types::DataRequirement>,
+    #[serde(default)]
+    related_action: Vec<PlanDefinitionActionRelatedAction>,
+    #[serde(flatten)]
+    timing: crate::r4::choice::Slot<PlanDefinitionActionTiming>,
+    #[serde(default)]
+    participant: Vec<PlanDefinitionActionParticipant>,
+    r#type: Option<types::CodeableConcept>,
+    grouping_behavior: Option<crate::coded::Coded<crate::r4::codes::ActionGroupingBehavior>>,
+    #[serde(rename = "_groupingBehavior")]
+    grouping_behavior_ext: Option<types::Element>,
+    selection_behavior: Option<crate::coded::Coded<crate::r4::codes::ActionSelectionBehavior>>,
+    #[serde(rename = "_selectionBehavior")]
+    selection_behavior_ext: Option<types::Element>,
+    required_behavior: Option<crate::coded::Coded<crate::r4::codes::ActionRequiredBehavior>>,
+    #[serde(rename = "_requiredBehavior")]
+    required_behavior_ext: Option<types::Element>,
+    precheck_behavior: Option<crate::coded::Coded<crate::r4::codes::ActionPrecheckBehavior>>,
+    #[serde(rename = "_precheckBehavior")]
+    precheck_behavior_ext: Option<types::Element>,
+    cardinality_behavior: Option<crate::coded::Coded<crate::r4::codes::ActionCardinalityBehavior>>,
+    #[serde(rename = "_cardinalityBehavior")]
+    cardinality_behavior_ext: Option<types::Element>,
+    #[serde(flatten)]
+    definition: crate::r4::choice::Slot<PlanDefinitionActionDefinition>,
+    transform: Option<types::Canonical>,
+    #[serde(rename = "_transform")]
+    transform_ext: Option<types::Element>,
+    #[serde(default)]
+    dynamic_value: Vec<PlanDefinitionActionDynamicValue>,
+    #[serde(default)]
+    action: Vec<PlanDefinitionAction>,
+}
+
+impl ::core::convert::From<PlanDefinitionActionDe> for PlanDefinitionAction {
+    fn from(v: PlanDefinitionActionDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            prefix: v.prefix,
+            prefix_ext: v.prefix_ext,
+            title: v.title,
+            title_ext: v.title_ext,
+            description: v.description,
+            description_ext: v.description_ext,
+            text_equivalent: v.text_equivalent,
+            text_equivalent_ext: v.text_equivalent_ext,
+            priority: v.priority,
+            priority_ext: v.priority_ext,
+            code: v.code,
+            reason: v.reason,
+            documentation: v.documentation,
+            goal_id: v.goal_id,
+            goal_id_ext: v.goal_id_ext,
+            subject: v.subject.0,
+            trigger: v.trigger,
+            condition: v.condition,
+            input: v.input,
+            output: v.output,
+            related_action: v.related_action,
+            timing: v.timing.0,
+            participant: v.participant,
+            r#type: v.r#type,
+            grouping_behavior: v.grouping_behavior,
+            grouping_behavior_ext: v.grouping_behavior_ext,
+            selection_behavior: v.selection_behavior,
+            selection_behavior_ext: v.selection_behavior_ext,
+            required_behavior: v.required_behavior,
+            required_behavior_ext: v.required_behavior_ext,
+            precheck_behavior: v.precheck_behavior,
+            precheck_behavior_ext: v.precheck_behavior_ext,
+            cardinality_behavior: v.cardinality_behavior,
+            cardinality_behavior_ext: v.cardinality_behavior_ext,
+            definition: v.definition.0,
+            transform: v.transform,
+            transform_ext: v.transform_ext,
+            dynamic_value: v.dynamic_value,
+            action: v.action,
+        }
+    }
 }
 
 /// An expression that describes applicability criteria or start/stop
@@ -605,6 +895,7 @@ pub struct PlanDefinitionActionParticipant {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "PlanDefinitionActionRelatedActionDe")]
 #[fhir_version("r4")]
 pub struct PlanDefinitionActionRelatedAction {
     /// Unique id for inter-element referencing
@@ -637,6 +928,41 @@ pub struct PlanDefinitionActionRelatedAction {
     /// The `PlanDefinition.action.relatedAction.offset[x]` choice element (0..1); see [`PlanDefinitionActionRelatedActionOffset`].
     #[serde(flatten)]
     pub offset: Option<PlanDefinitionActionRelatedActionOffset>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PlanDefinitionActionRelatedActionDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    action_id: types::Id,
+    #[serde(rename = "_actionId")]
+    action_id_ext: Option<types::Element>,
+    relationship: crate::coded::Coded<crate::r4::codes::ActionRelationshipType>,
+    #[serde(rename = "_relationship")]
+    relationship_ext: Option<types::Element>,
+    #[serde(flatten)]
+    offset: crate::r4::choice::Slot<PlanDefinitionActionRelatedActionOffset>,
+}
+
+impl ::core::convert::From<PlanDefinitionActionRelatedActionDe>
+    for PlanDefinitionActionRelatedAction
+{
+    fn from(v: PlanDefinitionActionRelatedActionDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            action_id: v.action_id,
+            action_id_ext: v.action_id_ext,
+            relationship: v.relationship,
+            relationship_ext: v.relationship_ext,
+            offset: v.offset.0,
+        }
+    }
 }
 
 /// Goals that describe what the activities within the plan are intended to
@@ -724,6 +1050,7 @@ pub struct PlanDefinitionGoal {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "PlanDefinitionGoalTargetDe")]
 #[fhir_version("r4")]
 pub struct PlanDefinitionGoalTarget {
     /// Unique id for inter-element referencing
@@ -747,6 +1074,33 @@ pub struct PlanDefinitionGoalTarget {
 
     /// Reach goal within
     pub due: Option<types::Duration>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PlanDefinitionGoalTargetDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    measure: Option<types::CodeableConcept>,
+    #[serde(flatten)]
+    detail: crate::r4::choice::Slot<PlanDefinitionGoalTargetDetail>,
+    due: Option<types::Duration>,
+}
+
+impl ::core::convert::From<PlanDefinitionGoalTargetDe> for PlanDefinitionGoalTarget {
+    fn from(v: PlanDefinitionGoalTargetDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            measure: v.measure,
+            detail: v.detail.0,
+            due: v.due,
+        }
+    }
 }
 
 /// The `PlanDefinition.subject[x]` choice element (see `spec/11-choice-types.md`).

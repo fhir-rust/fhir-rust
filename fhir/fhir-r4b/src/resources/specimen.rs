@@ -153,6 +153,7 @@ pub struct Specimen {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "SpecimenCollectionDe")]
 #[fhir_version("r4b")]
 pub struct SpecimenCollection {
     /// Unique id for inter-element referencing
@@ -192,6 +193,42 @@ pub struct SpecimenCollection {
     pub fasting_status: Option<SpecimenCollectionFastingStatus>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SpecimenCollectionDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    collector: Option<types::Reference>,
+    #[serde(flatten)]
+    collected: crate::r4b::choice::Slot<SpecimenCollectionCollected>,
+    duration: Option<types::Duration>,
+    quantity: Option<types::Quantity>,
+    method: Option<types::CodeableConcept>,
+    body_site: Option<types::CodeableConcept>,
+    #[serde(flatten)]
+    fasting_status: crate::r4b::choice::Slot<SpecimenCollectionFastingStatus>,
+}
+
+impl ::core::convert::From<SpecimenCollectionDe> for SpecimenCollection {
+    fn from(v: SpecimenCollectionDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            collector: v.collector,
+            collected: v.collected.0,
+            duration: v.duration,
+            quantity: v.quantity,
+            method: v.method,
+            body_site: v.body_site,
+            fasting_status: v.fasting_status.0,
+        }
+    }
+}
+
 /// The container holding the specimen. The recursive nature of containers;
 /// i.e. blood in tube in tray in rack is not addressed here.
 ///
@@ -215,6 +252,7 @@ pub struct SpecimenCollection {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "SpecimenContainerDe")]
 #[fhir_version("r4b")]
 pub struct SpecimenContainer {
     /// Unique id for inter-element referencing
@@ -254,6 +292,43 @@ pub struct SpecimenContainer {
     pub additive: Option<SpecimenContainerAdditive>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SpecimenContainerDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    description: Option<types::String>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    r#type: Option<types::CodeableConcept>,
+    capacity: Option<types::Quantity>,
+    specimen_quantity: Option<types::Quantity>,
+    #[serde(flatten)]
+    additive: crate::r4b::choice::Slot<SpecimenContainerAdditive>,
+}
+
+impl ::core::convert::From<SpecimenContainerDe> for SpecimenContainer {
+    fn from(v: SpecimenContainerDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            description: v.description,
+            description_ext: v.description_ext,
+            r#type: v.r#type,
+            capacity: v.capacity,
+            specimen_quantity: v.specimen_quantity,
+            additive: v.additive.0,
+        }
+    }
+}
+
 /// Details concerning processing and processing steps for the specimen.
 ///
 /// # Examples
@@ -276,6 +351,7 @@ pub struct SpecimenContainer {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "SpecimenProcessingDe")]
 #[fhir_version("r4b")]
 pub struct SpecimenProcessing {
     /// Unique id for inter-element referencing
@@ -307,6 +383,39 @@ pub struct SpecimenProcessing {
     /// The `Specimen.processing.time[x]` choice element (0..1); see [`SpecimenProcessingTime`].
     #[serde(flatten)]
     pub time: Option<SpecimenProcessingTime>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SpecimenProcessingDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    description: Option<types::String>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    procedure: Option<types::CodeableConcept>,
+    #[serde(default)]
+    additive: Vec<types::Reference<crate::r4b::resources::Substance>>,
+    #[serde(flatten)]
+    time: crate::r4b::choice::Slot<SpecimenProcessingTime>,
+}
+
+impl ::core::convert::From<SpecimenProcessingDe> for SpecimenProcessing {
+    fn from(v: SpecimenProcessingDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            description: v.description,
+            description_ext: v.description_ext,
+            procedure: v.procedure,
+            additive: v.additive,
+            time: v.time.0,
+        }
+    }
 }
 
 /// The `Specimen.collection.collected[x]` choice element (see `spec/11-choice-types.md`).

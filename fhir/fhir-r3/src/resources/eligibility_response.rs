@@ -317,6 +317,7 @@ pub struct EligibilityResponseInsuranceBenefitBalance {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "EligibilityResponseInsuranceBenefitBalanceFinancialDe")]
 #[fhir_version("r3")]
 pub struct EligibilityResponseInsuranceBenefitBalanceFinancial {
     /// xml:id (or equivalent in JSON)
@@ -342,6 +343,36 @@ pub struct EligibilityResponseInsuranceBenefitBalanceFinancial {
     /// The `EligibilityResponse.insurance.benefitBalance.financial.used[x]` choice element (0..1); see [`EligibilityResponseInsuranceBenefitBalanceFinancialUsed`].
     #[serde(flatten)]
     pub used: Option<EligibilityResponseInsuranceBenefitBalanceFinancialUsed>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct EligibilityResponseInsuranceBenefitBalanceFinancialDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: types::CodeableConcept,
+    #[serde(flatten)]
+    allowed: crate::r3::choice::Slot<EligibilityResponseInsuranceBenefitBalanceFinancialAllowed>,
+    #[serde(flatten)]
+    used: crate::r3::choice::Slot<EligibilityResponseInsuranceBenefitBalanceFinancialUsed>,
+}
+
+impl ::core::convert::From<EligibilityResponseInsuranceBenefitBalanceFinancialDe>
+    for EligibilityResponseInsuranceBenefitBalanceFinancial
+{
+    fn from(v: EligibilityResponseInsuranceBenefitBalanceFinancialDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            allowed: v.allowed.0,
+            used: v.used.0,
+        }
+    }
 }
 
 /// The `EligibilityResponse.insurance.benefitBalance.financial.allowed[x]` choice element (see `spec/11-choice-types.md`).

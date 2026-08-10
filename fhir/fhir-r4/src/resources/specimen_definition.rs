@@ -196,6 +196,7 @@ pub struct SpecimenDefinitionTypeTested {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "SpecimenDefinitionTypeTestedContainerDe")]
 #[fhir_version("r4")]
 pub struct SpecimenDefinitionTypeTestedContainer {
     /// Unique id for inter-element referencing
@@ -245,6 +246,52 @@ pub struct SpecimenDefinitionTypeTestedContainer {
     pub preparation_ext: Option<types::Element>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SpecimenDefinitionTypeTestedContainerDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    material: Option<types::CodeableConcept>,
+    r#type: Option<types::CodeableConcept>,
+    cap: Option<types::CodeableConcept>,
+    description: Option<types::String>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    capacity: Option<types::Quantity>,
+    #[serde(flatten)]
+    minimum_volume: crate::r4::choice::Slot<SpecimenDefinitionTypeTestedContainerMinimumVolume>,
+    #[serde(default)]
+    additive: Vec<SpecimenDefinitionTypeTestedContainerAdditive>,
+    preparation: Option<types::String>,
+    #[serde(rename = "_preparation")]
+    preparation_ext: Option<types::Element>,
+}
+
+impl ::core::convert::From<SpecimenDefinitionTypeTestedContainerDe>
+    for SpecimenDefinitionTypeTestedContainer
+{
+    fn from(v: SpecimenDefinitionTypeTestedContainerDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            material: v.material,
+            r#type: v.r#type,
+            cap: v.cap,
+            description: v.description,
+            description_ext: v.description_ext,
+            capacity: v.capacity,
+            minimum_volume: v.minimum_volume.0,
+            additive: v.additive,
+            preparation: v.preparation,
+            preparation_ext: v.preparation_ext,
+        }
+    }
+}
+
 /// Substance introduced in the kind of container to preserve, maintain or
 /// enhance the specimen. Examples: Formalin, Citrate, EDTA.
 ///
@@ -268,6 +315,7 @@ pub struct SpecimenDefinitionTypeTestedContainer {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "SpecimenDefinitionTypeTestedContainerAdditiveDe")]
 #[fhir_version("r4")]
 pub struct SpecimenDefinitionTypeTestedContainerAdditive {
     /// Unique id for inter-element referencing
@@ -285,6 +333,31 @@ pub struct SpecimenDefinitionTypeTestedContainerAdditive {
     /// The `SpecimenDefinition.typeTested.container.additive.additive[x]` choice element (1..1); see [`SpecimenDefinitionTypeTestedContainerAdditiveAdditive`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub additive: Option<SpecimenDefinitionTypeTestedContainerAdditiveAdditive>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SpecimenDefinitionTypeTestedContainerAdditiveDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    additive: crate::r4::choice::Slot<SpecimenDefinitionTypeTestedContainerAdditiveAdditive>,
+}
+
+impl ::core::convert::From<SpecimenDefinitionTypeTestedContainerAdditiveDe>
+    for SpecimenDefinitionTypeTestedContainerAdditive
+{
+    fn from(v: SpecimenDefinitionTypeTestedContainerAdditiveDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            additive: v.additive.0,
+        }
+    }
 }
 
 /// Set of instructions for preservation/transport of the specimen at a defined

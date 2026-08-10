@@ -70,6 +70,7 @@ use fhir_derive_macros::Validate;
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ExampleScenarioDe")]
 pub struct ExampleScenario {
     /// Logical id of this artifact
     pub id: Option<types::String>,
@@ -209,6 +210,127 @@ pub struct ExampleScenario {
     pub process: Vec<ExampleScenarioProcess>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ExampleScenarioDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r5::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    url: Option<types::Uri>,
+    #[serde(rename = "_url")]
+    url_ext: Option<types::Element>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    version: Option<types::String>,
+    #[serde(rename = "_version")]
+    version_ext: Option<types::Element>,
+    #[serde(flatten)]
+    version_algorithm: crate::r5::choice::Slot<ExampleScenarioVersionAlgorithm>,
+    name: Option<types::String>,
+    #[serde(rename = "_name")]
+    name_ext: Option<types::Element>,
+    title: Option<types::String>,
+    #[serde(rename = "_title")]
+    title_ext: Option<types::Element>,
+    status: crate::r5::coded::Coded<crate::r5::codes::PublicationStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    experimental: Option<types::Boolean>,
+    #[serde(rename = "_experimental")]
+    experimental_ext: Option<types::Element>,
+    date: Option<types::DateTime>,
+    #[serde(rename = "_date")]
+    date_ext: Option<types::Element>,
+    publisher: Option<types::String>,
+    #[serde(rename = "_publisher")]
+    publisher_ext: Option<types::Element>,
+    #[serde(default)]
+    contact: Vec<types::ContactDetail>,
+    description: Option<types::Markdown>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    #[serde(default)]
+    use_context: Vec<types::UsageContext>,
+    #[serde(default)]
+    jurisdiction: Vec<types::CodeableConcept>,
+    purpose: Option<types::Markdown>,
+    #[serde(rename = "_purpose")]
+    purpose_ext: Option<types::Element>,
+    copyright: Option<types::Markdown>,
+    #[serde(rename = "_copyright")]
+    copyright_ext: Option<types::Element>,
+    copyright_label: Option<types::String>,
+    #[serde(rename = "_copyrightLabel")]
+    copyright_label_ext: Option<types::Element>,
+    #[serde(default)]
+    actor: Vec<ExampleScenarioActor>,
+    #[serde(default)]
+    instance: Vec<ExampleScenarioInstance>,
+    #[serde(default)]
+    process: Vec<ExampleScenarioProcess>,
+}
+
+impl ::core::convert::From<ExampleScenarioDe> for ExampleScenario {
+    fn from(v: ExampleScenarioDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            url: v.url,
+            url_ext: v.url_ext,
+            identifier: v.identifier,
+            version: v.version,
+            version_ext: v.version_ext,
+            version_algorithm: v.version_algorithm.0,
+            name: v.name,
+            name_ext: v.name_ext,
+            title: v.title,
+            title_ext: v.title_ext,
+            status: v.status,
+            status_ext: v.status_ext,
+            experimental: v.experimental,
+            experimental_ext: v.experimental_ext,
+            date: v.date,
+            date_ext: v.date_ext,
+            publisher: v.publisher,
+            publisher_ext: v.publisher_ext,
+            contact: v.contact,
+            description: v.description,
+            description_ext: v.description_ext,
+            use_context: v.use_context,
+            jurisdiction: v.jurisdiction,
+            purpose: v.purpose,
+            purpose_ext: v.purpose_ext,
+            copyright: v.copyright,
+            copyright_ext: v.copyright_ext,
+            copyright_label: v.copyright_label,
+            copyright_label_ext: v.copyright_label_ext,
+            actor: v.actor,
+            instance: v.instance,
+            process: v.process,
+        }
+    }
+}
+
 /// ExampleScenarioActor
 ///
 /// A system or person who shares or receives an instance within the scenario.
@@ -293,6 +415,7 @@ pub struct ExampleScenarioActor {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ExampleScenarioInstanceDe")]
 pub struct ExampleScenarioInstance {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -346,6 +469,59 @@ pub struct ExampleScenarioInstance {
     /// Resources contained in the instance
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub contained_instance: Vec<ExampleScenarioInstanceContainedInstance>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ExampleScenarioInstanceDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    key: types::String,
+    #[serde(rename = "_key")]
+    key_ext: Option<types::Element>,
+    structure_type: types::Coding,
+    structure_version: Option<types::String>,
+    #[serde(rename = "_structureVersion")]
+    structure_version_ext: Option<types::Element>,
+    #[serde(flatten)]
+    structure_profile: crate::r5::choice::Slot<ExampleScenarioInstanceStructureProfile>,
+    title: types::String,
+    #[serde(rename = "_title")]
+    title_ext: Option<types::Element>,
+    description: Option<types::Markdown>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    content: Option<types::Reference>,
+    #[serde(default)]
+    version: Vec<ExampleScenarioInstanceVersion>,
+    #[serde(default)]
+    contained_instance: Vec<ExampleScenarioInstanceContainedInstance>,
+}
+
+impl ::core::convert::From<ExampleScenarioInstanceDe> for ExampleScenarioInstance {
+    fn from(v: ExampleScenarioInstanceDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            key: v.key,
+            key_ext: v.key_ext,
+            structure_type: v.structure_type,
+            structure_version: v.structure_version,
+            structure_version_ext: v.structure_version_ext,
+            structure_profile: v.structure_profile.0,
+            title: v.title,
+            title_ext: v.title_ext,
+            description: v.description,
+            description_ext: v.description_ext,
+            content: v.content,
+            version: v.version,
+            contained_instance: v.contained_instance,
+        }
+    }
 }
 
 /// ExampleScenarioInstanceVersion

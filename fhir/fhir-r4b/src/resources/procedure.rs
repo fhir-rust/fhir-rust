@@ -39,6 +39,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ProcedureDe")]
 #[fhir_version("r4b")]
 pub struct Procedure {
     /// Logical id of this artifact
@@ -193,6 +194,128 @@ pub struct Procedure {
     /// Coded items used during the procedure
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub used_code: Vec<types::CodeableConcept>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ProcedureDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r4b::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    #[serde(default)]
+    instantiates_canonical: Vec<types::Canonical>,
+    #[serde(rename = "_instantiatesCanonical")]
+    #[serde(default)]
+    instantiates_canonical_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    instantiates_uri: Vec<types::Uri>,
+    #[serde(rename = "_instantiatesUri")]
+    #[serde(default)]
+    instantiates_uri_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    based_on: Vec<types::Reference>,
+    #[serde(default)]
+    part_of: Vec<types::Reference>,
+    status: crate::coded::Coded<crate::r4b::codes::EventStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    status_reason: Option<types::CodeableConcept>,
+    category: Option<types::CodeableConcept>,
+    code: Option<types::CodeableConcept>,
+    subject: types::Reference,
+    encounter: Option<types::Reference<crate::r4b::resources::Encounter>>,
+    #[serde(flatten)]
+    performed: crate::r4b::choice::Slot<ProcedurePerformed>,
+    recorder: Option<types::Reference>,
+    asserter: Option<types::Reference>,
+    #[serde(default)]
+    performer: Vec<ProcedurePerformer>,
+    location: Option<types::Reference<crate::r4b::resources::Location>>,
+    #[serde(default)]
+    reason_code: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    reason_reference: Vec<types::Reference>,
+    #[serde(default)]
+    body_site: Vec<types::CodeableConcept>,
+    outcome: Option<types::CodeableConcept>,
+    #[serde(default)]
+    report: Vec<types::Reference>,
+    #[serde(default)]
+    complication: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    complication_detail: Vec<types::Reference<crate::r4b::resources::Condition>>,
+    #[serde(default)]
+    follow_up: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+    #[serde(default)]
+    focal_device: Vec<ProcedureFocalDevice>,
+    #[serde(default)]
+    used_reference: Vec<types::Reference>,
+    #[serde(default)]
+    used_code: Vec<types::CodeableConcept>,
+}
+
+impl ::core::convert::From<ProcedureDe> for Procedure {
+    fn from(v: ProcedureDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            instantiates_canonical: v.instantiates_canonical,
+            instantiates_canonical_ext: v.instantiates_canonical_ext,
+            instantiates_uri: v.instantiates_uri,
+            instantiates_uri_ext: v.instantiates_uri_ext,
+            based_on: v.based_on,
+            part_of: v.part_of,
+            status: v.status,
+            status_ext: v.status_ext,
+            status_reason: v.status_reason,
+            category: v.category,
+            code: v.code,
+            subject: v.subject,
+            encounter: v.encounter,
+            performed: v.performed.0,
+            recorder: v.recorder,
+            asserter: v.asserter,
+            performer: v.performer,
+            location: v.location,
+            reason_code: v.reason_code,
+            reason_reference: v.reason_reference,
+            body_site: v.body_site,
+            outcome: v.outcome,
+            report: v.report,
+            complication: v.complication,
+            complication_detail: v.complication_detail,
+            follow_up: v.follow_up,
+            note: v.note,
+            focal_device: v.focal_device,
+            used_reference: v.used_reference,
+            used_code: v.used_code,
+        }
+    }
 }
 
 /// A device that is implanted, removed or otherwise manipulated (calibration,

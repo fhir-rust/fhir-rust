@@ -39,6 +39,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "DataRequirementDe")]
 #[fhir_version("r4b")]
 pub struct DataRequirement {
     /// Unique id for inter-element referencing
@@ -98,6 +99,59 @@ pub struct DataRequirement {
     /// Order of the results
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub sort: Vec<DataRequirementSort>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DataRequirementDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    r#type: types::Code,
+    #[serde(rename = "_type")]
+    type_ext: Option<types::Element>,
+    #[serde(default)]
+    profile: Vec<types::Canonical>,
+    #[serde(rename = "_profile")]
+    #[serde(default)]
+    profile_ext: Vec<Option<types::Element>>,
+    #[serde(flatten)]
+    subject: crate::r4b::choice::Slot<DataRequirementSubject>,
+    #[serde(default)]
+    must_support: Vec<types::String>,
+    #[serde(rename = "_mustSupport")]
+    #[serde(default)]
+    must_support_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    code_filter: Vec<DataRequirementCodeFilter>,
+    #[serde(default)]
+    date_filter: Vec<DataRequirementDateFilter>,
+    limit: Option<types::PositiveInt>,
+    #[serde(rename = "_limit")]
+    limit_ext: Option<types::Element>,
+    #[serde(default)]
+    sort: Vec<DataRequirementSort>,
+}
+
+impl ::core::convert::From<DataRequirementDe> for DataRequirement {
+    fn from(v: DataRequirementDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            r#type: v.r#type,
+            type_ext: v.type_ext,
+            profile: v.profile,
+            profile_ext: v.profile_ext,
+            subject: v.subject.0,
+            must_support: v.must_support,
+            must_support_ext: v.must_support_ext,
+            code_filter: v.code_filter,
+            date_filter: v.date_filter,
+            limit: v.limit,
+            limit_ext: v.limit_ext,
+            sort: v.sort,
+        }
+    }
 }
 
 /// Code filters specify additional constraints on the data, specifying the
@@ -184,6 +238,7 @@ pub struct DataRequirementCodeFilter {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "DataRequirementDateFilterDe")]
 #[fhir_version("r4b")]
 pub struct DataRequirementDateFilter {
     /// Unique id for inter-element referencing
@@ -211,6 +266,36 @@ pub struct DataRequirementDateFilter {
     /// The `DataRequirement.dateFilter.value[x]` choice element (0..1); see [`DataRequirementDateFilterValue`].
     #[serde(flatten)]
     pub value: Option<DataRequirementDateFilterValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DataRequirementDateFilterDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    path: Option<types::String>,
+    #[serde(rename = "_path")]
+    path_ext: Option<types::Element>,
+    search_param: Option<types::String>,
+    #[serde(rename = "_searchParam")]
+    search_param_ext: Option<types::Element>,
+    #[serde(flatten)]
+    value: crate::r4b::choice::Slot<DataRequirementDateFilterValue>,
+}
+
+impl ::core::convert::From<DataRequirementDateFilterDe> for DataRequirementDateFilter {
+    fn from(v: DataRequirementDateFilterDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            path: v.path,
+            path_ext: v.path_ext,
+            search_param: v.search_param,
+            search_param_ext: v.search_param_ext,
+            value: v.value.0,
+        }
+    }
 }
 
 /// Specifies the order of the results to be returned.

@@ -41,6 +41,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "UsageContextDe")]
 #[fhir_version("r6")]
 pub struct UsageContext {
     /// Unique id for inter-element referencing
@@ -57,6 +58,28 @@ pub struct UsageContext {
     /// The `UsageContext.value[x]` choice element (1..1); see [`UsageContextValue`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub value: Option<UsageContextValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct UsageContextDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    code: types::Coding,
+    #[serde(flatten)]
+    value: crate::r6::choice::Slot<UsageContextValue>,
+}
+
+impl ::core::convert::From<UsageContextDe> for UsageContext {
+    fn from(v: UsageContextDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            code: v.code,
+            value: v.value.0,
+        }
+    }
 }
 
 /// The `UsageContext.value[x]` choice element (see `spec/11-choice-types.md`).

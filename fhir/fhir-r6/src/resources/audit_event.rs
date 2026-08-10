@@ -31,6 +31,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "AuditEventDe")]
 #[fhir_version("r6")]
 pub struct AuditEvent {
     /// Logical id of this artifact
@@ -132,6 +133,85 @@ pub struct AuditEvent {
     pub entity: Vec<AuditEventEntity>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AuditEventDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r6::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: types::CodeableConcept,
+    #[serde(default)]
+    subtype: Vec<types::CodeableConcept>,
+    action: Option<crate::coded::Coded<crate::r6::codes::AuditEventAction>>,
+    #[serde(rename = "_action")]
+    action_ext: Option<types::Element>,
+    severity: Option<crate::coded::Coded<crate::r6::codes::AuditEventSeverity>>,
+    #[serde(rename = "_severity")]
+    severity_ext: Option<types::Element>,
+    #[serde(flatten)]
+    occurred: crate::r6::choice::Slot<AuditEventOccurred>,
+    recorded: types::Instant,
+    #[serde(rename = "_recorded")]
+    recorded_ext: Option<types::Element>,
+    outcome: Option<AuditEventOutcome>,
+    #[serde(default)]
+    authorization: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    based_on: Vec<types::Reference>,
+    patient: Option<types::Reference<crate::r6::resources::Patient>>,
+    encounter: Option<types::Reference<crate::r6::resources::Encounter>>,
+    agent: ::vec1::Vec1<AuditEventAgent>,
+    source: AuditEventSource,
+    #[serde(default)]
+    entity: Vec<AuditEventEntity>,
+}
+
+impl ::core::convert::From<AuditEventDe> for AuditEvent {
+    fn from(v: AuditEventDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            subtype: v.subtype,
+            action: v.action,
+            action_ext: v.action_ext,
+            severity: v.severity,
+            severity_ext: v.severity_ext,
+            occurred: v.occurred.0,
+            recorded: v.recorded,
+            recorded_ext: v.recorded_ext,
+            outcome: v.outcome,
+            authorization: v.authorization,
+            based_on: v.based_on,
+            patient: v.patient,
+            encounter: v.encounter,
+            agent: v.agent,
+            source: v.source,
+            entity: v.entity,
+        }
+    }
+}
+
 /// An actor taking an active role in the event or activity that is logged.
 ///
 /// # Examples
@@ -154,6 +234,7 @@ pub struct AuditEvent {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "AuditEventAgentDe")]
 #[fhir_version("r6")]
 pub struct AuditEventAgent {
     /// Unique id for inter-element referencing
@@ -204,6 +285,53 @@ pub struct AuditEventAgent {
     /// Allowable authorization for this agent
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub authorization: Vec<types::CodeableConcept>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AuditEventAgentDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: Option<types::CodeableConcept>,
+    #[serde(default)]
+    role: Vec<types::CodeableConcept>,
+    who: types::Reference,
+    requestor: Option<types::Boolean>,
+    #[serde(rename = "_requestor")]
+    requestor_ext: Option<types::Element>,
+    location: Option<types::Reference<crate::r6::resources::Location>>,
+    #[serde(default)]
+    policy: Vec<types::Uri>,
+    #[serde(rename = "_policy")]
+    #[serde(default)]
+    policy_ext: Vec<Option<types::Element>>,
+    #[serde(flatten)]
+    network: crate::r6::choice::Slot<AuditEventAgentNetwork>,
+    #[serde(default)]
+    authorization: Vec<types::CodeableConcept>,
+}
+
+impl ::core::convert::From<AuditEventAgentDe> for AuditEventAgent {
+    fn from(v: AuditEventAgentDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            role: v.role,
+            who: v.who,
+            requestor: v.requestor,
+            requestor_ext: v.requestor_ext,
+            location: v.location,
+            policy: v.policy,
+            policy_ext: v.policy_ext,
+            network: v.network.0,
+            authorization: v.authorization,
+        }
+    }
 }
 
 /// Specific instances of data or objects that have been accessed.
@@ -296,6 +424,7 @@ pub struct AuditEventEntity {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "AuditEventEntityDetailDe")]
 #[fhir_version("r6")]
 pub struct AuditEventEntityDetail {
     /// Unique id for inter-element referencing
@@ -316,6 +445,31 @@ pub struct AuditEventEntityDetail {
     /// The `AuditEvent.entity.detail.value[x]` choice element (1..1); see [`AuditEventEntityDetailValue`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub value: Option<AuditEventEntityDetailValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AuditEventEntityDetailDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: types::CodeableConcept,
+    #[serde(flatten)]
+    value: crate::r6::choice::Slot<AuditEventEntityDetailValue>,
+}
+
+impl ::core::convert::From<AuditEventEntityDetailDe> for AuditEventEntityDetail {
+    fn from(v: AuditEventEntityDetailDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            value: v.value.0,
+        }
+    }
 }
 
 /// Indicates whether the event succeeded or failed. A free text descripiton

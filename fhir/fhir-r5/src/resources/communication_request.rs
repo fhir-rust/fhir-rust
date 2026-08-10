@@ -62,6 +62,7 @@ use fhir_derive_macros::Validate;
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "CommunicationRequestDe")]
 pub struct CommunicationRequest {
     /// Logical id of this artifact
     pub id: Option<types::String>,
@@ -190,6 +191,114 @@ pub struct CommunicationRequest {
     pub note: Vec<types::Annotation>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CommunicationRequestDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r5::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    #[serde(default)]
+    based_on: Vec<types::Reference>,
+    #[serde(default)]
+    replaces: Vec<types::Reference<crate::r5::resources::CommunicationRequest>>,
+    group_identifier: Option<types::Identifier>,
+    status: crate::r5::coded::Coded<crate::r5::codes::RequestStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    status_reason: Option<types::CodeableConcept>,
+    intent: crate::r5::coded::Coded<crate::r5::codes::RequestIntent>,
+    #[serde(rename = "_intent")]
+    intent_ext: Option<types::Element>,
+    #[serde(default)]
+    category: Vec<types::CodeableConcept>,
+    priority: Option<crate::r5::coded::Coded<crate::r5::codes::RequestPriority>>,
+    #[serde(rename = "_priority")]
+    priority_ext: Option<types::Element>,
+    do_not_perform: Option<types::Boolean>,
+    #[serde(rename = "_doNotPerform")]
+    do_not_perform_ext: Option<types::Element>,
+    #[serde(default)]
+    medium: Vec<types::CodeableConcept>,
+    subject: Option<types::Reference>,
+    #[serde(default)]
+    about: Vec<types::Reference>,
+    encounter: Option<types::Reference<crate::r5::resources::Encounter>>,
+    #[serde(default)]
+    payload: Vec<CommunicationRequestPayload>,
+    #[serde(flatten)]
+    occurrence: crate::r5::choice::Slot<CommunicationRequestOccurrence>,
+    authored_on: Option<types::DateTime>,
+    #[serde(rename = "_authoredOn")]
+    authored_on_ext: Option<types::Element>,
+    requester: Option<types::Reference>,
+    #[serde(default)]
+    recipient: Vec<types::Reference>,
+    #[serde(default)]
+    information_provider: Vec<types::Reference>,
+    #[serde(default)]
+    reason: Vec<types::CodeableReference>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+}
+
+impl ::core::convert::From<CommunicationRequestDe> for CommunicationRequest {
+    fn from(v: CommunicationRequestDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            based_on: v.based_on,
+            replaces: v.replaces,
+            group_identifier: v.group_identifier,
+            status: v.status,
+            status_ext: v.status_ext,
+            status_reason: v.status_reason,
+            intent: v.intent,
+            intent_ext: v.intent_ext,
+            category: v.category,
+            priority: v.priority,
+            priority_ext: v.priority_ext,
+            do_not_perform: v.do_not_perform,
+            do_not_perform_ext: v.do_not_perform_ext,
+            medium: v.medium,
+            subject: v.subject,
+            about: v.about,
+            encounter: v.encounter,
+            payload: v.payload,
+            occurrence: v.occurrence.0,
+            authored_on: v.authored_on,
+            authored_on_ext: v.authored_on_ext,
+            requester: v.requester,
+            recipient: v.recipient,
+            information_provider: v.information_provider,
+            reason: v.reason,
+            note: v.note,
+        }
+    }
+}
+
 /// CommunicationRequestPayload
 ///
 /// Text, attachment(s), or resource(s) to be communicated to the recipient.
@@ -213,6 +322,7 @@ pub struct CommunicationRequest {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "CommunicationRequestPayloadDe")]
 pub struct CommunicationRequestPayload {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -228,6 +338,29 @@ pub struct CommunicationRequestPayload {
     /// The `CommunicationRequest.payload.content[x]` choice element (0..1); see [`CommunicationRequestPayloadContent`].
     #[serde(flatten)]
     pub content: Option<CommunicationRequestPayloadContent>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CommunicationRequestPayloadDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    content: crate::r5::choice::Slot<CommunicationRequestPayloadContent>,
+}
+
+impl ::core::convert::From<CommunicationRequestPayloadDe> for CommunicationRequestPayload {
+    fn from(v: CommunicationRequestPayloadDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            content: v.content.0,
+        }
+    }
 }
 
 #[cfg(test)]

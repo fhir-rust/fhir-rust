@@ -337,6 +337,7 @@ pub struct GenomicStudyAnalysisDevice {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "GenomicStudyAnalysisInputDe")]
 #[fhir_version("r6")]
 pub struct GenomicStudyAnalysisInput {
     /// Unique id for inter-element referencing
@@ -360,6 +361,33 @@ pub struct GenomicStudyAnalysisInput {
     /// The `GenomicStudy.analysis.input.generatedBy[x]` choice element (0..1); see [`GenomicStudyAnalysisInputGeneratedBy`].
     #[serde(flatten)]
     pub generated_by: Option<GenomicStudyAnalysisInputGeneratedBy>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct GenomicStudyAnalysisInputDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    file: Option<types::Reference<crate::r6::resources::DocumentReference>>,
+    r#type: Option<types::CodeableConcept>,
+    #[serde(flatten)]
+    generated_by: crate::r6::choice::Slot<GenomicStudyAnalysisInputGeneratedBy>,
+}
+
+impl ::core::convert::From<GenomicStudyAnalysisInputDe> for GenomicStudyAnalysisInput {
+    fn from(v: GenomicStudyAnalysisInputDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            file: v.file,
+            r#type: v.r#type,
+            generated_by: v.generated_by.0,
+        }
+    }
 }
 
 /// Outputs for the analysis event.

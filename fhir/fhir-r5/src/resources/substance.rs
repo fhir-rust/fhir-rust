@@ -166,6 +166,7 @@ pub struct Substance {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "SubstanceIngredientDe")]
 pub struct SubstanceIngredient {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -184,6 +185,31 @@ pub struct SubstanceIngredient {
     /// The `Substance.ingredient.substance[x]` choice element (0..1); see [`SubstanceIngredientSubstance`].
     #[serde(flatten)]
     pub substance: Option<SubstanceIngredientSubstance>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SubstanceIngredientDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    quantity: Option<types::Ratio>,
+    #[serde(flatten)]
+    substance: crate::r5::choice::Slot<SubstanceIngredientSubstance>,
+}
+
+impl ::core::convert::From<SubstanceIngredientDe> for SubstanceIngredient {
+    fn from(v: SubstanceIngredientDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            quantity: v.quantity,
+            substance: v.substance.0,
+        }
+    }
 }
 
 #[cfg(test)]

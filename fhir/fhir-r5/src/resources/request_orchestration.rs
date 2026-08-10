@@ -212,6 +212,7 @@ pub struct RequestOrchestration {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "RequestOrchestrationActionDe")]
 pub struct RequestOrchestrationAction {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -357,6 +358,129 @@ pub struct RequestOrchestrationAction {
     /// Sub action
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub action: Vec<RequestOrchestrationAction>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RequestOrchestrationActionDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    link_id: Option<types::String>,
+    #[serde(rename = "_linkId")]
+    link_id_ext: Option<types::Element>,
+    prefix: Option<types::String>,
+    #[serde(rename = "_prefix")]
+    prefix_ext: Option<types::Element>,
+    title: Option<types::String>,
+    #[serde(rename = "_title")]
+    title_ext: Option<types::Element>,
+    description: Option<types::Markdown>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    text_equivalent: Option<types::Markdown>,
+    #[serde(rename = "_textEquivalent")]
+    text_equivalent_ext: Option<types::Element>,
+    priority: Option<crate::r5::coded::Coded<crate::r5::codes::RequestPriority>>,
+    #[serde(rename = "_priority")]
+    priority_ext: Option<types::Element>,
+    #[serde(default)]
+    code: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    documentation: Vec<types::RelatedArtifact>,
+    #[serde(default)]
+    goal: Vec<types::Reference<crate::r5::resources::Goal>>,
+    #[serde(default)]
+    condition: Vec<RequestOrchestrationActionCondition>,
+    #[serde(default)]
+    input: Vec<RequestOrchestrationActionInput>,
+    #[serde(default)]
+    output: Vec<RequestOrchestrationActionOutput>,
+    #[serde(default)]
+    related_action: Vec<RequestOrchestrationActionRelatedAction>,
+    #[serde(flatten)]
+    timing: crate::r5::choice::Slot<RequestOrchestrationActionTiming>,
+    location: Option<types::CodeableReference>,
+    #[serde(default)]
+    participant: Vec<RequestOrchestrationActionParticipant>,
+    r#type: Option<types::CodeableConcept>,
+    grouping_behavior: Option<crate::r5::coded::Coded<crate::r5::codes::ActionGroupingBehavior>>,
+    #[serde(rename = "_groupingBehavior")]
+    grouping_behavior_ext: Option<types::Element>,
+    selection_behavior: Option<crate::r5::coded::Coded<crate::r5::codes::ActionSelectionBehavior>>,
+    #[serde(rename = "_selectionBehavior")]
+    selection_behavior_ext: Option<types::Element>,
+    required_behavior: Option<crate::r5::coded::Coded<crate::r5::codes::ActionRequiredBehavior>>,
+    #[serde(rename = "_requiredBehavior")]
+    required_behavior_ext: Option<types::Element>,
+    precheck_behavior: Option<crate::r5::coded::Coded<crate::r5::codes::ActionPrecheckBehavior>>,
+    #[serde(rename = "_precheckBehavior")]
+    precheck_behavior_ext: Option<types::Element>,
+    cardinality_behavior:
+        Option<crate::r5::coded::Coded<crate::r5::codes::ActionCardinalityBehavior>>,
+    #[serde(rename = "_cardinalityBehavior")]
+    cardinality_behavior_ext: Option<types::Element>,
+    resource: Option<types::Reference>,
+    #[serde(flatten)]
+    definition: crate::r5::choice::Slot<RequestOrchestrationActionDefinition>,
+    transform: Option<types::Canonical>,
+    #[serde(rename = "_transform")]
+    transform_ext: Option<types::Element>,
+    #[serde(default)]
+    dynamic_value: Vec<RequestOrchestrationActionDynamicValue>,
+    #[serde(default)]
+    action: Vec<RequestOrchestrationAction>,
+}
+
+impl ::core::convert::From<RequestOrchestrationActionDe> for RequestOrchestrationAction {
+    fn from(v: RequestOrchestrationActionDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            link_id: v.link_id,
+            link_id_ext: v.link_id_ext,
+            prefix: v.prefix,
+            prefix_ext: v.prefix_ext,
+            title: v.title,
+            title_ext: v.title_ext,
+            description: v.description,
+            description_ext: v.description_ext,
+            text_equivalent: v.text_equivalent,
+            text_equivalent_ext: v.text_equivalent_ext,
+            priority: v.priority,
+            priority_ext: v.priority_ext,
+            code: v.code,
+            documentation: v.documentation,
+            goal: v.goal,
+            condition: v.condition,
+            input: v.input,
+            output: v.output,
+            related_action: v.related_action,
+            timing: v.timing.0,
+            location: v.location,
+            participant: v.participant,
+            r#type: v.r#type,
+            grouping_behavior: v.grouping_behavior,
+            grouping_behavior_ext: v.grouping_behavior_ext,
+            selection_behavior: v.selection_behavior,
+            selection_behavior_ext: v.selection_behavior_ext,
+            required_behavior: v.required_behavior,
+            required_behavior_ext: v.required_behavior_ext,
+            precheck_behavior: v.precheck_behavior,
+            precheck_behavior_ext: v.precheck_behavior_ext,
+            cardinality_behavior: v.cardinality_behavior,
+            cardinality_behavior_ext: v.cardinality_behavior_ext,
+            resource: v.resource,
+            definition: v.definition.0,
+            transform: v.transform,
+            transform_ext: v.transform_ext,
+            dynamic_value: v.dynamic_value,
+            action: v.action,
+        }
+    }
 }
 
 /// Whether or not the action is applicable.
@@ -530,6 +654,7 @@ pub struct RequestOrchestrationActionOutput {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "RequestOrchestrationActionRelatedActionDe")]
 pub struct RequestOrchestrationActionRelatedAction {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -565,6 +690,46 @@ pub struct RequestOrchestrationActionRelatedAction {
     pub offset: Option<RequestOrchestrationActionRelatedActionOffset>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RequestOrchestrationActionRelatedActionDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    target_id: types::Id,
+    #[serde(rename = "_targetId")]
+    target_id_ext: Option<types::Element>,
+    relationship: crate::r5::coded::Coded<crate::r5::codes::ActionRelationshipType>,
+    #[serde(rename = "_relationship")]
+    relationship_ext: Option<types::Element>,
+    end_relationship: Option<crate::r5::coded::Coded<crate::r5::codes::ActionRelationshipType>>,
+    #[serde(rename = "_endRelationship")]
+    end_relationship_ext: Option<types::Element>,
+    #[serde(flatten)]
+    offset: crate::r5::choice::Slot<RequestOrchestrationActionRelatedActionOffset>,
+}
+
+impl ::core::convert::From<RequestOrchestrationActionRelatedActionDe>
+    for RequestOrchestrationActionRelatedAction
+{
+    fn from(v: RequestOrchestrationActionRelatedActionDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            target_id: v.target_id,
+            target_id_ext: v.target_id_ext,
+            relationship: v.relationship,
+            relationship_ext: v.relationship_ext,
+            end_relationship: v.end_relationship,
+            end_relationship_ext: v.end_relationship_ext,
+            offset: v.offset.0,
+        }
+    }
+}
+
 /// Who should perform the action.
 ///
 /// The participant that should perform or be responsible for the action.
@@ -588,6 +753,7 @@ pub struct RequestOrchestrationActionRelatedAction {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "RequestOrchestrationActionParticipantDe")]
 pub struct RequestOrchestrationActionParticipant {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -624,6 +790,47 @@ pub struct RequestOrchestrationActionParticipant {
     /// The `RequestOrchestration.action.participant.actor[x]` choice element (0..1); see [`RequestOrchestrationActionParticipantActor`].
     #[serde(flatten)]
     pub actor: Option<RequestOrchestrationActionParticipantActor>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RequestOrchestrationActionParticipantDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: Option<crate::r5::coded::Coded<crate::r5::codes::ActionParticipantType>>,
+    #[serde(rename = "_type")]
+    type_ext: Option<types::Element>,
+    type_canonical: Option<types::Canonical>,
+    #[serde(rename = "_typeCanonical")]
+    type_canonical_ext: Option<types::Element>,
+    type_reference: Option<types::Reference>,
+    role: Option<types::CodeableConcept>,
+    function: Option<types::CodeableConcept>,
+    #[serde(flatten)]
+    actor: crate::r5::choice::Slot<RequestOrchestrationActionParticipantActor>,
+}
+
+impl ::core::convert::From<RequestOrchestrationActionParticipantDe>
+    for RequestOrchestrationActionParticipant
+{
+    fn from(v: RequestOrchestrationActionParticipantDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            type_ext: v.type_ext,
+            type_canonical: v.type_canonical,
+            type_canonical_ext: v.type_canonical_ext,
+            type_reference: v.type_reference,
+            role: v.role,
+            function: v.function,
+            actor: v.actor.0,
+        }
+    }
 }
 
 /// Dynamic aspects of the definition.

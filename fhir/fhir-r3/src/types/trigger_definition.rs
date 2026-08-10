@@ -37,6 +37,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "TriggerDefinitionDe")]
 #[fhir_version("r3")]
 pub struct TriggerDefinition {
     /// xml:id (or equivalent in JSON)
@@ -68,6 +69,38 @@ pub struct TriggerDefinition {
 
     /// Triggering data of the event
     pub event_data: Option<types::DataRequirement>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct TriggerDefinitionDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    r#type: crate::coded::Coded<crate::r3::codes::TriggerType>,
+    #[serde(rename = "_type")]
+    type_ext: Option<types::Element>,
+    event_name: Option<types::String>,
+    #[serde(rename = "_eventName")]
+    event_name_ext: Option<types::Element>,
+    #[serde(flatten)]
+    event_timing: crate::r3::choice::Slot<TriggerDefinitionEventTiming>,
+    event_data: Option<types::DataRequirement>,
+}
+
+impl ::core::convert::From<TriggerDefinitionDe> for TriggerDefinition {
+    fn from(v: TriggerDefinitionDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            r#type: v.r#type,
+            type_ext: v.type_ext,
+            event_name: v.event_name,
+            event_name_ext: v.event_name_ext,
+            event_timing: v.event_timing.0,
+            event_data: v.event_data,
+        }
+    }
 }
 
 /// The `TriggerDefinition.eventTiming[x]` choice element (see `spec/11-choice-types.md`).

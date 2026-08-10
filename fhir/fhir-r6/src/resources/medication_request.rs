@@ -370,6 +370,7 @@ pub struct MedicationRequestDispenseRequestInitialFill {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MedicationRequestSubstitutionDe")]
 #[fhir_version("r6")]
 pub struct MedicationRequestSubstitution {
     /// Unique id for inter-element referencing
@@ -390,6 +391,31 @@ pub struct MedicationRequestSubstitution {
 
     /// Why should (not) substitution be made
     pub reason: Option<types::CodeableConcept>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MedicationRequestSubstitutionDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    allowed: crate::r6::choice::Slot<MedicationRequestSubstitutionAllowed>,
+    reason: Option<types::CodeableConcept>,
+}
+
+impl ::core::convert::From<MedicationRequestSubstitutionDe> for MedicationRequestSubstitution {
+    fn from(v: MedicationRequestSubstitutionDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            allowed: v.allowed.0,
+            reason: v.reason,
+        }
+    }
 }
 
 /// The `MedicationRequest.substitution.allowed[x]` choice element (see `spec/11-choice-types.md`).

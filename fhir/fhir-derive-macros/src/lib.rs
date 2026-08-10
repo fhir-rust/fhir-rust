@@ -517,6 +517,8 @@ pub fn derive_fhir_choice(input: TokenStream) -> TokenStream {
     let mut val_decls = Vec::new();
     let mut key_arms = Vec::new();
     let mut build_arms = Vec::new();
+    let mut slot_key_arms = Vec::new();
+    let mut build_arms_slot = Vec::new();
 
     for variant in &data.variants {
         let vident = &variant.ident;
@@ -568,10 +570,29 @@ pub fn derive_fhir_choice(input: TokenStream) -> TokenStream {
                 #key => { #val_var = ::core::option::Option::Some(map.next_value()?); }
                 #ext_key => { #ext_var = ::core::option::Option::Some(map.next_value()?); }
             });
+            slot_key_arms.push(quote! {
+                #key => {
+                    __touched = true;
+                    #val_var = ::core::option::Option::Some(map.next_value()?);
+                }
+                #ext_key => {
+                    __touched = true;
+                    #ext_var = ::core::option::Option::Some(map.next_value()?);
+                }
+            });
             build_arms.push(quote! {
                 if let ::core::option::Option::Some(value) = #val_var {
                     return ::core::result::Result::Ok(#name::#vident(
                         #version::choice::Primitive { value, extension: #ext_var }
+                    ));
+                }
+            });
+            build_arms_slot.push(quote! {
+                if let ::core::option::Option::Some(value) = #val_var {
+                    return ::core::result::Result::Ok(#version::choice::Slot(
+                        ::core::option::Option::Some(#name::#vident(
+                            #version::choice::Primitive { value, extension: #ext_var }
+                        ))
                     ));
                 }
             });
@@ -588,9 +609,22 @@ pub fn derive_fhir_choice(input: TokenStream) -> TokenStream {
             key_arms.push(quote! {
                 #key => { #val_var = ::core::option::Option::Some(map.next_value()?); }
             });
+            slot_key_arms.push(quote! {
+                #key => {
+                    __touched = true;
+                    #val_var = ::core::option::Option::Some(map.next_value()?);
+                }
+            });
             build_arms.push(quote! {
                 if let ::core::option::Option::Some(v) = #val_var {
                     return ::core::result::Result::Ok(#name::#vident(v));
+                }
+            });
+            build_arms_slot.push(quote! {
+                if let ::core::option::Option::Some(v) = #val_var {
+                    return ::core::result::Result::Ok(#version::choice::Slot(
+                        ::core::option::Option::Some(#name::#vident(v))
+                    ));
                 }
             });
         }
@@ -598,6 +632,8 @@ pub fn derive_fhir_choice(input: TokenStream) -> TokenStream {
 
     let expecting = format!("a FHIR {name} choice element");
     let visitor = format_ident!("__{}Visitor", name);
+    let slot_visitor = format_ident!("__{}SlotVisitor", name);
+    let slot_expecting = format!("a FHIR {name} choice element, or its absence");
 
     quote! {
         impl ::serde::Serialize for #name {
@@ -642,6 +678,60 @@ pub fn derive_fhir_choice(input: TokenStream) -> TokenStream {
                     }
                 }
                 deserializer.deserialize_map(#visitor)
+            }
+        }
+
+        // F-87: the deserialization used for a `#[serde(flatten)]`ed choice
+        // field. serde's flatten machinery turns any error inside a flattened
+        // `Option<T>` into `None`, which silently deletes a present-but-
+        // invalid element. `Slot` is not an `Option`, so its errors
+        // propagate; absence of every variant key — the one case flatten's
+        // swallow existed to express — is the only `None`.
+        impl<'de> ::serde::Deserialize<'de> for #version::choice::Slot<#name> {
+            fn deserialize<D: ::serde::Deserializer<'de>>(deserializer: D)
+                -> ::core::result::Result<Self, D::Error>
+            {
+                struct #slot_visitor;
+                impl<'de> ::serde::de::Visitor<'de> for #slot_visitor {
+                    type Value = #version::choice::Slot<#name>;
+                    fn expecting(&self, f: &mut ::core::fmt::Formatter)
+                        -> ::core::fmt::Result
+                    {
+                        f.write_str(#slot_expecting)
+                    }
+                    #[allow(non_snake_case)]
+                    fn visit_map<A: ::serde::de::MapAccess<'de>>(self, mut map: A)
+                        -> ::core::result::Result<Self::Value, A::Error>
+                    {
+                        let mut __touched = false;
+                        #(#val_decls)*
+                        while let ::core::option::Option::Some(__k) =
+                            map.next_key::<::std::string::String>()?
+                        {
+                            match __k.as_str() {
+                                #(#slot_key_arms)*
+                                _ => { map.next_value::<::serde::de::IgnoredAny>()?; }
+                            }
+                        }
+                        #(#build_arms_slot)*
+                        if __touched {
+                            // A `_valueX` extension without its value, or a
+                            // key this enum names whose content was consumed
+                            // but built nothing: refusing loudly beats the
+                            // silent drop this impl exists to end (F-87;
+                            // the representation gap itself is F-86).
+                            return ::core::result::Result::Err(
+                                ::serde::de::Error::custom(
+                                    "choice element present but incomplete \
+                                     (a value[x] extension without its value?)"
+                            ));
+                        }
+                        ::core::result::Result::Ok(#version::choice::Slot(
+                            ::core::option::Option::None
+                        ))
+                    }
+                }
+                deserializer.deserialize_map(#slot_visitor)
             }
         }
     }

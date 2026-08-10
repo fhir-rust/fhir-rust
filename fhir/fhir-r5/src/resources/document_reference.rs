@@ -338,6 +338,7 @@ pub struct DocumentReferenceContent {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "DocumentReferenceContentProfileDe")]
 pub struct DocumentReferenceContentProfile {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -353,6 +354,29 @@ pub struct DocumentReferenceContentProfile {
     /// The `DocumentReference.content.profile.value[x]` choice element (0..1); see [`DocumentReferenceContentProfileValue`].
     #[serde(flatten)]
     pub value: Option<DocumentReferenceContentProfileValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DocumentReferenceContentProfileDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    value: crate::r5::choice::Slot<DocumentReferenceContentProfileValue>,
+}
+
+impl ::core::convert::From<DocumentReferenceContentProfileDe> for DocumentReferenceContentProfile {
+    fn from(v: DocumentReferenceContentProfileDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            value: v.value.0,
+        }
+    }
 }
 
 /// The `DocumentReference.content.profile.value[x]` choice element (see spec/11-choice-types.md).

@@ -232,6 +232,7 @@ pub struct PaymentReconciliation {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "PaymentReconciliationAllocationDe")]
 #[fhir_version("r6")]
 pub struct PaymentReconciliationAllocation {
     /// Unique id for inter-element referencing
@@ -289,6 +290,56 @@ pub struct PaymentReconciliationAllocation {
 
     /// Amount allocated to this payable
     pub amount: Option<types::Money>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PaymentReconciliationAllocationDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    identifier: Option<types::Identifier>,
+    predecessor: Option<types::Identifier>,
+    target: Option<types::Reference>,
+    #[serde(flatten)]
+    target_item: crate::r6::choice::Slot<PaymentReconciliationAllocationTargetItem>,
+    encounter: Option<types::Reference<crate::r6::resources::Encounter>>,
+    account: Option<types::Reference<crate::r6::resources::Account>>,
+    r#type: Option<types::CodeableConcept>,
+    submitter: Option<types::Reference>,
+    response: Option<types::Reference<crate::r6::resources::ClaimResponse>>,
+    date: Option<types::Date>,
+    #[serde(rename = "_date")]
+    date_ext: Option<types::Element>,
+    responsible: Option<types::Reference<crate::r6::resources::PractitionerRole>>,
+    payee: Option<types::Reference>,
+    amount: Option<types::Money>,
+}
+
+impl ::core::convert::From<PaymentReconciliationAllocationDe> for PaymentReconciliationAllocation {
+    fn from(v: PaymentReconciliationAllocationDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            predecessor: v.predecessor,
+            target: v.target,
+            target_item: v.target_item.0,
+            encounter: v.encounter,
+            account: v.account,
+            r#type: v.r#type,
+            submitter: v.submitter,
+            response: v.response,
+            date: v.date,
+            date_ext: v.date_ext,
+            responsible: v.responsible,
+            payee: v.payee,
+            amount: v.amount,
+        }
+    }
 }
 
 /// A note that describes or explains the processing in a human readable form.

@@ -256,6 +256,7 @@ pub struct QuestionnaireResponseGroupQuestion {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "QuestionnaireResponseGroupQuestionAnswerDe")]
 #[fhir_version("r2")]
 pub struct QuestionnaireResponseGroupQuestionAnswer {
     /// xml:id (or equivalent in JSON)
@@ -277,6 +278,34 @@ pub struct QuestionnaireResponseGroupQuestionAnswer {
     /// Nested questionnaire group
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub group: Vec<QuestionnaireResponseGroup>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct QuestionnaireResponseGroupQuestionAnswerDe {
+    id: Option<types::Id>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    value: crate::r2::choice::Slot<QuestionnaireResponseGroupQuestionAnswerValue>,
+    #[serde(default)]
+    group: Vec<QuestionnaireResponseGroup>,
+}
+
+impl ::core::convert::From<QuestionnaireResponseGroupQuestionAnswerDe>
+    for QuestionnaireResponseGroupQuestionAnswer
+{
+    fn from(v: QuestionnaireResponseGroupQuestionAnswerDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            value: v.value.0,
+            group: v.group,
+        }
+    }
 }
 
 /// The `QuestionnaireResponse.group.question.answer.value[x]` choice element (see `spec/11-choice-types.md`).

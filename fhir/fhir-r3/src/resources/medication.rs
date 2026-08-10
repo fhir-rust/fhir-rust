@@ -138,6 +138,7 @@ pub struct Medication {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MedicationIngredientDe")]
 #[fhir_version("r3")]
 pub struct MedicationIngredient {
     /// xml:id (or equivalent in JSON)
@@ -165,6 +166,36 @@ pub struct MedicationIngredient {
 
     /// Quantity of ingredient present
     pub amount: Option<types::Ratio>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MedicationIngredientDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    item: crate::r3::choice::Slot<MedicationIngredientItem>,
+    is_active: Option<types::Boolean>,
+    #[serde(rename = "_isActive")]
+    is_active_ext: Option<types::Element>,
+    amount: Option<types::Ratio>,
+}
+
+impl ::core::convert::From<MedicationIngredientDe> for MedicationIngredient {
+    fn from(v: MedicationIngredientDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            item: v.item.0,
+            is_active: v.is_active,
+            is_active_ext: v.is_active_ext,
+            amount: v.amount,
+        }
+    }
 }
 
 /// Information that only applies to packages (not products).
@@ -287,6 +318,7 @@ pub struct MedicationPackageBatch {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MedicationPackageContentDe")]
 #[fhir_version("r3")]
 pub struct MedicationPackageContent {
     /// xml:id (or equivalent in JSON)
@@ -307,6 +339,31 @@ pub struct MedicationPackageContent {
 
     /// Quantity present in the package
     pub amount: Option<types::Quantity>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MedicationPackageContentDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    item: crate::r3::choice::Slot<MedicationPackageContentItem>,
+    amount: Option<types::Quantity>,
+}
+
+impl ::core::convert::From<MedicationPackageContentDe> for MedicationPackageContent {
+    fn from(v: MedicationPackageContentDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            item: v.item.0,
+            amount: v.amount,
+        }
+    }
 }
 
 /// The `Medication.ingredient.item[x]` choice element (see `spec/11-choice-types.md`).

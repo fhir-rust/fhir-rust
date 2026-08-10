@@ -391,6 +391,7 @@ pub struct OperationDefinitionParameter {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "OperationDefinitionParameterBindingDe")]
 #[fhir_version("r3")]
 pub struct OperationDefinitionParameterBinding {
     /// xml:id (or equivalent in JSON)
@@ -415,6 +416,36 @@ pub struct OperationDefinitionParameterBinding {
     /// The `OperationDefinition.parameter.binding.valueSet[x]` choice element (1..1); see [`OperationDefinitionParameterBindingValueSet`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub value_set: Option<OperationDefinitionParameterBindingValueSet>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct OperationDefinitionParameterBindingDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    strength: crate::coded::Coded<crate::r3::codes::BindingStrength>,
+    #[serde(rename = "_strength")]
+    strength_ext: Option<types::Element>,
+    #[serde(flatten)]
+    value_set: crate::r3::choice::Slot<OperationDefinitionParameterBindingValueSet>,
+}
+
+impl ::core::convert::From<OperationDefinitionParameterBindingDe>
+    for OperationDefinitionParameterBinding
+{
+    fn from(v: OperationDefinitionParameterBindingDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            strength: v.strength,
+            strength_ext: v.strength_ext,
+            value_set: v.value_set.0,
+        }
+    }
 }
 
 /// The `OperationDefinition.parameter.binding.valueSet[x]` choice element (see `spec/11-choice-types.md`).

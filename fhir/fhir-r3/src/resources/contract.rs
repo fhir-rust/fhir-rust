@@ -37,6 +37,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ContractDe")]
 #[fhir_version("r3")]
 pub struct Contract {
     /// Logical id of this artifact
@@ -171,6 +172,111 @@ pub struct Contract {
     pub rule: Vec<ContractRule>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ContractDe {
+    id: Option<types::Id>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r3::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    identifier: Option<types::Identifier>,
+    status: Option<crate::coded::Coded<crate::r3::codes::ContractStatus>>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    issued: Option<types::DateTime>,
+    #[serde(rename = "_issued")]
+    issued_ext: Option<types::Element>,
+    applies: Option<types::Period>,
+    #[serde(default)]
+    subject: Vec<types::Reference>,
+    #[serde(default)]
+    topic: Vec<types::Reference>,
+    #[serde(default)]
+    authority: Vec<types::Reference<crate::r3::resources::Organization>>,
+    #[serde(default)]
+    domain: Vec<types::Reference<crate::r3::resources::Location>>,
+    r#type: Option<types::CodeableConcept>,
+    #[serde(default)]
+    sub_type: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    action: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    action_reason: Vec<types::CodeableConcept>,
+    decision_type: Option<types::CodeableConcept>,
+    content_derivative: Option<types::CodeableConcept>,
+    #[serde(default)]
+    security_label: Vec<types::Coding>,
+    #[serde(default)]
+    agent: Vec<ContractAgent>,
+    #[serde(default)]
+    signer: Vec<ContractSigner>,
+    #[serde(default)]
+    valued_item: Vec<ContractValuedItem>,
+    #[serde(default)]
+    term: Vec<ContractTerm>,
+    #[serde(flatten)]
+    binding: crate::r3::choice::Slot<ContractBinding>,
+    #[serde(default)]
+    friendly: Vec<ContractFriendly>,
+    #[serde(default)]
+    legal: Vec<ContractLegal>,
+    #[serde(default)]
+    rule: Vec<ContractRule>,
+}
+
+impl ::core::convert::From<ContractDe> for Contract {
+    fn from(v: ContractDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            status: v.status,
+            status_ext: v.status_ext,
+            issued: v.issued,
+            issued_ext: v.issued_ext,
+            applies: v.applies,
+            subject: v.subject,
+            topic: v.topic,
+            authority: v.authority,
+            domain: v.domain,
+            r#type: v.r#type,
+            sub_type: v.sub_type,
+            action: v.action,
+            action_reason: v.action_reason,
+            decision_type: v.decision_type,
+            content_derivative: v.content_derivative,
+            security_label: v.security_label,
+            agent: v.agent,
+            signer: v.signer,
+            valued_item: v.valued_item,
+            term: v.term,
+            binding: v.binding.0,
+            friendly: v.friendly,
+            legal: v.legal,
+            rule: v.rule,
+        }
+    }
+}
+
 /// An actor taking a role in an activity for which it can be assigned some
 /// degree of responsibility for the activity taking place.
 ///
@@ -243,6 +349,7 @@ pub struct ContractAgent {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ContractFriendlyDe")]
 #[fhir_version("r3")]
 pub struct ContractFriendly {
     /// xml:id (or equivalent in JSON)
@@ -260,6 +367,29 @@ pub struct ContractFriendly {
     /// The `Contract.friendly.content[x]` choice element (1..1); see [`ContractFriendlyContent`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub content: Option<ContractFriendlyContent>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ContractFriendlyDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    content: crate::r3::choice::Slot<ContractFriendlyContent>,
+}
+
+impl ::core::convert::From<ContractFriendlyDe> for ContractFriendly {
+    fn from(v: ContractFriendlyDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            content: v.content.0,
+        }
+    }
 }
 
 /// List of Legal expressions or representations of this Contract.
@@ -284,6 +414,7 @@ pub struct ContractFriendly {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ContractLegalDe")]
 #[fhir_version("r3")]
 pub struct ContractLegal {
     /// xml:id (or equivalent in JSON)
@@ -301,6 +432,29 @@ pub struct ContractLegal {
     /// The `Contract.legal.content[x]` choice element (1..1); see [`ContractLegalContent`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub content: Option<ContractLegalContent>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ContractLegalDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    content: crate::r3::choice::Slot<ContractLegalContent>,
+}
+
+impl ::core::convert::From<ContractLegalDe> for ContractLegal {
+    fn from(v: ContractLegalDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            content: v.content.0,
+        }
+    }
 }
 
 /// List of Computable Policy Rule Language Representations of this Contract.
@@ -325,6 +479,7 @@ pub struct ContractLegal {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ContractRuleDe")]
 #[fhir_version("r3")]
 pub struct ContractRule {
     /// xml:id (or equivalent in JSON)
@@ -342,6 +497,29 @@ pub struct ContractRule {
     /// The `Contract.rule.content[x]` choice element (1..1); see [`ContractRuleContent`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub content: Option<ContractRuleContent>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ContractRuleDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    content: crate::r3::choice::Slot<ContractRuleContent>,
+}
+
+impl ::core::convert::From<ContractRuleDe> for ContractRule {
+    fn from(v: ContractRuleDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            content: v.content.0,
+        }
+    }
 }
 
 /// Parties with legal standing in the Contract, including the principal
@@ -542,6 +720,7 @@ pub struct ContractTermAgent {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ContractTermValuedItemDe")]
 #[fhir_version("r3")]
 pub struct ContractTermValuedItem {
     /// xml:id (or equivalent in JSON)
@@ -594,6 +773,52 @@ pub struct ContractTermValuedItem {
     pub net: Option<types::Money>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ContractTermValuedItemDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    entity: crate::r3::choice::Slot<ContractTermValuedItemEntity>,
+    identifier: Option<types::Identifier>,
+    effective_time: Option<types::DateTime>,
+    #[serde(rename = "_effectiveTime")]
+    effective_time_ext: Option<types::Element>,
+    quantity: Option<types::Quantity>,
+    unit_price: Option<types::Money>,
+    factor: Option<types::Decimal>,
+    #[serde(rename = "_factor")]
+    factor_ext: Option<types::Element>,
+    points: Option<types::Decimal>,
+    #[serde(rename = "_points")]
+    points_ext: Option<types::Element>,
+    net: Option<types::Money>,
+}
+
+impl ::core::convert::From<ContractTermValuedItemDe> for ContractTermValuedItem {
+    fn from(v: ContractTermValuedItemDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            entity: v.entity.0,
+            identifier: v.identifier,
+            effective_time: v.effective_time,
+            effective_time_ext: v.effective_time_ext,
+            quantity: v.quantity,
+            unit_price: v.unit_price,
+            factor: v.factor,
+            factor_ext: v.factor_ext,
+            points: v.points,
+            points_ext: v.points_ext,
+            net: v.net,
+        }
+    }
+}
+
 /// Contract Valued Item List.
 ///
 /// # Examples
@@ -616,6 +841,7 @@ pub struct ContractTermValuedItem {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ContractValuedItemDe")]
 #[fhir_version("r3")]
 pub struct ContractValuedItem {
     /// xml:id (or equivalent in JSON)
@@ -666,6 +892,52 @@ pub struct ContractValuedItem {
 
     /// Total Contract Valued Item Value
     pub net: Option<types::Money>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ContractValuedItemDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    entity: crate::r3::choice::Slot<ContractValuedItemEntity>,
+    identifier: Option<types::Identifier>,
+    effective_time: Option<types::DateTime>,
+    #[serde(rename = "_effectiveTime")]
+    effective_time_ext: Option<types::Element>,
+    quantity: Option<types::Quantity>,
+    unit_price: Option<types::Money>,
+    factor: Option<types::Decimal>,
+    #[serde(rename = "_factor")]
+    factor_ext: Option<types::Element>,
+    points: Option<types::Decimal>,
+    #[serde(rename = "_points")]
+    points_ext: Option<types::Element>,
+    net: Option<types::Money>,
+}
+
+impl ::core::convert::From<ContractValuedItemDe> for ContractValuedItem {
+    fn from(v: ContractValuedItemDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            entity: v.entity.0,
+            identifier: v.identifier,
+            effective_time: v.effective_time,
+            effective_time_ext: v.effective_time_ext,
+            quantity: v.quantity,
+            unit_price: v.unit_price,
+            factor: v.factor,
+            factor_ext: v.factor_ext,
+            points: v.points,
+            points_ext: v.points_ext,
+            net: v.net,
+        }
+    }
 }
 
 /// The `Contract.binding[x]` choice element (see `spec/11-choice-types.md`).

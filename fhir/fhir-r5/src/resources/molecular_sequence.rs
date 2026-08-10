@@ -212,6 +212,7 @@ pub struct MolecularSequenceRelative {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MolecularSequenceRelativeStartingSequenceDe")]
 pub struct MolecularSequenceRelativeStartingSequence {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -257,6 +258,55 @@ pub struct MolecularSequenceRelativeStartingSequence {
     /// Primitive extension sibling for [`strand`](Self::strand) (FHIR `_strand`).
     #[serde(rename = "_strand")]
     pub strand_ext: Option<types::Element>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MolecularSequenceRelativeStartingSequenceDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    genome_assembly: Option<types::CodeableConcept>,
+    chromosome: Option<types::CodeableConcept>,
+    #[serde(flatten)]
+    sequence: crate::r5::choice::Slot<MolecularSequenceRelativeStartingSequenceSequence>,
+    window_start: Option<types::Integer>,
+    #[serde(rename = "_windowStart")]
+    window_start_ext: Option<types::Element>,
+    window_end: Option<types::Integer>,
+    #[serde(rename = "_windowEnd")]
+    window_end_ext: Option<types::Element>,
+    orientation: Option<crate::r5::coded::Coded<crate::r5::codes::OrientationType>>,
+    #[serde(rename = "_orientation")]
+    orientation_ext: Option<types::Element>,
+    strand: Option<crate::r5::coded::Coded<crate::r5::codes::StrandType>>,
+    #[serde(rename = "_strand")]
+    strand_ext: Option<types::Element>,
+}
+
+impl ::core::convert::From<MolecularSequenceRelativeStartingSequenceDe>
+    for MolecularSequenceRelativeStartingSequence
+{
+    fn from(v: MolecularSequenceRelativeStartingSequenceDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            genome_assembly: v.genome_assembly,
+            chromosome: v.chromosome,
+            sequence: v.sequence.0,
+            window_start: v.window_start,
+            window_start_ext: v.window_start_ext,
+            window_end: v.window_end,
+            window_end_ext: v.window_end_ext,
+            orientation: v.orientation,
+            orientation_ext: v.orientation_ext,
+            strand: v.strand,
+            strand_ext: v.strand_ext,
+        }
+    }
 }
 
 /// Changes in sequence from the starting sequence.

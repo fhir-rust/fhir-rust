@@ -56,6 +56,7 @@ use fhir_derive_macros::Validate;
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "CoverageEligibilityRequestDe")]
 pub struct CoverageEligibilityRequest {
     /// Logical id of this artifact
     pub id: Option<types::String>,
@@ -152,6 +153,89 @@ pub struct CoverageEligibilityRequest {
     pub item: Vec<CoverageEligibilityRequestItem>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CoverageEligibilityRequestDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r5::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    status: crate::r5::coded::Coded<crate::r5::codes::FmStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    priority: Option<types::CodeableConcept>,
+    purpose: vec1::Vec1<crate::r5::coded::Coded<crate::r5::codes::EligibilityrequestPurpose>>,
+    #[serde(rename = "_purpose")]
+    #[serde(default)]
+    purpose_ext: Vec<Option<types::Element>>,
+    patient: types::Reference<crate::r5::resources::Patient>,
+    #[serde(default)]
+    event: Vec<CoverageEligibilityRequestEvent>,
+    #[serde(flatten)]
+    serviced: crate::r5::choice::Slot<CoverageEligibilityRequestServiced>,
+    created: types::DateTime,
+    #[serde(rename = "_created")]
+    created_ext: Option<types::Element>,
+    enterer: Option<types::Reference>,
+    provider: Option<types::Reference>,
+    insurer: types::Reference<crate::r5::resources::Organization>,
+    facility: Option<types::Reference<crate::r5::resources::Location>>,
+    #[serde(default)]
+    supporting_info: Vec<CoverageEligibilityRequestSupportingInfo>,
+    #[serde(default)]
+    insurance: Vec<CoverageEligibilityRequestInsurance>,
+    #[serde(default)]
+    item: Vec<CoverageEligibilityRequestItem>,
+}
+
+impl ::core::convert::From<CoverageEligibilityRequestDe> for CoverageEligibilityRequest {
+    fn from(v: CoverageEligibilityRequestDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            status: v.status,
+            status_ext: v.status_ext,
+            priority: v.priority,
+            purpose: v.purpose,
+            purpose_ext: v.purpose_ext,
+            patient: v.patient,
+            event: v.event,
+            serviced: v.serviced.0,
+            created: v.created,
+            created_ext: v.created_ext,
+            enterer: v.enterer,
+            provider: v.provider,
+            insurer: v.insurer,
+            facility: v.facility,
+            supporting_info: v.supporting_info,
+            insurance: v.insurance,
+            item: v.item,
+        }
+    }
+}
+
 /// Additional information codes regarding exceptions, special considerations,
 /// the condition, situation, prior or concurrent issues.
 /// # Examples
@@ -174,6 +258,7 @@ pub struct CoverageEligibilityRequest {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "CoverageEligibilityRequestEventDe")]
 pub struct CoverageEligibilityRequestEvent {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -192,6 +277,31 @@ pub struct CoverageEligibilityRequestEvent {
     /// The `CoverageEligibilityRequest.event.when[x]` choice element (0..1); see [`CoverageEligibilityRequestEventWhen`].
     #[serde(flatten)]
     pub when: Option<CoverageEligibilityRequestEventWhen>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CoverageEligibilityRequestEventDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: types::CodeableConcept,
+    #[serde(flatten)]
+    when: crate::r5::choice::Slot<CoverageEligibilityRequestEventWhen>,
+}
+
+impl ::core::convert::From<CoverageEligibilityRequestEventDe> for CoverageEligibilityRequestEvent {
+    fn from(v: CoverageEligibilityRequestEventDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            when: v.when.0,
+        }
+    }
 }
 
 /// Additional information codes regarding exceptions, special considerations,
@@ -390,6 +500,7 @@ pub struct CoverageEligibilityRequestItem {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "CoverageEligibilityRequestItemDiagnosisDe")]
 pub struct CoverageEligibilityRequestItemDiagnosis {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -405,6 +516,31 @@ pub struct CoverageEligibilityRequestItemDiagnosis {
     /// The `CoverageEligibilityRequest.item.diagnosis.diagnosis[x]` choice element (0..1); see [`CoverageEligibilityRequestItemDiagnosisDiagnosis`].
     #[serde(flatten)]
     pub diagnosis: Option<CoverageEligibilityRequestItemDiagnosisDiagnosis>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CoverageEligibilityRequestItemDiagnosisDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    diagnosis: crate::r5::choice::Slot<CoverageEligibilityRequestItemDiagnosisDiagnosis>,
+}
+
+impl ::core::convert::From<CoverageEligibilityRequestItemDiagnosisDe>
+    for CoverageEligibilityRequestItemDiagnosis
+{
+    fn from(v: CoverageEligibilityRequestItemDiagnosisDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            diagnosis: v.diagnosis.0,
+        }
+    }
 }
 
 /// The `CoverageEligibilityRequest.event.when[x]` choice element (see spec/11-choice-types.md).

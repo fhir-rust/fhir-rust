@@ -225,6 +225,7 @@ pub struct Questionnaire {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "QuestionnaireItemDe")]
 #[fhir_version("r3")]
 pub struct QuestionnaireItem {
     /// xml:id (or equivalent in JSON)
@@ -326,6 +327,88 @@ pub struct QuestionnaireItem {
     pub item: Vec<QuestionnaireItem>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct QuestionnaireItemDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    link_id: types::String,
+    #[serde(rename = "_linkId")]
+    link_id_ext: Option<types::Element>,
+    definition: Option<types::Uri>,
+    #[serde(rename = "_definition")]
+    definition_ext: Option<types::Element>,
+    #[serde(default)]
+    code: Vec<types::Coding>,
+    prefix: Option<types::String>,
+    #[serde(rename = "_prefix")]
+    prefix_ext: Option<types::Element>,
+    text: Option<types::String>,
+    #[serde(rename = "_text")]
+    text_ext: Option<types::Element>,
+    r#type: crate::coded::Coded<crate::r3::codes::ItemType>,
+    #[serde(rename = "_type")]
+    type_ext: Option<types::Element>,
+    #[serde(default)]
+    enable_when: Vec<QuestionnaireItemEnableWhen>,
+    required: Option<types::Boolean>,
+    #[serde(rename = "_required")]
+    required_ext: Option<types::Element>,
+    repeats: Option<types::Boolean>,
+    #[serde(rename = "_repeats")]
+    repeats_ext: Option<types::Element>,
+    read_only: Option<types::Boolean>,
+    #[serde(rename = "_readOnly")]
+    read_only_ext: Option<types::Element>,
+    max_length: Option<types::Integer>,
+    #[serde(rename = "_maxLength")]
+    max_length_ext: Option<types::Element>,
+    options: Option<types::Reference<crate::r3::resources::ValueSet>>,
+    #[serde(default)]
+    option: Vec<QuestionnaireItemOption>,
+    #[serde(flatten)]
+    initial: crate::r3::choice::Slot<QuestionnaireItemInitial>,
+    #[serde(default)]
+    item: Vec<QuestionnaireItem>,
+}
+
+impl ::core::convert::From<QuestionnaireItemDe> for QuestionnaireItem {
+    fn from(v: QuestionnaireItemDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            link_id: v.link_id,
+            link_id_ext: v.link_id_ext,
+            definition: v.definition,
+            definition_ext: v.definition_ext,
+            code: v.code,
+            prefix: v.prefix,
+            prefix_ext: v.prefix_ext,
+            text: v.text,
+            text_ext: v.text_ext,
+            r#type: v.r#type,
+            type_ext: v.type_ext,
+            enable_when: v.enable_when,
+            required: v.required,
+            required_ext: v.required_ext,
+            repeats: v.repeats,
+            repeats_ext: v.repeats_ext,
+            read_only: v.read_only,
+            read_only_ext: v.read_only_ext,
+            max_length: v.max_length,
+            max_length_ext: v.max_length_ext,
+            options: v.options,
+            option: v.option,
+            initial: v.initial.0,
+            item: v.item,
+        }
+    }
+}
+
 /// A constraint indicating that this item should only be enabled
 /// (displayed/allow answers to be captured) when the specified condition is
 /// true.
@@ -350,6 +433,7 @@ pub struct QuestionnaireItem {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "QuestionnaireItemEnableWhenDe")]
 #[fhir_version("r3")]
 pub struct QuestionnaireItemEnableWhen {
     /// xml:id (or equivalent in JSON)
@@ -383,6 +467,39 @@ pub struct QuestionnaireItemEnableWhen {
     pub answer: Option<QuestionnaireItemEnableWhenAnswer>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct QuestionnaireItemEnableWhenDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    question: types::String,
+    #[serde(rename = "_question")]
+    question_ext: Option<types::Element>,
+    has_answer: Option<types::Boolean>,
+    #[serde(rename = "_hasAnswer")]
+    has_answer_ext: Option<types::Element>,
+    #[serde(flatten)]
+    answer: crate::r3::choice::Slot<QuestionnaireItemEnableWhenAnswer>,
+}
+
+impl ::core::convert::From<QuestionnaireItemEnableWhenDe> for QuestionnaireItemEnableWhen {
+    fn from(v: QuestionnaireItemEnableWhenDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            question: v.question,
+            question_ext: v.question_ext,
+            has_answer: v.has_answer,
+            has_answer_ext: v.has_answer_ext,
+            answer: v.answer.0,
+        }
+    }
+}
+
 /// One of the permitted answers for a "choice" or "open-choice" question.
 ///
 /// # Examples
@@ -405,6 +522,7 @@ pub struct QuestionnaireItemEnableWhen {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "QuestionnaireItemOptionDe")]
 #[fhir_version("r3")]
 pub struct QuestionnaireItemOption {
     /// xml:id (or equivalent in JSON)
@@ -422,6 +540,29 @@ pub struct QuestionnaireItemOption {
     /// The `Questionnaire.item.option.value[x]` choice element (1..1); see [`QuestionnaireItemOptionValue`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub value: Option<QuestionnaireItemOptionValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct QuestionnaireItemOptionDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    value: crate::r3::choice::Slot<QuestionnaireItemOptionValue>,
+}
+
+impl ::core::convert::From<QuestionnaireItemOptionDe> for QuestionnaireItemOption {
+    fn from(v: QuestionnaireItemOptionDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            value: v.value.0,
+        }
+    }
 }
 
 /// The `Questionnaire.item.initial[x]` choice element (see `spec/11-choice-types.md`).

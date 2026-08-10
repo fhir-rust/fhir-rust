@@ -658,6 +658,7 @@ pub struct ValueSetExpansionContains {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ValueSetExpansionParameterDe")]
 #[fhir_version("r4b")]
 pub struct ValueSetExpansionParameter {
     /// Unique id for inter-element referencing
@@ -682,6 +683,34 @@ pub struct ValueSetExpansionParameter {
     /// The `ValueSet.expansion.parameter.value[x]` choice element (0..1); see [`ValueSetExpansionParameterValue`].
     #[serde(flatten)]
     pub value: Option<ValueSetExpansionParameterValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ValueSetExpansionParameterDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    name: types::String,
+    #[serde(rename = "_name")]
+    name_ext: Option<types::Element>,
+    #[serde(flatten)]
+    value: crate::r4b::choice::Slot<ValueSetExpansionParameterValue>,
+}
+
+impl ::core::convert::From<ValueSetExpansionParameterDe> for ValueSetExpansionParameter {
+    fn from(v: ValueSetExpansionParameterDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            name: v.name,
+            name_ext: v.name_ext,
+            value: v.value.0,
+        }
+    }
 }
 
 /// The `ValueSet.expansion.parameter.value[x]` choice element (see `spec/11-choice-types.md`).

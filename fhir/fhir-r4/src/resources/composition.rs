@@ -267,6 +267,7 @@ pub struct CompositionEvent {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "CompositionRelatesToDe")]
 #[fhir_version("r4")]
 pub struct CompositionRelatesTo {
     /// Unique id for inter-element referencing
@@ -291,6 +292,34 @@ pub struct CompositionRelatesTo {
     /// The `Composition.relatesTo.target[x]` choice element (1..1); see [`CompositionRelatesToTarget`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub target: Option<CompositionRelatesToTarget>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CompositionRelatesToDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    code: crate::coded::Coded<crate::r4::codes::DocumentRelationshipType>,
+    #[serde(rename = "_code")]
+    code_ext: Option<types::Element>,
+    #[serde(flatten)]
+    target: crate::r4::choice::Slot<CompositionRelatesToTarget>,
+}
+
+impl ::core::convert::From<CompositionRelatesToDe> for CompositionRelatesTo {
+    fn from(v: CompositionRelatesToDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            code: v.code,
+            code_ext: v.code_ext,
+            target: v.target.0,
+        }
+    }
 }
 
 /// The root of the sections that make up the composition.

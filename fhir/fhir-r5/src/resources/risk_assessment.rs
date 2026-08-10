@@ -59,6 +59,7 @@ use fhir_derive_macros::Validate;
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "RiskAssessmentDe")]
 pub struct RiskAssessment {
     /// Logical id of this artifact
     pub id: Option<types::String>,
@@ -154,6 +155,87 @@ pub struct RiskAssessment {
     pub note: Vec<types::Annotation>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RiskAssessmentDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r5::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    based_on: Option<types::Reference>,
+    parent: Option<types::Reference>,
+    status: crate::r5::coded::Coded<crate::r5::codes::ObservationStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    method: Option<types::CodeableConcept>,
+    code: Option<types::CodeableConcept>,
+    subject: types::Reference,
+    encounter: Option<types::Reference<crate::r5::resources::Encounter>>,
+    #[serde(flatten)]
+    occurrence: crate::r5::choice::Slot<RiskAssessmentOccurrence>,
+    condition: Option<types::Reference<crate::r5::resources::Condition>>,
+    performer: Option<types::Reference>,
+    #[serde(default)]
+    reason: Vec<types::CodeableReference>,
+    #[serde(default)]
+    basis: Vec<types::Reference>,
+    #[serde(default)]
+    prediction: Vec<RiskAssessmentPrediction>,
+    mitigation: Option<types::String>,
+    #[serde(rename = "_mitigation")]
+    mitigation_ext: Option<types::Element>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+}
+
+impl ::core::convert::From<RiskAssessmentDe> for RiskAssessment {
+    fn from(v: RiskAssessmentDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            based_on: v.based_on,
+            parent: v.parent,
+            status: v.status,
+            status_ext: v.status_ext,
+            method: v.method,
+            code: v.code,
+            subject: v.subject,
+            encounter: v.encounter,
+            occurrence: v.occurrence.0,
+            condition: v.condition,
+            performer: v.performer,
+            reason: v.reason,
+            basis: v.basis,
+            prediction: v.prediction,
+            mitigation: v.mitigation,
+            mitigation_ext: v.mitigation_ext,
+            note: v.note,
+        }
+    }
+}
+
 /// RiskAssessmentPrediction
 ///
 /// Describes the expected outcome for the subject, including the likelihood of
@@ -178,6 +260,7 @@ pub struct RiskAssessment {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "RiskAssessmentPredictionDe")]
 pub struct RiskAssessmentPrediction {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -215,6 +298,46 @@ pub struct RiskAssessmentPrediction {
     /// Primitive extension sibling for [`rationale`](Self::rationale) (FHIR `_rationale`).
     #[serde(rename = "_rationale")]
     pub rationale_ext: Option<types::Element>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RiskAssessmentPredictionDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    outcome: Option<types::CodeableConcept>,
+    #[serde(flatten)]
+    probability: crate::r5::choice::Slot<RiskAssessmentPredictionProbability>,
+    qualitative_risk: Option<types::CodeableConcept>,
+    relative_risk: Option<types::Decimal>,
+    #[serde(rename = "_relativeRisk")]
+    relative_risk_ext: Option<types::Element>,
+    #[serde(flatten)]
+    when: crate::r5::choice::Slot<RiskAssessmentPredictionWhen>,
+    rationale: Option<types::String>,
+    #[serde(rename = "_rationale")]
+    rationale_ext: Option<types::Element>,
+}
+
+impl ::core::convert::From<RiskAssessmentPredictionDe> for RiskAssessmentPrediction {
+    fn from(v: RiskAssessmentPredictionDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            outcome: v.outcome,
+            probability: v.probability.0,
+            qualitative_risk: v.qualitative_risk,
+            relative_risk: v.relative_risk,
+            relative_risk_ext: v.relative_risk_ext,
+            when: v.when.0,
+            rationale: v.rationale,
+            rationale_ext: v.rationale_ext,
+        }
+    }
 }
 
 #[cfg(test)]

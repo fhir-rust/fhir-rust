@@ -715,6 +715,7 @@ pub struct ResearchStudyRecruitment {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ResearchStudyRelatesToDe")]
 #[fhir_version("r6")]
 pub struct ResearchStudyRelatesTo {
     /// Unique id for inter-element referencing
@@ -745,6 +746,34 @@ pub struct ResearchStudyRelatesTo {
     /// The `ResearchStudy.relatesTo.target[x]` choice element (1..1); see [`ResearchStudyRelatesToTarget`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub target: Option<ResearchStudyRelatesToTarget>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ResearchStudyRelatesToDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: crate::coded::Coded<crate::r6::codes::ArtifactRelationshipType>,
+    #[serde(rename = "_type")]
+    type_ext: Option<types::Element>,
+    #[serde(flatten)]
+    target: crate::r6::choice::Slot<ResearchStudyRelatesToTarget>,
+}
+
+impl ::core::convert::From<ResearchStudyRelatesToDe> for ResearchStudyRelatesTo {
+    fn from(v: ResearchStudyRelatesToDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            type_ext: v.type_ext,
+            target: v.target.0,
+        }
+    }
 }
 
 /// The `ResearchStudy.relatesTo.target[x]` choice element (see `spec/11-choice-types.md`).

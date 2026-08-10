@@ -38,6 +38,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "InvoiceDe")]
 #[fhir_version("r6")]
 pub struct Invoice {
     /// Logical id of this artifact
@@ -157,6 +158,100 @@ pub struct Invoice {
     pub note: Vec<types::Annotation>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct InvoiceDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r6::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    status: crate::coded::Coded<crate::r6::codes::InvoiceStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    cancelled_reason: Option<types::String>,
+    #[serde(rename = "_cancelledReason")]
+    cancelled_reason_ext: Option<types::Element>,
+    r#type: Option<types::CodeableConcept>,
+    subject: Option<types::Reference>,
+    recipient: Option<types::Reference>,
+    date: Option<types::DateTime>,
+    #[serde(rename = "_date")]
+    date_ext: Option<types::Element>,
+    creation: Option<types::DateTime>,
+    #[serde(rename = "_creation")]
+    creation_ext: Option<types::Element>,
+    #[serde(flatten)]
+    period: crate::r6::choice::Slot<InvoicePeriod>,
+    #[serde(default)]
+    participant: Vec<InvoiceParticipant>,
+    issuer: Option<types::Reference<crate::r6::resources::Organization>>,
+    account: Option<types::Reference<crate::r6::resources::Account>>,
+    #[serde(default)]
+    line_item: Vec<InvoiceLineItem>,
+    #[serde(default)]
+    total_price_component: Vec<types::MonetaryComponent>,
+    total_net: Option<types::Money>,
+    total_gross: Option<types::Money>,
+    payment_terms: Option<types::Markdown>,
+    #[serde(rename = "_paymentTerms")]
+    payment_terms_ext: Option<types::Element>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+}
+
+impl ::core::convert::From<InvoiceDe> for Invoice {
+    fn from(v: InvoiceDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            status: v.status,
+            status_ext: v.status_ext,
+            cancelled_reason: v.cancelled_reason,
+            cancelled_reason_ext: v.cancelled_reason_ext,
+            r#type: v.r#type,
+            subject: v.subject,
+            recipient: v.recipient,
+            date: v.date,
+            date_ext: v.date_ext,
+            creation: v.creation,
+            creation_ext: v.creation_ext,
+            period: v.period.0,
+            participant: v.participant,
+            issuer: v.issuer,
+            account: v.account,
+            line_item: v.line_item,
+            total_price_component: v.total_price_component,
+            total_net: v.total_net,
+            total_gross: v.total_gross,
+            payment_terms: v.payment_terms,
+            payment_terms_ext: v.payment_terms_ext,
+            note: v.note,
+        }
+    }
+}
+
 /// Each line item represents one charge for goods and services rendered.
 /// Details such.ofType(date), code and amount are found in the referenced
 /// ChargeItem resource.
@@ -181,6 +276,7 @@ pub struct Invoice {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "InvoiceLineItemDe")]
 #[fhir_version("r6")]
 pub struct InvoiceLineItem {
     /// Unique id for inter-element referencing
@@ -215,6 +311,40 @@ pub struct InvoiceLineItem {
     /// Components of total line item price
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub price_component: Vec<types::MonetaryComponent>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct InvoiceLineItemDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    sequence: Option<types::PositiveInt>,
+    #[serde(rename = "_sequence")]
+    sequence_ext: Option<types::Element>,
+    #[serde(flatten)]
+    serviced: crate::r6::choice::Slot<InvoiceLineItemServiced>,
+    #[serde(flatten)]
+    charge_item: crate::r6::choice::Slot<InvoiceLineItemChargeItem>,
+    #[serde(default)]
+    price_component: Vec<types::MonetaryComponent>,
+}
+
+impl ::core::convert::From<InvoiceLineItemDe> for InvoiceLineItem {
+    fn from(v: InvoiceLineItemDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            sequence: v.sequence,
+            sequence_ext: v.sequence_ext,
+            serviced: v.serviced.0,
+            charge_item: v.charge_item.0,
+            price_component: v.price_component,
+        }
+    }
 }
 
 /// Indicates who or what performed or participated in the charged service.

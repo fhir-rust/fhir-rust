@@ -178,6 +178,7 @@ pub struct BiologicallyDerivedProduct {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "BiologicallyDerivedProductCollectionDe")]
 pub struct BiologicallyDerivedProductCollection {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -200,6 +201,35 @@ pub struct BiologicallyDerivedProductCollection {
     /// The `BiologicallyDerivedProduct.collection.collected[x]` choice element (0..1); see [`BiologicallyDerivedProductCollectionCollected`].
     #[serde(flatten)]
     pub collected: Option<BiologicallyDerivedProductCollectionCollected>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct BiologicallyDerivedProductCollectionDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    collector: Option<types::Reference>,
+    source: Option<types::Reference>,
+    #[serde(flatten)]
+    collected: crate::r5::choice::Slot<BiologicallyDerivedProductCollectionCollected>,
+}
+
+impl ::core::convert::From<BiologicallyDerivedProductCollectionDe>
+    for BiologicallyDerivedProductCollection
+{
+    fn from(v: BiologicallyDerivedProductCollectionDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            collector: v.collector,
+            source: v.source,
+            collected: v.collected.0,
+        }
+    }
 }
 
 /// BiologicallyDerivedProductProperty
@@ -226,6 +256,7 @@ pub struct BiologicallyDerivedProductCollection {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "BiologicallyDerivedProductPropertyDe")]
 pub struct BiologicallyDerivedProductProperty {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -244,6 +275,33 @@ pub struct BiologicallyDerivedProductProperty {
     /// The `BiologicallyDerivedProduct.property.value[x]` choice element (0..1); see [`BiologicallyDerivedProductPropertyValue`].
     #[serde(flatten)]
     pub value: Option<BiologicallyDerivedProductPropertyValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct BiologicallyDerivedProductPropertyDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: types::CodeableConcept,
+    #[serde(flatten)]
+    value: crate::r5::choice::Slot<BiologicallyDerivedProductPropertyValue>,
+}
+
+impl ::core::convert::From<BiologicallyDerivedProductPropertyDe>
+    for BiologicallyDerivedProductProperty
+{
+    fn from(v: BiologicallyDerivedProductPropertyDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            value: v.value.0,
+        }
+    }
 }
 
 #[cfg(test)]

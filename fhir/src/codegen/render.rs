@@ -127,6 +127,13 @@ fn render_struct(structure: &StructPlan, plan: &TypePlan, version: Version) -> S
     let builder = if structure.is_root { ", Builder" } else { "" };
     let _ = writeln!(out, "#[derive({derives}{builder})]");
     out.push_str("#[serde(rename_all = \"camelCase\")]\n");
+    let has_choice = structure.fields.iter().any(|f| f.choice.is_some());
+    if has_choice {
+        // F-87: a flattened `Option<Choice>` swallows inner errors, so a
+        // choice-bearing struct deserializes through its shadow, whose
+        // choice fields are non-`Option` `choice::Slot`s.
+        let _ = writeln!(out, "#[serde(from = \"{}De\")]", structure.name);
+    }
     out.push_str(&version_attribute(version));
     let _ = writeln!(out, "pub struct {} {{", structure.name);
 
@@ -138,6 +145,87 @@ fn render_struct(structure: &StructPlan, plan: &TypePlan, version: Version) -> S
     }
 
     out.push_str("}\n");
+    if has_choice {
+        out.push('\n');
+        out.push_str(&render_shadow(structure, version));
+    }
+    out
+}
+
+/// The deserialization shadow of a choice-bearing struct (audit **F-87**).
+///
+/// Identical fields, no docs, not public — except that each choice field is
+/// a non-`Option` [`choice::Slot`], whose `Deserialize` (emitted by
+/// `#[derive(FhirChoice)]`) propagates a present-but-invalid element as an
+/// error instead of letting serde's flatten machinery turn it into `None`.
+/// The real struct declares `#[serde(from = "…De")]` and this `From` moves
+/// every field across.
+fn render_shadow(structure: &StructPlan, version: Version) -> String {
+    let module = version.module();
+    let name = &structure.name;
+    let mut out = String::new();
+    out.push_str("#[derive(Deserialize)]\n");
+    out.push_str("#[serde(rename_all = \"camelCase\")]\n");
+    let _ = writeln!(out, "struct {name}De {{");
+    for field in &structure.fields {
+        if let Some(choice) = &field.choice {
+            out.push_str("    #[serde(flatten)]\n");
+            let _ = writeln!(
+                out,
+                "    {}: crate::{module}::choice::Slot<{choice}>,",
+                field.ident
+            );
+            continue;
+        }
+        let inner = if field.boxed {
+            format!("Box<{}>", field.inner_type)
+        } else {
+            field.inner_type.clone()
+        };
+        if naming::needs_explicit_rename(&field.ident, &field.wire) {
+            let _ = writeln!(out, "    #[serde(rename = {:?})]", field.wire);
+        }
+        match field.wrapper {
+            Wrapper::Option => {
+                let _ = writeln!(out, "    {}: Option<{inner}>,", field.ident);
+            }
+            Wrapper::Required => {
+                let _ = writeln!(out, "    {}: {inner},", field.ident);
+            }
+            Wrapper::Vec => {
+                out.push_str("    #[serde(default)]\n");
+                let _ = writeln!(out, "    {}: Vec<{inner}>,", field.ident);
+            }
+            Wrapper::Vec1 => {
+                let _ = writeln!(out, "    {}: ::vec1::Vec1<{inner}>,", field.ident);
+            }
+        }
+        if let Some(sibling) = &field.sibling {
+            let _ = writeln!(out, "    #[serde(rename = \"{}\")]", sibling.wire);
+            if sibling.is_multiple {
+                out.push_str("    #[serde(default)]\n");
+                let _ = writeln!(out, "    {}: Vec<Option<types::Element>>,", sibling.ident);
+            } else {
+                let _ = writeln!(out, "    {}: Option<types::Element>,", sibling.ident);
+            }
+        }
+    }
+    out.push_str("}\n\n");
+
+    let _ = writeln!(out, "impl ::core::convert::From<{name}De> for {name} {{");
+    let _ = writeln!(out, "    fn from(v: {name}De) -> Self {{");
+    out.push_str("        Self {\n");
+    for field in &structure.fields {
+        if field.choice.is_some() {
+            let _ = writeln!(out, "            {}: v.{}.0,", field.ident, field.ident);
+        } else {
+            let _ = writeln!(out, "            {}: v.{},", field.ident, field.ident);
+            if let Some(sibling) = &field.sibling {
+                let _ = writeln!(out, "            {}: v.{},", sibling.ident, sibling.ident);
+            }
+        }
+    }
+    out.push_str("        }\n    }\n}\n");
     out
 }
 

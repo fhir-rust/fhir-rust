@@ -239,6 +239,7 @@ pub struct CoverageClass {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "CoverageCostToBeneficiaryDe")]
 #[fhir_version("r6")]
 pub struct CoverageCostToBeneficiary {
     /// Unique id for inter-element referencing
@@ -275,6 +276,42 @@ pub struct CoverageCostToBeneficiary {
     /// Exceptions for patient payments
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub exception: Vec<CoverageCostToBeneficiaryException>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CoverageCostToBeneficiaryDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: Option<types::CodeableConcept>,
+    category: Option<types::CodeableConcept>,
+    network: Option<types::CodeableConcept>,
+    unit: Option<types::CodeableConcept>,
+    term: Option<types::CodeableConcept>,
+    #[serde(flatten)]
+    value: crate::r6::choice::Slot<CoverageCostToBeneficiaryValue>,
+    #[serde(default)]
+    exception: Vec<CoverageCostToBeneficiaryException>,
+}
+
+impl ::core::convert::From<CoverageCostToBeneficiaryDe> for CoverageCostToBeneficiary {
+    fn from(v: CoverageCostToBeneficiaryDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            category: v.category,
+            network: v.network,
+            unit: v.unit,
+            term: v.term,
+            value: v.value.0,
+            exception: v.exception,
+        }
+    }
 }
 
 /// A suite of codes indicating exceptions or reductions to patient costs and

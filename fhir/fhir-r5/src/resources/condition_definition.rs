@@ -68,6 +68,7 @@ use fhir_derive_macros::Validate;
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ConditionDefinitionDe")]
 pub struct ConditionDefinition {
     /// Logical id of this artifact
     pub id: Option<types::String>,
@@ -245,6 +246,156 @@ pub struct ConditionDefinition {
     pub plan: Vec<ConditionDefinitionPlan>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ConditionDefinitionDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r5::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    url: Option<types::Uri>,
+    #[serde(rename = "_url")]
+    url_ext: Option<types::Element>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    version: Option<types::String>,
+    #[serde(rename = "_version")]
+    version_ext: Option<types::Element>,
+    #[serde(flatten)]
+    version_algorithm: crate::r5::choice::Slot<ConditionDefinitionVersionAlgorithm>,
+    name: Option<types::String>,
+    #[serde(rename = "_name")]
+    name_ext: Option<types::Element>,
+    title: Option<types::String>,
+    #[serde(rename = "_title")]
+    title_ext: Option<types::Element>,
+    subtitle: Option<types::String>,
+    #[serde(rename = "_subtitle")]
+    subtitle_ext: Option<types::Element>,
+    status: crate::r5::coded::Coded<crate::r5::codes::PublicationStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    experimental: Option<types::Boolean>,
+    #[serde(rename = "_experimental")]
+    experimental_ext: Option<types::Element>,
+    date: Option<types::DateTime>,
+    #[serde(rename = "_date")]
+    date_ext: Option<types::Element>,
+    publisher: Option<types::String>,
+    #[serde(rename = "_publisher")]
+    publisher_ext: Option<types::Element>,
+    #[serde(default)]
+    contact: Vec<types::ContactDetail>,
+    description: Option<types::Markdown>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    #[serde(default)]
+    use_context: Vec<types::UsageContext>,
+    #[serde(default)]
+    jurisdiction: Vec<types::CodeableConcept>,
+    code: types::CodeableConcept,
+    severity: Option<types::CodeableConcept>,
+    body_site: Option<types::CodeableConcept>,
+    stage: Option<types::CodeableConcept>,
+    has_severity: Option<types::Boolean>,
+    #[serde(rename = "_hasSeverity")]
+    has_severity_ext: Option<types::Element>,
+    has_body_site: Option<types::Boolean>,
+    #[serde(rename = "_hasBodySite")]
+    has_body_site_ext: Option<types::Element>,
+    has_stage: Option<types::Boolean>,
+    #[serde(rename = "_hasStage")]
+    has_stage_ext: Option<types::Element>,
+    #[serde(default)]
+    definition: Vec<types::Uri>,
+    #[serde(rename = "_definition")]
+    #[serde(default)]
+    definition_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    observation: Vec<ConditionDefinitionObservation>,
+    #[serde(default)]
+    medication: Vec<ConditionDefinitionMedication>,
+    #[serde(default)]
+    precondition: Vec<ConditionDefinitionPrecondition>,
+    #[serde(default)]
+    team: Vec<types::Reference<crate::r5::resources::CareTeam>>,
+    #[serde(default)]
+    questionnaire: Vec<ConditionDefinitionQuestionnaire>,
+    #[serde(default)]
+    plan: Vec<ConditionDefinitionPlan>,
+}
+
+impl ::core::convert::From<ConditionDefinitionDe> for ConditionDefinition {
+    fn from(v: ConditionDefinitionDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            url: v.url,
+            url_ext: v.url_ext,
+            identifier: v.identifier,
+            version: v.version,
+            version_ext: v.version_ext,
+            version_algorithm: v.version_algorithm.0,
+            name: v.name,
+            name_ext: v.name_ext,
+            title: v.title,
+            title_ext: v.title_ext,
+            subtitle: v.subtitle,
+            subtitle_ext: v.subtitle_ext,
+            status: v.status,
+            status_ext: v.status_ext,
+            experimental: v.experimental,
+            experimental_ext: v.experimental_ext,
+            date: v.date,
+            date_ext: v.date_ext,
+            publisher: v.publisher,
+            publisher_ext: v.publisher_ext,
+            contact: v.contact,
+            description: v.description,
+            description_ext: v.description_ext,
+            use_context: v.use_context,
+            jurisdiction: v.jurisdiction,
+            code: v.code,
+            severity: v.severity,
+            body_site: v.body_site,
+            stage: v.stage,
+            has_severity: v.has_severity,
+            has_severity_ext: v.has_severity_ext,
+            has_body_site: v.has_body_site,
+            has_body_site_ext: v.has_body_site_ext,
+            has_stage: v.has_stage,
+            has_stage_ext: v.has_stage_ext,
+            definition: v.definition,
+            definition_ext: v.definition_ext,
+            observation: v.observation,
+            medication: v.medication,
+            precondition: v.precondition,
+            team: v.team,
+            questionnaire: v.questionnaire,
+            plan: v.plan,
+        }
+    }
+}
+
 /// Observations particularly relevant to this condition.
 /// # Examples
 ///
@@ -346,6 +497,7 @@ pub struct ConditionDefinitionMedication {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ConditionDefinitionPreconditionDe")]
 pub struct ConditionDefinitionPrecondition {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -370,6 +522,36 @@ pub struct ConditionDefinitionPrecondition {
     /// The `ConditionDefinition.precondition.value[x]` choice element (0..1); see [`ConditionDefinitionPreconditionValue`].
     #[serde(flatten)]
     pub value: Option<ConditionDefinitionPreconditionValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ConditionDefinitionPreconditionDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: crate::r5::coded::Coded<crate::r5::codes::ConditionPreconditionType>,
+    #[serde(rename = "_type")]
+    type_ext: Option<types::Element>,
+    code: types::CodeableConcept,
+    #[serde(flatten)]
+    value: crate::r5::choice::Slot<ConditionDefinitionPreconditionValue>,
+}
+
+impl ::core::convert::From<ConditionDefinitionPreconditionDe> for ConditionDefinitionPrecondition {
+    fn from(v: ConditionDefinitionPreconditionDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            type_ext: v.type_ext,
+            code: v.code,
+            value: v.value.0,
+        }
+    }
 }
 
 /// Questionnaire for this condition.

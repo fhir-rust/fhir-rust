@@ -276,6 +276,7 @@ pub struct MedicationKnowledgeMonograph {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MedicationKnowledgeCostDe")]
 pub struct MedicationKnowledgeCost {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -304,6 +305,39 @@ pub struct MedicationKnowledgeCost {
     /// The `MedicationKnowledge.cost.cost[x]` choice element (0..1); see [`MedicationKnowledgeCostCost`].
     #[serde(flatten)]
     pub cost: Option<MedicationKnowledgeCostCost>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MedicationKnowledgeCostDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    effective_date: Vec<types::Period>,
+    r#type: types::CodeableConcept,
+    source: Option<types::String>,
+    #[serde(rename = "_source")]
+    source_ext: Option<types::Element>,
+    #[serde(flatten)]
+    cost: crate::r5::choice::Slot<MedicationKnowledgeCostCost>,
+}
+
+impl ::core::convert::From<MedicationKnowledgeCostDe> for MedicationKnowledgeCost {
+    fn from(v: MedicationKnowledgeCostDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            effective_date: v.effective_date,
+            r#type: v.r#type,
+            source: v.source,
+            source_ext: v.source_ext,
+            cost: v.cost.0,
+        }
+    }
 }
 
 /// Program under which a medication is reviewed.
@@ -493,6 +527,7 @@ pub struct MedicationKnowledgeIndicationGuidelineDosingGuidelineDosage {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MedicationKnowledgeIndicationGuidelineDosingGuidelinePatientCharacteristicDe")]
 pub struct MedicationKnowledgeIndicationGuidelineDosingGuidelinePatientCharacteristic {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -512,6 +547,39 @@ pub struct MedicationKnowledgeIndicationGuidelineDosingGuidelinePatientCharacter
     #[serde(flatten)]
     pub value:
         Option<MedicationKnowledgeIndicationGuidelineDosingGuidelinePatientCharacteristicValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MedicationKnowledgeIndicationGuidelineDosingGuidelinePatientCharacteristicDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: types::CodeableConcept,
+    #[serde(flatten)]
+    value: crate::r5::choice::Slot<
+        MedicationKnowledgeIndicationGuidelineDosingGuidelinePatientCharacteristicValue,
+    >,
+}
+
+impl
+    ::core::convert::From<
+        MedicationKnowledgeIndicationGuidelineDosingGuidelinePatientCharacteristicDe,
+    > for MedicationKnowledgeIndicationGuidelineDosingGuidelinePatientCharacteristic
+{
+    fn from(
+        v: MedicationKnowledgeIndicationGuidelineDosingGuidelinePatientCharacteristicDe,
+    ) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            value: v.value.0,
+        }
+    }
 }
 
 /// Categorization of the medication within a formulary or classification system.
@@ -535,6 +603,7 @@ pub struct MedicationKnowledgeIndicationGuidelineDosingGuidelinePatientCharacter
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MedicationKnowledgeMedicineClassificationDe")]
 pub struct MedicationKnowledgeMedicineClassification {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -557,6 +626,36 @@ pub struct MedicationKnowledgeMedicineClassification {
     /// Specific category assigned to the medication
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub classification: Vec<types::CodeableConcept>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MedicationKnowledgeMedicineClassificationDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: types::CodeableConcept,
+    #[serde(flatten)]
+    source: crate::r5::choice::Slot<MedicationKnowledgeMedicineClassificationSource>,
+    #[serde(default)]
+    classification: Vec<types::CodeableConcept>,
+}
+
+impl ::core::convert::From<MedicationKnowledgeMedicineClassificationDe>
+    for MedicationKnowledgeMedicineClassification
+{
+    fn from(v: MedicationKnowledgeMedicineClassificationDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            source: v.source.0,
+            classification: v.classification,
+        }
+    }
 }
 
 /// Details about packaged medications.
@@ -672,6 +771,7 @@ pub struct MedicationKnowledgeStorageGuideline {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MedicationKnowledgeStorageGuidelineEnvironmentalSettingDe")]
 pub struct MedicationKnowledgeStorageGuidelineEnvironmentalSetting {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -690,6 +790,33 @@ pub struct MedicationKnowledgeStorageGuidelineEnvironmentalSetting {
     /// The `MedicationKnowledge.storageGuideline.environmentalSetting.value[x]` choice element (0..1); see [`MedicationKnowledgeStorageGuidelineEnvironmentalSettingValue`].
     #[serde(flatten)]
     pub value: Option<MedicationKnowledgeStorageGuidelineEnvironmentalSettingValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MedicationKnowledgeStorageGuidelineEnvironmentalSettingDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: types::CodeableConcept,
+    #[serde(flatten)]
+    value: crate::r5::choice::Slot<MedicationKnowledgeStorageGuidelineEnvironmentalSettingValue>,
+}
+
+impl ::core::convert::From<MedicationKnowledgeStorageGuidelineEnvironmentalSettingDe>
+    for MedicationKnowledgeStorageGuidelineEnvironmentalSetting
+{
+    fn from(v: MedicationKnowledgeStorageGuidelineEnvironmentalSettingDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            value: v.value.0,
+        }
+    }
 }
 
 /// Regulatory information about a medication.
@@ -897,6 +1024,7 @@ pub struct MedicationKnowledgeDefinitional {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MedicationKnowledgeDefinitionalIngredientDe")]
 pub struct MedicationKnowledgeDefinitionalIngredient {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -920,6 +1048,35 @@ pub struct MedicationKnowledgeDefinitionalIngredient {
     pub strength: Option<MedicationKnowledgeDefinitionalIngredientStrength>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MedicationKnowledgeDefinitionalIngredientDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    item: types::CodeableReference,
+    r#type: Option<types::CodeableConcept>,
+    #[serde(flatten)]
+    strength: crate::r5::choice::Slot<MedicationKnowledgeDefinitionalIngredientStrength>,
+}
+
+impl ::core::convert::From<MedicationKnowledgeDefinitionalIngredientDe>
+    for MedicationKnowledgeDefinitionalIngredient
+{
+    fn from(v: MedicationKnowledgeDefinitionalIngredientDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            item: v.item,
+            r#type: v.r#type,
+            strength: v.strength.0,
+        }
+    }
+}
+
 /// Specifies descriptive properties of the medicine.
 /// # Examples
 ///
@@ -941,6 +1098,7 @@ pub struct MedicationKnowledgeDefinitionalIngredient {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MedicationKnowledgeDefinitionalDrugCharacteristicDe")]
 pub struct MedicationKnowledgeDefinitionalDrugCharacteristic {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -959,6 +1117,33 @@ pub struct MedicationKnowledgeDefinitionalDrugCharacteristic {
     /// The `MedicationKnowledge.definitional.drugCharacteristic.value[x]` choice element (0..1); see [`MedicationKnowledgeDefinitionalDrugCharacteristicValue`].
     #[serde(flatten)]
     pub value: Option<MedicationKnowledgeDefinitionalDrugCharacteristicValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MedicationKnowledgeDefinitionalDrugCharacteristicDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: Option<types::CodeableConcept>,
+    #[serde(flatten)]
+    value: crate::r5::choice::Slot<MedicationKnowledgeDefinitionalDrugCharacteristicValue>,
+}
+
+impl ::core::convert::From<MedicationKnowledgeDefinitionalDrugCharacteristicDe>
+    for MedicationKnowledgeDefinitionalDrugCharacteristic
+{
+    fn from(v: MedicationKnowledgeDefinitionalDrugCharacteristicDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            value: v.value.0,
+        }
+    }
 }
 
 #[cfg(test)]

@@ -137,6 +137,7 @@ pub struct RiskAssessment {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "RiskAssessmentPredictionDe")]
 #[fhir_version("r2")]
 pub struct RiskAssessmentPrediction {
     /// xml:id (or equivalent in JSON)
@@ -176,6 +177,44 @@ pub struct RiskAssessmentPrediction {
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_rationale")]
     pub rationale_ext: Option<types::Element>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RiskAssessmentPredictionDe {
+    id: Option<types::Id>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    outcome: types::CodeableConcept,
+    #[serde(flatten)]
+    probability: crate::r2::choice::Slot<RiskAssessmentPredictionProbability>,
+    relative_risk: Option<types::Decimal>,
+    #[serde(rename = "_relativeRisk")]
+    relative_risk_ext: Option<types::Element>,
+    #[serde(flatten)]
+    when: crate::r2::choice::Slot<RiskAssessmentPredictionWhen>,
+    rationale: Option<types::String>,
+    #[serde(rename = "_rationale")]
+    rationale_ext: Option<types::Element>,
+}
+
+impl ::core::convert::From<RiskAssessmentPredictionDe> for RiskAssessmentPrediction {
+    fn from(v: RiskAssessmentPredictionDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            outcome: v.outcome,
+            probability: v.probability.0,
+            relative_risk: v.relative_risk,
+            relative_risk_ext: v.relative_risk_ext,
+            when: v.when.0,
+            rationale: v.rationale,
+            rationale_ext: v.rationale_ext,
+        }
+    }
 }
 
 /// The `RiskAssessment.prediction.probability[x]` choice element (see `spec/11-choice-types.md`).

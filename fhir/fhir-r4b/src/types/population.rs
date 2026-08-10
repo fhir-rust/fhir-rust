@@ -39,6 +39,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "PopulationDe")]
 #[fhir_version("r4b")]
 pub struct Population {
     /// Unique id for inter-element referencing
@@ -66,6 +67,35 @@ pub struct Population {
     /// The existing physiological conditions of the specific population to
     /// which this applies
     pub physiological_condition: Option<types::CodeableConcept>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PopulationDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    age: crate::r4b::choice::Slot<PopulationAge>,
+    gender: Option<types::CodeableConcept>,
+    race: Option<types::CodeableConcept>,
+    physiological_condition: Option<types::CodeableConcept>,
+}
+
+impl ::core::convert::From<PopulationDe> for Population {
+    fn from(v: PopulationDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            age: v.age.0,
+            gender: v.gender,
+            race: v.race,
+            physiological_condition: v.physiological_condition,
+        }
+    }
 }
 
 /// The `Population.age[x]` choice element (see `spec/11-choice-types.md`).

@@ -231,6 +231,7 @@ pub struct ClaimResponse {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ClaimResponseAddItemDe")]
 #[fhir_version("r6")]
 pub struct ClaimResponseAddItem {
     /// Unique id for inter-element referencing
@@ -352,6 +353,105 @@ pub struct ClaimResponseAddItem {
     /// Insurer added line details
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub detail: Vec<ClaimResponseAddItemDetail>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ClaimResponseAddItemDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    item_sequence: Vec<types::PositiveInt>,
+    #[serde(rename = "_itemSequence")]
+    #[serde(default)]
+    item_sequence_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    detail_sequence: Vec<types::PositiveInt>,
+    #[serde(rename = "_detailSequence")]
+    #[serde(default)]
+    detail_sequence_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    subdetail_sequence: Vec<types::PositiveInt>,
+    #[serde(rename = "_subdetailSequence")]
+    #[serde(default)]
+    subdetail_sequence_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    trace_number: Vec<types::Identifier>,
+    #[serde(default)]
+    provider: Vec<types::Reference>,
+    revenue: Option<types::CodeableConcept>,
+    product_or_service: Option<types::CodeableConcept>,
+    product_or_service_end: Option<types::CodeableConcept>,
+    #[serde(default)]
+    request: Vec<types::Reference>,
+    #[serde(default)]
+    modifier: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    program_code: Vec<types::CodeableConcept>,
+    #[serde(flatten)]
+    serviced: crate::r6::choice::Slot<ClaimResponseAddItemServiced>,
+    #[serde(flatten)]
+    location: crate::r6::choice::Slot<ClaimResponseAddItemLocation>,
+    quantity: Option<types::Quantity>,
+    unit_price: Option<types::Money>,
+    factor: Option<types::Decimal>,
+    #[serde(rename = "_factor")]
+    factor_ext: Option<types::Element>,
+    tax: Option<types::Money>,
+    net: Option<types::Money>,
+    #[serde(default)]
+    body_site: Vec<ClaimResponseAddItemBodySite>,
+    #[serde(default)]
+    note_number: Vec<types::PositiveInt>,
+    #[serde(rename = "_noteNumber")]
+    #[serde(default)]
+    note_number_ext: Vec<Option<types::Element>>,
+    review_outcome: Option<ClaimResponseItemReviewOutcome>,
+    #[serde(default)]
+    adjudication: Vec<ClaimResponseItemAdjudication>,
+    #[serde(default)]
+    detail: Vec<ClaimResponseAddItemDetail>,
+}
+
+impl ::core::convert::From<ClaimResponseAddItemDe> for ClaimResponseAddItem {
+    fn from(v: ClaimResponseAddItemDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            item_sequence: v.item_sequence,
+            item_sequence_ext: v.item_sequence_ext,
+            detail_sequence: v.detail_sequence,
+            detail_sequence_ext: v.detail_sequence_ext,
+            subdetail_sequence: v.subdetail_sequence,
+            subdetail_sequence_ext: v.subdetail_sequence_ext,
+            trace_number: v.trace_number,
+            provider: v.provider,
+            revenue: v.revenue,
+            product_or_service: v.product_or_service,
+            product_or_service_end: v.product_or_service_end,
+            request: v.request,
+            modifier: v.modifier,
+            program_code: v.program_code,
+            serviced: v.serviced.0,
+            location: v.location.0,
+            quantity: v.quantity,
+            unit_price: v.unit_price,
+            factor: v.factor,
+            factor_ext: v.factor_ext,
+            tax: v.tax,
+            net: v.net,
+            body_site: v.body_site,
+            note_number: v.note_number,
+            note_number_ext: v.note_number_ext,
+            review_outcome: v.review_outcome,
+            adjudication: v.adjudication,
+            detail: v.detail,
+        }
+    }
 }
 
 /// Physical location where the service is performed or applies.
@@ -661,6 +761,7 @@ pub struct ClaimResponseError {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ClaimResponseEventDe")]
 #[fhir_version("r6")]
 pub struct ClaimResponseEvent {
     /// Unique id for inter-element referencing
@@ -681,6 +782,31 @@ pub struct ClaimResponseEvent {
     /// The `ClaimResponse.event.when[x]` choice element (1..1); see [`ClaimResponseEventWhen`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub when: Option<ClaimResponseEventWhen>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ClaimResponseEventDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: types::CodeableConcept,
+    #[serde(flatten)]
+    when: crate::r6::choice::Slot<ClaimResponseEventWhen>,
+}
+
+impl ::core::convert::From<ClaimResponseEventDe> for ClaimResponseEvent {
+    fn from(v: ClaimResponseEventDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            when: v.when.0,
+        }
+    }
 }
 
 /// Financial instruments for reimbursement for the health care products and

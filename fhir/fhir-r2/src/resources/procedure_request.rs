@@ -37,6 +37,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ProcedureRequestDe")]
 #[fhir_version("r2")]
 pub struct ProcedureRequest {
     /// Logical id of this artifact
@@ -137,6 +138,86 @@ pub struct ProcedureRequest {
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_priority")]
     pub priority_ext: Option<types::Element>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ProcedureRequestDe {
+    id: Option<types::Id>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r2::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    subject: types::Reference,
+    code: types::CodeableConcept,
+    #[serde(default)]
+    body_site: Vec<types::CodeableConcept>,
+    #[serde(flatten)]
+    reason: crate::r2::choice::Slot<ProcedureRequestReason>,
+    #[serde(flatten)]
+    scheduled: crate::r2::choice::Slot<ProcedureRequestScheduled>,
+    encounter: Option<types::Reference<crate::r2::resources::Encounter>>,
+    performer: Option<types::Reference>,
+    status: Option<crate::coded::Coded<crate::r2::codes::ProcedureRequestStatus>>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    #[serde(default)]
+    notes: Vec<types::Annotation>,
+    #[serde(flatten)]
+    as_needed: crate::r2::choice::Slot<ProcedureRequestAsNeeded>,
+    ordered_on: Option<types::DateTime>,
+    #[serde(rename = "_orderedOn")]
+    ordered_on_ext: Option<types::Element>,
+    orderer: Option<types::Reference>,
+    priority: Option<crate::coded::Coded<crate::r2::codes::ProcedureRequestPriority>>,
+    #[serde(rename = "_priority")]
+    priority_ext: Option<types::Element>,
+}
+
+impl ::core::convert::From<ProcedureRequestDe> for ProcedureRequest {
+    fn from(v: ProcedureRequestDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            subject: v.subject,
+            code: v.code,
+            body_site: v.body_site,
+            reason: v.reason.0,
+            scheduled: v.scheduled.0,
+            encounter: v.encounter,
+            performer: v.performer,
+            status: v.status,
+            status_ext: v.status_ext,
+            notes: v.notes,
+            as_needed: v.as_needed.0,
+            ordered_on: v.ordered_on,
+            ordered_on_ext: v.ordered_on_ext,
+            orderer: v.orderer,
+            priority: v.priority,
+            priority_ext: v.priority_ext,
+        }
+    }
 }
 
 /// The `ProcedureRequest.reason[x]` choice element (see `spec/11-choice-types.md`).

@@ -86,6 +86,7 @@ pub struct Parameters {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ParametersParameterDe")]
 #[fhir_version("r3")]
 pub struct ParametersParameter {
     /// xml:id (or equivalent in JSON)
@@ -117,6 +118,39 @@ pub struct ParametersParameter {
     /// Named part of a multi-part parameter
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub part: Vec<ParametersParameter>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ParametersParameterDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    name: types::String,
+    #[serde(rename = "_name")]
+    name_ext: Option<types::Element>,
+    #[serde(flatten)]
+    value: crate::r3::choice::Slot<ParametersParameterValue>,
+    resource: Option<::serde_json::Value>,
+    #[serde(default)]
+    part: Vec<ParametersParameter>,
+}
+
+impl ::core::convert::From<ParametersParameterDe> for ParametersParameter {
+    fn from(v: ParametersParameterDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            name: v.name,
+            name_ext: v.name_ext,
+            value: v.value.0,
+            resource: v.resource,
+            part: v.part,
+        }
+    }
 }
 
 /// The `Parameters.parameter.value[x]` choice element (see `spec/11-choice-types.md`).

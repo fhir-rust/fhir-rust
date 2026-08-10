@@ -5,6 +5,18 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Release crates 3.0.1, fhir-derive-macros 1.4.0 — 2026-08-10
+
+- **F-87 fixed** (monorepo audit; High): a `value[x]`/choice element whose
+  content failed to parse was silently dropped — serde's flatten machinery
+  turns any error inside a flattened `Option<T>` into `None`. Every
+  choice-bearing struct now deserializes through a generated shadow whose
+  choice fields are non-`Option` `choice::Slot`s, so a present-but-invalid
+  element errors loudly. Public API unchanged; all five corpora re-run
+  green. An ext-only primitive choice (`_valueX` with no `valueX`),
+  previously also dropped silently, is refused by name (F-86's other
+  unrepresentable shape).
+
 ## 3.1.0 — 2026-08-10
 
 - **R4B modelled**: new crate `fhir-r4b` (FHIR 4.3.0), feature `r4b`,

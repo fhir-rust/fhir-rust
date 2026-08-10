@@ -38,6 +38,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "EvidenceVariableDe")]
 #[fhir_version("r6")]
 pub struct EvidenceVariable {
     /// Logical id of this artifact
@@ -292,6 +293,197 @@ pub struct EvidenceVariable {
     pub unacceptable_data_handling: Vec<types::CodeableConcept>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct EvidenceVariableDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r6::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    url: Option<types::Uri>,
+    #[serde(rename = "_url")]
+    url_ext: Option<types::Element>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    version: Option<types::String>,
+    #[serde(rename = "_version")]
+    version_ext: Option<types::Element>,
+    #[serde(flatten)]
+    version_algorithm: crate::r6::choice::Slot<EvidenceVariableVersionAlgorithm>,
+    name: Option<types::String>,
+    #[serde(rename = "_name")]
+    name_ext: Option<types::Element>,
+    title: Option<types::String>,
+    #[serde(rename = "_title")]
+    title_ext: Option<types::Element>,
+    short_title: Option<types::String>,
+    #[serde(rename = "_shortTitle")]
+    short_title_ext: Option<types::Element>,
+    cite_as: Option<types::Markdown>,
+    #[serde(rename = "_citeAs")]
+    cite_as_ext: Option<types::Element>,
+    status: crate::coded::Coded<crate::r6::codes::PublicationStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    experimental: Option<types::Boolean>,
+    #[serde(rename = "_experimental")]
+    experimental_ext: Option<types::Element>,
+    date: Option<types::DateTime>,
+    #[serde(rename = "_date")]
+    date_ext: Option<types::Element>,
+    #[serde(default)]
+    author: Vec<types::ContactDetail>,
+    publisher: Option<types::String>,
+    #[serde(rename = "_publisher")]
+    publisher_ext: Option<types::Element>,
+    #[serde(default)]
+    contact: Vec<types::ContactDetail>,
+    #[serde(default)]
+    recorder: Vec<types::ContactDetail>,
+    #[serde(default)]
+    editor: Vec<types::ContactDetail>,
+    #[serde(default)]
+    reviewer: Vec<types::ContactDetail>,
+    #[serde(default)]
+    endorser: Vec<types::ContactDetail>,
+    description: Option<types::Markdown>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+    #[serde(default)]
+    use_context: Vec<types::UsageContext>,
+    purpose: Option<types::Markdown>,
+    #[serde(rename = "_purpose")]
+    purpose_ext: Option<types::Element>,
+    copyright: Option<types::Markdown>,
+    #[serde(rename = "_copyright")]
+    copyright_ext: Option<types::Element>,
+    copyright_label: Option<types::String>,
+    #[serde(rename = "_copyrightLabel")]
+    copyright_label_ext: Option<types::Element>,
+    approval_date: Option<types::Date>,
+    #[serde(rename = "_approvalDate")]
+    approval_date_ext: Option<types::Element>,
+    last_review_date: Option<types::Date>,
+    #[serde(rename = "_lastReviewDate")]
+    last_review_date_ext: Option<types::Element>,
+    effective_period: Option<types::Period>,
+    #[serde(default)]
+    relates_to: Vec<EvidenceVariableRelatesTo>,
+    actual: Option<types::Boolean>,
+    #[serde(rename = "_actual")]
+    actual_ext: Option<types::Element>,
+    definition: Option<types::CodeableReference>,
+    #[serde(default)]
+    definition_modifier: Vec<EvidenceVariableDefinitionModifier>,
+    handling: Option<crate::coded::Coded<crate::r6::codes::VariableHandling>>,
+    #[serde(rename = "_handling")]
+    handling_ext: Option<types::Element>,
+    #[serde(default)]
+    category: Vec<EvidenceVariableCategory>,
+    conditional: Option<types::Expression>,
+    #[serde(default)]
+    classifier: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    data_storage: Vec<EvidenceVariableDataStorage>,
+    timing: Option<types::RelativeTime>,
+    period: Option<types::Period>,
+    #[serde(default)]
+    constraint: Vec<EvidenceVariableConstraint>,
+    #[serde(default)]
+    missing_data_meaning: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    unacceptable_data_handling: Vec<types::CodeableConcept>,
+}
+
+impl ::core::convert::From<EvidenceVariableDe> for EvidenceVariable {
+    fn from(v: EvidenceVariableDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            url: v.url,
+            url_ext: v.url_ext,
+            identifier: v.identifier,
+            version: v.version,
+            version_ext: v.version_ext,
+            version_algorithm: v.version_algorithm.0,
+            name: v.name,
+            name_ext: v.name_ext,
+            title: v.title,
+            title_ext: v.title_ext,
+            short_title: v.short_title,
+            short_title_ext: v.short_title_ext,
+            cite_as: v.cite_as,
+            cite_as_ext: v.cite_as_ext,
+            status: v.status,
+            status_ext: v.status_ext,
+            experimental: v.experimental,
+            experimental_ext: v.experimental_ext,
+            date: v.date,
+            date_ext: v.date_ext,
+            author: v.author,
+            publisher: v.publisher,
+            publisher_ext: v.publisher_ext,
+            contact: v.contact,
+            recorder: v.recorder,
+            editor: v.editor,
+            reviewer: v.reviewer,
+            endorser: v.endorser,
+            description: v.description,
+            description_ext: v.description_ext,
+            note: v.note,
+            use_context: v.use_context,
+            purpose: v.purpose,
+            purpose_ext: v.purpose_ext,
+            copyright: v.copyright,
+            copyright_ext: v.copyright_ext,
+            copyright_label: v.copyright_label,
+            copyright_label_ext: v.copyright_label_ext,
+            approval_date: v.approval_date,
+            approval_date_ext: v.approval_date_ext,
+            last_review_date: v.last_review_date,
+            last_review_date_ext: v.last_review_date_ext,
+            effective_period: v.effective_period,
+            relates_to: v.relates_to,
+            actual: v.actual,
+            actual_ext: v.actual_ext,
+            definition: v.definition,
+            definition_modifier: v.definition_modifier,
+            handling: v.handling,
+            handling_ext: v.handling_ext,
+            category: v.category,
+            conditional: v.conditional,
+            classifier: v.classifier,
+            data_storage: v.data_storage,
+            timing: v.timing,
+            period: v.period,
+            constraint: v.constraint,
+            missing_data_meaning: v.missing_data_meaning,
+            unacceptable_data_handling: v.unacceptable_data_handling,
+        }
+    }
+}
+
 /// A grouping for dichotomous, ordinal, or polychotomouos variables.
 ///
 /// # Examples
@@ -314,6 +506,7 @@ pub struct EvidenceVariable {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "EvidenceVariableCategoryDe")]
 #[fhir_version("r6")]
 pub struct EvidenceVariableCategory {
     /// Unique id for inter-element referencing
@@ -338,6 +531,34 @@ pub struct EvidenceVariableCategory {
     /// The `EvidenceVariable.category.value[x]` choice element (0..1); see [`EvidenceVariableCategoryValue`].
     #[serde(flatten)]
     pub value: Option<EvidenceVariableCategoryValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct EvidenceVariableCategoryDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    name: Option<types::String>,
+    #[serde(rename = "_name")]
+    name_ext: Option<types::Element>,
+    #[serde(flatten)]
+    value: crate::r6::choice::Slot<EvidenceVariableCategoryValue>,
+}
+
+impl ::core::convert::From<EvidenceVariableCategoryDe> for EvidenceVariableCategory {
+    fn from(v: EvidenceVariableCategoryDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            name: v.name,
+            name_ext: v.name_ext,
+            value: v.value.0,
+        }
+    }
 }
 
 /// Limit on acceptability of data used to express values of the variable.
@@ -513,6 +734,7 @@ pub struct EvidenceVariableDataStorage {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "EvidenceVariableDefinitionModifierDe")]
 #[fhir_version("r6")]
 pub struct EvidenceVariableDefinitionModifier {
     /// Unique id for inter-element referencing
@@ -533,6 +755,33 @@ pub struct EvidenceVariableDefinitionModifier {
     /// The `EvidenceVariable.definitionModifier.value[x]` choice element (1..1); see [`EvidenceVariableDefinitionModifierValue`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub value: Option<EvidenceVariableDefinitionModifierValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct EvidenceVariableDefinitionModifierDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    code: types::CodeableConcept,
+    #[serde(flatten)]
+    value: crate::r6::choice::Slot<EvidenceVariableDefinitionModifierValue>,
+}
+
+impl ::core::convert::From<EvidenceVariableDefinitionModifierDe>
+    for EvidenceVariableDefinitionModifier
+{
+    fn from(v: EvidenceVariableDefinitionModifierDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            code: v.code,
+            value: v.value.0,
+        }
+    }
 }
 
 /// Relationships that this EvidenceVariable has with other FHIR or non-FHIR
@@ -558,6 +807,7 @@ pub struct EvidenceVariableDefinitionModifier {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "EvidenceVariableRelatesToDe")]
 #[fhir_version("r6")]
 pub struct EvidenceVariableRelatesTo {
     /// Unique id for inter-element referencing
@@ -588,6 +838,34 @@ pub struct EvidenceVariableRelatesTo {
     /// The `EvidenceVariable.relatesTo.target[x]` choice element (1..1); see [`EvidenceVariableRelatesToTarget`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub target: Option<EvidenceVariableRelatesToTarget>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct EvidenceVariableRelatesToDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: crate::coded::Coded<crate::r6::codes::ArtifactRelationshipType>,
+    #[serde(rename = "_type")]
+    type_ext: Option<types::Element>,
+    #[serde(flatten)]
+    target: crate::r6::choice::Slot<EvidenceVariableRelatesToTarget>,
+}
+
+impl ::core::convert::From<EvidenceVariableRelatesToDe> for EvidenceVariableRelatesTo {
+    fn from(v: EvidenceVariableRelatesToDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            type_ext: v.type_ext,
+            target: v.target.0,
+        }
+    }
 }
 
 /// The `EvidenceVariable.versionAlgorithm[x]` choice element (see `spec/11-choice-types.md`).

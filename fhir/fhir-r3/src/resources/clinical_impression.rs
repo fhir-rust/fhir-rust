@@ -38,6 +38,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ClinicalImpressionDe")]
 #[fhir_version("r3")]
 pub struct ClinicalImpression {
     /// Logical id of this artifact
@@ -165,6 +166,107 @@ pub struct ClinicalImpression {
     pub note: Vec<types::Annotation>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ClinicalImpressionDe {
+    id: Option<types::Id>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r3::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    status: crate::coded::Coded<crate::r3::codes::ClinicalImpressionStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    code: Option<types::CodeableConcept>,
+    description: Option<types::String>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    subject: types::Reference,
+    context: Option<types::Reference>,
+    #[serde(flatten)]
+    effective: crate::r3::choice::Slot<ClinicalImpressionEffective>,
+    date: Option<types::DateTime>,
+    #[serde(rename = "_date")]
+    date_ext: Option<types::Element>,
+    assessor: Option<types::Reference<crate::r3::resources::Practitioner>>,
+    previous: Option<types::Reference<crate::r3::resources::ClinicalImpression>>,
+    #[serde(default)]
+    problem: Vec<types::Reference>,
+    #[serde(default)]
+    investigation: Vec<ClinicalImpressionInvestigation>,
+    #[serde(default)]
+    protocol: Vec<types::Uri>,
+    #[serde(rename = "_protocol")]
+    #[serde(default)]
+    protocol_ext: Vec<Option<types::Element>>,
+    summary: Option<types::String>,
+    #[serde(rename = "_summary")]
+    summary_ext: Option<types::Element>,
+    #[serde(default)]
+    finding: Vec<ClinicalImpressionFinding>,
+    #[serde(default)]
+    prognosis_codeable_concept: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    prognosis_reference: Vec<types::Reference<crate::r3::resources::RiskAssessment>>,
+    #[serde(default)]
+    action: Vec<types::Reference>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+}
+
+impl ::core::convert::From<ClinicalImpressionDe> for ClinicalImpression {
+    fn from(v: ClinicalImpressionDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            status: v.status,
+            status_ext: v.status_ext,
+            code: v.code,
+            description: v.description,
+            description_ext: v.description_ext,
+            subject: v.subject,
+            context: v.context,
+            effective: v.effective.0,
+            date: v.date,
+            date_ext: v.date_ext,
+            assessor: v.assessor,
+            previous: v.previous,
+            problem: v.problem,
+            investigation: v.investigation,
+            protocol: v.protocol,
+            protocol_ext: v.protocol_ext,
+            summary: v.summary,
+            summary_ext: v.summary_ext,
+            finding: v.finding,
+            prognosis_codeable_concept: v.prognosis_codeable_concept,
+            prognosis_reference: v.prognosis_reference,
+            action: v.action,
+            note: v.note,
+        }
+    }
+}
+
 /// Specific findings or diagnoses that was considered likely or relevant to
 /// ongoing treatment.
 ///
@@ -188,6 +290,7 @@ pub struct ClinicalImpression {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ClinicalImpressionFindingDe")]
 #[fhir_version("r3")]
 pub struct ClinicalImpressionFinding {
     /// xml:id (or equivalent in JSON)
@@ -212,6 +315,34 @@ pub struct ClinicalImpressionFinding {
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_basis")]
     pub basis_ext: Option<types::Element>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ClinicalImpressionFindingDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    item: crate::r3::choice::Slot<ClinicalImpressionFindingItem>,
+    basis: Option<types::String>,
+    #[serde(rename = "_basis")]
+    basis_ext: Option<types::Element>,
+}
+
+impl ::core::convert::From<ClinicalImpressionFindingDe> for ClinicalImpressionFinding {
+    fn from(v: ClinicalImpressionFindingDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            item: v.item.0,
+            basis: v.basis,
+            basis_ext: v.basis_ext,
+        }
+    }
 }
 
 /// One or more sets of investigations (signs, symptions, etc.). The actual

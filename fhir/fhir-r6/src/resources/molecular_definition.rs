@@ -267,6 +267,7 @@ pub struct MolecularDefinitionLocationCytobandLocationCytobandInterval {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MolecularDefinitionLocationCytobandLocationCytobandIntervalEndCytobandDe")]
 #[fhir_version("r6")]
 pub struct MolecularDefinitionLocationCytobandLocationCytobandIntervalEndCytoband {
     /// Unique id for inter-element referencing
@@ -303,6 +304,48 @@ pub struct MolecularDefinitionLocationCytobandLocationCytobandIntervalEndCytoban
         Option<MolecularDefinitionLocationCytobandLocationCytobandIntervalEndCytobandSubBand>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MolecularDefinitionLocationCytobandLocationCytobandIntervalEndCytobandDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    arm: crate::r6::choice::Slot<
+        MolecularDefinitionLocationCytobandLocationCytobandIntervalEndCytobandArm,
+    >,
+    #[serde(flatten)]
+    region: crate::r6::choice::Slot<
+        MolecularDefinitionLocationCytobandLocationCytobandIntervalEndCytobandRegion,
+    >,
+    #[serde(flatten)]
+    band: crate::r6::choice::Slot<
+        MolecularDefinitionLocationCytobandLocationCytobandIntervalEndCytobandBand,
+    >,
+    #[serde(flatten)]
+    sub_band: crate::r6::choice::Slot<
+        MolecularDefinitionLocationCytobandLocationCytobandIntervalEndCytobandSubBand,
+    >,
+}
+
+impl ::core::convert::From<MolecularDefinitionLocationCytobandLocationCytobandIntervalEndCytobandDe>
+    for MolecularDefinitionLocationCytobandLocationCytobandIntervalEndCytoband
+{
+    fn from(v: MolecularDefinitionLocationCytobandLocationCytobandIntervalEndCytobandDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            arm: v.arm.0,
+            region: v.region.0,
+            band: v.band.0,
+            sub_band: v.sub_band.0,
+        }
+    }
+}
+
 /// The start of this cytoband Interval.
 ///
 /// # Examples
@@ -325,6 +368,7 @@ pub struct MolecularDefinitionLocationCytobandLocationCytobandIntervalEndCytoban
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MolecularDefinitionLocationCytobandLocationCytobandIntervalStartCytobandDe")]
 #[fhir_version("r6")]
 pub struct MolecularDefinitionLocationCytobandLocationCytobandIntervalStartCytoband {
     /// Unique id for inter-element referencing
@@ -361,6 +405,50 @@ pub struct MolecularDefinitionLocationCytobandLocationCytobandIntervalStartCytob
         Option<MolecularDefinitionLocationCytobandLocationCytobandIntervalStartCytobandSubBand>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MolecularDefinitionLocationCytobandLocationCytobandIntervalStartCytobandDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    arm: crate::r6::choice::Slot<
+        MolecularDefinitionLocationCytobandLocationCytobandIntervalStartCytobandArm,
+    >,
+    #[serde(flatten)]
+    region: crate::r6::choice::Slot<
+        MolecularDefinitionLocationCytobandLocationCytobandIntervalStartCytobandRegion,
+    >,
+    #[serde(flatten)]
+    band: crate::r6::choice::Slot<
+        MolecularDefinitionLocationCytobandLocationCytobandIntervalStartCytobandBand,
+    >,
+    #[serde(flatten)]
+    sub_band: crate::r6::choice::Slot<
+        MolecularDefinitionLocationCytobandLocationCytobandIntervalStartCytobandSubBand,
+    >,
+}
+
+impl
+    ::core::convert::From<
+        MolecularDefinitionLocationCytobandLocationCytobandIntervalStartCytobandDe,
+    > for MolecularDefinitionLocationCytobandLocationCytobandIntervalStartCytoband
+{
+    fn from(v: MolecularDefinitionLocationCytobandLocationCytobandIntervalStartCytobandDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            arm: v.arm.0,
+            region: v.region.0,
+            band: v.band.0,
+            sub_band: v.sub_band.0,
+        }
+    }
+}
+
 /// The reference genome assemble.
 ///
 /// # Examples
@@ -383,6 +471,7 @@ pub struct MolecularDefinitionLocationCytobandLocationCytobandIntervalStartCytob
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MolecularDefinitionLocationCytobandLocationGenomeAssemblyDe")]
 #[fhir_version("r6")]
 pub struct MolecularDefinitionLocationCytobandLocationGenomeAssembly {
     /// Unique id for inter-element referencing
@@ -409,6 +498,39 @@ pub struct MolecularDefinitionLocationCytobandLocationGenomeAssembly {
     /// The `MolecularDefinition.location.cytobandLocation.genomeAssembly.description[x]` choice element (0..1); see [`MolecularDefinitionLocationCytobandLocationGenomeAssemblyDescription`].
     #[serde(flatten)]
     pub description: Option<MolecularDefinitionLocationCytobandLocationGenomeAssemblyDescription>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MolecularDefinitionLocationCytobandLocationGenomeAssemblyDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    organism: Option<types::CodeableConcept>,
+    build: Option<types::CodeableConcept>,
+    accession: Option<types::CodeableConcept>,
+    #[serde(flatten)]
+    description: crate::r6::choice::Slot<
+        MolecularDefinitionLocationCytobandLocationGenomeAssemblyDescription,
+    >,
+}
+
+impl ::core::convert::From<MolecularDefinitionLocationCytobandLocationGenomeAssemblyDe>
+    for MolecularDefinitionLocationCytobandLocationGenomeAssembly
+{
+    fn from(v: MolecularDefinitionLocationCytobandLocationGenomeAssemblyDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            organism: v.organism,
+            build: v.build,
+            accession: v.accession,
+            description: v.description.0,
+        }
+    }
 }
 
 /// A location on a sequence, defined using a nucleotide coordinate system.
@@ -479,6 +601,7 @@ pub struct MolecularDefinitionLocationSequenceLocation {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MolecularDefinitionLocationSequenceLocationCoordinateIntervalDe")]
 #[fhir_version("r6")]
 pub struct MolecularDefinitionLocationSequenceLocationCoordinateInterval {
     /// Unique id for inter-element referencing
@@ -505,6 +628,38 @@ pub struct MolecularDefinitionLocationSequenceLocationCoordinateInterval {
     /// The `MolecularDefinition.location.sequenceLocation.coordinateInterval.end[x]` choice element (0..1); see [`MolecularDefinitionLocationSequenceLocationCoordinateIntervalEnd`].
     #[serde(flatten)]
     pub end: Option<MolecularDefinitionLocationSequenceLocationCoordinateIntervalEnd>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MolecularDefinitionLocationSequenceLocationCoordinateIntervalDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    coordinate_system:
+        Option<MolecularDefinitionLocationSequenceLocationCoordinateIntervalCoordinateSystem>,
+    #[serde(flatten)]
+    start:
+        crate::r6::choice::Slot<MolecularDefinitionLocationSequenceLocationCoordinateIntervalStart>,
+    #[serde(flatten)]
+    end: crate::r6::choice::Slot<MolecularDefinitionLocationSequenceLocationCoordinateIntervalEnd>,
+}
+
+impl ::core::convert::From<MolecularDefinitionLocationSequenceLocationCoordinateIntervalDe>
+    for MolecularDefinitionLocationSequenceLocationCoordinateInterval
+{
+    fn from(v: MolecularDefinitionLocationSequenceLocationCoordinateIntervalDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            coordinate_system: v.coordinate_system,
+            start: v.start.0,
+            end: v.end.0,
+        }
+    }
 }
 
 /// A definition of the coordinate system. Examples include 1-based character
@@ -784,6 +939,7 @@ pub struct MolecularDefinitionRepresentationExtracted {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MolecularDefinitionRepresentationExtractedCoordinateIntervalDe")]
 #[fhir_version("r6")]
 pub struct MolecularDefinitionRepresentationExtractedCoordinateInterval {
     /// Unique id for inter-element referencing
@@ -810,6 +966,38 @@ pub struct MolecularDefinitionRepresentationExtractedCoordinateInterval {
     /// The `MolecularDefinition.representation.extracted.coordinateInterval.end[x]` choice element (0..1); see [`MolecularDefinitionRepresentationExtractedCoordinateIntervalEnd`].
     #[serde(flatten)]
     pub end: Option<MolecularDefinitionRepresentationExtractedCoordinateIntervalEnd>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MolecularDefinitionRepresentationExtractedCoordinateIntervalDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    coordinate_system:
+        Option<MolecularDefinitionRepresentationExtractedCoordinateIntervalCoordinateSystem>,
+    #[serde(flatten)]
+    start:
+        crate::r6::choice::Slot<MolecularDefinitionRepresentationExtractedCoordinateIntervalStart>,
+    #[serde(flatten)]
+    end: crate::r6::choice::Slot<MolecularDefinitionRepresentationExtractedCoordinateIntervalEnd>,
+}
+
+impl ::core::convert::From<MolecularDefinitionRepresentationExtractedCoordinateIntervalDe>
+    for MolecularDefinitionRepresentationExtractedCoordinateInterval
+{
+    fn from(v: MolecularDefinitionRepresentationExtractedCoordinateIntervalDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            coordinate_system: v.coordinate_system,
+            start: v.start.0,
+            end: v.end.0,
+        }
+    }
 }
 
 /// The coordinate system used to define the location, which may vary depending
@@ -1031,6 +1219,7 @@ pub struct MolecularDefinitionRepresentationRelativeEdit {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MolecularDefinitionRepresentationRelativeEditCoordinateIntervalDe")]
 #[fhir_version("r6")]
 pub struct MolecularDefinitionRepresentationRelativeEditCoordinateInterval {
     /// Unique id for inter-element referencing
@@ -1057,6 +1246,40 @@ pub struct MolecularDefinitionRepresentationRelativeEditCoordinateInterval {
     /// The `MolecularDefinition.representation.relative.edit.coordinateInterval.end[x]` choice element (0..1); see [`MolecularDefinitionRepresentationRelativeEditCoordinateIntervalEnd`].
     #[serde(flatten)]
     pub end: Option<MolecularDefinitionRepresentationRelativeEditCoordinateIntervalEnd>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MolecularDefinitionRepresentationRelativeEditCoordinateIntervalDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    coordinate_system:
+        Option<MolecularDefinitionRepresentationRelativeEditCoordinateIntervalCoordinateSystem>,
+    #[serde(flatten)]
+    start: crate::r6::choice::Slot<
+        MolecularDefinitionRepresentationRelativeEditCoordinateIntervalStart,
+    >,
+    #[serde(flatten)]
+    end:
+        crate::r6::choice::Slot<MolecularDefinitionRepresentationRelativeEditCoordinateIntervalEnd>,
+}
+
+impl ::core::convert::From<MolecularDefinitionRepresentationRelativeEditCoordinateIntervalDe>
+    for MolecularDefinitionRepresentationRelativeEditCoordinateInterval
+{
+    fn from(v: MolecularDefinitionRepresentationRelativeEditCoordinateIntervalDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            coordinate_system: v.coordinate_system,
+            start: v.start.0,
+            end: v.end.0,
+        }
+    }
 }
 
 /// The coordinate system used to define the location, which may vary depending

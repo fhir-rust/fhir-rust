@@ -352,6 +352,7 @@ pub struct ImplementationGuidePackage {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ImplementationGuidePackageResourceDe")]
 #[fhir_version("r3")]
 pub struct ImplementationGuidePackageResource {
     /// xml:id (or equivalent in JSON)
@@ -400,6 +401,53 @@ pub struct ImplementationGuidePackageResource {
 
     /// Resource this is an example of (if applicable)
     pub example_for: Option<types::Reference<crate::r3::resources::StructureDefinition>>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ImplementationGuidePackageResourceDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    example: types::Boolean,
+    #[serde(rename = "_example")]
+    example_ext: Option<types::Element>,
+    name: Option<types::String>,
+    #[serde(rename = "_name")]
+    name_ext: Option<types::Element>,
+    description: Option<types::String>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    acronym: Option<types::String>,
+    #[serde(rename = "_acronym")]
+    acronym_ext: Option<types::Element>,
+    #[serde(flatten)]
+    source: crate::r3::choice::Slot<ImplementationGuidePackageResourceSource>,
+    example_for: Option<types::Reference<crate::r3::resources::StructureDefinition>>,
+}
+
+impl ::core::convert::From<ImplementationGuidePackageResourceDe>
+    for ImplementationGuidePackageResource
+{
+    fn from(v: ImplementationGuidePackageResourceDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            example: v.example,
+            example_ext: v.example_ext,
+            name: v.name,
+            name_ext: v.name_ext,
+            description: v.description,
+            description_ext: v.description_ext,
+            acronym: v.acronym,
+            acronym_ext: v.acronym_ext,
+            source: v.source.0,
+            example_for: v.example_for,
+        }
+    }
 }
 
 /// A page / section in the implementation guide. The root page is the

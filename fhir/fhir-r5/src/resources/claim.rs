@@ -308,6 +308,7 @@ pub struct ClaimPayee {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ClaimEventDe")]
 pub struct ClaimEvent {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -326,6 +327,31 @@ pub struct ClaimEvent {
     /// The `Claim.event.when[x]` choice element (0..1); see [`ClaimEventWhen`].
     #[serde(flatten)]
     pub when: Option<ClaimEventWhen>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ClaimEventDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: types::CodeableConcept,
+    #[serde(flatten)]
+    when: crate::r5::choice::Slot<ClaimEventWhen>,
+}
+
+impl ::core::convert::From<ClaimEventDe> for ClaimEvent {
+    fn from(v: ClaimEventDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            when: v.when.0,
+        }
+    }
 }
 
 /// Claim nested backbone element `Claim.careTeam`. Members of the care team
@@ -404,6 +430,7 @@ pub struct ClaimCareTeam {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ClaimSupportingInfoDe")]
 pub struct ClaimSupportingInfo {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -440,6 +467,43 @@ pub struct ClaimSupportingInfo {
     pub reason: Option<types::CodeableConcept>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ClaimSupportingInfoDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    sequence: types::PositiveInt,
+    #[serde(rename = "_sequence")]
+    sequence_ext: Option<types::Element>,
+    category: types::CodeableConcept,
+    code: Option<types::CodeableConcept>,
+    #[serde(flatten)]
+    timing: crate::r5::choice::Slot<ClaimSupportingInfoTiming>,
+    #[serde(flatten)]
+    value: crate::r5::choice::Slot<ClaimSupportingInfoValue>,
+    reason: Option<types::CodeableConcept>,
+}
+
+impl ::core::convert::From<ClaimSupportingInfoDe> for ClaimSupportingInfo {
+    fn from(v: ClaimSupportingInfoDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            sequence: v.sequence,
+            sequence_ext: v.sequence_ext,
+            category: v.category,
+            code: v.code,
+            timing: v.timing.0,
+            value: v.value.0,
+            reason: v.reason,
+        }
+    }
+}
+
 /// Claim nested backbone element `Claim.diagnosis`. Pertinent diagnosis information
 /// # Examples
 ///
@@ -461,6 +525,7 @@ pub struct ClaimSupportingInfo {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ClaimDiagnosisDe")]
 pub struct ClaimDiagnosis {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -491,6 +556,39 @@ pub struct ClaimDiagnosis {
     pub on_admission: Option<types::CodeableConcept>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ClaimDiagnosisDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    sequence: types::PositiveInt,
+    #[serde(rename = "_sequence")]
+    sequence_ext: Option<types::Element>,
+    #[serde(flatten)]
+    diagnosis: crate::r5::choice::Slot<ClaimDiagnosisDiagnosis>,
+    #[serde(default)]
+    r#type: Vec<types::CodeableConcept>,
+    on_admission: Option<types::CodeableConcept>,
+}
+
+impl ::core::convert::From<ClaimDiagnosisDe> for ClaimDiagnosis {
+    fn from(v: ClaimDiagnosisDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            sequence: v.sequence,
+            sequence_ext: v.sequence_ext,
+            diagnosis: v.diagnosis.0,
+            r#type: v.r#type,
+            on_admission: v.on_admission,
+        }
+    }
+}
+
 /// Claim nested backbone element `Claim.procedure`. Clinical procedures performed
 /// # Examples
 ///
@@ -512,6 +610,7 @@ pub struct ClaimDiagnosis {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ClaimProcedureDe")]
 pub struct ClaimProcedure {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -547,6 +646,45 @@ pub struct ClaimProcedure {
     /// Unique device identifier
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub udi: Vec<types::Reference<crate::r5::resources::Device>>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ClaimProcedureDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    sequence: types::PositiveInt,
+    #[serde(rename = "_sequence")]
+    sequence_ext: Option<types::Element>,
+    #[serde(default)]
+    r#type: Vec<types::CodeableConcept>,
+    date: Option<types::DateTime>,
+    #[serde(rename = "_date")]
+    date_ext: Option<types::Element>,
+    #[serde(flatten)]
+    procedure: crate::r5::choice::Slot<ClaimProcedureProcedure>,
+    #[serde(default)]
+    udi: Vec<types::Reference<crate::r5::resources::Device>>,
+}
+
+impl ::core::convert::From<ClaimProcedureDe> for ClaimProcedure {
+    fn from(v: ClaimProcedureDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            sequence: v.sequence,
+            sequence_ext: v.sequence_ext,
+            r#type: v.r#type,
+            date: v.date,
+            date_ext: v.date_ext,
+            procedure: v.procedure.0,
+            udi: v.udi,
+        }
+    }
 }
 
 /// Claim nested backbone element `Claim.insurance`. Patient insurance information
@@ -639,6 +777,7 @@ pub struct ClaimInsurance {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ClaimAccidentDe")]
 pub struct ClaimAccident {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -665,6 +804,36 @@ pub struct ClaimAccident {
     pub location: Option<ClaimAccidentLocation>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ClaimAccidentDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    date: types::Date,
+    #[serde(rename = "_date")]
+    date_ext: Option<types::Element>,
+    r#type: Option<types::CodeableConcept>,
+    #[serde(flatten)]
+    location: crate::r5::choice::Slot<ClaimAccidentLocation>,
+}
+
+impl ::core::convert::From<ClaimAccidentDe> for ClaimAccident {
+    fn from(v: ClaimAccidentDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            date: v.date,
+            date_ext: v.date_ext,
+            r#type: v.r#type,
+            location: v.location.0,
+        }
+    }
+}
+
 /// Claim nested backbone element `Claim.item`. Product or service provided
 /// # Examples
 ///
@@ -686,6 +855,7 @@ pub struct ClaimAccident {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ClaimItemDe")]
 pub struct ClaimItem {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -808,6 +978,112 @@ pub struct ClaimItem {
     /// Product or service provided
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub detail: Vec<ClaimItemDetail>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ClaimItemDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    sequence: types::PositiveInt,
+    #[serde(rename = "_sequence")]
+    sequence_ext: Option<types::Element>,
+    #[serde(default)]
+    trace_number: Vec<types::Identifier>,
+    #[serde(default)]
+    care_team_sequence: Vec<types::PositiveInt>,
+    #[serde(rename = "_careTeamSequence")]
+    #[serde(default)]
+    care_team_sequence_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    diagnosis_sequence: Vec<types::PositiveInt>,
+    #[serde(rename = "_diagnosisSequence")]
+    #[serde(default)]
+    diagnosis_sequence_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    procedure_sequence: Vec<types::PositiveInt>,
+    #[serde(rename = "_procedureSequence")]
+    #[serde(default)]
+    procedure_sequence_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    information_sequence: Vec<types::PositiveInt>,
+    #[serde(rename = "_informationSequence")]
+    #[serde(default)]
+    information_sequence_ext: Vec<Option<types::Element>>,
+    revenue: Option<types::CodeableConcept>,
+    category: Option<types::CodeableConcept>,
+    product_or_service: Option<types::CodeableConcept>,
+    product_or_service_end: Option<types::CodeableConcept>,
+    #[serde(default)]
+    request: Vec<types::Reference>,
+    #[serde(default)]
+    modifier: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    program_code: Vec<types::CodeableConcept>,
+    #[serde(flatten)]
+    serviced: crate::r5::choice::Slot<ClaimItemServiced>,
+    #[serde(flatten)]
+    location: crate::r5::choice::Slot<ClaimItemLocation>,
+    patient_paid: Option<types::Money>,
+    quantity: Option<types::Quantity>,
+    unit_price: Option<types::Money>,
+    factor: Option<types::Decimal>,
+    #[serde(rename = "_factor")]
+    factor_ext: Option<types::Element>,
+    tax: Option<types::Money>,
+    net: Option<types::Money>,
+    #[serde(default)]
+    udi: Vec<types::Reference<crate::r5::resources::Device>>,
+    #[serde(default)]
+    body_site: Vec<ClaimItemBodySite>,
+    #[serde(default)]
+    encounter: Vec<types::Reference<crate::r5::resources::Encounter>>,
+    #[serde(default)]
+    detail: Vec<ClaimItemDetail>,
+}
+
+impl ::core::convert::From<ClaimItemDe> for ClaimItem {
+    fn from(v: ClaimItemDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            sequence: v.sequence,
+            sequence_ext: v.sequence_ext,
+            trace_number: v.trace_number,
+            care_team_sequence: v.care_team_sequence,
+            care_team_sequence_ext: v.care_team_sequence_ext,
+            diagnosis_sequence: v.diagnosis_sequence,
+            diagnosis_sequence_ext: v.diagnosis_sequence_ext,
+            procedure_sequence: v.procedure_sequence,
+            procedure_sequence_ext: v.procedure_sequence_ext,
+            information_sequence: v.information_sequence,
+            information_sequence_ext: v.information_sequence_ext,
+            revenue: v.revenue,
+            category: v.category,
+            product_or_service: v.product_or_service,
+            product_or_service_end: v.product_or_service_end,
+            request: v.request,
+            modifier: v.modifier,
+            program_code: v.program_code,
+            serviced: v.serviced.0,
+            location: v.location.0,
+            patient_paid: v.patient_paid,
+            quantity: v.quantity,
+            unit_price: v.unit_price,
+            factor: v.factor,
+            factor_ext: v.factor_ext,
+            tax: v.tax,
+            net: v.net,
+            udi: v.udi,
+            body_site: v.body_site,
+            encounter: v.encounter,
+            detail: v.detail,
+        }
+    }
 }
 
 /// Claim nested backbone element `Claim.item.bodySite`. Anatomical location

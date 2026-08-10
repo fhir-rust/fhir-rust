@@ -58,6 +58,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MedicationStatementDe")]
 #[fhir_version("r6")]
 pub struct MedicationStatement {
     /// Logical id of this artifact
@@ -173,6 +174,98 @@ pub struct MedicationStatement {
     /// Indicates whether the medication is or is not being consumed or
     /// administered
     pub adherence: Option<MedicationStatementAdherence>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MedicationStatementDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r6::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    #[serde(default)]
+    part_of: Vec<types::Reference>,
+    status: crate::coded::Coded<crate::r6::codes::MedicationStatementStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    #[serde(default)]
+    category: Vec<types::CodeableConcept>,
+    medication: types::CodeableReference,
+    subject: types::Reference,
+    encounter: Option<types::Reference<crate::r6::resources::Encounter>>,
+    #[serde(flatten)]
+    effective: crate::r6::choice::Slot<MedicationStatementEffective>,
+    date_asserted: Option<types::DateTime>,
+    #[serde(rename = "_dateAsserted")]
+    date_asserted_ext: Option<types::Element>,
+    author: Option<types::Reference>,
+    #[serde(default)]
+    information_source: Vec<types::Reference>,
+    #[serde(default)]
+    derived_from: Vec<types::Reference>,
+    #[serde(default)]
+    reason: Vec<types::CodeableReference>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+    #[serde(default)]
+    related_clinical_information: Vec<types::Reference>,
+    rendered_dosage_instruction: Option<types::Markdown>,
+    #[serde(rename = "_renderedDosageInstruction")]
+    rendered_dosage_instruction_ext: Option<types::Element>,
+    #[serde(default)]
+    dosage: Vec<types::Dosage>,
+    adherence: Option<MedicationStatementAdherence>,
+}
+
+impl ::core::convert::From<MedicationStatementDe> for MedicationStatement {
+    fn from(v: MedicationStatementDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            part_of: v.part_of,
+            status: v.status,
+            status_ext: v.status_ext,
+            category: v.category,
+            medication: v.medication,
+            subject: v.subject,
+            encounter: v.encounter,
+            effective: v.effective.0,
+            date_asserted: v.date_asserted,
+            date_asserted_ext: v.date_asserted_ext,
+            author: v.author,
+            information_source: v.information_source,
+            derived_from: v.derived_from,
+            reason: v.reason,
+            note: v.note,
+            related_clinical_information: v.related_clinical_information,
+            rendered_dosage_instruction: v.rendered_dosage_instruction,
+            rendered_dosage_instruction_ext: v.rendered_dosage_instruction_ext,
+            dosage: v.dosage,
+            adherence: v.adherence,
+        }
+    }
 }
 
 /// Indicates whether the medication is or is not being consumed or

@@ -148,6 +148,7 @@ pub struct CareTeam {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "CareTeamParticipantDe")]
 #[fhir_version("r6")]
 pub struct CareTeamParticipant {
     /// Unique id for inter-element referencing
@@ -175,6 +176,35 @@ pub struct CareTeamParticipant {
     /// The `CareTeam.participant.effective[x]` choice element (0..1); see [`CareTeamParticipantEffective`].
     #[serde(flatten)]
     pub effective: Option<CareTeamParticipantEffective>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CareTeamParticipantDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    role: Option<types::CodeableConcept>,
+    member: Option<types::Reference>,
+    on_behalf_of: Option<types::Reference>,
+    #[serde(flatten)]
+    effective: crate::r6::choice::Slot<CareTeamParticipantEffective>,
+}
+
+impl ::core::convert::From<CareTeamParticipantDe> for CareTeamParticipant {
+    fn from(v: CareTeamParticipantDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            role: v.role,
+            member: v.member,
+            on_behalf_of: v.on_behalf_of,
+            effective: v.effective.0,
+        }
+    }
 }
 
 /// The `CareTeam.participant.effective[x]` choice element (see `spec/11-choice-types.md`).

@@ -40,6 +40,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "DetectedIssueDe")]
 #[fhir_version("r4")]
 pub struct DetectedIssue {
     /// Logical id of this artifact
@@ -134,6 +135,84 @@ pub struct DetectedIssue {
     /// Step taken to address
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub mitigation: Vec<DetectedIssueMitigation>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DetectedIssueDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r4::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    status: crate::coded::Coded<crate::r4::codes::ObservationStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    code: Option<types::CodeableConcept>,
+    severity: Option<crate::coded::Coded<crate::r4::codes::DetectedissueSeverity>>,
+    #[serde(rename = "_severity")]
+    severity_ext: Option<types::Element>,
+    patient: Option<types::Reference<crate::r4::resources::Patient>>,
+    #[serde(flatten)]
+    identified: crate::r4::choice::Slot<DetectedIssueIdentified>,
+    author: Option<types::Reference>,
+    #[serde(default)]
+    implicated: Vec<types::Reference>,
+    #[serde(default)]
+    evidence: Vec<DetectedIssueEvidence>,
+    detail: Option<types::String>,
+    #[serde(rename = "_detail")]
+    detail_ext: Option<types::Element>,
+    reference: Option<types::Uri>,
+    #[serde(rename = "_reference")]
+    reference_ext: Option<types::Element>,
+    #[serde(default)]
+    mitigation: Vec<DetectedIssueMitigation>,
+}
+
+impl ::core::convert::From<DetectedIssueDe> for DetectedIssue {
+    fn from(v: DetectedIssueDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            status: v.status,
+            status_ext: v.status_ext,
+            code: v.code,
+            severity: v.severity,
+            severity_ext: v.severity_ext,
+            patient: v.patient,
+            identified: v.identified.0,
+            author: v.author,
+            implicated: v.implicated,
+            evidence: v.evidence,
+            detail: v.detail,
+            detail_ext: v.detail_ext,
+            reference: v.reference,
+            reference_ext: v.reference_ext,
+            mitigation: v.mitigation,
+        }
+    }
 }
 
 /// Supporting evidence or manifestations that provide the basis for

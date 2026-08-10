@@ -134,6 +134,7 @@ pub struct Provenance {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ProvenanceAgentDe")]
 #[fhir_version("r3")]
 pub struct ProvenanceAgent {
     /// xml:id (or equivalent in JSON)
@@ -165,6 +166,37 @@ pub struct ProvenanceAgent {
     pub related_agent_type: Option<types::CodeableConcept>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ProvenanceAgentDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    role: Vec<types::CodeableConcept>,
+    #[serde(flatten)]
+    who: crate::r3::choice::Slot<ProvenanceAgentWho>,
+    #[serde(flatten)]
+    on_behalf_of: crate::r3::choice::Slot<ProvenanceAgentOnBehalfOf>,
+    related_agent_type: Option<types::CodeableConcept>,
+}
+
+impl ::core::convert::From<ProvenanceAgentDe> for ProvenanceAgent {
+    fn from(v: ProvenanceAgentDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            role: v.role,
+            who: v.who.0,
+            on_behalf_of: v.on_behalf_of.0,
+            related_agent_type: v.related_agent_type,
+        }
+    }
+}
+
 /// An entity used in this activity.
 ///
 /// # Examples
@@ -187,6 +219,7 @@ pub struct ProvenanceAgent {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ProvenanceEntityDe")]
 #[fhir_version("r3")]
 pub struct ProvenanceEntity {
     /// xml:id (or equivalent in JSON)
@@ -215,6 +248,37 @@ pub struct ProvenanceEntity {
     /// Entity is attributed to this agent
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub agent: Vec<ProvenanceAgent>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ProvenanceEntityDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    role: crate::coded::Coded<crate::r3::codes::ProvenanceEntityRole>,
+    #[serde(rename = "_role")]
+    role_ext: Option<types::Element>,
+    #[serde(flatten)]
+    what: crate::r3::choice::Slot<ProvenanceEntityWhat>,
+    #[serde(default)]
+    agent: Vec<ProvenanceAgent>,
+}
+
+impl ::core::convert::From<ProvenanceEntityDe> for ProvenanceEntity {
+    fn from(v: ProvenanceEntityDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            role: v.role,
+            role_ext: v.role_ext,
+            what: v.what.0,
+            agent: v.agent,
+        }
+    }
 }
 
 /// The `Provenance.agent.who[x]` choice element (see `spec/11-choice-types.md`).

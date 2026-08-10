@@ -294,6 +294,7 @@ pub struct ExplanationOfBenefit {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ExplanationOfBenefitAccidentDe")]
 #[fhir_version("r6")]
 pub struct ExplanationOfBenefitAccident {
     /// Unique id for inter-element referencing
@@ -323,6 +324,36 @@ pub struct ExplanationOfBenefitAccident {
     pub location: Option<ExplanationOfBenefitAccidentLocation>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ExplanationOfBenefitAccidentDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    date: Option<types::Date>,
+    #[serde(rename = "_date")]
+    date_ext: Option<types::Element>,
+    r#type: Option<types::CodeableConcept>,
+    #[serde(flatten)]
+    location: crate::r6::choice::Slot<ExplanationOfBenefitAccidentLocation>,
+}
+
+impl ::core::convert::From<ExplanationOfBenefitAccidentDe> for ExplanationOfBenefitAccident {
+    fn from(v: ExplanationOfBenefitAccidentDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            date: v.date,
+            date_ext: v.date_ext,
+            r#type: v.r#type,
+            location: v.location.0,
+        }
+    }
+}
+
 /// The first-tier service adjudications for payor added product or service
 /// lines.
 ///
@@ -346,6 +377,7 @@ pub struct ExplanationOfBenefitAccident {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ExplanationOfBenefitAddItemDe")]
 #[fhir_version("r6")]
 pub struct ExplanationOfBenefitAddItem {
     /// Unique id for inter-element referencing
@@ -470,6 +502,107 @@ pub struct ExplanationOfBenefitAddItem {
     /// Insurer added line items
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub detail: Vec<ExplanationOfBenefitAddItemDetail>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ExplanationOfBenefitAddItemDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    item_sequence: Vec<types::PositiveInt>,
+    #[serde(rename = "_itemSequence")]
+    #[serde(default)]
+    item_sequence_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    detail_sequence: Vec<types::PositiveInt>,
+    #[serde(rename = "_detailSequence")]
+    #[serde(default)]
+    detail_sequence_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    sub_detail_sequence: Vec<types::PositiveInt>,
+    #[serde(rename = "_subDetailSequence")]
+    #[serde(default)]
+    sub_detail_sequence_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    trace_number: Vec<types::Identifier>,
+    #[serde(default)]
+    provider: Vec<types::Reference>,
+    revenue: Option<types::CodeableConcept>,
+    product_or_service: Option<types::CodeableConcept>,
+    product_or_service_end: Option<types::CodeableConcept>,
+    #[serde(default)]
+    request: Vec<types::Reference>,
+    #[serde(default)]
+    modifier: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    program_code: Vec<types::CodeableConcept>,
+    #[serde(flatten)]
+    serviced: crate::r6::choice::Slot<ExplanationOfBenefitAddItemServiced>,
+    #[serde(flatten)]
+    location: crate::r6::choice::Slot<ExplanationOfBenefitAddItemLocation>,
+    patient_paid: Option<types::Money>,
+    quantity: Option<types::Quantity>,
+    unit_price: Option<types::Money>,
+    factor: Option<types::Decimal>,
+    #[serde(rename = "_factor")]
+    factor_ext: Option<types::Element>,
+    tax: Option<types::Money>,
+    net: Option<types::Money>,
+    #[serde(default)]
+    body_site: Vec<ExplanationOfBenefitAddItemBodySite>,
+    #[serde(default)]
+    note_number: Vec<types::PositiveInt>,
+    #[serde(rename = "_noteNumber")]
+    #[serde(default)]
+    note_number_ext: Vec<Option<types::Element>>,
+    review_outcome: Option<ExplanationOfBenefitItemReviewOutcome>,
+    #[serde(default)]
+    adjudication: Vec<ExplanationOfBenefitItemAdjudication>,
+    #[serde(default)]
+    detail: Vec<ExplanationOfBenefitAddItemDetail>,
+}
+
+impl ::core::convert::From<ExplanationOfBenefitAddItemDe> for ExplanationOfBenefitAddItem {
+    fn from(v: ExplanationOfBenefitAddItemDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            item_sequence: v.item_sequence,
+            item_sequence_ext: v.item_sequence_ext,
+            detail_sequence: v.detail_sequence,
+            detail_sequence_ext: v.detail_sequence_ext,
+            sub_detail_sequence: v.sub_detail_sequence,
+            sub_detail_sequence_ext: v.sub_detail_sequence_ext,
+            trace_number: v.trace_number,
+            provider: v.provider,
+            revenue: v.revenue,
+            product_or_service: v.product_or_service,
+            product_or_service_end: v.product_or_service_end,
+            request: v.request,
+            modifier: v.modifier,
+            program_code: v.program_code,
+            serviced: v.serviced.0,
+            location: v.location.0,
+            patient_paid: v.patient_paid,
+            quantity: v.quantity,
+            unit_price: v.unit_price,
+            factor: v.factor,
+            factor_ext: v.factor_ext,
+            tax: v.tax,
+            net: v.net,
+            body_site: v.body_site,
+            note_number: v.note_number,
+            note_number_ext: v.note_number_ext,
+            review_outcome: v.review_outcome,
+            adjudication: v.adjudication,
+            detail: v.detail,
+        }
+    }
 }
 
 /// Physical location where the service is performed or applies.
@@ -789,6 +922,7 @@ pub struct ExplanationOfBenefitBenefitBalance {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ExplanationOfBenefitBenefitBalanceFinancialDe")]
 #[fhir_version("r6")]
 pub struct ExplanationOfBenefitBenefitBalanceFinancial {
     /// Unique id for inter-element referencing
@@ -814,6 +948,36 @@ pub struct ExplanationOfBenefitBenefitBalanceFinancial {
     /// The `ExplanationOfBenefit.benefitBalance.financial.used[x]` choice element (0..1); see [`ExplanationOfBenefitBenefitBalanceFinancialUsed`].
     #[serde(flatten)]
     pub used: Option<ExplanationOfBenefitBenefitBalanceFinancialUsed>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ExplanationOfBenefitBenefitBalanceFinancialDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: types::CodeableConcept,
+    #[serde(flatten)]
+    allowed: crate::r6::choice::Slot<ExplanationOfBenefitBenefitBalanceFinancialAllowed>,
+    #[serde(flatten)]
+    used: crate::r6::choice::Slot<ExplanationOfBenefitBenefitBalanceFinancialUsed>,
+}
+
+impl ::core::convert::From<ExplanationOfBenefitBenefitBalanceFinancialDe>
+    for ExplanationOfBenefitBenefitBalanceFinancial
+{
+    fn from(v: ExplanationOfBenefitBenefitBalanceFinancialDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            allowed: v.allowed.0,
+            used: v.used.0,
+        }
+    }
 }
 
 /// The members of the team who provided the products and services.
@@ -897,6 +1061,7 @@ pub struct ExplanationOfBenefitCareTeam {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ExplanationOfBenefitDiagnosisDe")]
 #[fhir_version("r6")]
 pub struct ExplanationOfBenefitDiagnosis {
     /// Unique id for inter-element referencing
@@ -930,6 +1095,39 @@ pub struct ExplanationOfBenefitDiagnosis {
     pub on_admission: Option<types::CodeableConcept>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ExplanationOfBenefitDiagnosisDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    sequence: types::PositiveInt,
+    #[serde(rename = "_sequence")]
+    sequence_ext: Option<types::Element>,
+    #[serde(flatten)]
+    diagnosis: crate::r6::choice::Slot<ExplanationOfBenefitDiagnosisDiagnosis>,
+    #[serde(default)]
+    r#type: Vec<types::CodeableConcept>,
+    on_admission: Option<types::CodeableConcept>,
+}
+
+impl ::core::convert::From<ExplanationOfBenefitDiagnosisDe> for ExplanationOfBenefitDiagnosis {
+    fn from(v: ExplanationOfBenefitDiagnosisDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            sequence: v.sequence,
+            sequence_ext: v.sequence_ext,
+            diagnosis: v.diagnosis.0,
+            r#type: v.r#type,
+            on_admission: v.on_admission,
+        }
+    }
+}
+
 /// Information code for an event with a corresponding date or period.
 ///
 /// # Examples
@@ -952,6 +1150,7 @@ pub struct ExplanationOfBenefitDiagnosis {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ExplanationOfBenefitEventDe")]
 #[fhir_version("r6")]
 pub struct ExplanationOfBenefitEvent {
     /// Unique id for inter-element referencing
@@ -972,6 +1171,31 @@ pub struct ExplanationOfBenefitEvent {
     /// The `ExplanationOfBenefit.event.when[x]` choice element (1..1); see [`ExplanationOfBenefitEventWhen`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub when: Option<ExplanationOfBenefitEventWhen>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ExplanationOfBenefitEventDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: types::CodeableConcept,
+    #[serde(flatten)]
+    when: crate::r6::choice::Slot<ExplanationOfBenefitEventWhen>,
+}
+
+impl ::core::convert::From<ExplanationOfBenefitEventDe> for ExplanationOfBenefitEvent {
+    fn from(v: ExplanationOfBenefitEventDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            when: v.when.0,
+        }
+    }
 }
 
 /// Financial instruments for reimbursement for the health care products and
@@ -1053,6 +1277,7 @@ pub struct ExplanationOfBenefitInsurance {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ExplanationOfBenefitItemDe")]
 #[fhir_version("r6")]
 pub struct ExplanationOfBenefitItem {
     /// Unique id for inter-element referencing
@@ -1200,6 +1425,124 @@ pub struct ExplanationOfBenefitItem {
     /// Additional items
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub detail: Vec<ExplanationOfBenefitItemDetail>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ExplanationOfBenefitItemDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    sequence: types::PositiveInt,
+    #[serde(rename = "_sequence")]
+    sequence_ext: Option<types::Element>,
+    #[serde(default)]
+    care_team_sequence: Vec<types::PositiveInt>,
+    #[serde(rename = "_careTeamSequence")]
+    #[serde(default)]
+    care_team_sequence_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    diagnosis_sequence: Vec<types::PositiveInt>,
+    #[serde(rename = "_diagnosisSequence")]
+    #[serde(default)]
+    diagnosis_sequence_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    procedure_sequence: Vec<types::PositiveInt>,
+    #[serde(rename = "_procedureSequence")]
+    #[serde(default)]
+    procedure_sequence_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    information_sequence: Vec<types::PositiveInt>,
+    #[serde(rename = "_informationSequence")]
+    #[serde(default)]
+    information_sequence_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    trace_number: Vec<types::Identifier>,
+    revenue: Option<types::CodeableConcept>,
+    category: Option<types::CodeableConcept>,
+    product_or_service: Option<types::CodeableConcept>,
+    product_or_service_end: Option<types::CodeableConcept>,
+    #[serde(default)]
+    request: Vec<types::Reference>,
+    #[serde(default)]
+    modifier: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    program_code: Vec<types::CodeableConcept>,
+    #[serde(flatten)]
+    serviced: crate::r6::choice::Slot<ExplanationOfBenefitItemServiced>,
+    #[serde(flatten)]
+    location: crate::r6::choice::Slot<ExplanationOfBenefitItemLocation>,
+    patient_paid: Option<types::Money>,
+    quantity: Option<types::Quantity>,
+    unit_price: Option<types::Money>,
+    factor: Option<types::Decimal>,
+    #[serde(rename = "_factor")]
+    factor_ext: Option<types::Element>,
+    tax: Option<types::Money>,
+    net: Option<types::Money>,
+    #[serde(default)]
+    udi: Vec<types::Reference<crate::r6::resources::Device>>,
+    #[serde(default)]
+    body_site: Vec<ExplanationOfBenefitItemBodySite>,
+    #[serde(default)]
+    encounter: Vec<types::Reference<crate::r6::resources::Encounter>>,
+    #[serde(default)]
+    note_number: Vec<types::PositiveInt>,
+    #[serde(rename = "_noteNumber")]
+    #[serde(default)]
+    note_number_ext: Vec<Option<types::Element>>,
+    review_outcome: Option<ExplanationOfBenefitItemReviewOutcome>,
+    #[serde(default)]
+    adjudication: Vec<ExplanationOfBenefitItemAdjudication>,
+    #[serde(default)]
+    detail: Vec<ExplanationOfBenefitItemDetail>,
+}
+
+impl ::core::convert::From<ExplanationOfBenefitItemDe> for ExplanationOfBenefitItem {
+    fn from(v: ExplanationOfBenefitItemDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            sequence: v.sequence,
+            sequence_ext: v.sequence_ext,
+            care_team_sequence: v.care_team_sequence,
+            care_team_sequence_ext: v.care_team_sequence_ext,
+            diagnosis_sequence: v.diagnosis_sequence,
+            diagnosis_sequence_ext: v.diagnosis_sequence_ext,
+            procedure_sequence: v.procedure_sequence,
+            procedure_sequence_ext: v.procedure_sequence_ext,
+            information_sequence: v.information_sequence,
+            information_sequence_ext: v.information_sequence_ext,
+            trace_number: v.trace_number,
+            revenue: v.revenue,
+            category: v.category,
+            product_or_service: v.product_or_service,
+            product_or_service_end: v.product_or_service_end,
+            request: v.request,
+            modifier: v.modifier,
+            program_code: v.program_code,
+            serviced: v.serviced.0,
+            location: v.location.0,
+            patient_paid: v.patient_paid,
+            quantity: v.quantity,
+            unit_price: v.unit_price,
+            factor: v.factor,
+            factor_ext: v.factor_ext,
+            tax: v.tax,
+            net: v.net,
+            udi: v.udi,
+            body_site: v.body_site,
+            encounter: v.encounter,
+            note_number: v.note_number,
+            note_number_ext: v.note_number_ext,
+            review_outcome: v.review_outcome,
+            adjudication: v.adjudication,
+            detail: v.detail,
+        }
+    }
 }
 
 /// If this item is a group then the values here are a summary of the
@@ -1688,6 +2031,7 @@ pub struct ExplanationOfBenefitPayment {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ExplanationOfBenefitProcedureDe")]
 #[fhir_version("r6")]
 pub struct ExplanationOfBenefitProcedure {
     /// Unique id for inter-element referencing
@@ -1727,6 +2071,45 @@ pub struct ExplanationOfBenefitProcedure {
     /// Unique device identifier
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub udi: Vec<types::Reference<crate::r6::resources::Device>>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ExplanationOfBenefitProcedureDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    sequence: types::PositiveInt,
+    #[serde(rename = "_sequence")]
+    sequence_ext: Option<types::Element>,
+    #[serde(default)]
+    r#type: Vec<types::CodeableConcept>,
+    date: Option<types::DateTime>,
+    #[serde(rename = "_date")]
+    date_ext: Option<types::Element>,
+    #[serde(flatten)]
+    procedure: crate::r6::choice::Slot<ExplanationOfBenefitProcedureProcedure>,
+    #[serde(default)]
+    udi: Vec<types::Reference<crate::r6::resources::Device>>,
+}
+
+impl ::core::convert::From<ExplanationOfBenefitProcedureDe> for ExplanationOfBenefitProcedure {
+    fn from(v: ExplanationOfBenefitProcedureDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            sequence: v.sequence,
+            sequence_ext: v.sequence_ext,
+            r#type: v.r#type,
+            date: v.date,
+            date_ext: v.date_ext,
+            procedure: v.procedure.0,
+            udi: v.udi,
+        }
+    }
 }
 
 /// A note that describes or explains adjudication results in a human readable
@@ -1855,6 +2238,7 @@ pub struct ExplanationOfBenefitRelated {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ExplanationOfBenefitSupportingInfoDe")]
 #[fhir_version("r6")]
 pub struct ExplanationOfBenefitSupportingInfo {
     /// Unique id for inter-element referencing
@@ -1893,6 +2277,45 @@ pub struct ExplanationOfBenefitSupportingInfo {
 
     /// Explanation for the information
     pub reason: Option<types::Coding>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ExplanationOfBenefitSupportingInfoDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    sequence: types::PositiveInt,
+    #[serde(rename = "_sequence")]
+    sequence_ext: Option<types::Element>,
+    category: types::CodeableConcept,
+    code: Option<types::CodeableConcept>,
+    #[serde(flatten)]
+    timing: crate::r6::choice::Slot<ExplanationOfBenefitSupportingInfoTiming>,
+    #[serde(flatten)]
+    value: crate::r6::choice::Slot<ExplanationOfBenefitSupportingInfoValue>,
+    reason: Option<types::Coding>,
+}
+
+impl ::core::convert::From<ExplanationOfBenefitSupportingInfoDe>
+    for ExplanationOfBenefitSupportingInfo
+{
+    fn from(v: ExplanationOfBenefitSupportingInfoDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            sequence: v.sequence,
+            sequence_ext: v.sequence_ext,
+            category: v.category,
+            code: v.code,
+            timing: v.timing.0,
+            value: v.value.0,
+            reason: v.reason,
+        }
+    }
 }
 
 /// Categorized monetary totals for the adjudication.

@@ -63,6 +63,7 @@ use fhir_derive_macros::Validate;
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "AdverseEventDe")]
 pub struct AdverseEvent {
     /// Logical id of this artifact
     pub id: Option<types::String>,
@@ -205,6 +206,119 @@ pub struct AdverseEvent {
     pub note: Vec<types::Annotation>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AdverseEventDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r5::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    status: types::Code,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    actuality: crate::r5::coded::Coded<crate::r5::codes::AdverseEventActuality>,
+    #[serde(rename = "_actuality")]
+    actuality_ext: Option<types::Element>,
+    #[serde(default)]
+    category: Vec<types::CodeableConcept>,
+    code: Option<types::CodeableConcept>,
+    subject: types::Reference,
+    encounter: Option<types::Reference<crate::r5::resources::Encounter>>,
+    #[serde(flatten)]
+    occurrence: crate::r5::choice::Slot<AdverseEventOccurrence>,
+    detected: Option<types::DateTime>,
+    #[serde(rename = "_detected")]
+    detected_ext: Option<types::Element>,
+    recorded_date: Option<types::DateTime>,
+    #[serde(rename = "_recordedDate")]
+    recorded_date_ext: Option<types::Element>,
+    #[serde(default)]
+    resulting_effect: Vec<types::Reference>,
+    location: Option<types::Reference<crate::r5::resources::Location>>,
+    seriousness: Option<types::CodeableConcept>,
+    #[serde(default)]
+    outcome: Vec<types::CodeableConcept>,
+    recorder: Option<types::Reference>,
+    #[serde(default)]
+    participant: Vec<AdverseEventParticipant>,
+    #[serde(default)]
+    study: Vec<types::Reference<crate::r5::resources::ResearchStudy>>,
+    expected_in_research_study: Option<types::Boolean>,
+    #[serde(rename = "_expectedInResearchStudy")]
+    expected_in_research_study_ext: Option<types::Element>,
+    #[serde(default)]
+    suspect_entity: Vec<AdverseEventSuspectEntity>,
+    #[serde(default)]
+    contributing_factor: Vec<AdverseEventContributingFactor>,
+    #[serde(default)]
+    preventive_action: Vec<AdverseEventPreventiveAction>,
+    #[serde(default)]
+    mitigating_action: Vec<AdverseEventMitigatingAction>,
+    #[serde(default)]
+    supporting_info: Vec<AdverseEventSupportingInfo>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+}
+
+impl ::core::convert::From<AdverseEventDe> for AdverseEvent {
+    fn from(v: AdverseEventDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            status: v.status,
+            status_ext: v.status_ext,
+            actuality: v.actuality,
+            actuality_ext: v.actuality_ext,
+            category: v.category,
+            code: v.code,
+            subject: v.subject,
+            encounter: v.encounter,
+            occurrence: v.occurrence.0,
+            detected: v.detected,
+            detected_ext: v.detected_ext,
+            recorded_date: v.recorded_date,
+            recorded_date_ext: v.recorded_date_ext,
+            resulting_effect: v.resulting_effect,
+            location: v.location,
+            seriousness: v.seriousness,
+            outcome: v.outcome,
+            recorder: v.recorder,
+            participant: v.participant,
+            study: v.study,
+            expected_in_research_study: v.expected_in_research_study,
+            expected_in_research_study_ext: v.expected_in_research_study_ext,
+            suspect_entity: v.suspect_entity,
+            contributing_factor: v.contributing_factor,
+            preventive_action: v.preventive_action,
+            mitigating_action: v.mitigating_action,
+            supporting_info: v.supporting_info,
+            note: v.note,
+        }
+    }
+}
+
 /// Who was involved in the adverse event or the potential adverse event and
 /// what they did.
 /// # Examples
@@ -267,6 +381,7 @@ pub struct AdverseEventParticipant {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "AdverseEventSuspectEntityDe")]
 pub struct AdverseEventSuspectEntity {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -285,6 +400,31 @@ pub struct AdverseEventSuspectEntity {
 
     /// Information on the possible cause of the event
     pub causality: Option<AdverseEventSuspectEntityCausality>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AdverseEventSuspectEntityDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    instance: crate::r5::choice::Slot<AdverseEventSuspectEntityInstance>,
+    causality: Option<AdverseEventSuspectEntityCausality>,
+}
+
+impl ::core::convert::From<AdverseEventSuspectEntityDe> for AdverseEventSuspectEntity {
+    fn from(v: AdverseEventSuspectEntityDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            instance: v.instance.0,
+            causality: v.causality,
+        }
+    }
 }
 
 /// Information on the possible cause of the event.
@@ -353,6 +493,7 @@ pub struct AdverseEventSuspectEntityCausality {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "AdverseEventContributingFactorDe")]
 pub struct AdverseEventContributingFactor {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -368,6 +509,29 @@ pub struct AdverseEventContributingFactor {
     /// The `AdverseEvent.contributingFactor.item[x]` choice element (0..1); see [`AdverseEventContributingFactorItem`].
     #[serde(flatten)]
     pub item: Option<AdverseEventContributingFactorItem>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AdverseEventContributingFactorDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    item: crate::r5::choice::Slot<AdverseEventContributingFactorItem>,
+}
+
+impl ::core::convert::From<AdverseEventContributingFactorDe> for AdverseEventContributingFactor {
+    fn from(v: AdverseEventContributingFactorDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            item: v.item.0,
+        }
+    }
 }
 
 /// Preventive actions that contributed to avoiding the adverse event.
@@ -391,6 +555,7 @@ pub struct AdverseEventContributingFactor {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "AdverseEventPreventiveActionDe")]
 pub struct AdverseEventPreventiveAction {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -406,6 +571,29 @@ pub struct AdverseEventPreventiveAction {
     /// The `AdverseEvent.preventiveAction.item[x]` choice element (0..1); see [`AdverseEventPreventiveActionItem`].
     #[serde(flatten)]
     pub item: Option<AdverseEventPreventiveActionItem>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AdverseEventPreventiveActionDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    item: crate::r5::choice::Slot<AdverseEventPreventiveActionItem>,
+}
+
+impl ::core::convert::From<AdverseEventPreventiveActionDe> for AdverseEventPreventiveAction {
+    fn from(v: AdverseEventPreventiveActionDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            item: v.item.0,
+        }
+    }
 }
 
 /// Ameliorating actions taken after the adverse event occured in order to
@@ -430,6 +618,7 @@ pub struct AdverseEventPreventiveAction {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "AdverseEventMitigatingActionDe")]
 pub struct AdverseEventMitigatingAction {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -445,6 +634,29 @@ pub struct AdverseEventMitigatingAction {
     /// The `AdverseEvent.mitigatingAction.item[x]` choice element (0..1); see [`AdverseEventMitigatingActionItem`].
     #[serde(flatten)]
     pub item: Option<AdverseEventMitigatingActionItem>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AdverseEventMitigatingActionDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    item: crate::r5::choice::Slot<AdverseEventMitigatingActionItem>,
+}
+
+impl ::core::convert::From<AdverseEventMitigatingActionDe> for AdverseEventMitigatingAction {
+    fn from(v: AdverseEventMitigatingActionDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            item: v.item.0,
+        }
+    }
 }
 
 /// Supporting information relevant to the event.
@@ -468,6 +680,7 @@ pub struct AdverseEventMitigatingAction {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "AdverseEventSupportingInfoDe")]
 pub struct AdverseEventSupportingInfo {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -483,6 +696,29 @@ pub struct AdverseEventSupportingInfo {
     /// The `AdverseEvent.supportingInfo.item[x]` choice element (0..1); see [`AdverseEventSupportingInfoItem`].
     #[serde(flatten)]
     pub item: Option<AdverseEventSupportingInfoItem>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AdverseEventSupportingInfoDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    item: crate::r5::choice::Slot<AdverseEventSupportingInfoItem>,
+}
+
+impl ::core::convert::From<AdverseEventSupportingInfoDe> for AdverseEventSupportingInfo {
+    fn from(v: AdverseEventSupportingInfoDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            item: v.item.0,
+        }
+    }
 }
 
 #[cfg(test)]

@@ -38,6 +38,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MediaDe")]
 #[fhir_version("r3")]
 pub struct Media {
     /// Logical id of this artifact
@@ -154,6 +155,99 @@ pub struct Media {
     /// Comments made about the media
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub note: Vec<types::Annotation>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MediaDe {
+    id: Option<types::Id>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r3::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    #[serde(default)]
+    based_on: Vec<types::Reference<crate::r3::resources::ProcedureRequest>>,
+    r#type: crate::coded::Coded<crate::r3::codes::DigitalMediaType>,
+    #[serde(rename = "_type")]
+    type_ext: Option<types::Element>,
+    subtype: Option<types::CodeableConcept>,
+    view: Option<types::CodeableConcept>,
+    subject: Option<types::Reference>,
+    context: Option<types::Reference>,
+    #[serde(flatten)]
+    occurrence: crate::r3::choice::Slot<MediaOccurrence>,
+    operator: Option<types::Reference<crate::r3::resources::Practitioner>>,
+    #[serde(default)]
+    reason_code: Vec<types::CodeableConcept>,
+    body_site: Option<types::CodeableConcept>,
+    device: Option<types::Reference>,
+    height: Option<types::PositiveInt>,
+    #[serde(rename = "_height")]
+    height_ext: Option<types::Element>,
+    width: Option<types::PositiveInt>,
+    #[serde(rename = "_width")]
+    width_ext: Option<types::Element>,
+    frames: Option<types::PositiveInt>,
+    #[serde(rename = "_frames")]
+    frames_ext: Option<types::Element>,
+    duration: Option<types::UnsignedInt>,
+    #[serde(rename = "_duration")]
+    duration_ext: Option<types::Element>,
+    content: types::Attachment,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+}
+
+impl ::core::convert::From<MediaDe> for Media {
+    fn from(v: MediaDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            based_on: v.based_on,
+            r#type: v.r#type,
+            type_ext: v.type_ext,
+            subtype: v.subtype,
+            view: v.view,
+            subject: v.subject,
+            context: v.context,
+            occurrence: v.occurrence.0,
+            operator: v.operator,
+            reason_code: v.reason_code,
+            body_site: v.body_site,
+            device: v.device,
+            height: v.height,
+            height_ext: v.height_ext,
+            width: v.width,
+            width_ext: v.width_ext,
+            frames: v.frames,
+            frames_ext: v.frames_ext,
+            duration: v.duration,
+            duration_ext: v.duration_ext,
+            content: v.content,
+            note: v.note,
+        }
+    }
 }
 
 /// The `Media.occurrence[x]` choice element (see `spec/11-choice-types.md`).

@@ -41,6 +41,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MedicationDispenseDe")]
 #[fhir_version("r4b")]
 pub struct MedicationDispense {
     /// Logical id of this artifact
@@ -177,6 +178,112 @@ pub struct MedicationDispense {
     /// A list of relevant lifecycle events
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub event_history: Vec<types::Reference<crate::r4b::resources::Provenance>>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MedicationDispenseDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r4b::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    #[serde(default)]
+    part_of: Vec<types::Reference<crate::r4b::resources::Procedure>>,
+    status: crate::coded::Coded<crate::r4b::codes::MedicationdispenseStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    #[serde(flatten)]
+    status_reason: crate::r4b::choice::Slot<MedicationDispenseStatusReason>,
+    category: Option<types::CodeableConcept>,
+    #[serde(flatten)]
+    medication: crate::r4b::choice::Slot<MedicationDispenseMedication>,
+    subject: Option<types::Reference>,
+    context: Option<types::Reference>,
+    #[serde(default)]
+    supporting_information: Vec<types::Reference>,
+    #[serde(default)]
+    performer: Vec<MedicationDispensePerformer>,
+    location: Option<types::Reference<crate::r4b::resources::Location>>,
+    #[serde(default)]
+    authorizing_prescription: Vec<types::Reference<crate::r4b::resources::MedicationRequest>>,
+    r#type: Option<types::CodeableConcept>,
+    quantity: Option<types::Quantity>,
+    days_supply: Option<types::Quantity>,
+    when_prepared: Option<types::DateTime>,
+    #[serde(rename = "_whenPrepared")]
+    when_prepared_ext: Option<types::Element>,
+    when_handed_over: Option<types::DateTime>,
+    #[serde(rename = "_whenHandedOver")]
+    when_handed_over_ext: Option<types::Element>,
+    destination: Option<types::Reference<crate::r4b::resources::Location>>,
+    #[serde(default)]
+    receiver: Vec<types::Reference>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+    #[serde(default)]
+    dosage_instruction: Vec<types::Dosage>,
+    substitution: Option<MedicationDispenseSubstitution>,
+    #[serde(default)]
+    detected_issue: Vec<types::Reference<crate::r4b::resources::DetectedIssue>>,
+    #[serde(default)]
+    event_history: Vec<types::Reference<crate::r4b::resources::Provenance>>,
+}
+
+impl ::core::convert::From<MedicationDispenseDe> for MedicationDispense {
+    fn from(v: MedicationDispenseDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            part_of: v.part_of,
+            status: v.status,
+            status_ext: v.status_ext,
+            status_reason: v.status_reason.0,
+            category: v.category,
+            medication: v.medication.0,
+            subject: v.subject,
+            context: v.context,
+            supporting_information: v.supporting_information,
+            performer: v.performer,
+            location: v.location,
+            authorizing_prescription: v.authorizing_prescription,
+            r#type: v.r#type,
+            quantity: v.quantity,
+            days_supply: v.days_supply,
+            when_prepared: v.when_prepared,
+            when_prepared_ext: v.when_prepared_ext,
+            when_handed_over: v.when_handed_over,
+            when_handed_over_ext: v.when_handed_over_ext,
+            destination: v.destination,
+            receiver: v.receiver,
+            note: v.note,
+            dosage_instruction: v.dosage_instruction,
+            substitution: v.substitution,
+            detected_issue: v.detected_issue,
+            event_history: v.event_history,
+        }
+    }
 }
 
 /// Indicates who or what performed the event.

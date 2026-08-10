@@ -44,6 +44,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ClinicalImpressionDe")]
 #[fhir_version("r4b")]
 pub struct ClinicalImpression {
     /// Logical id of this artifact
@@ -172,6 +173,109 @@ pub struct ClinicalImpression {
     /// Comments made about the ClinicalImpression
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub note: Vec<types::Annotation>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ClinicalImpressionDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r4b::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    status: types::Code,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    status_reason: Option<types::CodeableConcept>,
+    code: Option<types::CodeableConcept>,
+    description: Option<types::String>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    subject: types::Reference,
+    encounter: Option<types::Reference<crate::r4b::resources::Encounter>>,
+    #[serde(flatten)]
+    effective: crate::r4b::choice::Slot<ClinicalImpressionEffective>,
+    date: Option<types::DateTime>,
+    #[serde(rename = "_date")]
+    date_ext: Option<types::Element>,
+    assessor: Option<types::Reference>,
+    previous: Option<types::Reference<crate::r4b::resources::ClinicalImpression>>,
+    #[serde(default)]
+    problem: Vec<types::Reference>,
+    #[serde(default)]
+    investigation: Vec<ClinicalImpressionInvestigation>,
+    #[serde(default)]
+    protocol: Vec<types::Uri>,
+    #[serde(rename = "_protocol")]
+    #[serde(default)]
+    protocol_ext: Vec<Option<types::Element>>,
+    summary: Option<types::String>,
+    #[serde(rename = "_summary")]
+    summary_ext: Option<types::Element>,
+    #[serde(default)]
+    finding: Vec<ClinicalImpressionFinding>,
+    #[serde(default)]
+    prognosis_codeable_concept: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    prognosis_reference: Vec<types::Reference<crate::r4b::resources::RiskAssessment>>,
+    #[serde(default)]
+    supporting_info: Vec<types::Reference>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+}
+
+impl ::core::convert::From<ClinicalImpressionDe> for ClinicalImpression {
+    fn from(v: ClinicalImpressionDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            status: v.status,
+            status_ext: v.status_ext,
+            status_reason: v.status_reason,
+            code: v.code,
+            description: v.description,
+            description_ext: v.description_ext,
+            subject: v.subject,
+            encounter: v.encounter,
+            effective: v.effective.0,
+            date: v.date,
+            date_ext: v.date_ext,
+            assessor: v.assessor,
+            previous: v.previous,
+            problem: v.problem,
+            investigation: v.investigation,
+            protocol: v.protocol,
+            protocol_ext: v.protocol_ext,
+            summary: v.summary,
+            summary_ext: v.summary_ext,
+            finding: v.finding,
+            prognosis_codeable_concept: v.prognosis_codeable_concept,
+            prognosis_reference: v.prognosis_reference,
+            supporting_info: v.supporting_info,
+            note: v.note,
+        }
+    }
 }
 
 /// Specific findings or diagnoses that were considered likely or relevant to

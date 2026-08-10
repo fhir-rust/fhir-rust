@@ -37,6 +37,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "TaskDe")]
 #[fhir_version("r3")]
 pub struct Task {
     /// Logical id of this artifact
@@ -191,6 +192,124 @@ pub struct Task {
     pub output: Vec<TaskOutput>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct TaskDe {
+    id: Option<types::Id>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r3::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    #[serde(flatten)]
+    definition: crate::r3::choice::Slot<TaskDefinition>,
+    #[serde(default)]
+    based_on: Vec<types::Reference>,
+    group_identifier: Option<types::Identifier>,
+    #[serde(default)]
+    part_of: Vec<types::Reference<crate::r3::resources::Task>>,
+    status: crate::coded::Coded<crate::r3::codes::TaskStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    status_reason: Option<types::CodeableConcept>,
+    business_status: Option<types::CodeableConcept>,
+    intent: crate::coded::Coded<crate::r3::codes::RequestIntent>,
+    #[serde(rename = "_intent")]
+    intent_ext: Option<types::Element>,
+    priority: Option<crate::coded::Coded<crate::r3::codes::RequestPriority>>,
+    #[serde(rename = "_priority")]
+    priority_ext: Option<types::Element>,
+    code: Option<types::CodeableConcept>,
+    description: Option<types::String>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    focus: Option<types::Reference>,
+    r#for: Option<types::Reference>,
+    context: Option<types::Reference>,
+    execution_period: Option<types::Period>,
+    authored_on: Option<types::DateTime>,
+    #[serde(rename = "_authoredOn")]
+    authored_on_ext: Option<types::Element>,
+    last_modified: Option<types::DateTime>,
+    #[serde(rename = "_lastModified")]
+    last_modified_ext: Option<types::Element>,
+    requester: Option<TaskRequester>,
+    #[serde(default)]
+    performer_type: Vec<types::CodeableConcept>,
+    owner: Option<types::Reference>,
+    reason: Option<types::CodeableConcept>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+    #[serde(default)]
+    relevant_history: Vec<types::Reference<crate::r3::resources::Provenance>>,
+    restriction: Option<TaskRestriction>,
+    #[serde(default)]
+    input: Vec<TaskInput>,
+    #[serde(default)]
+    output: Vec<TaskOutput>,
+}
+
+impl ::core::convert::From<TaskDe> for Task {
+    fn from(v: TaskDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            definition: v.definition.0,
+            based_on: v.based_on,
+            group_identifier: v.group_identifier,
+            part_of: v.part_of,
+            status: v.status,
+            status_ext: v.status_ext,
+            status_reason: v.status_reason,
+            business_status: v.business_status,
+            intent: v.intent,
+            intent_ext: v.intent_ext,
+            priority: v.priority,
+            priority_ext: v.priority_ext,
+            code: v.code,
+            description: v.description,
+            description_ext: v.description_ext,
+            focus: v.focus,
+            r#for: v.r#for,
+            context: v.context,
+            execution_period: v.execution_period,
+            authored_on: v.authored_on,
+            authored_on_ext: v.authored_on_ext,
+            last_modified: v.last_modified,
+            last_modified_ext: v.last_modified_ext,
+            requester: v.requester,
+            performer_type: v.performer_type,
+            owner: v.owner,
+            reason: v.reason,
+            note: v.note,
+            relevant_history: v.relevant_history,
+            restriction: v.restriction,
+            input: v.input,
+            output: v.output,
+        }
+    }
+}
+
 /// Additional information that may be needed in the execution of the task.
 ///
 /// # Examples
@@ -213,6 +332,7 @@ pub struct Task {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "TaskInputDe")]
 #[fhir_version("r3")]
 pub struct TaskInput {
     /// xml:id (or equivalent in JSON)
@@ -233,6 +353,31 @@ pub struct TaskInput {
     /// The `Task.input.value[x]` choice element (1..1); see [`TaskInputValue`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub value: Option<TaskInputValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct TaskInputDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: types::CodeableConcept,
+    #[serde(flatten)]
+    value: crate::r3::choice::Slot<TaskInputValue>,
+}
+
+impl ::core::convert::From<TaskInputDe> for TaskInput {
+    fn from(v: TaskInputDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            value: v.value.0,
+        }
+    }
 }
 
 /// Outputs produced by the Task.
@@ -257,6 +402,7 @@ pub struct TaskInput {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "TaskOutputDe")]
 #[fhir_version("r3")]
 pub struct TaskOutput {
     /// xml:id (or equivalent in JSON)
@@ -277,6 +423,31 @@ pub struct TaskOutput {
     /// The `Task.output.value[x]` choice element (1..1); see [`TaskOutputValue`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub value: Option<TaskOutputValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct TaskOutputDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: types::CodeableConcept,
+    #[serde(flatten)]
+    value: crate::r3::choice::Slot<TaskOutputValue>,
+}
+
+impl ::core::convert::From<TaskOutputDe> for TaskOutput {
+    fn from(v: TaskOutputDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            value: v.value.0,
+        }
+    }
 }
 
 /// The creator of the task.

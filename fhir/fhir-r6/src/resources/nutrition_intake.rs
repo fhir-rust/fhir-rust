@@ -47,6 +47,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "NutritionIntakeDe")]
 #[fhir_version("r6")]
 pub struct NutritionIntake {
     /// Logical id of this artifact
@@ -160,6 +161,94 @@ pub struct NutritionIntake {
     pub note: Vec<types::Annotation>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct NutritionIntakeDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r6::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    #[serde(default)]
+    based_on: Vec<types::Reference>,
+    #[serde(default)]
+    part_of: Vec<types::Reference>,
+    status: crate::coded::Coded<crate::r6::codes::EventStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    #[serde(default)]
+    status_reason: Vec<types::CodeableConcept>,
+    code: Option<types::CodeableConcept>,
+    subject: types::Reference,
+    encounter: Option<types::Reference<crate::r6::resources::Encounter>>,
+    #[serde(flatten)]
+    occurrence: crate::r6::choice::Slot<NutritionIntakeOccurrence>,
+    recorded: Option<types::DateTime>,
+    #[serde(rename = "_recorded")]
+    recorded_ext: Option<types::Element>,
+    #[serde(flatten)]
+    reported: crate::r6::choice::Slot<NutritionIntakeReported>,
+    #[serde(default)]
+    nutrition_item: Vec<NutritionIntakeNutritionItem>,
+    #[serde(default)]
+    performer: Vec<NutritionIntakePerformer>,
+    location: Option<types::Reference<crate::r6::resources::Location>>,
+    #[serde(default)]
+    derived_from: Vec<types::Reference>,
+    #[serde(default)]
+    reason: Vec<types::CodeableReference>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+}
+
+impl ::core::convert::From<NutritionIntakeDe> for NutritionIntake {
+    fn from(v: NutritionIntakeDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            based_on: v.based_on,
+            part_of: v.part_of,
+            status: v.status,
+            status_ext: v.status_ext,
+            status_reason: v.status_reason,
+            code: v.code,
+            subject: v.subject,
+            encounter: v.encounter,
+            occurrence: v.occurrence.0,
+            recorded: v.recorded,
+            recorded_ext: v.recorded_ext,
+            reported: v.reported.0,
+            nutrition_item: v.nutrition_item,
+            performer: v.performer,
+            location: v.location,
+            derived_from: v.derived_from,
+            reason: v.reason,
+            note: v.note,
+        }
+    }
+}
+
 /// The nutrition product intended for consumption and/or administration.
 ///
 /// # Examples
@@ -232,6 +321,7 @@ pub struct NutritionIntakeNutritionItem {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "NutritionIntakeNutritionItemConsumedItemDe")]
 #[fhir_version("r6")]
 pub struct NutritionIntakeNutritionItemConsumedItem {
     /// Unique id for inter-element referencing
@@ -259,6 +349,38 @@ pub struct NutritionIntakeNutritionItemConsumedItem {
     /// Nutrients and/or energy contained in the intake
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub total_intake: Vec<NutritionIntakeNutritionItemConsumedItemTotalIntake>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct NutritionIntakeNutritionItemConsumedItemDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    schedule: Option<types::Timing>,
+    amount: Option<types::Quantity>,
+    #[serde(flatten)]
+    rate: crate::r6::choice::Slot<NutritionIntakeNutritionItemConsumedItemRate>,
+    #[serde(default)]
+    total_intake: Vec<NutritionIntakeNutritionItemConsumedItemTotalIntake>,
+}
+
+impl ::core::convert::From<NutritionIntakeNutritionItemConsumedItemDe>
+    for NutritionIntakeNutritionItemConsumedItem
+{
+    fn from(v: NutritionIntakeNutritionItemConsumedItemDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            schedule: v.schedule,
+            amount: v.amount,
+            rate: v.rate.0,
+            total_intake: v.total_intake,
+        }
+    }
 }
 
 /// Nutrients and/or energy contained in the intake.

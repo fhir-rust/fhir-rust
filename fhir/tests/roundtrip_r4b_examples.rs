@@ -55,46 +55,47 @@ fn roundtrip_curated_subset() {
 /// null-padded parallel-array form (`"event": [null]` beside `_event`), which
 /// is valid FHIR JSON. The model rejects the null (audit **F-86**, all
 /// releases — repeating primitives are `Vec<T>` and cannot represent a
-/// null-padded position), and the choice machinery then drops the whole
-/// element silently instead of erroring (audit **F-87**). The R4 corpus never
-/// exercises this because HL7's R4 copies of the same examples omit the value
-/// array instead of padding it.
+/// null-padded position). Until F-87's fix (same day) the choice machinery
+/// then dropped the whole element silently; now the refusal is loud, which
+/// is why these entries are deserialize failures rather than mismatches.
+/// The R4 corpus never exercises this because HL7's R4 copies of the same
+/// examples omit the value array instead of padding it.
 const KNOWN_FAILURES: &[common::KnownFailure] = &[
     common::KnownFailure {
         file: "activitydefinition-administer-zika-virus-exposure-assessment.json",
-        reason: "F-86/F-87: null-padded Timing.event dropped from timing[x]",
+        reason: "F-86: null-padded Timing.event refused (loudly, since F-87's fix)",
     },
     common::KnownFailure {
         file: "activitydefinition-example.json",
-        reason: "F-86/F-87: null-padded Timing.event dropped from timing[x]",
+        reason: "F-86: null-padded Timing.event refused (loudly, since F-87's fix)",
     },
     common::KnownFailure {
         file: "activitydefinition-order-serum-dengue-virus-igm.json",
-        reason: "F-86/F-87: null-padded Timing.event dropped from timing[x]",
+        reason: "F-86: null-padded Timing.event refused (loudly, since F-87's fix)",
     },
     common::KnownFailure {
         file: "activitydefinition-order-serum-zika-dengue-virus-igm.json",
-        reason: "F-86/F-87: null-padded Timing.event dropped from timing[x]",
+        reason: "F-86: null-padded Timing.event refused (loudly, since F-87's fix)",
     },
     common::KnownFailure {
         file: "activitydefinition-predecessor-example.json",
-        reason: "F-86/F-87: null-padded Timing.event dropped from timing[x]",
+        reason: "F-86: null-padded Timing.event refused (loudly, since F-87's fix)",
     },
     common::KnownFailure {
         file: "activitydefinition-provide-mosquito-prevention-advice.json",
-        reason: "F-86/F-87: null-padded Timing.event dropped from timing[x]",
+        reason: "F-86: null-padded Timing.event refused (loudly, since F-87's fix)",
     },
     common::KnownFailure {
         file: "activitydefinition-servicerequest-example.json",
-        reason: "F-86/F-87: null-padded Timing.event dropped from timing[x]",
+        reason: "F-86: null-padded Timing.event refused (loudly, since F-87's fix)",
     },
     common::KnownFailure {
         file: "plandefinition-example-cardiology-os.json",
-        reason: "F-86/F-87: null-padded Timing.event in a contained resource",
+        reason: "F-86: null-padded Timing.event in a contained resource, refused",
     },
     common::KnownFailure {
         file: "plandefinition-example.json",
-        reason: "F-86/F-87: null-padded Timing.event in a contained resource",
+        reason: "F-86: null-padded Timing.event in a contained resource, refused",
     },
 ];
 

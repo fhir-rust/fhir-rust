@@ -40,6 +40,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "EvidenceDe")]
 #[fhir_version("r6")]
 pub struct Evidence {
     /// Logical id of this artifact
@@ -257,6 +258,171 @@ pub struct Evidence {
     pub certainty: Vec<EvidenceCertainty>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct EvidenceDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r6::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    url: Option<types::Uri>,
+    #[serde(rename = "_url")]
+    url_ext: Option<types::Element>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    version: Option<types::String>,
+    #[serde(rename = "_version")]
+    version_ext: Option<types::Element>,
+    #[serde(flatten)]
+    version_algorithm: crate::r6::choice::Slot<EvidenceVersionAlgorithm>,
+    name: Option<types::String>,
+    #[serde(rename = "_name")]
+    name_ext: Option<types::Element>,
+    title: Option<types::String>,
+    #[serde(rename = "_title")]
+    title_ext: Option<types::Element>,
+    cite_as: Option<types::Markdown>,
+    #[serde(rename = "_citeAs")]
+    cite_as_ext: Option<types::Element>,
+    status: crate::coded::Coded<crate::r6::codes::PublicationStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    experimental: Option<types::Boolean>,
+    #[serde(rename = "_experimental")]
+    experimental_ext: Option<types::Element>,
+    date: Option<types::DateTime>,
+    #[serde(rename = "_date")]
+    date_ext: Option<types::Element>,
+    approval_date: Option<types::Date>,
+    #[serde(rename = "_approvalDate")]
+    approval_date_ext: Option<types::Element>,
+    last_review_date: Option<types::Date>,
+    #[serde(rename = "_lastReviewDate")]
+    last_review_date_ext: Option<types::Element>,
+    #[serde(default)]
+    author: Vec<types::ContactDetail>,
+    publisher: Option<types::String>,
+    #[serde(rename = "_publisher")]
+    publisher_ext: Option<types::Element>,
+    #[serde(default)]
+    contact: Vec<types::ContactDetail>,
+    #[serde(default)]
+    recorder: Vec<types::ContactDetail>,
+    #[serde(default)]
+    editor: Vec<types::ContactDetail>,
+    #[serde(default)]
+    reviewer: Vec<types::ContactDetail>,
+    #[serde(default)]
+    endorser: Vec<types::ContactDetail>,
+    #[serde(default)]
+    use_context: Vec<types::UsageContext>,
+    purpose: Option<types::Markdown>,
+    #[serde(rename = "_purpose")]
+    purpose_ext: Option<types::Element>,
+    copyright: Option<types::Markdown>,
+    #[serde(rename = "_copyright")]
+    copyright_ext: Option<types::Element>,
+    copyright_label: Option<types::String>,
+    #[serde(rename = "_copyrightLabel")]
+    copyright_label_ext: Option<types::Element>,
+    #[serde(default)]
+    relates_to: Vec<EvidenceRelatesTo>,
+    description: Option<types::Markdown>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    assertion: Option<types::Markdown>,
+    #[serde(rename = "_assertion")]
+    assertion_ext: Option<types::Element>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+    #[serde(default)]
+    variable_definition: Vec<EvidenceVariableDefinition>,
+    #[serde(default)]
+    synthesis_type: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    study_design: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    statistic: Vec<EvidenceStatistic>,
+    #[serde(default)]
+    certainty: Vec<EvidenceCertainty>,
+}
+
+impl ::core::convert::From<EvidenceDe> for Evidence {
+    fn from(v: EvidenceDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            url: v.url,
+            url_ext: v.url_ext,
+            identifier: v.identifier,
+            version: v.version,
+            version_ext: v.version_ext,
+            version_algorithm: v.version_algorithm.0,
+            name: v.name,
+            name_ext: v.name_ext,
+            title: v.title,
+            title_ext: v.title_ext,
+            cite_as: v.cite_as,
+            cite_as_ext: v.cite_as_ext,
+            status: v.status,
+            status_ext: v.status_ext,
+            experimental: v.experimental,
+            experimental_ext: v.experimental_ext,
+            date: v.date,
+            date_ext: v.date_ext,
+            approval_date: v.approval_date,
+            approval_date_ext: v.approval_date_ext,
+            last_review_date: v.last_review_date,
+            last_review_date_ext: v.last_review_date_ext,
+            author: v.author,
+            publisher: v.publisher,
+            publisher_ext: v.publisher_ext,
+            contact: v.contact,
+            recorder: v.recorder,
+            editor: v.editor,
+            reviewer: v.reviewer,
+            endorser: v.endorser,
+            use_context: v.use_context,
+            purpose: v.purpose,
+            purpose_ext: v.purpose_ext,
+            copyright: v.copyright,
+            copyright_ext: v.copyright_ext,
+            copyright_label: v.copyright_label,
+            copyright_label_ext: v.copyright_label_ext,
+            relates_to: v.relates_to,
+            description: v.description,
+            description_ext: v.description_ext,
+            assertion: v.assertion,
+            assertion_ext: v.assertion_ext,
+            note: v.note,
+            variable_definition: v.variable_definition,
+            synthesis_type: v.synthesis_type,
+            study_design: v.study_design,
+            statistic: v.statistic,
+            certainty: v.certainty,
+        }
+    }
+}
+
 /// Assessment of certainty, confidence in the estimates, or quality of the
 /// evidence.
 ///
@@ -347,6 +513,7 @@ pub struct EvidenceCertainty {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "EvidenceRelatesToDe")]
 #[fhir_version("r6")]
 pub struct EvidenceRelatesTo {
     /// Unique id for inter-element referencing
@@ -377,6 +544,34 @@ pub struct EvidenceRelatesTo {
     /// The `Evidence.relatesTo.target[x]` choice element (1..1); see [`EvidenceRelatesToTarget`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub target: Option<EvidenceRelatesToTarget>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct EvidenceRelatesToDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: crate::coded::Coded<crate::r6::codes::ArtifactRelationshipType>,
+    #[serde(rename = "_type")]
+    type_ext: Option<types::Element>,
+    #[serde(flatten)]
+    target: crate::r6::choice::Slot<EvidenceRelatesToTarget>,
+}
+
+impl ::core::convert::From<EvidenceRelatesToDe> for EvidenceRelatesTo {
+    fn from(v: EvidenceRelatesToDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            type_ext: v.type_ext,
+            target: v.target.0,
+        }
+    }
 }
 
 /// Values and parameters for a single statistic.
@@ -553,6 +748,7 @@ pub struct EvidenceStatisticAttributeEstimate {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "EvidenceStatisticModelCharacteristicDe")]
 #[fhir_version("r6")]
 pub struct EvidenceStatisticModelCharacteristic {
     /// Unique id for inter-element referencing
@@ -596,6 +792,49 @@ pub struct EvidenceStatisticModelCharacteristic {
     /// An attribute of the model characteristic
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub attribute: Vec<EvidenceStatisticAttributeEstimate>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct EvidenceStatisticModelCharacteristicDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    code: types::CodeableConcept,
+    #[serde(flatten)]
+    value: crate::r6::choice::Slot<EvidenceStatisticModelCharacteristicValue>,
+    intended: Option<types::Boolean>,
+    #[serde(rename = "_intended")]
+    intended_ext: Option<types::Element>,
+    applied: Option<types::Boolean>,
+    #[serde(rename = "_applied")]
+    applied_ext: Option<types::Element>,
+    #[serde(default)]
+    variable: Vec<EvidenceStatisticModelCharacteristicVariable>,
+    #[serde(default)]
+    attribute: Vec<EvidenceStatisticAttributeEstimate>,
+}
+
+impl ::core::convert::From<EvidenceStatisticModelCharacteristicDe>
+    for EvidenceStatisticModelCharacteristic
+{
+    fn from(v: EvidenceStatisticModelCharacteristicDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            code: v.code,
+            value: v.value.0,
+            intended: v.intended,
+            intended_ext: v.intended_ext,
+            applied: v.applied,
+            applied_ext: v.applied_ext,
+            variable: v.variable,
+            attribute: v.attribute,
+        }
+    }
 }
 
 /// A variable adjusted for in the adjusted analysis.

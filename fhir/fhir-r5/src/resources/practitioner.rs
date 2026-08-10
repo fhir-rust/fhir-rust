@@ -61,6 +61,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "PractitionerDe")]
 pub struct Practitioner {
     /// Logical id of this artifact
     pub id: Option<types::String>,
@@ -144,6 +145,82 @@ pub struct Practitioner {
     /// A language which may be used to communicate with the practitioner
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub communication: Vec<PractitionerCommunication>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PractitionerDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r5::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    active: Option<types::Boolean>,
+    #[serde(rename = "_active")]
+    active_ext: Option<types::Element>,
+    #[serde(default)]
+    name: Vec<types::HumanName>,
+    #[serde(default)]
+    telecom: Vec<types::ContactPoint>,
+    gender: Option<crate::r5::coded::Coded<crate::r5::codes::AdministrativeGender>>,
+    #[serde(rename = "_gender")]
+    gender_ext: Option<types::Element>,
+    birth_date: Option<types::Date>,
+    #[serde(rename = "_birthDate")]
+    birth_date_ext: Option<types::Element>,
+    #[serde(flatten)]
+    deceased: crate::r5::choice::Slot<PractitionerDeceased>,
+    #[serde(default)]
+    address: Vec<types::Address>,
+    #[serde(default)]
+    photo: Vec<types::Attachment>,
+    #[serde(default)]
+    qualification: Vec<PractitionerQualification>,
+    #[serde(default)]
+    communication: Vec<PractitionerCommunication>,
+}
+
+impl ::core::convert::From<PractitionerDe> for Practitioner {
+    fn from(v: PractitionerDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            active: v.active,
+            active_ext: v.active_ext,
+            name: v.name,
+            telecom: v.telecom,
+            gender: v.gender,
+            gender_ext: v.gender_ext,
+            birth_date: v.birth_date,
+            birth_date_ext: v.birth_date_ext,
+            deceased: v.deceased.0,
+            address: v.address,
+            photo: v.photo,
+            qualification: v.qualification,
+            communication: v.communication,
+        }
+    }
 }
 
 /// Qualifications, certifications, accreditations, licenses, training, etc.

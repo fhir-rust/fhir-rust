@@ -388,6 +388,7 @@ pub struct CodeSystemConceptDesignation {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "CodeSystemConceptPropertyDe")]
 #[fhir_version("r4")]
 pub struct CodeSystemConceptProperty {
     /// Unique id for inter-element referencing
@@ -412,6 +413,34 @@ pub struct CodeSystemConceptProperty {
     /// The `CodeSystem.concept.property.value[x]` choice element (1..1); see [`CodeSystemConceptPropertyValue`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub value: Option<CodeSystemConceptPropertyValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CodeSystemConceptPropertyDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    code: types::Code,
+    #[serde(rename = "_code")]
+    code_ext: Option<types::Element>,
+    #[serde(flatten)]
+    value: crate::r4::choice::Slot<CodeSystemConceptPropertyValue>,
+}
+
+impl ::core::convert::From<CodeSystemConceptPropertyDe> for CodeSystemConceptProperty {
+    fn from(v: CodeSystemConceptPropertyDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            code: v.code,
+            code_ext: v.code_ext,
+            value: v.value.0,
+        }
+    }
 }
 
 /// A filter that can be used in a value set compose statement when selecting

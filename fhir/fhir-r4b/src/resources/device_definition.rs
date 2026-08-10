@@ -38,6 +38,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "DeviceDefinitionDe")]
 #[fhir_version("r4b")]
 pub struct DeviceDefinition {
     /// Logical id of this artifact
@@ -178,6 +179,114 @@ pub struct DeviceDefinition {
     /// A substance used to create the material(s) of which the device is made
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub material: Vec<DeviceDefinitionMaterial>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DeviceDefinitionDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r4b::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    #[serde(default)]
+    udi_device_identifier: Vec<DeviceDefinitionUdiDeviceIdentifier>,
+    #[serde(flatten)]
+    manufacturer: crate::r4b::choice::Slot<DeviceDefinitionManufacturer>,
+    #[serde(default)]
+    device_name: Vec<DeviceDefinitionDeviceName>,
+    model_number: Option<types::String>,
+    #[serde(rename = "_modelNumber")]
+    model_number_ext: Option<types::Element>,
+    r#type: Option<types::CodeableConcept>,
+    #[serde(default)]
+    specialization: Vec<DeviceDefinitionSpecialization>,
+    #[serde(default)]
+    version: Vec<types::String>,
+    #[serde(rename = "_version")]
+    #[serde(default)]
+    version_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    safety: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    shelf_life_storage: Vec<types::ProductShelfLife>,
+    physical_characteristics: Option<types::ProdCharacteristic>,
+    #[serde(default)]
+    language_code: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    capability: Vec<DeviceDefinitionCapability>,
+    #[serde(default)]
+    property: Vec<DeviceDefinitionProperty>,
+    owner: Option<types::Reference<crate::r4b::resources::Organization>>,
+    #[serde(default)]
+    contact: Vec<types::ContactPoint>,
+    url: Option<types::Uri>,
+    #[serde(rename = "_url")]
+    url_ext: Option<types::Element>,
+    online_information: Option<types::Uri>,
+    #[serde(rename = "_onlineInformation")]
+    online_information_ext: Option<types::Element>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+    quantity: Option<types::Quantity>,
+    parent_device: Option<types::Reference<crate::r4b::resources::DeviceDefinition>>,
+    #[serde(default)]
+    material: Vec<DeviceDefinitionMaterial>,
+}
+
+impl ::core::convert::From<DeviceDefinitionDe> for DeviceDefinition {
+    fn from(v: DeviceDefinitionDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            udi_device_identifier: v.udi_device_identifier,
+            manufacturer: v.manufacturer.0,
+            device_name: v.device_name,
+            model_number: v.model_number,
+            model_number_ext: v.model_number_ext,
+            r#type: v.r#type,
+            specialization: v.specialization,
+            version: v.version,
+            version_ext: v.version_ext,
+            safety: v.safety,
+            shelf_life_storage: v.shelf_life_storage,
+            physical_characteristics: v.physical_characteristics,
+            language_code: v.language_code,
+            capability: v.capability,
+            property: v.property,
+            owner: v.owner,
+            contact: v.contact,
+            url: v.url,
+            url_ext: v.url_ext,
+            online_information: v.online_information,
+            online_information_ext: v.online_information_ext,
+            note: v.note,
+            quantity: v.quantity,
+            parent_device: v.parent_device,
+            material: v.material,
+        }
+    }
 }
 
 /// Device capabilities.

@@ -236,6 +236,7 @@ pub struct SubstanceSpecificationCode {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "SubstanceSpecificationMoietyDe")]
 #[fhir_version("r4")]
 pub struct SubstanceSpecificationMoiety {
     /// Unique id for inter-element referencing
@@ -279,6 +280,47 @@ pub struct SubstanceSpecificationMoiety {
     /// The `SubstanceSpecification.moiety.amount[x]` choice element (0..1); see [`SubstanceSpecificationMoietyAmount`].
     #[serde(flatten)]
     pub amount: Option<SubstanceSpecificationMoietyAmount>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SubstanceSpecificationMoietyDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    role: Option<types::CodeableConcept>,
+    identifier: Option<types::Identifier>,
+    name: Option<types::String>,
+    #[serde(rename = "_name")]
+    name_ext: Option<types::Element>,
+    stereochemistry: Option<types::CodeableConcept>,
+    optical_activity: Option<types::CodeableConcept>,
+    molecular_formula: Option<types::String>,
+    #[serde(rename = "_molecularFormula")]
+    molecular_formula_ext: Option<types::Element>,
+    #[serde(flatten)]
+    amount: crate::r4::choice::Slot<SubstanceSpecificationMoietyAmount>,
+}
+
+impl ::core::convert::From<SubstanceSpecificationMoietyDe> for SubstanceSpecificationMoiety {
+    fn from(v: SubstanceSpecificationMoietyDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            role: v.role,
+            identifier: v.identifier,
+            name: v.name,
+            name_ext: v.name_ext,
+            stereochemistry: v.stereochemistry,
+            optical_activity: v.optical_activity,
+            molecular_formula: v.molecular_formula,
+            molecular_formula_ext: v.molecular_formula_ext,
+            amount: v.amount.0,
+        }
+    }
 }
 
 /// Names applicable to this substance.
@@ -438,6 +480,7 @@ pub struct SubstanceSpecificationNameOfficial {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "SubstanceSpecificationPropertyDe")]
 #[fhir_version("r4")]
 pub struct SubstanceSpecificationProperty {
     /// Unique id for inter-element referencing
@@ -477,6 +520,41 @@ pub struct SubstanceSpecificationProperty {
     pub amount: Option<SubstanceSpecificationPropertyAmount>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SubstanceSpecificationPropertyDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    category: Option<types::CodeableConcept>,
+    code: Option<types::CodeableConcept>,
+    parameters: Option<types::String>,
+    #[serde(rename = "_parameters")]
+    parameters_ext: Option<types::Element>,
+    #[serde(flatten)]
+    defining_substance: crate::r4::choice::Slot<SubstanceSpecificationPropertyDefiningSubstance>,
+    #[serde(flatten)]
+    amount: crate::r4::choice::Slot<SubstanceSpecificationPropertyAmount>,
+}
+
+impl ::core::convert::From<SubstanceSpecificationPropertyDe> for SubstanceSpecificationProperty {
+    fn from(v: SubstanceSpecificationPropertyDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            category: v.category,
+            code: v.code,
+            parameters: v.parameters,
+            parameters_ext: v.parameters_ext,
+            defining_substance: v.defining_substance.0,
+            amount: v.amount.0,
+        }
+    }
+}
+
 /// A link between this substance and another, with details of the
 /// relationship.
 ///
@@ -500,6 +578,7 @@ pub struct SubstanceSpecificationProperty {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "SubstanceSpecificationRelationshipDe")]
 #[fhir_version("r4")]
 pub struct SubstanceSpecificationRelationship {
     /// Unique id for inter-element referencing
@@ -548,6 +627,48 @@ pub struct SubstanceSpecificationRelationship {
     /// Supporting literature
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub source: Vec<types::Reference<crate::r4::resources::DocumentReference>>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SubstanceSpecificationRelationshipDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    substance: crate::r4::choice::Slot<SubstanceSpecificationRelationshipSubstance>,
+    relationship: Option<types::CodeableConcept>,
+    is_defining: Option<types::Boolean>,
+    #[serde(rename = "_isDefining")]
+    is_defining_ext: Option<types::Element>,
+    #[serde(flatten)]
+    amount: crate::r4::choice::Slot<SubstanceSpecificationRelationshipAmount>,
+    amount_ratio_low_limit: Option<types::Ratio>,
+    amount_type: Option<types::CodeableConcept>,
+    #[serde(default)]
+    source: Vec<types::Reference<crate::r4::resources::DocumentReference>>,
+}
+
+impl ::core::convert::From<SubstanceSpecificationRelationshipDe>
+    for SubstanceSpecificationRelationship
+{
+    fn from(v: SubstanceSpecificationRelationshipDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            substance: v.substance.0,
+            relationship: v.relationship,
+            is_defining: v.is_defining,
+            is_defining_ext: v.is_defining_ext,
+            amount: v.amount.0,
+            amount_ratio_low_limit: v.amount_ratio_low_limit,
+            amount_type: v.amount_type,
+            source: v.source,
+        }
+    }
 }
 
 /// Structural information.

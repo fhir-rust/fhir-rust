@@ -133,6 +133,7 @@ pub struct MedicinalProductIndication {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MedicinalProductIndicationOtherTherapyDe")]
 #[fhir_version("r4")]
 pub struct MedicinalProductIndicationOtherTherapy {
     /// Unique id for inter-element referencing
@@ -155,6 +156,33 @@ pub struct MedicinalProductIndicationOtherTherapy {
     /// The `MedicinalProductIndication.otherTherapy.medication[x]` choice element (1..1); see [`MedicinalProductIndicationOtherTherapyMedication`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub medication: Option<MedicinalProductIndicationOtherTherapyMedication>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MedicinalProductIndicationOtherTherapyDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    therapy_relationship_type: types::CodeableConcept,
+    #[serde(flatten)]
+    medication: crate::r4::choice::Slot<MedicinalProductIndicationOtherTherapyMedication>,
+}
+
+impl ::core::convert::From<MedicinalProductIndicationOtherTherapyDe>
+    for MedicinalProductIndicationOtherTherapy
+{
+    fn from(v: MedicinalProductIndicationOtherTherapyDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            therapy_relationship_type: v.therapy_relationship_type,
+            medication: v.medication.0,
+        }
+    }
 }
 
 /// The `MedicinalProductIndication.otherTherapy.medication[x]` choice element (see `spec/11-choice-types.md`).

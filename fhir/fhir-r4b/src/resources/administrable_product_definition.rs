@@ -143,6 +143,7 @@ pub struct AdministrableProductDefinition {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "AdministrableProductDefinitionPropertyDe")]
 #[fhir_version("r4b")]
 pub struct AdministrableProductDefinitionProperty {
     /// Unique id for inter-element referencing
@@ -166,6 +167,35 @@ pub struct AdministrableProductDefinitionProperty {
 
     /// The status of characteristic e.g. assigned or pending
     pub status: Option<types::CodeableConcept>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AdministrableProductDefinitionPropertyDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: types::CodeableConcept,
+    #[serde(flatten)]
+    value: crate::r4b::choice::Slot<AdministrableProductDefinitionPropertyValue>,
+    status: Option<types::CodeableConcept>,
+}
+
+impl ::core::convert::From<AdministrableProductDefinitionPropertyDe>
+    for AdministrableProductDefinitionProperty
+{
+    fn from(v: AdministrableProductDefinitionPropertyDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            value: v.value.0,
+            status: v.status,
+        }
+    }
 }
 
 /// The path by which the product is taken into or makes contact with the body.

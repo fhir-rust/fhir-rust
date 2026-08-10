@@ -38,6 +38,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "DeviceDefinitionDe")]
 #[fhir_version("r6")]
 pub struct DeviceDefinition {
     /// Logical id of this artifact
@@ -278,6 +279,185 @@ pub struct DeviceDefinition {
     /// Billing code or reference associated with the device
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub charge_item: Vec<DeviceDefinitionChargeItem>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DeviceDefinitionDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r6::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    url: Option<types::Uri>,
+    #[serde(rename = "_url")]
+    url_ext: Option<types::Element>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    version: Option<types::String>,
+    #[serde(rename = "_version")]
+    version_ext: Option<types::Element>,
+    #[serde(flatten)]
+    version_algorithm: crate::r6::choice::Slot<DeviceDefinitionVersionAlgorithm>,
+    name: Option<types::String>,
+    #[serde(rename = "_name")]
+    name_ext: Option<types::Element>,
+    title: Option<types::String>,
+    #[serde(rename = "_title")]
+    title_ext: Option<types::Element>,
+    status: crate::coded::Coded<crate::r6::codes::PublicationStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    experimental: Option<types::Boolean>,
+    #[serde(rename = "_experimental")]
+    experimental_ext: Option<types::Element>,
+    part_number: Option<types::String>,
+    #[serde(rename = "_partNumber")]
+    part_number_ext: Option<types::Element>,
+    manufacturer: Option<types::Reference<crate::r6::resources::Organization>>,
+    model_number: Option<types::String>,
+    #[serde(rename = "_modelNumber")]
+    model_number_ext: Option<types::Element>,
+    date: Option<types::DateTime>,
+    #[serde(rename = "_date")]
+    date_ext: Option<types::Element>,
+    #[serde(default)]
+    contact: Vec<types::ContactDetail>,
+    publisher: Option<types::String>,
+    #[serde(rename = "_publisher")]
+    publisher_ext: Option<types::Element>,
+    #[serde(default)]
+    use_context: Vec<types::UsageContext>,
+    #[serde(default)]
+    jurisdiction: Vec<types::CodeableConcept>,
+    purpose: Option<types::Markdown>,
+    #[serde(rename = "_purpose")]
+    purpose_ext: Option<types::Element>,
+    copyright: Option<types::Markdown>,
+    #[serde(rename = "_copyright")]
+    copyright_ext: Option<types::Element>,
+    copyright_label: Option<types::String>,
+    #[serde(rename = "_copyrightLabel")]
+    copyright_label_ext: Option<types::Element>,
+    #[serde(default)]
+    udi_device_identifier: Vec<DeviceDefinitionUdiDeviceIdentifier>,
+    #[serde(default)]
+    regulatory_identifier: Vec<DeviceDefinitionRegulatoryIdentifier>,
+    #[serde(default)]
+    device_name: Vec<DeviceDefinitionDeviceName>,
+    #[serde(default)]
+    classification: Vec<DeviceDefinitionClassification>,
+    #[serde(default)]
+    conforms_to: Vec<DeviceDefinitionConformsTo>,
+    #[serde(default)]
+    has_part: Vec<DeviceDefinitionHasPart>,
+    #[serde(default)]
+    packaging: Vec<DeviceDefinitionPackaging>,
+    #[serde(default)]
+    device_version: Vec<DeviceDefinitionDeviceVersion>,
+    #[serde(default)]
+    safety: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    shelf_life_storage: Vec<types::ProductShelfLife>,
+    #[serde(default)]
+    output_language: Vec<types::Code>,
+    #[serde(rename = "_outputLanguage")]
+    #[serde(default)]
+    output_language_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    property: Vec<DeviceDefinitionProperty>,
+    #[serde(default)]
+    link: Vec<DeviceDefinitionLink>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+    #[serde(default)]
+    material: Vec<DeviceDefinitionMaterial>,
+    #[serde(rename = "productionIdentifierInUDI")]
+    #[serde(default)]
+    production_identifier_in_udi: Vec<types::CodeableConcept>,
+    guideline: Option<DeviceDefinitionGuideline>,
+    corrective_action: Option<DeviceDefinitionCorrectiveAction>,
+    #[serde(default)]
+    charge_item: Vec<DeviceDefinitionChargeItem>,
+}
+
+impl ::core::convert::From<DeviceDefinitionDe> for DeviceDefinition {
+    fn from(v: DeviceDefinitionDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            url: v.url,
+            url_ext: v.url_ext,
+            identifier: v.identifier,
+            version: v.version,
+            version_ext: v.version_ext,
+            version_algorithm: v.version_algorithm.0,
+            name: v.name,
+            name_ext: v.name_ext,
+            title: v.title,
+            title_ext: v.title_ext,
+            status: v.status,
+            status_ext: v.status_ext,
+            experimental: v.experimental,
+            experimental_ext: v.experimental_ext,
+            part_number: v.part_number,
+            part_number_ext: v.part_number_ext,
+            manufacturer: v.manufacturer,
+            model_number: v.model_number,
+            model_number_ext: v.model_number_ext,
+            date: v.date,
+            date_ext: v.date_ext,
+            contact: v.contact,
+            publisher: v.publisher,
+            publisher_ext: v.publisher_ext,
+            use_context: v.use_context,
+            jurisdiction: v.jurisdiction,
+            purpose: v.purpose,
+            purpose_ext: v.purpose_ext,
+            copyright: v.copyright,
+            copyright_ext: v.copyright_ext,
+            copyright_label: v.copyright_label,
+            copyright_label_ext: v.copyright_label_ext,
+            udi_device_identifier: v.udi_device_identifier,
+            regulatory_identifier: v.regulatory_identifier,
+            device_name: v.device_name,
+            classification: v.classification,
+            conforms_to: v.conforms_to,
+            has_part: v.has_part,
+            packaging: v.packaging,
+            device_version: v.device_version,
+            safety: v.safety,
+            shelf_life_storage: v.shelf_life_storage,
+            output_language: v.output_language,
+            output_language_ext: v.output_language_ext,
+            property: v.property,
+            link: v.link,
+            note: v.note,
+            material: v.material,
+            production_identifier_in_udi: v.production_identifier_in_udi,
+            guideline: v.guideline,
+            corrective_action: v.corrective_action,
+            charge_item: v.charge_item,
+        }
+    }
 }
 
 /// Billing code or reference associated with the device.
@@ -935,6 +1115,7 @@ pub struct DeviceDefinitionPackagingDistributor {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "DeviceDefinitionPropertyDe")]
 #[fhir_version("r6")]
 pub struct DeviceDefinitionProperty {
     /// Unique id for inter-element referencing
@@ -955,6 +1136,31 @@ pub struct DeviceDefinitionProperty {
     /// The `DeviceDefinition.property.value[x]` choice element (1..1); see [`DeviceDefinitionPropertyValue`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub value: Option<DeviceDefinitionPropertyValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DeviceDefinitionPropertyDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: types::CodeableConcept,
+    #[serde(flatten)]
+    value: crate::r6::choice::Slot<DeviceDefinitionPropertyValue>,
+}
+
+impl ::core::convert::From<DeviceDefinitionPropertyDe> for DeviceDefinitionProperty {
+    fn from(v: DeviceDefinitionPropertyDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            value: v.value.0,
+        }
+    }
 }
 
 /// Identifier associated with the regulatory documentation (certificates,

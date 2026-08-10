@@ -371,6 +371,7 @@ pub struct QuestionnaireItem {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "QuestionnaireItemAnswerOptionDe")]
 #[fhir_version("r4")]
 pub struct QuestionnaireItemAnswerOption {
     /// Unique id for inter-element referencing
@@ -397,6 +398,34 @@ pub struct QuestionnaireItemAnswerOption {
     pub initial_selected_ext: Option<types::Element>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct QuestionnaireItemAnswerOptionDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    value: crate::r4::choice::Slot<QuestionnaireItemAnswerOptionValue>,
+    initial_selected: Option<types::Boolean>,
+    #[serde(rename = "_initialSelected")]
+    initial_selected_ext: Option<types::Element>,
+}
+
+impl ::core::convert::From<QuestionnaireItemAnswerOptionDe> for QuestionnaireItemAnswerOption {
+    fn from(v: QuestionnaireItemAnswerOptionDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            value: v.value.0,
+            initial_selected: v.initial_selected,
+            initial_selected_ext: v.initial_selected_ext,
+        }
+    }
+}
+
 /// A constraint indicating that this item should only be enabled
 /// (displayed/allow answers to be captured) when the specified condition is
 /// true.
@@ -421,6 +450,7 @@ pub struct QuestionnaireItemAnswerOption {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "QuestionnaireItemEnableWhenDe")]
 #[fhir_version("r4")]
 pub struct QuestionnaireItemEnableWhen {
     /// Unique id for inter-element referencing
@@ -454,6 +484,39 @@ pub struct QuestionnaireItemEnableWhen {
     pub answer: Option<QuestionnaireItemEnableWhenAnswer>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct QuestionnaireItemEnableWhenDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    question: types::String,
+    #[serde(rename = "_question")]
+    question_ext: Option<types::Element>,
+    operator: crate::coded::Coded<crate::r4::codes::QuestionnaireEnableOperator>,
+    #[serde(rename = "_operator")]
+    operator_ext: Option<types::Element>,
+    #[serde(flatten)]
+    answer: crate::r4::choice::Slot<QuestionnaireItemEnableWhenAnswer>,
+}
+
+impl ::core::convert::From<QuestionnaireItemEnableWhenDe> for QuestionnaireItemEnableWhen {
+    fn from(v: QuestionnaireItemEnableWhenDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            question: v.question,
+            question_ext: v.question_ext,
+            operator: v.operator,
+            operator_ext: v.operator_ext,
+            answer: v.answer.0,
+        }
+    }
+}
+
 /// One or more values that should be pre-populated in the answer when
 /// initially rendering the questionnaire for user input.
 ///
@@ -477,6 +540,7 @@ pub struct QuestionnaireItemEnableWhen {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "QuestionnaireItemInitialDe")]
 #[fhir_version("r4")]
 pub struct QuestionnaireItemInitial {
     /// Unique id for inter-element referencing
@@ -494,6 +558,29 @@ pub struct QuestionnaireItemInitial {
     /// The `Questionnaire.item.initial.value[x]` choice element (1..1); see [`QuestionnaireItemInitialValue`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub value: Option<QuestionnaireItemInitialValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct QuestionnaireItemInitialDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    value: crate::r4::choice::Slot<QuestionnaireItemInitialValue>,
+}
+
+impl ::core::convert::From<QuestionnaireItemInitialDe> for QuestionnaireItemInitial {
+    fn from(v: QuestionnaireItemInitialDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            value: v.value.0,
+        }
+    }
 }
 
 /// The `Questionnaire.item.answerOption.value[x]` choice element (see `spec/11-choice-types.md`).

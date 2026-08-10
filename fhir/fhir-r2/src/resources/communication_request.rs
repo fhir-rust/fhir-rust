@@ -37,6 +37,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "CommunicationRequestDe")]
 #[fhir_version("r2")]
 pub struct CommunicationRequest {
     /// Logical id of this artifact
@@ -133,6 +134,83 @@ pub struct CommunicationRequest {
     pub priority: Option<types::CodeableConcept>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CommunicationRequestDe {
+    id: Option<types::Id>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r2::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    category: Option<types::CodeableConcept>,
+    sender: Option<types::Reference>,
+    #[serde(default)]
+    recipient: Vec<types::Reference>,
+    #[serde(default)]
+    payload: Vec<CommunicationRequestPayload>,
+    #[serde(default)]
+    medium: Vec<types::CodeableConcept>,
+    requester: Option<types::Reference>,
+    status: Option<crate::coded::Coded<crate::r2::codes::CommunicationRequestStatus>>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    encounter: Option<types::Reference<crate::r2::resources::Encounter>>,
+    #[serde(flatten)]
+    scheduled: crate::r2::choice::Slot<CommunicationRequestScheduled>,
+    #[serde(default)]
+    reason: Vec<types::CodeableConcept>,
+    requested_on: Option<types::DateTime>,
+    #[serde(rename = "_requestedOn")]
+    requested_on_ext: Option<types::Element>,
+    subject: Option<types::Reference<crate::r2::resources::Patient>>,
+    priority: Option<types::CodeableConcept>,
+}
+
+impl ::core::convert::From<CommunicationRequestDe> for CommunicationRequest {
+    fn from(v: CommunicationRequestDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            category: v.category,
+            sender: v.sender,
+            recipient: v.recipient,
+            payload: v.payload,
+            medium: v.medium,
+            requester: v.requester,
+            status: v.status,
+            status_ext: v.status_ext,
+            encounter: v.encounter,
+            scheduled: v.scheduled.0,
+            reason: v.reason,
+            requested_on: v.requested_on,
+            requested_on_ext: v.requested_on_ext,
+            subject: v.subject,
+            priority: v.priority,
+        }
+    }
+}
+
 /// Text, attachment(s), or resource(s) to be communicated to the recipient.
 ///
 /// # Examples
@@ -155,6 +233,7 @@ pub struct CommunicationRequest {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "CommunicationRequestPayloadDe")]
 #[fhir_version("r2")]
 pub struct CommunicationRequestPayload {
     /// xml:id (or equivalent in JSON)
@@ -172,6 +251,29 @@ pub struct CommunicationRequestPayload {
     /// The `CommunicationRequest.payload.content[x]` choice element (1..1); see [`CommunicationRequestPayloadContent`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub content: Option<CommunicationRequestPayloadContent>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CommunicationRequestPayloadDe {
+    id: Option<types::Id>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    content: crate::r2::choice::Slot<CommunicationRequestPayloadContent>,
+}
+
+impl ::core::convert::From<CommunicationRequestPayloadDe> for CommunicationRequestPayload {
+    fn from(v: CommunicationRequestPayloadDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            content: v.content.0,
+        }
+    }
 }
 
 /// The `CommunicationRequest.scheduled[x]` choice element (see `spec/11-choice-types.md`).

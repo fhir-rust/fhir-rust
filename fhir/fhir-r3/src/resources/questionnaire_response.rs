@@ -210,6 +210,7 @@ pub struct QuestionnaireResponseItem {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "QuestionnaireResponseItemAnswerDe")]
 #[fhir_version("r3")]
 pub struct QuestionnaireResponseItemAnswer {
     /// xml:id (or equivalent in JSON)
@@ -231,6 +232,32 @@ pub struct QuestionnaireResponseItemAnswer {
     /// Nested groups and questions
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub item: Vec<QuestionnaireResponseItem>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct QuestionnaireResponseItemAnswerDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    value: crate::r3::choice::Slot<QuestionnaireResponseItemAnswerValue>,
+    #[serde(default)]
+    item: Vec<QuestionnaireResponseItem>,
+}
+
+impl ::core::convert::From<QuestionnaireResponseItemAnswerDe> for QuestionnaireResponseItemAnswer {
+    fn from(v: QuestionnaireResponseItemAnswerDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            value: v.value.0,
+            item: v.item,
+        }
+    }
 }
 
 /// The `QuestionnaireResponse.item.answer.value[x]` choice element (see `spec/11-choice-types.md`).

@@ -49,6 +49,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "SubstanceAmountDe")]
 #[fhir_version("r4")]
 pub struct SubstanceAmount {
     /// Unique id for inter-element referencing
@@ -88,6 +89,38 @@ pub struct SubstanceAmount {
 
     /// Reference range of possible or expected values
     pub reference_range: Option<SubstanceAmountReferenceRange>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SubstanceAmountDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    amount: crate::r4::choice::Slot<SubstanceAmountAmount>,
+    amount_type: Option<types::CodeableConcept>,
+    amount_text: Option<types::String>,
+    #[serde(rename = "_amountText")]
+    amount_text_ext: Option<types::Element>,
+    reference_range: Option<SubstanceAmountReferenceRange>,
+}
+
+impl ::core::convert::From<SubstanceAmountDe> for SubstanceAmount {
+    fn from(v: SubstanceAmountDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            amount: v.amount.0,
+            amount_type: v.amount_type,
+            amount_text: v.amount_text,
+            amount_text_ext: v.amount_text_ext,
+            reference_range: v.reference_range,
+        }
+    }
 }
 
 /// Reference range of possible or expected values.

@@ -149,6 +149,7 @@ pub struct NutritionProduct {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "NutritionProductCharacteristicDe")]
 #[fhir_version("r6")]
 pub struct NutritionProductCharacteristic {
     /// Unique id for inter-element referencing
@@ -169,6 +170,31 @@ pub struct NutritionProductCharacteristic {
     /// The `NutritionProduct.characteristic.value[x]` choice element (1..1); see [`NutritionProductCharacteristicValue`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub value: Option<NutritionProductCharacteristicValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct NutritionProductCharacteristicDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: types::CodeableConcept,
+    #[serde(flatten)]
+    value: crate::r6::choice::Slot<NutritionProductCharacteristicValue>,
+}
+
+impl ::core::convert::From<NutritionProductCharacteristicDe> for NutritionProductCharacteristic {
+    fn from(v: NutritionProductCharacteristicDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            value: v.value.0,
+        }
+    }
 }
 
 /// Ingredients contained in this product.
@@ -193,6 +219,7 @@ pub struct NutritionProductCharacteristic {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "NutritionProductIngredientDe")]
 #[fhir_version("r6")]
 pub struct NutritionProductIngredient {
     /// Unique id for inter-element referencing
@@ -221,6 +248,36 @@ pub struct NutritionProductIngredient {
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_allergen")]
     pub allergen_ext: Option<types::Element>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct NutritionProductIngredientDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    item: types::CodeableReference,
+    #[serde(flatten)]
+    amount: crate::r6::choice::Slot<NutritionProductIngredientAmount>,
+    allergen: Option<types::Boolean>,
+    #[serde(rename = "_allergen")]
+    allergen_ext: Option<types::Element>,
+}
+
+impl ::core::convert::From<NutritionProductIngredientDe> for NutritionProductIngredient {
+    fn from(v: NutritionProductIngredientDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            item: v.item,
+            amount: v.amount.0,
+            allergen: v.allergen,
+            allergen_ext: v.allergen_ext,
+        }
+    }
 }
 
 /// Conveys instance-level information about this product item. One or several
@@ -322,6 +379,7 @@ pub struct NutritionProductInstance {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "NutritionProductNutrientDe")]
 #[fhir_version("r6")]
 pub struct NutritionProductNutrient {
     /// Unique id for inter-element referencing
@@ -342,6 +400,31 @@ pub struct NutritionProductNutrient {
     /// The `NutritionProduct.nutrient.amount[x]` choice element (0..1); see [`NutritionProductNutrientAmount`].
     #[serde(flatten)]
     pub amount: Option<NutritionProductNutrientAmount>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct NutritionProductNutrientDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    item: types::CodeableReference,
+    #[serde(flatten)]
+    amount: crate::r6::choice::Slot<NutritionProductNutrientAmount>,
+}
+
+impl ::core::convert::From<NutritionProductNutrientDe> for NutritionProductNutrient {
+    fn from(v: NutritionProductNutrientDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            item: v.item,
+            amount: v.amount.0,
+        }
+    }
 }
 
 /// The `NutritionProduct.characteristic.value[x]` choice element (see `spec/11-choice-types.md`).

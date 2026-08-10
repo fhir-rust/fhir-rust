@@ -38,6 +38,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ServiceRequestDe")]
 #[fhir_version("r6")]
 pub struct ServiceRequest {
     /// Logical id of this artifact
@@ -237,6 +238,158 @@ pub struct ServiceRequest {
     pub relevant_history: Vec<types::Reference<crate::r6::resources::Provenance>>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ServiceRequestDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r6::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    #[serde(default)]
+    instantiates_canonical: Vec<types::Canonical>,
+    #[serde(rename = "_instantiatesCanonical")]
+    #[serde(default)]
+    instantiates_canonical_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    instantiates_uri: Vec<types::Uri>,
+    #[serde(rename = "_instantiatesUri")]
+    #[serde(default)]
+    instantiates_uri_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    based_on: Vec<types::Reference>,
+    #[serde(default)]
+    replaces: Vec<types::Reference<crate::r6::resources::ServiceRequest>>,
+    requisition: Option<types::Identifier>,
+    status: crate::coded::Coded<crate::r6::codes::RequestStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    intent: crate::coded::Coded<crate::r6::codes::RequestIntent>,
+    #[serde(rename = "_intent")]
+    intent_ext: Option<types::Element>,
+    #[serde(default)]
+    category: Vec<types::CodeableConcept>,
+    priority: Option<crate::coded::Coded<crate::r6::codes::RequestPriority>>,
+    #[serde(rename = "_priority")]
+    priority_ext: Option<types::Element>,
+    do_not_perform: Option<types::Boolean>,
+    #[serde(rename = "_doNotPerform")]
+    do_not_perform_ext: Option<types::Element>,
+    code: Option<types::CodeableReference>,
+    #[serde(default)]
+    order_detail: Vec<ServiceRequestOrderDetail>,
+    #[serde(flatten)]
+    quantity: crate::r6::choice::Slot<ServiceRequestQuantity>,
+    subject: types::Reference,
+    #[serde(default)]
+    focus: Vec<types::Reference>,
+    encounter: Option<types::Reference<crate::r6::resources::Encounter>>,
+    #[serde(flatten)]
+    occurrence: crate::r6::choice::Slot<ServiceRequestOccurrence>,
+    as_needed: Option<types::Boolean>,
+    #[serde(rename = "_asNeeded")]
+    as_needed_ext: Option<types::Element>,
+    #[serde(default)]
+    as_needed_for: Vec<types::CodeableConcept>,
+    authored_on: Option<types::DateTime>,
+    #[serde(rename = "_authoredOn")]
+    authored_on_ext: Option<types::Element>,
+    requester: Option<types::Reference>,
+    performer_type: Option<types::CodeableConcept>,
+    #[serde(default)]
+    performer: Vec<types::Reference>,
+    #[serde(default)]
+    location: Vec<types::CodeableReference>,
+    #[serde(default)]
+    reason: Vec<types::CodeableReference>,
+    #[serde(default)]
+    insurance: Vec<types::Reference>,
+    #[serde(default)]
+    supporting_info: Vec<types::CodeableReference>,
+    #[serde(default)]
+    specimen: Vec<types::Reference<crate::r6::resources::Specimen>>,
+    #[serde(default)]
+    body_site: Vec<types::CodeableConcept>,
+    body_structure: Option<types::Reference<crate::r6::resources::BodyStructure>>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+    #[serde(default)]
+    patient_instruction: Vec<ServiceRequestPatientInstruction>,
+    #[serde(default)]
+    relevant_history: Vec<types::Reference<crate::r6::resources::Provenance>>,
+}
+
+impl ::core::convert::From<ServiceRequestDe> for ServiceRequest {
+    fn from(v: ServiceRequestDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            instantiates_canonical: v.instantiates_canonical,
+            instantiates_canonical_ext: v.instantiates_canonical_ext,
+            instantiates_uri: v.instantiates_uri,
+            instantiates_uri_ext: v.instantiates_uri_ext,
+            based_on: v.based_on,
+            replaces: v.replaces,
+            requisition: v.requisition,
+            status: v.status,
+            status_ext: v.status_ext,
+            intent: v.intent,
+            intent_ext: v.intent_ext,
+            category: v.category,
+            priority: v.priority,
+            priority_ext: v.priority_ext,
+            do_not_perform: v.do_not_perform,
+            do_not_perform_ext: v.do_not_perform_ext,
+            code: v.code,
+            order_detail: v.order_detail,
+            quantity: v.quantity.0,
+            subject: v.subject,
+            focus: v.focus,
+            encounter: v.encounter,
+            occurrence: v.occurrence.0,
+            as_needed: v.as_needed,
+            as_needed_ext: v.as_needed_ext,
+            as_needed_for: v.as_needed_for,
+            authored_on: v.authored_on,
+            authored_on_ext: v.authored_on_ext,
+            requester: v.requester,
+            performer_type: v.performer_type,
+            performer: v.performer,
+            location: v.location,
+            reason: v.reason,
+            insurance: v.insurance,
+            supporting_info: v.supporting_info,
+            specimen: v.specimen,
+            body_site: v.body_site,
+            body_structure: v.body_structure,
+            note: v.note,
+            patient_instruction: v.patient_instruction,
+            relevant_history: v.relevant_history,
+        }
+    }
+}
+
 /// Additional details and instructions about how the services are to be
 /// delivered. For example, an order for a urinary catheter may have an order
 /// detail for an external or indwelling catheter, or an order for a bandage
@@ -299,6 +452,7 @@ pub struct ServiceRequestOrderDetail {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ServiceRequestOrderDetailParameterDe")]
 #[fhir_version("r6")]
 pub struct ServiceRequestOrderDetailParameter {
     /// Unique id for inter-element referencing
@@ -319,6 +473,33 @@ pub struct ServiceRequestOrderDetailParameter {
     /// The `ServiceRequest.orderDetail.parameter.value[x]` choice element (1..1); see [`ServiceRequestOrderDetailParameterValue`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub value: Option<ServiceRequestOrderDetailParameterValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ServiceRequestOrderDetailParameterDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    code: types::CodeableConcept,
+    #[serde(flatten)]
+    value: crate::r6::choice::Slot<ServiceRequestOrderDetailParameterValue>,
+}
+
+impl ::core::convert::From<ServiceRequestOrderDetailParameterDe>
+    for ServiceRequestOrderDetailParameter
+{
+    fn from(v: ServiceRequestOrderDetailParameterDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            code: v.code,
+            value: v.value.0,
+        }
+    }
 }
 
 /// Instructions in terms that are understood by the patient or consumer.
@@ -343,6 +524,7 @@ pub struct ServiceRequestOrderDetailParameter {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ServiceRequestPatientInstructionDe")]
 #[fhir_version("r6")]
 pub struct ServiceRequestPatientInstruction {
     /// Unique id for inter-element referencing
@@ -360,6 +542,31 @@ pub struct ServiceRequestPatientInstruction {
     /// The `ServiceRequest.patientInstruction.instruction[x]` choice element (0..1); see [`ServiceRequestPatientInstructionInstruction`].
     #[serde(flatten)]
     pub instruction: Option<ServiceRequestPatientInstructionInstruction>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ServiceRequestPatientInstructionDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    instruction: crate::r6::choice::Slot<ServiceRequestPatientInstructionInstruction>,
+}
+
+impl ::core::convert::From<ServiceRequestPatientInstructionDe>
+    for ServiceRequestPatientInstruction
+{
+    fn from(v: ServiceRequestPatientInstructionDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            instruction: v.instruction.0,
+        }
+    }
 }
 
 /// The `ServiceRequest.quantity[x]` choice element (see `spec/11-choice-types.md`).

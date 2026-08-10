@@ -66,6 +66,7 @@ use fhir_derive_macros::Validate;
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ChargeItemDe")]
 pub struct ChargeItem {
     /// Logical id of this artifact
     pub id: Option<types::String>,
@@ -204,6 +205,122 @@ pub struct ChargeItem {
     /// Further information supporting this charge
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub supporting_information: Vec<types::Reference>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ChargeItemDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r5::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    #[serde(default)]
+    definition_uri: Vec<types::Uri>,
+    #[serde(rename = "_definitionUri")]
+    #[serde(default)]
+    definition_uri_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    definition_canonical: Vec<types::Canonical>,
+    #[serde(rename = "_definitionCanonical")]
+    #[serde(default)]
+    definition_canonical_ext: Vec<Option<types::Element>>,
+    status: crate::r5::coded::Coded<crate::r5::codes::ChargeitemStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    #[serde(default)]
+    part_of: Vec<types::Reference<crate::r5::resources::ChargeItem>>,
+    code: types::CodeableConcept,
+    subject: types::Reference,
+    encounter: Option<types::Reference<crate::r5::resources::Encounter>>,
+    #[serde(flatten)]
+    occurrence: crate::r5::choice::Slot<ChargeItemOccurrence>,
+    #[serde(default)]
+    performer: Vec<ChargeItemPerformer>,
+    performing_organization: Option<types::Reference<crate::r5::resources::Organization>>,
+    requesting_organization: Option<types::Reference<crate::r5::resources::Organization>>,
+    cost_center: Option<types::Reference<crate::r5::resources::Organization>>,
+    quantity: Option<types::Quantity>,
+    #[serde(default)]
+    bodysite: Vec<types::CodeableConcept>,
+    unit_price_component: Option<types::MonetaryComponent>,
+    total_price_component: Option<types::MonetaryComponent>,
+    override_reason: Option<types::CodeableConcept>,
+    enterer: Option<types::Reference>,
+    entered_date: Option<types::DateTime>,
+    #[serde(rename = "_enteredDate")]
+    entered_date_ext: Option<types::Element>,
+    #[serde(default)]
+    reason: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    service: Vec<types::CodeableReference>,
+    #[serde(default)]
+    product: Vec<types::CodeableReference>,
+    #[serde(default)]
+    account: Vec<types::Reference<crate::r5::resources::Account>>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+    #[serde(default)]
+    supporting_information: Vec<types::Reference>,
+}
+
+impl ::core::convert::From<ChargeItemDe> for ChargeItem {
+    fn from(v: ChargeItemDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            definition_uri: v.definition_uri,
+            definition_uri_ext: v.definition_uri_ext,
+            definition_canonical: v.definition_canonical,
+            definition_canonical_ext: v.definition_canonical_ext,
+            status: v.status,
+            status_ext: v.status_ext,
+            part_of: v.part_of,
+            code: v.code,
+            subject: v.subject,
+            encounter: v.encounter,
+            occurrence: v.occurrence.0,
+            performer: v.performer,
+            performing_organization: v.performing_organization,
+            requesting_organization: v.requesting_organization,
+            cost_center: v.cost_center,
+            quantity: v.quantity,
+            bodysite: v.bodysite,
+            unit_price_component: v.unit_price_component,
+            total_price_component: v.total_price_component,
+            override_reason: v.override_reason,
+            enterer: v.enterer,
+            entered_date: v.entered_date,
+            entered_date_ext: v.entered_date_ext,
+            reason: v.reason,
+            service: v.service,
+            product: v.product,
+            account: v.account,
+            note: v.note,
+            supporting_information: v.supporting_information,
+        }
+    }
 }
 
 /// Who performed charged service.

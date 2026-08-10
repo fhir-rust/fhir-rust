@@ -59,6 +59,7 @@ use fhir_derive_macros::Validate;
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "SpecimenDefinitionDe")]
 pub struct SpecimenDefinition {
     /// Logical id of this artifact
     pub id: Option<types::String>,
@@ -241,6 +242,162 @@ pub struct SpecimenDefinition {
     pub type_tested: Vec<SpecimenDefinitionTypeTested>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SpecimenDefinitionDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r5::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    url: Option<types::Uri>,
+    #[serde(rename = "_url")]
+    url_ext: Option<types::Element>,
+    identifier: Option<types::Identifier>,
+    version: Option<types::String>,
+    #[serde(rename = "_version")]
+    version_ext: Option<types::Element>,
+    #[serde(flatten)]
+    version_algorithm: crate::r5::choice::Slot<SpecimenDefinitionVersionAlgorithm>,
+    name: Option<types::String>,
+    #[serde(rename = "_name")]
+    name_ext: Option<types::Element>,
+    title: Option<types::String>,
+    #[serde(rename = "_title")]
+    title_ext: Option<types::Element>,
+    #[serde(default)]
+    derived_from_canonical: Vec<types::Canonical>,
+    #[serde(rename = "_derivedFromCanonical")]
+    #[serde(default)]
+    derived_from_canonical_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    derived_from_uri: Vec<types::Uri>,
+    #[serde(rename = "_derivedFromUri")]
+    #[serde(default)]
+    derived_from_uri_ext: Vec<Option<types::Element>>,
+    status: crate::r5::coded::Coded<crate::r5::codes::PublicationStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    experimental: Option<types::Boolean>,
+    #[serde(rename = "_experimental")]
+    experimental_ext: Option<types::Element>,
+    #[serde(flatten)]
+    subject: crate::r5::choice::Slot<SpecimenDefinitionSubject>,
+    date: Option<types::DateTime>,
+    #[serde(rename = "_date")]
+    date_ext: Option<types::Element>,
+    publisher: Option<types::String>,
+    #[serde(rename = "_publisher")]
+    publisher_ext: Option<types::Element>,
+    #[serde(default)]
+    contact: Vec<types::ContactDetail>,
+    description: Option<types::Markdown>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    #[serde(default)]
+    use_context: Vec<types::UsageContext>,
+    #[serde(default)]
+    jurisdiction: Vec<types::CodeableConcept>,
+    purpose: Option<types::Markdown>,
+    #[serde(rename = "_purpose")]
+    purpose_ext: Option<types::Element>,
+    copyright: Option<types::Markdown>,
+    #[serde(rename = "_copyright")]
+    copyright_ext: Option<types::Element>,
+    copyright_label: Option<types::String>,
+    #[serde(rename = "_copyrightLabel")]
+    copyright_label_ext: Option<types::Element>,
+    approval_date: Option<types::Date>,
+    #[serde(rename = "_approvalDate")]
+    approval_date_ext: Option<types::Element>,
+    last_review_date: Option<types::Date>,
+    #[serde(rename = "_lastReviewDate")]
+    last_review_date_ext: Option<types::Element>,
+    effective_period: Option<types::Period>,
+    type_collected: Option<types::CodeableConcept>,
+    #[serde(default)]
+    patient_preparation: Vec<types::CodeableConcept>,
+    time_aspect: Option<types::String>,
+    #[serde(rename = "_timeAspect")]
+    time_aspect_ext: Option<types::Element>,
+    #[serde(default)]
+    collection: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    type_tested: Vec<SpecimenDefinitionTypeTested>,
+}
+
+impl ::core::convert::From<SpecimenDefinitionDe> for SpecimenDefinition {
+    fn from(v: SpecimenDefinitionDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            url: v.url,
+            url_ext: v.url_ext,
+            identifier: v.identifier,
+            version: v.version,
+            version_ext: v.version_ext,
+            version_algorithm: v.version_algorithm.0,
+            name: v.name,
+            name_ext: v.name_ext,
+            title: v.title,
+            title_ext: v.title_ext,
+            derived_from_canonical: v.derived_from_canonical,
+            derived_from_canonical_ext: v.derived_from_canonical_ext,
+            derived_from_uri: v.derived_from_uri,
+            derived_from_uri_ext: v.derived_from_uri_ext,
+            status: v.status,
+            status_ext: v.status_ext,
+            experimental: v.experimental,
+            experimental_ext: v.experimental_ext,
+            subject: v.subject.0,
+            date: v.date,
+            date_ext: v.date_ext,
+            publisher: v.publisher,
+            publisher_ext: v.publisher_ext,
+            contact: v.contact,
+            description: v.description,
+            description_ext: v.description_ext,
+            use_context: v.use_context,
+            jurisdiction: v.jurisdiction,
+            purpose: v.purpose,
+            purpose_ext: v.purpose_ext,
+            copyright: v.copyright,
+            copyright_ext: v.copyright_ext,
+            copyright_label: v.copyright_label,
+            copyright_label_ext: v.copyright_label_ext,
+            approval_date: v.approval_date,
+            approval_date_ext: v.approval_date_ext,
+            last_review_date: v.last_review_date,
+            last_review_date_ext: v.last_review_date_ext,
+            effective_period: v.effective_period,
+            type_collected: v.type_collected,
+            patient_preparation: v.patient_preparation,
+            time_aspect: v.time_aspect,
+            time_aspect_ext: v.time_aspect_ext,
+            collection: v.collection,
+            type_tested: v.type_tested,
+        }
+    }
+}
+
 /// Specimen in container intended for testing by lab.
 ///
 /// Describes a kind of specimen conditioned for testing, expected from
@@ -349,6 +506,7 @@ pub struct SpecimenDefinitionTypeTested {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "SpecimenDefinitionTypeTestedContainerDe")]
 pub struct SpecimenDefinitionTypeTestedContainer {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -394,6 +552,52 @@ pub struct SpecimenDefinitionTypeTestedContainer {
     pub preparation_ext: Option<types::Element>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SpecimenDefinitionTypeTestedContainerDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    material: Option<types::CodeableConcept>,
+    r#type: Option<types::CodeableConcept>,
+    cap: Option<types::CodeableConcept>,
+    description: Option<types::Markdown>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    capacity: Option<types::Quantity>,
+    #[serde(flatten)]
+    minimum_volume: crate::r5::choice::Slot<SpecimenDefinitionTypeTestedContainerMinimumVolume>,
+    #[serde(default)]
+    additive: Vec<SpecimenDefinitionTypeTestedContainerAdditive>,
+    preparation: Option<types::Markdown>,
+    #[serde(rename = "_preparation")]
+    preparation_ext: Option<types::Element>,
+}
+
+impl ::core::convert::From<SpecimenDefinitionTypeTestedContainerDe>
+    for SpecimenDefinitionTypeTestedContainer
+{
+    fn from(v: SpecimenDefinitionTypeTestedContainerDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            material: v.material,
+            r#type: v.r#type,
+            cap: v.cap,
+            description: v.description,
+            description_ext: v.description_ext,
+            capacity: v.capacity,
+            minimum_volume: v.minimum_volume.0,
+            additive: v.additive,
+            preparation: v.preparation,
+            preparation_ext: v.preparation_ext,
+        }
+    }
+}
+
 /// Additive associated with container.
 ///
 /// Substance introduced in the kind of container to preserve, maintain
@@ -419,6 +623,7 @@ pub struct SpecimenDefinitionTypeTestedContainer {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "SpecimenDefinitionTypeTestedContainerAdditiveDe")]
 pub struct SpecimenDefinitionTypeTestedContainerAdditive {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -434,6 +639,31 @@ pub struct SpecimenDefinitionTypeTestedContainerAdditive {
     /// The `SpecimenDefinition.typeTested.container.additive.additive[x]` choice element (0..1); see [`SpecimenDefinitionTypeTestedContainerAdditiveAdditive`].
     #[serde(flatten)]
     pub additive: Option<SpecimenDefinitionTypeTestedContainerAdditiveAdditive>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SpecimenDefinitionTypeTestedContainerAdditiveDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    additive: crate::r5::choice::Slot<SpecimenDefinitionTypeTestedContainerAdditiveAdditive>,
+}
+
+impl ::core::convert::From<SpecimenDefinitionTypeTestedContainerAdditiveDe>
+    for SpecimenDefinitionTypeTestedContainerAdditive
+{
+    fn from(v: SpecimenDefinitionTypeTestedContainerAdditiveDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            additive: v.additive.0,
+        }
+    }
 }
 
 /// Specimen handling before testing.

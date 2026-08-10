@@ -84,6 +84,7 @@ pub struct Timing {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "TimingRepeatDe")]
 #[fhir_version("r2")]
 pub struct TimingRepeat {
     /// xml:id (or equivalent in JSON)
@@ -167,6 +168,76 @@ pub struct TimingRepeat {
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_when")]
     pub when_ext: Option<types::Element>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct TimingRepeatDe {
+    id: Option<types::Id>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    bounds: crate::r2::choice::Slot<TimingRepeatBounds>,
+    count: Option<types::Integer>,
+    #[serde(rename = "_count")]
+    count_ext: Option<types::Element>,
+    duration: Option<types::Decimal>,
+    #[serde(rename = "_duration")]
+    duration_ext: Option<types::Element>,
+    duration_max: Option<types::Decimal>,
+    #[serde(rename = "_durationMax")]
+    duration_max_ext: Option<types::Element>,
+    duration_units: Option<types::Code>,
+    #[serde(rename = "_durationUnits")]
+    duration_units_ext: Option<types::Element>,
+    frequency: Option<types::Integer>,
+    #[serde(rename = "_frequency")]
+    frequency_ext: Option<types::Element>,
+    frequency_max: Option<types::Integer>,
+    #[serde(rename = "_frequencyMax")]
+    frequency_max_ext: Option<types::Element>,
+    period: Option<types::Decimal>,
+    #[serde(rename = "_period")]
+    period_ext: Option<types::Element>,
+    period_max: Option<types::Decimal>,
+    #[serde(rename = "_periodMax")]
+    period_max_ext: Option<types::Element>,
+    period_units: Option<types::Code>,
+    #[serde(rename = "_periodUnits")]
+    period_units_ext: Option<types::Element>,
+    when: Option<types::Code>,
+    #[serde(rename = "_when")]
+    when_ext: Option<types::Element>,
+}
+
+impl ::core::convert::From<TimingRepeatDe> for TimingRepeat {
+    fn from(v: TimingRepeatDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            bounds: v.bounds.0,
+            count: v.count,
+            count_ext: v.count_ext,
+            duration: v.duration,
+            duration_ext: v.duration_ext,
+            duration_max: v.duration_max,
+            duration_max_ext: v.duration_max_ext,
+            duration_units: v.duration_units,
+            duration_units_ext: v.duration_units_ext,
+            frequency: v.frequency,
+            frequency_ext: v.frequency_ext,
+            frequency_max: v.frequency_max,
+            frequency_max_ext: v.frequency_max_ext,
+            period: v.period,
+            period_ext: v.period_ext,
+            period_max: v.period_max,
+            period_max_ext: v.period_max_ext,
+            period_units: v.period_units,
+            period_units_ext: v.period_units_ext,
+            when: v.when,
+            when_ext: v.when_ext,
+        }
+    }
 }
 
 /// The `Timing.repeat.bounds[x]` choice element (see `spec/11-choice-types.md`).

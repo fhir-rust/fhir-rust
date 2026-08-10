@@ -242,6 +242,7 @@ pub struct PlanDefinition {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "PlanDefinitionActionDe")]
 #[fhir_version("r3")]
 pub struct PlanDefinitionAction {
     /// xml:id (or equivalent in JSON)
@@ -386,6 +387,120 @@ pub struct PlanDefinitionAction {
     /// A sub-action
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub action: Vec<PlanDefinitionAction>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PlanDefinitionActionDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    label: Option<types::String>,
+    #[serde(rename = "_label")]
+    label_ext: Option<types::Element>,
+    title: Option<types::String>,
+    #[serde(rename = "_title")]
+    title_ext: Option<types::Element>,
+    description: Option<types::String>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    text_equivalent: Option<types::String>,
+    #[serde(rename = "_textEquivalent")]
+    text_equivalent_ext: Option<types::Element>,
+    #[serde(default)]
+    code: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    reason: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    documentation: Vec<types::RelatedArtifact>,
+    #[serde(default)]
+    goal_id: Vec<types::Id>,
+    #[serde(rename = "_goalId")]
+    #[serde(default)]
+    goal_id_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    trigger_definition: Vec<types::TriggerDefinition>,
+    #[serde(default)]
+    condition: Vec<PlanDefinitionActionCondition>,
+    #[serde(default)]
+    input: Vec<types::DataRequirement>,
+    #[serde(default)]
+    output: Vec<types::DataRequirement>,
+    #[serde(default)]
+    related_action: Vec<PlanDefinitionActionRelatedAction>,
+    #[serde(flatten)]
+    timing: crate::r3::choice::Slot<PlanDefinitionActionTiming>,
+    #[serde(default)]
+    participant: Vec<PlanDefinitionActionParticipant>,
+    r#type: Option<types::Coding>,
+    grouping_behavior: Option<crate::coded::Coded<crate::r3::codes::ActionGroupingBehavior>>,
+    #[serde(rename = "_groupingBehavior")]
+    grouping_behavior_ext: Option<types::Element>,
+    selection_behavior: Option<crate::coded::Coded<crate::r3::codes::ActionSelectionBehavior>>,
+    #[serde(rename = "_selectionBehavior")]
+    selection_behavior_ext: Option<types::Element>,
+    required_behavior: Option<crate::coded::Coded<crate::r3::codes::ActionRequiredBehavior>>,
+    #[serde(rename = "_requiredBehavior")]
+    required_behavior_ext: Option<types::Element>,
+    precheck_behavior: Option<crate::coded::Coded<crate::r3::codes::ActionPrecheckBehavior>>,
+    #[serde(rename = "_precheckBehavior")]
+    precheck_behavior_ext: Option<types::Element>,
+    cardinality_behavior: Option<crate::coded::Coded<crate::r3::codes::ActionCardinalityBehavior>>,
+    #[serde(rename = "_cardinalityBehavior")]
+    cardinality_behavior_ext: Option<types::Element>,
+    definition: Option<types::Reference>,
+    transform: Option<types::Reference<crate::r3::resources::StructureMap>>,
+    #[serde(default)]
+    dynamic_value: Vec<PlanDefinitionActionDynamicValue>,
+    #[serde(default)]
+    action: Vec<PlanDefinitionAction>,
+}
+
+impl ::core::convert::From<PlanDefinitionActionDe> for PlanDefinitionAction {
+    fn from(v: PlanDefinitionActionDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            label: v.label,
+            label_ext: v.label_ext,
+            title: v.title,
+            title_ext: v.title_ext,
+            description: v.description,
+            description_ext: v.description_ext,
+            text_equivalent: v.text_equivalent,
+            text_equivalent_ext: v.text_equivalent_ext,
+            code: v.code,
+            reason: v.reason,
+            documentation: v.documentation,
+            goal_id: v.goal_id,
+            goal_id_ext: v.goal_id_ext,
+            trigger_definition: v.trigger_definition,
+            condition: v.condition,
+            input: v.input,
+            output: v.output,
+            related_action: v.related_action,
+            timing: v.timing.0,
+            participant: v.participant,
+            r#type: v.r#type,
+            grouping_behavior: v.grouping_behavior,
+            grouping_behavior_ext: v.grouping_behavior_ext,
+            selection_behavior: v.selection_behavior,
+            selection_behavior_ext: v.selection_behavior_ext,
+            required_behavior: v.required_behavior,
+            required_behavior_ext: v.required_behavior_ext,
+            precheck_behavior: v.precheck_behavior,
+            precheck_behavior_ext: v.precheck_behavior_ext,
+            cardinality_behavior: v.cardinality_behavior,
+            cardinality_behavior_ext: v.cardinality_behavior_ext,
+            definition: v.definition,
+            transform: v.transform,
+            dynamic_value: v.dynamic_value,
+            action: v.action,
+        }
+    }
 }
 
 /// An expression that describes applicability criteria, or start/stop
@@ -590,6 +705,7 @@ pub struct PlanDefinitionActionParticipant {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "PlanDefinitionActionRelatedActionDe")]
 #[fhir_version("r3")]
 pub struct PlanDefinitionActionRelatedAction {
     /// xml:id (or equivalent in JSON)
@@ -622,6 +738,41 @@ pub struct PlanDefinitionActionRelatedAction {
     /// The `PlanDefinition.action.relatedAction.offset[x]` choice element (0..1); see [`PlanDefinitionActionRelatedActionOffset`].
     #[serde(flatten)]
     pub offset: Option<PlanDefinitionActionRelatedActionOffset>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PlanDefinitionActionRelatedActionDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    action_id: types::Id,
+    #[serde(rename = "_actionId")]
+    action_id_ext: Option<types::Element>,
+    relationship: crate::coded::Coded<crate::r3::codes::ActionRelationshipType>,
+    #[serde(rename = "_relationship")]
+    relationship_ext: Option<types::Element>,
+    #[serde(flatten)]
+    offset: crate::r3::choice::Slot<PlanDefinitionActionRelatedActionOffset>,
+}
+
+impl ::core::convert::From<PlanDefinitionActionRelatedActionDe>
+    for PlanDefinitionActionRelatedAction
+{
+    fn from(v: PlanDefinitionActionRelatedActionDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            action_id: v.action_id,
+            action_id_ext: v.action_id_ext,
+            relationship: v.relationship,
+            relationship_ext: v.relationship_ext,
+            offset: v.offset.0,
+        }
+    }
 }
 
 /// Goals that describe what the activities within the plan are intended to
@@ -709,6 +860,7 @@ pub struct PlanDefinitionGoal {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "PlanDefinitionGoalTargetDe")]
 #[fhir_version("r3")]
 pub struct PlanDefinitionGoalTarget {
     /// xml:id (or equivalent in JSON)
@@ -732,6 +884,33 @@ pub struct PlanDefinitionGoalTarget {
 
     /// Reach goal within
     pub due: Option<types::Duration>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PlanDefinitionGoalTargetDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    measure: Option<types::CodeableConcept>,
+    #[serde(flatten)]
+    detail: crate::r3::choice::Slot<PlanDefinitionGoalTargetDetail>,
+    due: Option<types::Duration>,
+}
+
+impl ::core::convert::From<PlanDefinitionGoalTargetDe> for PlanDefinitionGoalTarget {
+    fn from(v: PlanDefinitionGoalTargetDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            measure: v.measure,
+            detail: v.detail.0,
+            due: v.due,
+        }
+    }
 }
 
 /// The `PlanDefinition.action.timing[x]` choice element (see `spec/11-choice-types.md`).

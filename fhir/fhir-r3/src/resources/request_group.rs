@@ -37,6 +37,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "RequestGroupDe")]
 #[fhir_version("r3")]
 pub struct RequestGroup {
     /// Logical id of this artifact
@@ -145,6 +146,92 @@ pub struct RequestGroup {
     pub action: Vec<RequestGroupAction>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RequestGroupDe {
+    id: Option<types::Id>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r3::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    #[serde(default)]
+    definition: Vec<types::Reference>,
+    #[serde(default)]
+    based_on: Vec<types::Reference>,
+    #[serde(default)]
+    replaces: Vec<types::Reference>,
+    group_identifier: Option<types::Identifier>,
+    status: crate::coded::Coded<crate::r3::codes::RequestStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    intent: crate::coded::Coded<crate::r3::codes::RequestIntent>,
+    #[serde(rename = "_intent")]
+    intent_ext: Option<types::Element>,
+    priority: Option<crate::coded::Coded<crate::r3::codes::RequestPriority>>,
+    #[serde(rename = "_priority")]
+    priority_ext: Option<types::Element>,
+    subject: Option<types::Reference>,
+    context: Option<types::Reference>,
+    authored_on: Option<types::DateTime>,
+    #[serde(rename = "_authoredOn")]
+    authored_on_ext: Option<types::Element>,
+    author: Option<types::Reference>,
+    #[serde(flatten)]
+    reason: crate::r3::choice::Slot<RequestGroupReason>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+    #[serde(default)]
+    action: Vec<RequestGroupAction>,
+}
+
+impl ::core::convert::From<RequestGroupDe> for RequestGroup {
+    fn from(v: RequestGroupDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            definition: v.definition,
+            based_on: v.based_on,
+            replaces: v.replaces,
+            group_identifier: v.group_identifier,
+            status: v.status,
+            status_ext: v.status_ext,
+            intent: v.intent,
+            intent_ext: v.intent_ext,
+            priority: v.priority,
+            priority_ext: v.priority_ext,
+            subject: v.subject,
+            context: v.context,
+            authored_on: v.authored_on,
+            authored_on_ext: v.authored_on_ext,
+            author: v.author,
+            reason: v.reason.0,
+            note: v.note,
+            action: v.action,
+        }
+    }
+}
+
 /// The actions, if any, produced by the evaluation of the artifact.
 ///
 /// # Examples
@@ -167,6 +254,7 @@ pub struct RequestGroup {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "RequestGroupActionDe")]
 #[fhir_version("r3")]
 pub struct RequestGroupAction {
     /// xml:id (or equivalent in JSON)
@@ -281,6 +369,96 @@ pub struct RequestGroupAction {
     pub action: Vec<RequestGroupAction>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RequestGroupActionDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    label: Option<types::String>,
+    #[serde(rename = "_label")]
+    label_ext: Option<types::Element>,
+    title: Option<types::String>,
+    #[serde(rename = "_title")]
+    title_ext: Option<types::Element>,
+    description: Option<types::String>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    text_equivalent: Option<types::String>,
+    #[serde(rename = "_textEquivalent")]
+    text_equivalent_ext: Option<types::Element>,
+    #[serde(default)]
+    code: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    documentation: Vec<types::RelatedArtifact>,
+    #[serde(default)]
+    condition: Vec<RequestGroupActionCondition>,
+    #[serde(default)]
+    related_action: Vec<RequestGroupActionRelatedAction>,
+    #[serde(flatten)]
+    timing: crate::r3::choice::Slot<RequestGroupActionTiming>,
+    #[serde(default)]
+    participant: Vec<types::Reference>,
+    r#type: Option<types::Coding>,
+    grouping_behavior: Option<crate::coded::Coded<crate::r3::codes::ActionGroupingBehavior>>,
+    #[serde(rename = "_groupingBehavior")]
+    grouping_behavior_ext: Option<types::Element>,
+    selection_behavior: Option<crate::coded::Coded<crate::r3::codes::ActionSelectionBehavior>>,
+    #[serde(rename = "_selectionBehavior")]
+    selection_behavior_ext: Option<types::Element>,
+    required_behavior: Option<crate::coded::Coded<crate::r3::codes::ActionRequiredBehavior>>,
+    #[serde(rename = "_requiredBehavior")]
+    required_behavior_ext: Option<types::Element>,
+    precheck_behavior: Option<crate::coded::Coded<crate::r3::codes::ActionPrecheckBehavior>>,
+    #[serde(rename = "_precheckBehavior")]
+    precheck_behavior_ext: Option<types::Element>,
+    cardinality_behavior: Option<crate::coded::Coded<crate::r3::codes::ActionCardinalityBehavior>>,
+    #[serde(rename = "_cardinalityBehavior")]
+    cardinality_behavior_ext: Option<types::Element>,
+    resource: Option<types::Reference>,
+    #[serde(default)]
+    action: Vec<RequestGroupAction>,
+}
+
+impl ::core::convert::From<RequestGroupActionDe> for RequestGroupAction {
+    fn from(v: RequestGroupActionDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            label: v.label,
+            label_ext: v.label_ext,
+            title: v.title,
+            title_ext: v.title_ext,
+            description: v.description,
+            description_ext: v.description_ext,
+            text_equivalent: v.text_equivalent,
+            text_equivalent_ext: v.text_equivalent_ext,
+            code: v.code,
+            documentation: v.documentation,
+            condition: v.condition,
+            related_action: v.related_action,
+            timing: v.timing.0,
+            participant: v.participant,
+            r#type: v.r#type,
+            grouping_behavior: v.grouping_behavior,
+            grouping_behavior_ext: v.grouping_behavior_ext,
+            selection_behavior: v.selection_behavior,
+            selection_behavior_ext: v.selection_behavior_ext,
+            required_behavior: v.required_behavior,
+            required_behavior_ext: v.required_behavior_ext,
+            precheck_behavior: v.precheck_behavior,
+            precheck_behavior_ext: v.precheck_behavior_ext,
+            cardinality_behavior: v.cardinality_behavior,
+            cardinality_behavior_ext: v.cardinality_behavior_ext,
+            resource: v.resource,
+            action: v.action,
+        }
+    }
+}
+
 /// An expression that describes applicability criteria, or start/stop
 /// conditions for the action.
 ///
@@ -369,6 +547,7 @@ pub struct RequestGroupActionCondition {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "RequestGroupActionRelatedActionDe")]
 #[fhir_version("r3")]
 pub struct RequestGroupActionRelatedAction {
     /// xml:id (or equivalent in JSON)
@@ -401,6 +580,39 @@ pub struct RequestGroupActionRelatedAction {
     /// The `RequestGroup.action.relatedAction.offset[x]` choice element (0..1); see [`RequestGroupActionRelatedActionOffset`].
     #[serde(flatten)]
     pub offset: Option<RequestGroupActionRelatedActionOffset>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RequestGroupActionRelatedActionDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    action_id: types::Id,
+    #[serde(rename = "_actionId")]
+    action_id_ext: Option<types::Element>,
+    relationship: crate::coded::Coded<crate::r3::codes::ActionRelationshipType>,
+    #[serde(rename = "_relationship")]
+    relationship_ext: Option<types::Element>,
+    #[serde(flatten)]
+    offset: crate::r3::choice::Slot<RequestGroupActionRelatedActionOffset>,
+}
+
+impl ::core::convert::From<RequestGroupActionRelatedActionDe> for RequestGroupActionRelatedAction {
+    fn from(v: RequestGroupActionRelatedActionDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            action_id: v.action_id,
+            action_id_ext: v.action_id_ext,
+            relationship: v.relationship,
+            relationship_ext: v.relationship_ext,
+            offset: v.offset.0,
+        }
+    }
 }
 
 /// The `RequestGroup.reason[x]` choice element (see `spec/11-choice-types.md`).

@@ -40,6 +40,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "GoalDe")]
 #[fhir_version("r6")]
 pub struct Goal {
     /// Logical id of this artifact
@@ -150,6 +151,92 @@ pub struct Goal {
     pub note: Vec<types::Annotation>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct GoalDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r6::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    lifecycle_status: crate::coded::Coded<crate::r6::codes::GoalStatus>,
+    #[serde(rename = "_lifecycleStatus")]
+    lifecycle_status_ext: Option<types::Element>,
+    achievement_status: Option<types::CodeableConcept>,
+    #[serde(default)]
+    category: Vec<types::CodeableConcept>,
+    continuous: Option<types::Boolean>,
+    #[serde(rename = "_continuous")]
+    continuous_ext: Option<types::Element>,
+    priority: Option<types::CodeableConcept>,
+    description: types::CodeableConcept,
+    subject: types::Reference,
+    #[serde(flatten)]
+    start: crate::r6::choice::Slot<GoalStart>,
+    #[serde(default)]
+    acceptance: Vec<GoalAcceptance>,
+    #[serde(default)]
+    target: Vec<GoalTarget>,
+    status_date: Option<types::Date>,
+    #[serde(rename = "_statusDate")]
+    status_date_ext: Option<types::Element>,
+    #[serde(default)]
+    status_reason: Vec<types::CodeableConcept>,
+    source: Option<types::Reference>,
+    #[serde(default)]
+    addresses: Vec<types::Reference>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+}
+
+impl ::core::convert::From<GoalDe> for Goal {
+    fn from(v: GoalDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            lifecycle_status: v.lifecycle_status,
+            lifecycle_status_ext: v.lifecycle_status_ext,
+            achievement_status: v.achievement_status,
+            category: v.category,
+            continuous: v.continuous,
+            continuous_ext: v.continuous_ext,
+            priority: v.priority,
+            description: v.description,
+            subject: v.subject,
+            start: v.start.0,
+            acceptance: v.acceptance,
+            target: v.target,
+            status_date: v.status_date,
+            status_date_ext: v.status_date_ext,
+            status_reason: v.status_reason,
+            source: v.source,
+            addresses: v.addresses,
+            note: v.note,
+        }
+    }
+}
+
 /// Information about the acceptance and relative priority assigned to the goal
 /// by the patient, practitioners and other stakeholders.
 ///
@@ -222,6 +309,7 @@ pub struct GoalAcceptance {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "GoalTargetDe")]
 #[fhir_version("r6")]
 pub struct GoalTarget {
     /// Unique id for inter-element referencing
@@ -247,6 +335,34 @@ pub struct GoalTarget {
     /// The `Goal.target.due[x]` choice element (0..1); see [`GoalTargetDue`].
     #[serde(flatten)]
     pub due: Option<GoalTargetDue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct GoalTargetDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    measure: Option<types::CodeableConcept>,
+    #[serde(flatten)]
+    detail: crate::r6::choice::Slot<GoalTargetDetail>,
+    #[serde(flatten)]
+    due: crate::r6::choice::Slot<GoalTargetDue>,
+}
+
+impl ::core::convert::From<GoalTargetDe> for GoalTarget {
+    fn from(v: GoalTargetDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            measure: v.measure,
+            detail: v.detail.0,
+            due: v.due.0,
+        }
+    }
 }
 
 /// The `Goal.start[x]` choice element (see `spec/11-choice-types.md`).

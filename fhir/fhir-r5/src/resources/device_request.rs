@@ -59,6 +59,7 @@ use fhir_derive_macros::Validate;
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "DeviceRequestDe")]
 pub struct DeviceRequest {
     /// Logical id of this artifact
     pub id: Option<types::String>,
@@ -213,6 +214,136 @@ pub struct DeviceRequest {
     pub relevant_history: Vec<types::Reference<crate::r5::resources::Provenance>>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DeviceRequestDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r5::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    #[serde(default)]
+    instantiates_canonical: Vec<types::Canonical>,
+    #[serde(rename = "_instantiatesCanonical")]
+    #[serde(default)]
+    instantiates_canonical_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    instantiates_uri: Vec<types::Uri>,
+    #[serde(rename = "_instantiatesUri")]
+    #[serde(default)]
+    instantiates_uri_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    based_on: Vec<types::Reference>,
+    #[serde(default)]
+    replaces: Vec<types::Reference<crate::r5::resources::DeviceRequest>>,
+    group_identifier: Option<types::Identifier>,
+    status: Option<crate::r5::coded::Coded<crate::r5::codes::RequestStatus>>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    intent: crate::r5::coded::Coded<crate::r5::codes::RequestIntent>,
+    #[serde(rename = "_intent")]
+    intent_ext: Option<types::Element>,
+    priority: Option<crate::r5::coded::Coded<crate::r5::codes::RequestPriority>>,
+    #[serde(rename = "_priority")]
+    priority_ext: Option<types::Element>,
+    do_not_perform: Option<types::Boolean>,
+    #[serde(rename = "_doNotPerform")]
+    do_not_perform_ext: Option<types::Element>,
+    code: types::CodeableReference,
+    quantity: Option<types::Integer>,
+    #[serde(rename = "_quantity")]
+    quantity_ext: Option<types::Element>,
+    #[serde(default)]
+    parameter: Vec<DeviceRequestParameter>,
+    subject: types::Reference,
+    encounter: Option<types::Reference<crate::r5::resources::Encounter>>,
+    #[serde(flatten)]
+    occurrence: crate::r5::choice::Slot<DeviceRequestOccurrence>,
+    authored_on: Option<types::DateTime>,
+    #[serde(rename = "_authoredOn")]
+    authored_on_ext: Option<types::Element>,
+    requester: Option<types::Reference>,
+    performer: Option<types::CodeableReference>,
+    #[serde(default)]
+    reason: Vec<types::CodeableReference>,
+    as_needed: Option<types::Boolean>,
+    #[serde(rename = "_asNeeded")]
+    as_needed_ext: Option<types::Element>,
+    as_needed_for: Option<types::CodeableConcept>,
+    #[serde(default)]
+    insurance: Vec<types::Reference>,
+    #[serde(default)]
+    supporting_info: Vec<types::Reference>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+    #[serde(default)]
+    relevant_history: Vec<types::Reference<crate::r5::resources::Provenance>>,
+}
+
+impl ::core::convert::From<DeviceRequestDe> for DeviceRequest {
+    fn from(v: DeviceRequestDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            instantiates_canonical: v.instantiates_canonical,
+            instantiates_canonical_ext: v.instantiates_canonical_ext,
+            instantiates_uri: v.instantiates_uri,
+            instantiates_uri_ext: v.instantiates_uri_ext,
+            based_on: v.based_on,
+            replaces: v.replaces,
+            group_identifier: v.group_identifier,
+            status: v.status,
+            status_ext: v.status_ext,
+            intent: v.intent,
+            intent_ext: v.intent_ext,
+            priority: v.priority,
+            priority_ext: v.priority_ext,
+            do_not_perform: v.do_not_perform,
+            do_not_perform_ext: v.do_not_perform_ext,
+            code: v.code,
+            quantity: v.quantity,
+            quantity_ext: v.quantity_ext,
+            parameter: v.parameter,
+            subject: v.subject,
+            encounter: v.encounter,
+            occurrence: v.occurrence.0,
+            authored_on: v.authored_on,
+            authored_on_ext: v.authored_on_ext,
+            requester: v.requester,
+            performer: v.performer,
+            reason: v.reason,
+            as_needed: v.as_needed,
+            as_needed_ext: v.as_needed_ext,
+            as_needed_for: v.as_needed_for,
+            insurance: v.insurance,
+            supporting_info: v.supporting_info,
+            note: v.note,
+            relevant_history: v.relevant_history,
+        }
+    }
+}
+
 /// Device details.
 ///
 /// Specific parameters for the ordered item, expressed as a coded detail and an
@@ -237,6 +368,7 @@ pub struct DeviceRequest {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "DeviceRequestParameterDe")]
 pub struct DeviceRequestParameter {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -255,6 +387,31 @@ pub struct DeviceRequestParameter {
     /// The `DeviceRequest.parameter.value[x]` choice element (0..1); see [`DeviceRequestParameterValue`].
     #[serde(flatten)]
     pub value: Option<DeviceRequestParameterValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DeviceRequestParameterDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    code: Option<types::CodeableConcept>,
+    #[serde(flatten)]
+    value: crate::r5::choice::Slot<DeviceRequestParameterValue>,
+}
+
+impl ::core::convert::From<DeviceRequestParameterDe> for DeviceRequestParameter {
+    fn from(v: DeviceRequestParameterDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            code: v.code,
+            value: v.value.0,
+        }
+    }
 }
 
 #[cfg(test)]

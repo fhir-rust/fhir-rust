@@ -39,6 +39,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "RelativeTimeDe")]
 #[fhir_version("r6")]
 pub struct RelativeTime {
     /// Unique id for inter-element referencing
@@ -86,6 +87,48 @@ pub struct RelativeTime {
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_text")]
     pub text_ext: Option<types::Element>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RelativeTimeDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    context_reference: Option<types::Reference>,
+    context_definition: Option<types::Canonical>,
+    #[serde(rename = "_contextDefinition")]
+    context_definition_ext: Option<types::Element>,
+    context_path: Option<types::String>,
+    #[serde(rename = "_contextPath")]
+    context_path_ext: Option<types::Element>,
+    context_code: Option<types::CodeableConcept>,
+    #[serde(flatten)]
+    offset: crate::r6::choice::Slot<RelativeTimeOffset>,
+    text: Option<types::String>,
+    #[serde(rename = "_text")]
+    text_ext: Option<types::Element>,
+}
+
+impl ::core::convert::From<RelativeTimeDe> for RelativeTime {
+    fn from(v: RelativeTimeDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            context_reference: v.context_reference,
+            context_definition: v.context_definition,
+            context_definition_ext: v.context_definition_ext,
+            context_path: v.context_path,
+            context_path_ext: v.context_path_ext,
+            context_code: v.context_code,
+            offset: v.offset.0,
+            text: v.text,
+            text_ext: v.text_ext,
+        }
+    }
 }
 
 /// The `RelativeTime.offset[x]` choice element (see `spec/11-choice-types.md`).

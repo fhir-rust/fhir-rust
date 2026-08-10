@@ -37,6 +37,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "CommunicationRequestDe")]
 #[fhir_version("r3")]
 pub struct CommunicationRequest {
     /// Logical id of this artifact
@@ -161,6 +162,104 @@ pub struct CommunicationRequest {
     pub note: Vec<types::Annotation>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CommunicationRequestDe {
+    id: Option<types::Id>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r3::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    #[serde(default)]
+    based_on: Vec<types::Reference>,
+    #[serde(default)]
+    replaces: Vec<types::Reference<crate::r3::resources::CommunicationRequest>>,
+    group_identifier: Option<types::Identifier>,
+    status: crate::coded::Coded<crate::r3::codes::RequestStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    #[serde(default)]
+    category: Vec<types::CodeableConcept>,
+    priority: Option<crate::coded::Coded<crate::r3::codes::RequestPriority>>,
+    #[serde(rename = "_priority")]
+    priority_ext: Option<types::Element>,
+    #[serde(default)]
+    medium: Vec<types::CodeableConcept>,
+    subject: Option<types::Reference>,
+    #[serde(default)]
+    recipient: Vec<types::Reference>,
+    #[serde(default)]
+    topic: Vec<types::Reference>,
+    context: Option<types::Reference>,
+    #[serde(default)]
+    payload: Vec<CommunicationRequestPayload>,
+    #[serde(flatten)]
+    occurrence: crate::r3::choice::Slot<CommunicationRequestOccurrence>,
+    authored_on: Option<types::DateTime>,
+    #[serde(rename = "_authoredOn")]
+    authored_on_ext: Option<types::Element>,
+    sender: Option<types::Reference>,
+    requester: Option<CommunicationRequestRequester>,
+    #[serde(default)]
+    reason_code: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    reason_reference: Vec<types::Reference>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+}
+
+impl ::core::convert::From<CommunicationRequestDe> for CommunicationRequest {
+    fn from(v: CommunicationRequestDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            based_on: v.based_on,
+            replaces: v.replaces,
+            group_identifier: v.group_identifier,
+            status: v.status,
+            status_ext: v.status_ext,
+            category: v.category,
+            priority: v.priority,
+            priority_ext: v.priority_ext,
+            medium: v.medium,
+            subject: v.subject,
+            recipient: v.recipient,
+            topic: v.topic,
+            context: v.context,
+            payload: v.payload,
+            occurrence: v.occurrence.0,
+            authored_on: v.authored_on,
+            authored_on_ext: v.authored_on_ext,
+            sender: v.sender,
+            requester: v.requester,
+            reason_code: v.reason_code,
+            reason_reference: v.reason_reference,
+            note: v.note,
+        }
+    }
+}
+
 /// Text, attachment(s), or resource(s) to be communicated to the recipient.
 ///
 /// # Examples
@@ -183,6 +282,7 @@ pub struct CommunicationRequest {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "CommunicationRequestPayloadDe")]
 #[fhir_version("r3")]
 pub struct CommunicationRequestPayload {
     /// xml:id (or equivalent in JSON)
@@ -200,6 +300,29 @@ pub struct CommunicationRequestPayload {
     /// The `CommunicationRequest.payload.content[x]` choice element (1..1); see [`CommunicationRequestPayloadContent`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub content: Option<CommunicationRequestPayloadContent>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CommunicationRequestPayloadDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    content: crate::r3::choice::Slot<CommunicationRequestPayloadContent>,
+}
+
+impl ::core::convert::From<CommunicationRequestPayloadDe> for CommunicationRequestPayload {
+    fn from(v: CommunicationRequestPayloadDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            content: v.content.0,
+        }
+    }
 }
 
 /// The individual who initiated the request and has responsibility for its

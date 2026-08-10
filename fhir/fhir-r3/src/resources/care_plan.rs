@@ -245,6 +245,7 @@ pub struct CarePlanActivity {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "CarePlanActivityDetailDe")]
 #[fhir_version("r3")]
 pub struct CarePlanActivityDetail {
     /// xml:id (or equivalent in JSON)
@@ -330,6 +331,76 @@ pub struct CarePlanActivityDetail {
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_description")]
     pub description_ext: Option<types::Element>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CarePlanActivityDetailDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    category: Option<types::CodeableConcept>,
+    definition: Option<types::Reference>,
+    code: Option<types::CodeableConcept>,
+    #[serde(default)]
+    reason_code: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    reason_reference: Vec<types::Reference<crate::r3::resources::Condition>>,
+    #[serde(default)]
+    goal: Vec<types::Reference<crate::r3::resources::Goal>>,
+    status: crate::coded::Coded<crate::r3::codes::CarePlanActivityStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    status_reason: Option<types::String>,
+    #[serde(rename = "_statusReason")]
+    status_reason_ext: Option<types::Element>,
+    prohibited: Option<types::Boolean>,
+    #[serde(rename = "_prohibited")]
+    prohibited_ext: Option<types::Element>,
+    #[serde(flatten)]
+    scheduled: crate::r3::choice::Slot<CarePlanActivityDetailScheduled>,
+    location: Option<types::Reference<crate::r3::resources::Location>>,
+    #[serde(default)]
+    performer: Vec<types::Reference>,
+    #[serde(flatten)]
+    product: crate::r3::choice::Slot<CarePlanActivityDetailProduct>,
+    daily_amount: Option<types::Quantity>,
+    quantity: Option<types::Quantity>,
+    description: Option<types::String>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+}
+
+impl ::core::convert::From<CarePlanActivityDetailDe> for CarePlanActivityDetail {
+    fn from(v: CarePlanActivityDetailDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            category: v.category,
+            definition: v.definition,
+            code: v.code,
+            reason_code: v.reason_code,
+            reason_reference: v.reason_reference,
+            goal: v.goal,
+            status: v.status,
+            status_ext: v.status_ext,
+            status_reason: v.status_reason,
+            status_reason_ext: v.status_reason_ext,
+            prohibited: v.prohibited,
+            prohibited_ext: v.prohibited_ext,
+            scheduled: v.scheduled.0,
+            location: v.location,
+            performer: v.performer,
+            product: v.product.0,
+            daily_amount: v.daily_amount,
+            quantity: v.quantity,
+            description: v.description,
+            description_ext: v.description_ext,
+        }
+    }
 }
 
 /// The `CarePlan.activity.detail.scheduled[x]` choice element (see `spec/11-choice-types.md`).

@@ -44,6 +44,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "UsageContextDe")]
 pub struct UsageContext {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -58,6 +59,28 @@ pub struct UsageContext {
     /// The `UsageContext.value[x]` choice element (0..1); see [`UsageContextValue`].
     #[serde(flatten)]
     pub value: Option<UsageContextValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct UsageContextDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    code: types::Coding,
+    #[serde(flatten)]
+    value: crate::r5::choice::Slot<UsageContextValue>,
+}
+
+impl ::core::convert::From<UsageContextDe> for UsageContext {
+    fn from(v: UsageContextDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            code: v.code,
+            value: v.value.0,
+        }
+    }
 }
 
 #[cfg(test)]

@@ -39,6 +39,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "SupplyRequestDe")]
 #[fhir_version("r6")]
 pub struct SupplyRequest {
     /// Logical id of this artifact
@@ -152,6 +153,95 @@ pub struct SupplyRequest {
     pub deliver_to: Option<types::Reference>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SupplyRequestDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r6::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    status: Option<crate::coded::Coded<crate::r6::codes::SupplyrequestStatus>>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    intent: crate::coded::Coded<crate::r6::codes::RequestIntent>,
+    #[serde(rename = "_intent")]
+    intent_ext: Option<types::Element>,
+    #[serde(default)]
+    based_on: Vec<types::Reference>,
+    category: Option<types::CodeableConcept>,
+    priority: Option<crate::coded::Coded<crate::r6::codes::RequestPriority>>,
+    #[serde(rename = "_priority")]
+    priority_ext: Option<types::Element>,
+    deliver_for: Option<types::Reference<crate::r6::resources::Patient>>,
+    item: types::CodeableReference,
+    quantity: types::Quantity,
+    #[serde(default)]
+    parameter: Vec<SupplyRequestParameter>,
+    #[serde(flatten)]
+    occurrence: crate::r6::choice::Slot<SupplyRequestOccurrence>,
+    authored_on: Option<types::DateTime>,
+    #[serde(rename = "_authoredOn")]
+    authored_on_ext: Option<types::Element>,
+    requester: Option<types::Reference>,
+    #[serde(default)]
+    supplier: Vec<types::Reference>,
+    #[serde(default)]
+    reason: Vec<types::CodeableReference>,
+    deliver_from: Option<types::Reference>,
+    deliver_to: Option<types::Reference>,
+}
+
+impl ::core::convert::From<SupplyRequestDe> for SupplyRequest {
+    fn from(v: SupplyRequestDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            status: v.status,
+            status_ext: v.status_ext,
+            intent: v.intent,
+            intent_ext: v.intent_ext,
+            based_on: v.based_on,
+            category: v.category,
+            priority: v.priority,
+            priority_ext: v.priority_ext,
+            deliver_for: v.deliver_for,
+            item: v.item,
+            quantity: v.quantity,
+            parameter: v.parameter,
+            occurrence: v.occurrence.0,
+            authored_on: v.authored_on,
+            authored_on_ext: v.authored_on_ext,
+            requester: v.requester,
+            supplier: v.supplier,
+            reason: v.reason,
+            deliver_from: v.deliver_from,
+            deliver_to: v.deliver_to,
+        }
+    }
+}
+
 /// Specific parameters for the ordered item. For example, the size of the
 /// indicated item.
 ///
@@ -175,6 +265,7 @@ pub struct SupplyRequest {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "SupplyRequestParameterDe")]
 #[fhir_version("r6")]
 pub struct SupplyRequestParameter {
     /// Unique id for inter-element referencing
@@ -195,6 +286,31 @@ pub struct SupplyRequestParameter {
     /// The `SupplyRequest.parameter.value[x]` choice element (0..1); see [`SupplyRequestParameterValue`].
     #[serde(flatten)]
     pub value: Option<SupplyRequestParameterValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SupplyRequestParameterDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    code: Option<types::CodeableConcept>,
+    #[serde(flatten)]
+    value: crate::r6::choice::Slot<SupplyRequestParameterValue>,
+}
+
+impl ::core::convert::From<SupplyRequestParameterDe> for SupplyRequestParameter {
+    fn from(v: SupplyRequestParameterDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            code: v.code,
+            value: v.value.0,
+        }
+    }
 }
 
 /// The `SupplyRequest.occurrence[x]` choice element (see `spec/11-choice-types.md`).

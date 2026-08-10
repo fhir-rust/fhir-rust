@@ -154,6 +154,7 @@ pub struct BiologicallyDerivedProduct {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "BiologicallyDerivedProductCollectionDe")]
 #[fhir_version("r6")]
 pub struct BiologicallyDerivedProductCollection {
     /// Unique id for inter-element referencing
@@ -183,6 +184,37 @@ pub struct BiologicallyDerivedProductCollection {
     pub procedure: Option<types::Reference<crate::r6::resources::Procedure>>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct BiologicallyDerivedProductCollectionDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    collector: Option<types::Reference>,
+    source: Option<types::Reference>,
+    #[serde(flatten)]
+    collected: crate::r6::choice::Slot<BiologicallyDerivedProductCollectionCollected>,
+    procedure: Option<types::Reference<crate::r6::resources::Procedure>>,
+}
+
+impl ::core::convert::From<BiologicallyDerivedProductCollectionDe>
+    for BiologicallyDerivedProductCollection
+{
+    fn from(v: BiologicallyDerivedProductCollectionDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            collector: v.collector,
+            source: v.source,
+            collected: v.collected.0,
+            procedure: v.procedure,
+        }
+    }
+}
+
 /// A property that is specific to this BiologicallyDerviedProduct instance.
 ///
 /// # Examples
@@ -205,6 +237,7 @@ pub struct BiologicallyDerivedProductCollection {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "BiologicallyDerivedProductPropertyDe")]
 #[fhir_version("r6")]
 pub struct BiologicallyDerivedProductProperty {
     /// Unique id for inter-element referencing
@@ -225,6 +258,33 @@ pub struct BiologicallyDerivedProductProperty {
     /// The `BiologicallyDerivedProduct.property.value[x]` choice element (1..1); see [`BiologicallyDerivedProductPropertyValue`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub value: Option<BiologicallyDerivedProductPropertyValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct BiologicallyDerivedProductPropertyDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: types::CodeableConcept,
+    #[serde(flatten)]
+    value: crate::r6::choice::Slot<BiologicallyDerivedProductPropertyValue>,
+}
+
+impl ::core::convert::From<BiologicallyDerivedProductPropertyDe>
+    for BiologicallyDerivedProductProperty
+{
+    fn from(v: BiologicallyDerivedProductPropertyDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            value: v.value.0,
+        }
+    }
 }
 
 /// The `BiologicallyDerivedProduct.collection.collected[x]` choice element (see `spec/11-choice-types.md`).

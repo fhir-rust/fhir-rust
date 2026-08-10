@@ -37,6 +37,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MedicationAdministrationDe")]
 #[fhir_version("r2")]
 pub struct MedicationAdministration {
     /// Logical id of this artifact
@@ -137,6 +138,86 @@ pub struct MedicationAdministration {
     pub dosage: Option<MedicationAdministrationDosage>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MedicationAdministrationDe {
+    id: Option<types::Id>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r2::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    status: crate::coded::Coded<crate::r2::codes::MedicationAdminStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    patient: types::Reference<crate::r2::resources::Patient>,
+    practitioner: Option<types::Reference>,
+    encounter: Option<types::Reference<crate::r2::resources::Encounter>>,
+    prescription: Option<types::Reference<crate::r2::resources::MedicationOrder>>,
+    was_not_given: Option<types::Boolean>,
+    #[serde(rename = "_wasNotGiven")]
+    was_not_given_ext: Option<types::Element>,
+    #[serde(default)]
+    reason_not_given: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    reason_given: Vec<types::CodeableConcept>,
+    #[serde(flatten)]
+    effective_time: crate::r2::choice::Slot<MedicationAdministrationEffectiveTime>,
+    #[serde(flatten)]
+    medication: crate::r2::choice::Slot<MedicationAdministrationMedication>,
+    #[serde(default)]
+    device: Vec<types::Reference<crate::r2::resources::Device>>,
+    note: Option<types::String>,
+    #[serde(rename = "_note")]
+    note_ext: Option<types::Element>,
+    dosage: Option<MedicationAdministrationDosage>,
+}
+
+impl ::core::convert::From<MedicationAdministrationDe> for MedicationAdministration {
+    fn from(v: MedicationAdministrationDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            status: v.status,
+            status_ext: v.status_ext,
+            patient: v.patient,
+            practitioner: v.practitioner,
+            encounter: v.encounter,
+            prescription: v.prescription,
+            was_not_given: v.was_not_given,
+            was_not_given_ext: v.was_not_given_ext,
+            reason_not_given: v.reason_not_given,
+            reason_given: v.reason_given,
+            effective_time: v.effective_time.0,
+            medication: v.medication.0,
+            device: v.device,
+            note: v.note,
+            note_ext: v.note_ext,
+            dosage: v.dosage,
+        }
+    }
+}
+
 /// Describes the medication dosage information details e.g. dose, rate, site,
 /// route, etc.
 ///
@@ -160,6 +241,7 @@ pub struct MedicationAdministration {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MedicationAdministrationDosageDe")]
 #[fhir_version("r2")]
 pub struct MedicationAdministrationDosage {
     /// xml:id (or equivalent in JSON)
@@ -198,6 +280,43 @@ pub struct MedicationAdministrationDosage {
     /// The `MedicationAdministration.dosage.rate[x]` choice element (0..1); see [`MedicationAdministrationDosageRate`].
     #[serde(flatten)]
     pub rate: Option<MedicationAdministrationDosageRate>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MedicationAdministrationDosageDe {
+    id: Option<types::Id>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    text: Option<types::String>,
+    #[serde(rename = "_text")]
+    text_ext: Option<types::Element>,
+    #[serde(flatten)]
+    site: crate::r2::choice::Slot<MedicationAdministrationDosageSite>,
+    route: Option<types::CodeableConcept>,
+    method: Option<types::CodeableConcept>,
+    quantity: Option<types::Quantity>,
+    #[serde(flatten)]
+    rate: crate::r2::choice::Slot<MedicationAdministrationDosageRate>,
+}
+
+impl ::core::convert::From<MedicationAdministrationDosageDe> for MedicationAdministrationDosage {
+    fn from(v: MedicationAdministrationDosageDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            text: v.text,
+            text_ext: v.text_ext,
+            site: v.site.0,
+            route: v.route,
+            method: v.method,
+            quantity: v.quantity,
+            rate: v.rate.0,
+        }
+    }
 }
 
 /// The `MedicationAdministration.effectiveTime[x]` choice element (see `spec/11-choice-types.md`).

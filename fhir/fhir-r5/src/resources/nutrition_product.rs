@@ -245,6 +245,7 @@ pub struct NutritionProductIngredient {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "NutritionProductCharacteristicDe")]
 pub struct NutritionProductCharacteristic {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -263,6 +264,31 @@ pub struct NutritionProductCharacteristic {
     /// The `NutritionProduct.characteristic.value[x]` choice element (0..1); see [`NutritionProductCharacteristicValue`].
     #[serde(flatten)]
     pub value: Option<NutritionProductCharacteristicValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct NutritionProductCharacteristicDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: types::CodeableConcept,
+    #[serde(flatten)]
+    value: crate::r5::choice::Slot<NutritionProductCharacteristicValue>,
+}
+
+impl ::core::convert::From<NutritionProductCharacteristicDe> for NutritionProductCharacteristic {
+    fn from(v: NutritionProductCharacteristicDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            value: v.value.0,
+        }
+    }
 }
 
 /// One or several physical instances or occurrences of the nutrition product.

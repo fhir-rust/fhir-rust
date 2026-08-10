@@ -223,6 +223,7 @@ pub struct SubstanceReferenceInformationGeneElement {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "SubstanceReferenceInformationTargetDe")]
 pub struct SubstanceReferenceInformationTarget {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -260,6 +261,46 @@ pub struct SubstanceReferenceInformationTarget {
     /// Todo
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub source: Vec<types::Reference<crate::r5::resources::DocumentReference>>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SubstanceReferenceInformationTargetDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    target: Option<types::Identifier>,
+    r#type: Option<types::CodeableConcept>,
+    interaction: Option<types::CodeableConcept>,
+    organism: Option<types::CodeableConcept>,
+    organism_type: Option<types::CodeableConcept>,
+    #[serde(flatten)]
+    amount: crate::r5::choice::Slot<SubstanceReferenceInformationTargetAmount>,
+    amount_type: Option<types::CodeableConcept>,
+    #[serde(default)]
+    source: Vec<types::Reference<crate::r5::resources::DocumentReference>>,
+}
+
+impl ::core::convert::From<SubstanceReferenceInformationTargetDe>
+    for SubstanceReferenceInformationTarget
+{
+    fn from(v: SubstanceReferenceInformationTargetDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            target: v.target,
+            r#type: v.r#type,
+            interaction: v.interaction,
+            organism: v.organism,
+            organism_type: v.organism_type,
+            amount: v.amount.0,
+            amount_type: v.amount_type,
+            source: v.source,
+        }
+    }
 }
 
 #[cfg(test)]

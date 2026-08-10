@@ -39,6 +39,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ProvenanceDe")]
 #[fhir_version("r6")]
 pub struct Provenance {
     /// Logical id of this artifact
@@ -139,6 +140,87 @@ pub struct Provenance {
     /// Signature on target
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub signature: Vec<types::Signature>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ProvenanceDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r6::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    target: ::vec1::Vec1<types::Reference>,
+    #[serde(flatten)]
+    occurred: crate::r6::choice::Slot<ProvenanceOccurred>,
+    recorded: Option<types::Instant>,
+    #[serde(rename = "_recorded")]
+    recorded_ext: Option<types::Element>,
+    #[serde(default)]
+    policy: Vec<types::Uri>,
+    #[serde(rename = "_policy")]
+    #[serde(default)]
+    policy_ext: Vec<Option<types::Element>>,
+    location: Option<types::Reference<crate::r6::resources::Location>>,
+    #[serde(default)]
+    authorization: Vec<types::CodeableReference>,
+    why: Option<types::Markdown>,
+    #[serde(rename = "_why")]
+    why_ext: Option<types::Element>,
+    activity: Option<types::CodeableConcept>,
+    #[serde(default)]
+    based_on: Vec<types::Reference>,
+    patient: Option<types::Reference<crate::r6::resources::Patient>>,
+    encounter: Option<types::Reference<crate::r6::resources::Encounter>>,
+    agent: ::vec1::Vec1<ProvenanceAgent>,
+    #[serde(default)]
+    entity: Vec<ProvenanceEntity>,
+    #[serde(default)]
+    signature: Vec<types::Signature>,
+}
+
+impl ::core::convert::From<ProvenanceDe> for Provenance {
+    fn from(v: ProvenanceDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            target: v.target,
+            occurred: v.occurred.0,
+            recorded: v.recorded,
+            recorded_ext: v.recorded_ext,
+            policy: v.policy,
+            policy_ext: v.policy_ext,
+            location: v.location,
+            authorization: v.authorization,
+            why: v.why,
+            why_ext: v.why_ext,
+            activity: v.activity,
+            based_on: v.based_on,
+            patient: v.patient,
+            encounter: v.encounter,
+            agent: v.agent,
+            entity: v.entity,
+            signature: v.signature,
+        }
+    }
 }
 
 /// An actor taking a role in an activity for which it can be assigned some

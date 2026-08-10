@@ -303,6 +303,7 @@ pub struct TransportRestriction {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "TransportInputDe")]
 pub struct TransportInput {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -321,6 +322,31 @@ pub struct TransportInput {
     /// The `Transport.input.value[x]` choice element (0..1); see [`TransportInputValue`].
     #[serde(flatten)]
     pub value: Option<TransportInputValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct TransportInputDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: types::CodeableConcept,
+    #[serde(flatten)]
+    value: crate::r5::choice::Slot<TransportInputValue>,
+}
+
+impl ::core::convert::From<TransportInputDe> for TransportInput {
+    fn from(v: TransportInputDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            value: v.value.0,
+        }
+    }
 }
 
 /// Transport.output
@@ -347,6 +373,7 @@ pub struct TransportInput {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "TransportOutputDe")]
 pub struct TransportOutput {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -365,6 +392,31 @@ pub struct TransportOutput {
     /// The `Transport.output.value[x]` choice element (0..1); see [`TransportOutputValue`].
     #[serde(flatten)]
     pub value: Option<TransportOutputValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct TransportOutputDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: types::CodeableConcept,
+    #[serde(flatten)]
+    value: crate::r5::choice::Slot<TransportOutputValue>,
+}
+
+impl ::core::convert::From<TransportOutputDe> for TransportOutput {
+    fn from(v: TransportOutputDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            value: v.value.0,
+        }
+    }
 }
 
 #[cfg(test)]

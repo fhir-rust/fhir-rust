@@ -38,6 +38,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ObservationDe")]
 #[fhir_version("r6")]
 pub struct Observation {
     /// Logical id of this artifact
@@ -195,6 +196,124 @@ pub struct Observation {
     pub component: Vec<ObservationComponent>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ObservationDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r6::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    #[serde(flatten)]
+    instantiates: crate::r6::choice::Slot<ObservationInstantiates>,
+    #[serde(default)]
+    based_on: Vec<types::Reference>,
+    #[serde(default)]
+    triggered_by: Vec<ObservationTriggeredBy>,
+    #[serde(default)]
+    part_of: Vec<types::Reference>,
+    status: crate::coded::Coded<crate::r6::codes::ObservationStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    #[serde(default)]
+    category: Vec<types::CodeableConcept>,
+    code: types::CodeableConcept,
+    subject: Option<types::Reference>,
+    #[serde(default)]
+    focus: Vec<types::Reference>,
+    organizer: Option<types::Boolean>,
+    #[serde(rename = "_organizer")]
+    organizer_ext: Option<types::Element>,
+    encounter: Option<types::Reference<crate::r6::resources::Encounter>>,
+    #[serde(flatten)]
+    effective: crate::r6::choice::Slot<ObservationEffective>,
+    issued: Option<types::Instant>,
+    #[serde(rename = "_issued")]
+    issued_ext: Option<types::Element>,
+    #[serde(default)]
+    performer: Vec<types::Reference>,
+    #[serde(flatten)]
+    value: crate::r6::choice::Slot<ObservationValue>,
+    data_absent_reason: Option<types::CodeableConcept>,
+    #[serde(default)]
+    interpretation: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+    body_site: Option<types::CodeableConcept>,
+    body_structure: Option<types::Reference<crate::r6::resources::BodyStructure>>,
+    method: Option<types::CodeableConcept>,
+    specimen: Option<types::Reference>,
+    device: Option<types::Reference>,
+    #[serde(default)]
+    reference_range: Vec<ObservationReferenceRange>,
+    #[serde(default)]
+    has_member: Vec<types::Reference>,
+    #[serde(default)]
+    derived_from: Vec<types::Reference>,
+    #[serde(default)]
+    component: Vec<ObservationComponent>,
+}
+
+impl ::core::convert::From<ObservationDe> for Observation {
+    fn from(v: ObservationDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            instantiates: v.instantiates.0,
+            based_on: v.based_on,
+            triggered_by: v.triggered_by,
+            part_of: v.part_of,
+            status: v.status,
+            status_ext: v.status_ext,
+            category: v.category,
+            code: v.code,
+            subject: v.subject,
+            focus: v.focus,
+            organizer: v.organizer,
+            organizer_ext: v.organizer_ext,
+            encounter: v.encounter,
+            effective: v.effective.0,
+            issued: v.issued,
+            issued_ext: v.issued_ext,
+            performer: v.performer,
+            value: v.value.0,
+            data_absent_reason: v.data_absent_reason,
+            interpretation: v.interpretation,
+            note: v.note,
+            body_site: v.body_site,
+            body_structure: v.body_structure,
+            method: v.method,
+            specimen: v.specimen,
+            device: v.device,
+            reference_range: v.reference_range,
+            has_member: v.has_member,
+            derived_from: v.derived_from,
+            component: v.component,
+        }
+    }
+}
+
 /// Some observations have multiple component observations. These component
 /// observations are expressed as separate code value pairs that share the same
 /// attributes. Examples include systolic and diastolic component observations
@@ -221,6 +340,7 @@ pub struct Observation {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ObservationComponentDe")]
 #[fhir_version("r6")]
 pub struct ObservationComponent {
     /// Unique id for inter-element referencing
@@ -252,6 +372,39 @@ pub struct ObservationComponent {
     /// Provides guide for interpretation of component result value
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub reference_range: Vec<ObservationReferenceRange>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ObservationComponentDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    code: types::CodeableConcept,
+    #[serde(flatten)]
+    value: crate::r6::choice::Slot<ObservationComponentValue>,
+    data_absent_reason: Option<types::CodeableConcept>,
+    #[serde(default)]
+    interpretation: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    reference_range: Vec<ObservationReferenceRange>,
+}
+
+impl ::core::convert::From<ObservationComponentDe> for ObservationComponent {
+    fn from(v: ObservationComponentDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            code: v.code,
+            value: v.value.0,
+            data_absent_reason: v.data_absent_reason,
+            interpretation: v.interpretation,
+            reference_range: v.reference_range,
+        }
+    }
 }
 
 /// Guidance on how to interpret the value by comparison to a normal or

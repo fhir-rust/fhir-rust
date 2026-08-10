@@ -39,6 +39,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MediaDe")]
 #[fhir_version("r4b")]
 pub struct Media {
     /// Logical id of this artifact
@@ -177,6 +178,114 @@ pub struct Media {
     /// Comments made about the media
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub note: Vec<types::Annotation>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MediaDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r4b::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    #[serde(default)]
+    based_on: Vec<types::Reference>,
+    #[serde(default)]
+    part_of: Vec<types::Reference>,
+    status: crate::coded::Coded<crate::r4b::codes::EventStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    r#type: Option<types::CodeableConcept>,
+    modality: Option<types::CodeableConcept>,
+    view: Option<types::CodeableConcept>,
+    subject: Option<types::Reference>,
+    encounter: Option<types::Reference<crate::r4b::resources::Encounter>>,
+    #[serde(flatten)]
+    created: crate::r4b::choice::Slot<MediaCreated>,
+    issued: Option<types::Instant>,
+    #[serde(rename = "_issued")]
+    issued_ext: Option<types::Element>,
+    operator: Option<types::Reference>,
+    #[serde(default)]
+    reason_code: Vec<types::CodeableConcept>,
+    body_site: Option<types::CodeableConcept>,
+    device_name: Option<types::String>,
+    #[serde(rename = "_deviceName")]
+    device_name_ext: Option<types::Element>,
+    device: Option<types::Reference>,
+    height: Option<types::PositiveInt>,
+    #[serde(rename = "_height")]
+    height_ext: Option<types::Element>,
+    width: Option<types::PositiveInt>,
+    #[serde(rename = "_width")]
+    width_ext: Option<types::Element>,
+    frames: Option<types::PositiveInt>,
+    #[serde(rename = "_frames")]
+    frames_ext: Option<types::Element>,
+    duration: Option<types::Decimal>,
+    #[serde(rename = "_duration")]
+    duration_ext: Option<types::Element>,
+    content: types::Attachment,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+}
+
+impl ::core::convert::From<MediaDe> for Media {
+    fn from(v: MediaDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            based_on: v.based_on,
+            part_of: v.part_of,
+            status: v.status,
+            status_ext: v.status_ext,
+            r#type: v.r#type,
+            modality: v.modality,
+            view: v.view,
+            subject: v.subject,
+            encounter: v.encounter,
+            created: v.created.0,
+            issued: v.issued,
+            issued_ext: v.issued_ext,
+            operator: v.operator,
+            reason_code: v.reason_code,
+            body_site: v.body_site,
+            device_name: v.device_name,
+            device_name_ext: v.device_name_ext,
+            device: v.device,
+            height: v.height,
+            height_ext: v.height_ext,
+            width: v.width,
+            width_ext: v.width_ext,
+            frames: v.frames,
+            frames_ext: v.frames_ext,
+            duration: v.duration,
+            duration_ext: v.duration_ext,
+            content: v.content,
+            note: v.note,
+        }
+    }
 }
 
 /// The `Media.created[x]` choice element (see `spec/11-choice-types.md`).

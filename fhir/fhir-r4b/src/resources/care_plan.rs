@@ -271,6 +271,7 @@ pub struct CarePlanActivity {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "CarePlanActivityDetailDe")]
 #[fhir_version("r4b")]
 pub struct CarePlanActivityDetail {
     /// Unique id for inter-element referencing
@@ -372,6 +373,88 @@ pub struct CarePlanActivityDetail {
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_description")]
     pub description_ext: Option<types::Element>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CarePlanActivityDetailDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    kind: Option<types::Code>,
+    #[serde(rename = "_kind")]
+    kind_ext: Option<types::Element>,
+    #[serde(default)]
+    instantiates_canonical: Vec<types::Canonical>,
+    #[serde(rename = "_instantiatesCanonical")]
+    #[serde(default)]
+    instantiates_canonical_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    instantiates_uri: Vec<types::Uri>,
+    #[serde(rename = "_instantiatesUri")]
+    #[serde(default)]
+    instantiates_uri_ext: Vec<Option<types::Element>>,
+    code: Option<types::CodeableConcept>,
+    #[serde(default)]
+    reason_code: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    reason_reference: Vec<types::Reference>,
+    #[serde(default)]
+    goal: Vec<types::Reference<crate::r4b::resources::Goal>>,
+    status: crate::coded::Coded<crate::r4b::codes::CarePlanActivityStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    status_reason: Option<types::CodeableConcept>,
+    do_not_perform: Option<types::Boolean>,
+    #[serde(rename = "_doNotPerform")]
+    do_not_perform_ext: Option<types::Element>,
+    #[serde(flatten)]
+    scheduled: crate::r4b::choice::Slot<CarePlanActivityDetailScheduled>,
+    location: Option<types::Reference<crate::r4b::resources::Location>>,
+    #[serde(default)]
+    performer: Vec<types::Reference>,
+    #[serde(flatten)]
+    product: crate::r4b::choice::Slot<CarePlanActivityDetailProduct>,
+    daily_amount: Option<types::Quantity>,
+    quantity: Option<types::Quantity>,
+    description: Option<types::String>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+}
+
+impl ::core::convert::From<CarePlanActivityDetailDe> for CarePlanActivityDetail {
+    fn from(v: CarePlanActivityDetailDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            kind: v.kind,
+            kind_ext: v.kind_ext,
+            instantiates_canonical: v.instantiates_canonical,
+            instantiates_canonical_ext: v.instantiates_canonical_ext,
+            instantiates_uri: v.instantiates_uri,
+            instantiates_uri_ext: v.instantiates_uri_ext,
+            code: v.code,
+            reason_code: v.reason_code,
+            reason_reference: v.reason_reference,
+            goal: v.goal,
+            status: v.status,
+            status_ext: v.status_ext,
+            status_reason: v.status_reason,
+            do_not_perform: v.do_not_perform,
+            do_not_perform_ext: v.do_not_perform_ext,
+            scheduled: v.scheduled.0,
+            location: v.location,
+            performer: v.performer,
+            product: v.product.0,
+            daily_amount: v.daily_amount,
+            quantity: v.quantity,
+            description: v.description,
+            description_ext: v.description_ext,
+        }
+    }
 }
 
 /// The `CarePlan.activity.detail.scheduled[x]` choice element (see `spec/11-choice-types.md`).

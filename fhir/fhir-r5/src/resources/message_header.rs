@@ -61,6 +61,7 @@ use fhir_derive_macros::Validate;
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MessageHeaderDe")]
 pub struct MessageHeader {
     /// Logical id of this artifact
     pub id: Option<types::String>,
@@ -132,6 +133,69 @@ pub struct MessageHeader {
     pub definition_ext: Option<types::Element>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MessageHeaderDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r5::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    event: crate::r5::choice::Slot<MessageHeaderEvent>,
+    #[serde(default)]
+    destination: Vec<MessageHeaderDestination>,
+    sender: Option<types::Reference>,
+    author: Option<types::Reference>,
+    source: MessageHeaderSource,
+    responsible: Option<types::Reference>,
+    reason: Option<types::CodeableConcept>,
+    response: Option<MessageHeaderResponse>,
+    #[serde(default)]
+    focus: Vec<types::Reference>,
+    definition: Option<types::Canonical>,
+    #[serde(rename = "_definition")]
+    definition_ext: Option<types::Element>,
+}
+
+impl ::core::convert::From<MessageHeaderDe> for MessageHeader {
+    fn from(v: MessageHeaderDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            event: v.event.0,
+            destination: v.destination,
+            sender: v.sender,
+            author: v.author,
+            source: v.source,
+            responsible: v.responsible,
+            reason: v.reason,
+            response: v.response,
+            focus: v.focus,
+            definition: v.definition,
+            definition_ext: v.definition_ext,
+        }
+    }
+}
+
 /// Message destination application(s).
 ///
 /// The destination application(s) which the message is intended for, including
@@ -157,6 +221,7 @@ pub struct MessageHeader {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MessageHeaderDestinationDe")]
 pub struct MessageHeaderDestination {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -186,6 +251,38 @@ pub struct MessageHeaderDestination {
     pub receiver: Option<types::Reference>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MessageHeaderDestinationDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    endpoint: crate::r5::choice::Slot<MessageHeaderDestinationEndpoint>,
+    name: Option<types::String>,
+    #[serde(rename = "_name")]
+    name_ext: Option<types::Element>,
+    target: Option<types::Reference<crate::r5::resources::Device>>,
+    receiver: Option<types::Reference>,
+}
+
+impl ::core::convert::From<MessageHeaderDestinationDe> for MessageHeaderDestination {
+    fn from(v: MessageHeaderDestinationDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            endpoint: v.endpoint.0,
+            name: v.name,
+            name_ext: v.name_ext,
+            target: v.target,
+            receiver: v.receiver,
+        }
+    }
+}
+
 /// Message source application.
 ///
 /// The source application from which this message originated, including the
@@ -211,6 +308,7 @@ pub struct MessageHeaderDestination {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MessageHeaderSourceDe")]
 pub struct MessageHeaderSource {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -247,6 +345,46 @@ pub struct MessageHeaderSource {
 
     /// Human contact for problems
     pub contact: Option<types::ContactPoint>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MessageHeaderSourceDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    endpoint: crate::r5::choice::Slot<MessageHeaderSourceEndpoint>,
+    name: Option<types::String>,
+    #[serde(rename = "_name")]
+    name_ext: Option<types::Element>,
+    software: Option<types::String>,
+    #[serde(rename = "_software")]
+    software_ext: Option<types::Element>,
+    version: Option<types::String>,
+    #[serde(rename = "_version")]
+    version_ext: Option<types::Element>,
+    contact: Option<types::ContactPoint>,
+}
+
+impl ::core::convert::From<MessageHeaderSourceDe> for MessageHeaderSource {
+    fn from(v: MessageHeaderSourceDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            endpoint: v.endpoint.0,
+            name: v.name,
+            name_ext: v.name_ext,
+            software: v.software,
+            software_ext: v.software_ext,
+            version: v.version,
+            version_ext: v.version_ext,
+            contact: v.contact,
+        }
+    }
 }
 
 /// If this is a reply to prior message.

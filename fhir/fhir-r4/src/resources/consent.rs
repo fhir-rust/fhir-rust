@@ -33,6 +33,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ConsentDe")]
 #[fhir_version("r4")]
 pub struct Consent {
     /// Logical id of this artifact
@@ -123,6 +124,81 @@ pub struct Consent {
 
     /// Constraints to the base Consent.policyRule
     pub provision: Option<ConsentProvision>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ConsentDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r4::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    status: crate::coded::Coded<crate::r4::codes::ConsentStateCodes>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    scope: types::CodeableConcept,
+    category: ::vec1::Vec1<types::CodeableConcept>,
+    patient: Option<types::Reference<crate::r4::resources::Patient>>,
+    date_time: Option<types::DateTime>,
+    #[serde(rename = "_dateTime")]
+    date_time_ext: Option<types::Element>,
+    #[serde(default)]
+    performer: Vec<types::Reference>,
+    #[serde(default)]
+    organization: Vec<types::Reference<crate::r4::resources::Organization>>,
+    #[serde(flatten)]
+    source: crate::r4::choice::Slot<ConsentSource>,
+    #[serde(default)]
+    policy: Vec<ConsentPolicy>,
+    policy_rule: Option<types::CodeableConcept>,
+    #[serde(default)]
+    verification: Vec<ConsentVerification>,
+    provision: Option<ConsentProvision>,
+}
+
+impl ::core::convert::From<ConsentDe> for Consent {
+    fn from(v: ConsentDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            status: v.status,
+            status_ext: v.status_ext,
+            scope: v.scope,
+            category: v.category,
+            patient: v.patient,
+            date_time: v.date_time,
+            date_time_ext: v.date_time_ext,
+            performer: v.performer,
+            organization: v.organization,
+            source: v.source.0,
+            policy: v.policy,
+            policy_rule: v.policy_rule,
+            verification: v.verification,
+            provision: v.provision,
+        }
+    }
 }
 
 /// The references to the policies that are included in this consent scope.

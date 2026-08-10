@@ -30,6 +30,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "SignatureDe")]
 #[fhir_version("r2")]
 pub struct Signature {
     /// xml:id (or equivalent in JSON)
@@ -67,6 +68,43 @@ pub struct Signature {
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_blob")]
     pub blob_ext: Option<types::Element>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SignatureDe {
+    id: Option<types::Id>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    r#type: ::vec1::Vec1<types::Coding>,
+    when: types::Instant,
+    #[serde(rename = "_when")]
+    when_ext: Option<types::Element>,
+    #[serde(flatten)]
+    who: crate::r2::choice::Slot<SignatureWho>,
+    content_type: types::Code,
+    #[serde(rename = "_contentType")]
+    content_type_ext: Option<types::Element>,
+    blob: types::Base64Binary,
+    #[serde(rename = "_blob")]
+    blob_ext: Option<types::Element>,
+}
+
+impl ::core::convert::From<SignatureDe> for Signature {
+    fn from(v: SignatureDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            r#type: v.r#type,
+            when: v.when,
+            when_ext: v.when_ext,
+            who: v.who.0,
+            content_type: v.content_type,
+            content_type_ext: v.content_type_ext,
+            blob: v.blob,
+            blob_ext: v.blob_ext,
+        }
+    }
 }
 
 /// The `Signature.who[x]` choice element (see `spec/11-choice-types.md`).

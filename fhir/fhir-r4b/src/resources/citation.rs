@@ -1169,6 +1169,7 @@ pub struct CitationCitedArtifactPublicationFormPublishedIn {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "CitationCitedArtifactRelatesToDe")]
 #[fhir_version("r4b")]
 pub struct CitationCitedArtifactRelatesTo {
     /// Unique id for inter-element referencing
@@ -1193,6 +1194,34 @@ pub struct CitationCitedArtifactRelatesTo {
     /// The `Citation.citedArtifact.relatesTo.target[x]` choice element (1..1); see [`CitationCitedArtifactRelatesToTarget`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub target: Option<CitationCitedArtifactRelatesToTarget>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CitationCitedArtifactRelatesToDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    relationship_type: types::CodeableConcept,
+    #[serde(default)]
+    target_classifier: Vec<types::CodeableConcept>,
+    #[serde(flatten)]
+    target: crate::r4b::choice::Slot<CitationCitedArtifactRelatesToTarget>,
+}
+
+impl ::core::convert::From<CitationCitedArtifactRelatesToDe> for CitationCitedArtifactRelatesTo {
+    fn from(v: CitationCitedArtifactRelatesToDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            relationship_type: v.relationship_type,
+            target_classifier: v.target_classifier,
+            target: v.target.0,
+        }
+    }
 }
 
 /// An effective date or period for a status of the cited artifact.
@@ -1451,6 +1480,7 @@ pub struct CitationClassification {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "CitationRelatesToDe")]
 #[fhir_version("r4b")]
 pub struct CitationRelatesTo {
     /// Unique id for inter-element referencing
@@ -1475,6 +1505,34 @@ pub struct CitationRelatesTo {
     /// The `Citation.relatesTo.target[x]` choice element (1..1); see [`CitationRelatesToTarget`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub target: Option<CitationRelatesToTarget>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CitationRelatesToDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    relationship_type: types::CodeableConcept,
+    #[serde(default)]
+    target_classifier: Vec<types::CodeableConcept>,
+    #[serde(flatten)]
+    target: crate::r4b::choice::Slot<CitationRelatesToTarget>,
+}
+
+impl ::core::convert::From<CitationRelatesToDe> for CitationRelatesTo {
+    fn from(v: CitationRelatesToDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            relationship_type: v.relationship_type,
+            target_classifier: v.target_classifier,
+            target: v.target.0,
+        }
+    }
 }
 
 /// An effective date or period for a status of the citation.

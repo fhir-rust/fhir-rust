@@ -312,6 +312,7 @@ pub struct ImplementationGuideDefinitionGrouping {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ImplementationGuideDefinitionPageDe")]
 #[fhir_version("r4b")]
 pub struct ImplementationGuideDefinitionPage {
     /// Unique id for inter-element referencing
@@ -347,6 +348,44 @@ pub struct ImplementationGuideDefinitionPage {
     /// Nested Pages / Sections
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub page: Vec<ImplementationGuideDefinitionPage>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ImplementationGuideDefinitionPageDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    name: crate::r4b::choice::Slot<ImplementationGuideDefinitionPageName>,
+    title: types::String,
+    #[serde(rename = "_title")]
+    title_ext: Option<types::Element>,
+    generation: crate::coded::Coded<crate::r4b::codes::GuidePageGeneration>,
+    #[serde(rename = "_generation")]
+    generation_ext: Option<types::Element>,
+    #[serde(default)]
+    page: Vec<ImplementationGuideDefinitionPage>,
+}
+
+impl ::core::convert::From<ImplementationGuideDefinitionPageDe>
+    for ImplementationGuideDefinitionPage
+{
+    fn from(v: ImplementationGuideDefinitionPageDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            name: v.name.0,
+            title: v.title,
+            title_ext: v.title_ext,
+            generation: v.generation,
+            generation_ext: v.generation_ext,
+            page: v.page,
+        }
+    }
 }
 
 /// Defines how IG is built by tools.
@@ -426,6 +465,7 @@ pub struct ImplementationGuideDefinitionParameter {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ImplementationGuideDefinitionResourceDe")]
 #[fhir_version("r4b")]
 pub struct ImplementationGuideDefinitionResource {
     /// Unique id for inter-element referencing
@@ -476,6 +516,55 @@ pub struct ImplementationGuideDefinitionResource {
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_groupingId")]
     pub grouping_id_ext: Option<types::Element>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ImplementationGuideDefinitionResourceDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    reference: types::Reference,
+    #[serde(default)]
+    fhir_version: Vec<crate::coded::Coded<crate::r4b::codes::FhirVersion>>,
+    #[serde(rename = "_fhirVersion")]
+    #[serde(default)]
+    fhir_version_ext: Vec<Option<types::Element>>,
+    name: Option<types::String>,
+    #[serde(rename = "_name")]
+    name_ext: Option<types::Element>,
+    description: Option<types::String>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    #[serde(flatten)]
+    example: crate::r4b::choice::Slot<ImplementationGuideDefinitionResourceExample>,
+    grouping_id: Option<types::Id>,
+    #[serde(rename = "_groupingId")]
+    grouping_id_ext: Option<types::Element>,
+}
+
+impl ::core::convert::From<ImplementationGuideDefinitionResourceDe>
+    for ImplementationGuideDefinitionResource
+{
+    fn from(v: ImplementationGuideDefinitionResourceDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            reference: v.reference,
+            fhir_version: v.fhir_version,
+            fhir_version_ext: v.fhir_version_ext,
+            name: v.name,
+            name_ext: v.name_ext,
+            description: v.description,
+            description_ext: v.description_ext,
+            example: v.example.0,
+            grouping_id: v.grouping_id,
+            grouping_id_ext: v.grouping_id_ext,
+        }
+    }
 }
 
 /// A template for building resources.
@@ -791,6 +880,7 @@ pub struct ImplementationGuideManifestPage {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ImplementationGuideManifestResourceDe")]
 #[fhir_version("r4b")]
 pub struct ImplementationGuideManifestResource {
     /// Unique id for inter-element referencing
@@ -818,6 +908,38 @@ pub struct ImplementationGuideManifestResource {
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_relativePath")]
     pub relative_path_ext: Option<types::Element>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ImplementationGuideManifestResourceDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    reference: types::Reference,
+    #[serde(flatten)]
+    example: crate::r4b::choice::Slot<ImplementationGuideManifestResourceExample>,
+    relative_path: Option<types::Url>,
+    #[serde(rename = "_relativePath")]
+    relative_path_ext: Option<types::Element>,
+}
+
+impl ::core::convert::From<ImplementationGuideManifestResourceDe>
+    for ImplementationGuideManifestResource
+{
+    fn from(v: ImplementationGuideManifestResourceDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            reference: v.reference,
+            example: v.example.0,
+            relative_path: v.relative_path,
+            relative_path_ext: v.relative_path_ext,
+        }
+    }
 }
 
 /// The `ImplementationGuide.definition.page.name[x]` choice element (see `spec/11-choice-types.md`).

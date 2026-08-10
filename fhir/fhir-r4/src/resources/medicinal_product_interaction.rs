@@ -127,6 +127,7 @@ pub struct MedicinalProductInteraction {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MedicinalProductInteractionInteractantDe")]
 #[fhir_version("r4")]
 pub struct MedicinalProductInteractionInteractant {
     /// Unique id for inter-element referencing
@@ -144,6 +145,31 @@ pub struct MedicinalProductInteractionInteractant {
     /// The `MedicinalProductInteraction.interactant.item[x]` choice element (1..1); see [`MedicinalProductInteractionInteractantItem`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub item: Option<MedicinalProductInteractionInteractantItem>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MedicinalProductInteractionInteractantDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    item: crate::r4::choice::Slot<MedicinalProductInteractionInteractantItem>,
+}
+
+impl ::core::convert::From<MedicinalProductInteractionInteractantDe>
+    for MedicinalProductInteractionInteractant
+{
+    fn from(v: MedicinalProductInteractionInteractantDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            item: v.item.0,
+        }
+    }
 }
 
 /// The `MedicinalProductInteraction.interactant.item[x]` choice element (see `spec/11-choice-types.md`).

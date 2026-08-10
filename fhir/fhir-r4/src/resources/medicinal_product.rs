@@ -384,6 +384,7 @@ pub struct MedicinalProductNameNamePart {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MedicinalProductSpecialDesignationDe")]
 #[fhir_version("r4")]
 pub struct MedicinalProductSpecialDesignation {
     /// Unique id for inter-element referencing
@@ -424,6 +425,47 @@ pub struct MedicinalProductSpecialDesignation {
 
     /// Animal species for which this applies
     pub species: Option<types::CodeableConcept>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MedicinalProductSpecialDesignationDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    r#type: Option<types::CodeableConcept>,
+    intended_use: Option<types::CodeableConcept>,
+    #[serde(flatten)]
+    indication: crate::r4::choice::Slot<MedicinalProductSpecialDesignationIndication>,
+    status: Option<types::CodeableConcept>,
+    date: Option<types::DateTime>,
+    #[serde(rename = "_date")]
+    date_ext: Option<types::Element>,
+    species: Option<types::CodeableConcept>,
+}
+
+impl ::core::convert::From<MedicinalProductSpecialDesignationDe>
+    for MedicinalProductSpecialDesignation
+{
+    fn from(v: MedicinalProductSpecialDesignationDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            r#type: v.r#type,
+            intended_use: v.intended_use,
+            indication: v.indication.0,
+            status: v.status,
+            date: v.date,
+            date_ext: v.date_ext,
+            species: v.species,
+        }
+    }
 }
 
 /// The `MedicinalProduct.specialDesignation.indication[x]` choice element (see `spec/11-choice-types.md`).

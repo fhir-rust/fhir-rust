@@ -169,6 +169,7 @@ pub struct Invoice {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "InvoiceLineItemDe")]
 #[fhir_version("r4")]
 pub struct InvoiceLineItem {
     /// Unique id for inter-element referencing
@@ -198,6 +199,37 @@ pub struct InvoiceLineItem {
     /// Components of total line item price
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub price_component: Vec<InvoiceLineItemPriceComponent>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct InvoiceLineItemDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    sequence: Option<types::PositiveInt>,
+    #[serde(rename = "_sequence")]
+    sequence_ext: Option<types::Element>,
+    #[serde(flatten)]
+    charge_item: crate::r4::choice::Slot<InvoiceLineItemChargeItem>,
+    #[serde(default)]
+    price_component: Vec<InvoiceLineItemPriceComponent>,
+}
+
+impl ::core::convert::From<InvoiceLineItemDe> for InvoiceLineItem {
+    fn from(v: InvoiceLineItemDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            sequence: v.sequence,
+            sequence_ext: v.sequence_ext,
+            charge_item: v.charge_item.0,
+            price_component: v.price_component,
+        }
+    }
 }
 
 /// The price for a ChargeItem may be calculated as a base price with

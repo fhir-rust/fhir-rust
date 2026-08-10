@@ -38,6 +38,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "VirtualServiceDetailDe")]
 #[fhir_version("r6")]
 pub struct VirtualServiceDetail {
     /// Unique id for inter-element referencing
@@ -77,6 +78,45 @@ pub struct VirtualServiceDetail {
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_sessionKey")]
     pub session_key_ext: Option<types::Element>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct VirtualServiceDetailDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    channel_type: Option<types::Coding>,
+    #[serde(flatten)]
+    address: crate::r6::choice::Slot<VirtualServiceDetailAddress>,
+    #[serde(default)]
+    additional_info: Vec<types::Url>,
+    #[serde(rename = "_additionalInfo")]
+    #[serde(default)]
+    additional_info_ext: Vec<Option<types::Element>>,
+    max_participants: Option<types::PositiveInt>,
+    #[serde(rename = "_maxParticipants")]
+    max_participants_ext: Option<types::Element>,
+    session_key: Option<types::String>,
+    #[serde(rename = "_sessionKey")]
+    session_key_ext: Option<types::Element>,
+}
+
+impl ::core::convert::From<VirtualServiceDetailDe> for VirtualServiceDetail {
+    fn from(v: VirtualServiceDetailDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            channel_type: v.channel_type,
+            address: v.address.0,
+            additional_info: v.additional_info,
+            additional_info_ext: v.additional_info_ext,
+            max_participants: v.max_participants,
+            max_participants_ext: v.max_participants_ext,
+            session_key: v.session_key,
+            session_key_ext: v.session_key_ext,
+        }
+    }
 }
 
 /// The `VirtualServiceDetail.address[x]` choice element (see `spec/11-choice-types.md`).

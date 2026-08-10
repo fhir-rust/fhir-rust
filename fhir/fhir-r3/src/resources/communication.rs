@@ -186,6 +186,7 @@ pub struct Communication {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "CommunicationPayloadDe")]
 #[fhir_version("r3")]
 pub struct CommunicationPayload {
     /// xml:id (or equivalent in JSON)
@@ -203,6 +204,29 @@ pub struct CommunicationPayload {
     /// The `Communication.payload.content[x]` choice element (1..1); see [`CommunicationPayloadContent`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub content: Option<CommunicationPayloadContent>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CommunicationPayloadDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    content: crate::r3::choice::Slot<CommunicationPayloadContent>,
+}
+
+impl ::core::convert::From<CommunicationPayloadDe> for CommunicationPayload {
+    fn from(v: CommunicationPayloadDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            content: v.content.0,
+        }
+    }
 }
 
 /// The `Communication.payload.content[x]` choice element (see `spec/11-choice-types.md`).

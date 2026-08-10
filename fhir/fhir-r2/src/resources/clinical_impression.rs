@@ -38,6 +38,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ClinicalImpressionDe")]
 #[fhir_version("r2")]
 pub struct ClinicalImpression {
     /// Logical id of this artifact
@@ -158,6 +159,103 @@ pub struct ClinicalImpression {
     /// Actions taken during assessment
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub action: Vec<types::Reference>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ClinicalImpressionDe {
+    id: Option<types::Id>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r2::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    patient: types::Reference<crate::r2::resources::Patient>,
+    assessor: Option<types::Reference<crate::r2::resources::Practitioner>>,
+    status: crate::coded::Coded<crate::r2::codes::ClinicalImpressionStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    date: Option<types::DateTime>,
+    #[serde(rename = "_date")]
+    date_ext: Option<types::Element>,
+    description: Option<types::String>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    previous: Option<types::Reference<crate::r2::resources::ClinicalImpression>>,
+    #[serde(default)]
+    problem: Vec<types::Reference>,
+    #[serde(flatten)]
+    trigger: crate::r2::choice::Slot<ClinicalImpressionTrigger>,
+    #[serde(default)]
+    investigations: Vec<ClinicalImpressionInvestigations>,
+    protocol: Option<types::Uri>,
+    #[serde(rename = "_protocol")]
+    protocol_ext: Option<types::Element>,
+    summary: Option<types::String>,
+    #[serde(rename = "_summary")]
+    summary_ext: Option<types::Element>,
+    #[serde(default)]
+    finding: Vec<ClinicalImpressionFinding>,
+    #[serde(default)]
+    resolved: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    ruled_out: Vec<ClinicalImpressionRuledOut>,
+    prognosis: Option<types::String>,
+    #[serde(rename = "_prognosis")]
+    prognosis_ext: Option<types::Element>,
+    #[serde(default)]
+    plan: Vec<types::Reference>,
+    #[serde(default)]
+    action: Vec<types::Reference>,
+}
+
+impl ::core::convert::From<ClinicalImpressionDe> for ClinicalImpression {
+    fn from(v: ClinicalImpressionDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            patient: v.patient,
+            assessor: v.assessor,
+            status: v.status,
+            status_ext: v.status_ext,
+            date: v.date,
+            date_ext: v.date_ext,
+            description: v.description,
+            description_ext: v.description_ext,
+            previous: v.previous,
+            problem: v.problem,
+            trigger: v.trigger.0,
+            investigations: v.investigations,
+            protocol: v.protocol,
+            protocol_ext: v.protocol_ext,
+            summary: v.summary,
+            summary_ext: v.summary_ext,
+            finding: v.finding,
+            resolved: v.resolved,
+            ruled_out: v.ruled_out,
+            prognosis: v.prognosis,
+            prognosis_ext: v.prognosis_ext,
+            plan: v.plan,
+            action: v.action,
+        }
+    }
 }
 
 /// Specific findings or diagnoses that was considered likely or relevant to

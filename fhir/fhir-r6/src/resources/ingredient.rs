@@ -243,6 +243,7 @@ pub struct IngredientSubstance {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "IngredientSubstanceStrengthDe")]
 #[fhir_version("r6")]
 pub struct IngredientSubstanceStrength {
     /// Unique id for inter-element referencing
@@ -303,6 +304,55 @@ pub struct IngredientSubstanceStrength {
     pub reference_strength: Vec<IngredientSubstanceStrengthReferenceStrength>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct IngredientSubstanceStrengthDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    presentation: crate::r6::choice::Slot<IngredientSubstanceStrengthPresentation>,
+    text_presentation: Option<types::String>,
+    #[serde(rename = "_textPresentation")]
+    text_presentation_ext: Option<types::Element>,
+    #[serde(flatten)]
+    concentration: crate::r6::choice::Slot<IngredientSubstanceStrengthConcentration>,
+    text_concentration: Option<types::String>,
+    #[serde(rename = "_textConcentration")]
+    text_concentration_ext: Option<types::Element>,
+    basis: Option<types::CodeableConcept>,
+    measurement_point: Option<types::String>,
+    #[serde(rename = "_measurementPoint")]
+    measurement_point_ext: Option<types::Element>,
+    #[serde(default)]
+    country: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    reference_strength: Vec<IngredientSubstanceStrengthReferenceStrength>,
+}
+
+impl ::core::convert::From<IngredientSubstanceStrengthDe> for IngredientSubstanceStrength {
+    fn from(v: IngredientSubstanceStrengthDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            presentation: v.presentation.0,
+            text_presentation: v.text_presentation,
+            text_presentation_ext: v.text_presentation_ext,
+            concentration: v.concentration.0,
+            text_concentration: v.text_concentration,
+            text_concentration_ext: v.text_concentration_ext,
+            basis: v.basis,
+            measurement_point: v.measurement_point,
+            measurement_point_ext: v.measurement_point_ext,
+            country: v.country,
+            reference_strength: v.reference_strength,
+        }
+    }
+}
+
 /// Strength expressed in terms of a reference substance. For when the
 /// ingredient strength is additionally expressed as equivalent to the strength
 /// of some other closely related substance (e.g. salt vs. base). Reference
@@ -331,6 +381,7 @@ pub struct IngredientSubstanceStrength {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "IngredientSubstanceStrengthReferenceStrengthDe")]
 #[fhir_version("r6")]
 pub struct IngredientSubstanceStrengthReferenceStrength {
     /// Unique id for inter-element referencing
@@ -362,6 +413,41 @@ pub struct IngredientSubstanceStrengthReferenceStrength {
     /// Where the strength range applies
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub country: Vec<types::CodeableConcept>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct IngredientSubstanceStrengthReferenceStrengthDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    substance: types::CodeableReference,
+    #[serde(flatten)]
+    strength: crate::r6::choice::Slot<IngredientSubstanceStrengthReferenceStrengthStrength>,
+    measurement_point: Option<types::String>,
+    #[serde(rename = "_measurementPoint")]
+    measurement_point_ext: Option<types::Element>,
+    #[serde(default)]
+    country: Vec<types::CodeableConcept>,
+}
+
+impl ::core::convert::From<IngredientSubstanceStrengthReferenceStrengthDe>
+    for IngredientSubstanceStrengthReferenceStrength
+{
+    fn from(v: IngredientSubstanceStrengthReferenceStrengthDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            substance: v.substance,
+            strength: v.strength.0,
+            measurement_point: v.measurement_point,
+            measurement_point_ext: v.measurement_point_ext,
+            country: v.country,
+        }
+    }
 }
 
 /// The `Ingredient.substance.strength.presentation[x]` choice element (see `spec/11-choice-types.md`).

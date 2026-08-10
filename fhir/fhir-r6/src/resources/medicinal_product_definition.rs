@@ -225,6 +225,7 @@ pub struct MedicinalProductDefinition {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MedicinalProductDefinitionCharacteristicDe")]
 #[fhir_version("r6")]
 pub struct MedicinalProductDefinitionCharacteristic {
     /// Unique id for inter-element referencing
@@ -245,6 +246,33 @@ pub struct MedicinalProductDefinitionCharacteristic {
     /// The `MedicinalProductDefinition.characteristic.value[x]` choice element (0..1); see [`MedicinalProductDefinitionCharacteristicValue`].
     #[serde(flatten)]
     pub value: Option<MedicinalProductDefinitionCharacteristicValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MedicinalProductDefinitionCharacteristicDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: types::CodeableConcept,
+    #[serde(flatten)]
+    value: crate::r6::choice::Slot<MedicinalProductDefinitionCharacteristicValue>,
+}
+
+impl ::core::convert::From<MedicinalProductDefinitionCharacteristicDe>
+    for MedicinalProductDefinitionCharacteristic
+{
+    fn from(v: MedicinalProductDefinitionCharacteristicDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            value: v.value.0,
+        }
+    }
 }
 
 /// A product specific contact, person (in a role), or an organization.

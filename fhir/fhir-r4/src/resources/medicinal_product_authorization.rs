@@ -228,6 +228,7 @@ pub struct MedicinalProductAuthorizationJurisdictionalAuthorization {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MedicinalProductAuthorizationProcedureDe")]
 #[fhir_version("r4")]
 pub struct MedicinalProductAuthorizationProcedure {
     /// Unique id for inter-element referencing
@@ -255,6 +256,38 @@ pub struct MedicinalProductAuthorizationProcedure {
     /// Applcations submitted to obtain a marketing authorization
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub application: Vec<MedicinalProductAuthorizationProcedure>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MedicinalProductAuthorizationProcedureDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    identifier: Option<types::Identifier>,
+    r#type: types::CodeableConcept,
+    #[serde(flatten)]
+    date: crate::r4::choice::Slot<MedicinalProductAuthorizationProcedureDate>,
+    #[serde(default)]
+    application: Vec<MedicinalProductAuthorizationProcedure>,
+}
+
+impl ::core::convert::From<MedicinalProductAuthorizationProcedureDe>
+    for MedicinalProductAuthorizationProcedure
+{
+    fn from(v: MedicinalProductAuthorizationProcedureDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            r#type: v.r#type,
+            date: v.date.0,
+            application: v.application,
+        }
+    }
 }
 
 /// The `MedicinalProductAuthorization.procedure.date[x]` choice element (see `spec/11-choice-types.md`).

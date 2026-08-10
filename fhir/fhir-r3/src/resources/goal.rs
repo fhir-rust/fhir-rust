@@ -37,6 +37,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "GoalDe")]
 #[fhir_version("r3")]
 pub struct Goal {
     /// Logical id of this artifact
@@ -142,6 +143,89 @@ pub struct Goal {
     pub outcome_reference: Vec<types::Reference<crate::r3::resources::Observation>>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct GoalDe {
+    id: Option<types::Id>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r3::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    status: crate::coded::Coded<crate::r3::codes::GoalStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    #[serde(default)]
+    category: Vec<types::CodeableConcept>,
+    priority: Option<types::CodeableConcept>,
+    description: types::CodeableConcept,
+    subject: Option<types::Reference>,
+    #[serde(flatten)]
+    start: crate::r3::choice::Slot<GoalStart>,
+    target: Option<GoalTarget>,
+    status_date: Option<types::Date>,
+    #[serde(rename = "_statusDate")]
+    status_date_ext: Option<types::Element>,
+    status_reason: Option<types::String>,
+    #[serde(rename = "_statusReason")]
+    status_reason_ext: Option<types::Element>,
+    expressed_by: Option<types::Reference>,
+    #[serde(default)]
+    addresses: Vec<types::Reference>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+    #[serde(default)]
+    outcome_code: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    outcome_reference: Vec<types::Reference<crate::r3::resources::Observation>>,
+}
+
+impl ::core::convert::From<GoalDe> for Goal {
+    fn from(v: GoalDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            status: v.status,
+            status_ext: v.status_ext,
+            category: v.category,
+            priority: v.priority,
+            description: v.description,
+            subject: v.subject,
+            start: v.start.0,
+            target: v.target,
+            status_date: v.status_date,
+            status_date_ext: v.status_date_ext,
+            status_reason: v.status_reason,
+            status_reason_ext: v.status_reason_ext,
+            expressed_by: v.expressed_by,
+            addresses: v.addresses,
+            note: v.note,
+            outcome_code: v.outcome_code,
+            outcome_reference: v.outcome_reference,
+        }
+    }
+}
+
 /// Indicates what should be done by when.
 ///
 /// # Examples
@@ -164,6 +248,7 @@ pub struct Goal {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "GoalTargetDe")]
 #[fhir_version("r3")]
 pub struct GoalTarget {
     /// xml:id (or equivalent in JSON)
@@ -189,6 +274,34 @@ pub struct GoalTarget {
     /// The `Goal.target.due[x]` choice element (0..1); see [`GoalTargetDue`].
     #[serde(flatten)]
     pub due: Option<GoalTargetDue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct GoalTargetDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    measure: Option<types::CodeableConcept>,
+    #[serde(flatten)]
+    detail: crate::r3::choice::Slot<GoalTargetDetail>,
+    #[serde(flatten)]
+    due: crate::r3::choice::Slot<GoalTargetDue>,
+}
+
+impl ::core::convert::From<GoalTargetDe> for GoalTarget {
+    fn from(v: GoalTargetDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            measure: v.measure,
+            detail: v.detail.0,
+            due: v.due.0,
+        }
+    }
 }
 
 /// The `Goal.start[x]` choice element (see `spec/11-choice-types.md`).

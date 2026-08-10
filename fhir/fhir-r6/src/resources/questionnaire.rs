@@ -40,6 +40,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "QuestionnaireDe")]
 #[fhir_version("r6")]
 pub struct Questionnaire {
     /// Logical id of this artifact
@@ -227,6 +228,150 @@ pub struct Questionnaire {
     pub item: Vec<QuestionnaireItem>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct QuestionnaireDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r6::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    url: Option<types::Uri>,
+    #[serde(rename = "_url")]
+    url_ext: Option<types::Element>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    version: Option<types::String>,
+    #[serde(rename = "_version")]
+    version_ext: Option<types::Element>,
+    #[serde(flatten)]
+    version_algorithm: crate::r6::choice::Slot<QuestionnaireVersionAlgorithm>,
+    name: Option<types::String>,
+    #[serde(rename = "_name")]
+    name_ext: Option<types::Element>,
+    title: Option<types::String>,
+    #[serde(rename = "_title")]
+    title_ext: Option<types::Element>,
+    #[serde(default)]
+    derived_from: Vec<types::Canonical>,
+    #[serde(rename = "_derivedFrom")]
+    #[serde(default)]
+    derived_from_ext: Vec<Option<types::Element>>,
+    status: crate::coded::Coded<crate::r6::codes::PublicationStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    experimental: Option<types::Boolean>,
+    #[serde(rename = "_experimental")]
+    experimental_ext: Option<types::Element>,
+    #[serde(default)]
+    subject_type: Vec<types::Code>,
+    #[serde(rename = "_subjectType")]
+    #[serde(default)]
+    subject_type_ext: Vec<Option<types::Element>>,
+    date: Option<types::DateTime>,
+    #[serde(rename = "_date")]
+    date_ext: Option<types::Element>,
+    publisher: Option<types::String>,
+    #[serde(rename = "_publisher")]
+    publisher_ext: Option<types::Element>,
+    #[serde(default)]
+    contact: Vec<types::ContactDetail>,
+    description: Option<types::Markdown>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    #[serde(default)]
+    use_context: Vec<types::UsageContext>,
+    #[serde(default)]
+    jurisdiction: Vec<types::CodeableConcept>,
+    purpose: Option<types::Markdown>,
+    #[serde(rename = "_purpose")]
+    purpose_ext: Option<types::Element>,
+    copyright: Option<types::Markdown>,
+    #[serde(rename = "_copyright")]
+    copyright_ext: Option<types::Element>,
+    copyright_label: Option<types::String>,
+    #[serde(rename = "_copyrightLabel")]
+    copyright_label_ext: Option<types::Element>,
+    approval_date: Option<types::Date>,
+    #[serde(rename = "_approvalDate")]
+    approval_date_ext: Option<types::Element>,
+    last_review_date: Option<types::Date>,
+    #[serde(rename = "_lastReviewDate")]
+    last_review_date_ext: Option<types::Element>,
+    effective_period: Option<types::Period>,
+    #[serde(default)]
+    code: Vec<types::Coding>,
+    #[serde(default)]
+    item: Vec<QuestionnaireItem>,
+}
+
+impl ::core::convert::From<QuestionnaireDe> for Questionnaire {
+    fn from(v: QuestionnaireDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            url: v.url,
+            url_ext: v.url_ext,
+            identifier: v.identifier,
+            version: v.version,
+            version_ext: v.version_ext,
+            version_algorithm: v.version_algorithm.0,
+            name: v.name,
+            name_ext: v.name_ext,
+            title: v.title,
+            title_ext: v.title_ext,
+            derived_from: v.derived_from,
+            derived_from_ext: v.derived_from_ext,
+            status: v.status,
+            status_ext: v.status_ext,
+            experimental: v.experimental,
+            experimental_ext: v.experimental_ext,
+            subject_type: v.subject_type,
+            subject_type_ext: v.subject_type_ext,
+            date: v.date,
+            date_ext: v.date_ext,
+            publisher: v.publisher,
+            publisher_ext: v.publisher_ext,
+            contact: v.contact,
+            description: v.description,
+            description_ext: v.description_ext,
+            use_context: v.use_context,
+            jurisdiction: v.jurisdiction,
+            purpose: v.purpose,
+            purpose_ext: v.purpose_ext,
+            copyright: v.copyright,
+            copyright_ext: v.copyright_ext,
+            copyright_label: v.copyright_label,
+            copyright_label_ext: v.copyright_label_ext,
+            approval_date: v.approval_date,
+            approval_date_ext: v.approval_date_ext,
+            last_review_date: v.last_review_date,
+            last_review_date_ext: v.last_review_date_ext,
+            effective_period: v.effective_period,
+            code: v.code,
+            item: v.item,
+        }
+    }
+}
+
 /// A particular question, question grouping or display text that is part of
 /// the questionnaire.
 ///
@@ -399,6 +544,7 @@ pub struct QuestionnaireItem {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "QuestionnaireItemAnswerOptionDe")]
 #[fhir_version("r6")]
 pub struct QuestionnaireItemAnswerOption {
     /// Unique id for inter-element referencing
@@ -425,6 +571,34 @@ pub struct QuestionnaireItemAnswerOption {
     pub initial_selected_ext: Option<types::Element>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct QuestionnaireItemAnswerOptionDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    value: crate::r6::choice::Slot<QuestionnaireItemAnswerOptionValue>,
+    initial_selected: Option<types::Boolean>,
+    #[serde(rename = "_initialSelected")]
+    initial_selected_ext: Option<types::Element>,
+}
+
+impl ::core::convert::From<QuestionnaireItemAnswerOptionDe> for QuestionnaireItemAnswerOption {
+    fn from(v: QuestionnaireItemAnswerOptionDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            value: v.value.0,
+            initial_selected: v.initial_selected,
+            initial_selected_ext: v.initial_selected_ext,
+        }
+    }
+}
+
 /// A constraint indicating that this item should only be enabled
 /// (displayed/allow answers to be captured) when the specified condition is
 /// true.
@@ -449,6 +623,7 @@ pub struct QuestionnaireItemAnswerOption {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "QuestionnaireItemEnableWhenDe")]
 #[fhir_version("r6")]
 pub struct QuestionnaireItemEnableWhen {
     /// Unique id for inter-element referencing
@@ -482,6 +657,39 @@ pub struct QuestionnaireItemEnableWhen {
     pub answer: Option<QuestionnaireItemEnableWhenAnswer>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct QuestionnaireItemEnableWhenDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    question: types::String,
+    #[serde(rename = "_question")]
+    question_ext: Option<types::Element>,
+    operator: crate::coded::Coded<crate::r6::codes::QuestionnaireEnableOperator>,
+    #[serde(rename = "_operator")]
+    operator_ext: Option<types::Element>,
+    #[serde(flatten)]
+    answer: crate::r6::choice::Slot<QuestionnaireItemEnableWhenAnswer>,
+}
+
+impl ::core::convert::From<QuestionnaireItemEnableWhenDe> for QuestionnaireItemEnableWhen {
+    fn from(v: QuestionnaireItemEnableWhenDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            question: v.question,
+            question_ext: v.question_ext,
+            operator: v.operator,
+            operator_ext: v.operator_ext,
+            answer: v.answer.0,
+        }
+    }
+}
+
 /// One or more values that should be pre-populated in the answer when
 /// initially rendering the questionnaire for user input.
 ///
@@ -505,6 +713,7 @@ pub struct QuestionnaireItemEnableWhen {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "QuestionnaireItemInitialDe")]
 #[fhir_version("r6")]
 pub struct QuestionnaireItemInitial {
     /// Unique id for inter-element referencing
@@ -522,6 +731,29 @@ pub struct QuestionnaireItemInitial {
     /// The `Questionnaire.item.initial.value[x]` choice element (1..1); see [`QuestionnaireItemInitialValue`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub value: Option<QuestionnaireItemInitialValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct QuestionnaireItemInitialDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    value: crate::r6::choice::Slot<QuestionnaireItemInitialValue>,
+}
+
+impl ::core::convert::From<QuestionnaireItemInitialDe> for QuestionnaireItemInitial {
+    fn from(v: QuestionnaireItemInitialDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            value: v.value.0,
+        }
+    }
 }
 
 /// The `Questionnaire.versionAlgorithm[x]` choice element (see `spec/11-choice-types.md`).

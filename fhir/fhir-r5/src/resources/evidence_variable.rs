@@ -66,6 +66,7 @@ use fhir_derive_macros::Validate;
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "EvidenceVariableDe")]
 pub struct EvidenceVariable {
     /// Logical id of this artifact
     pub id: Option<types::String>,
@@ -254,6 +255,166 @@ pub struct EvidenceVariable {
     pub category: Vec<EvidenceVariableCategory>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct EvidenceVariableDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r5::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    url: Option<types::Uri>,
+    #[serde(rename = "_url")]
+    url_ext: Option<types::Element>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    version: Option<types::String>,
+    #[serde(rename = "_version")]
+    version_ext: Option<types::Element>,
+    #[serde(flatten)]
+    version_algorithm: crate::r5::choice::Slot<EvidenceVariableVersionAlgorithm>,
+    name: Option<types::String>,
+    #[serde(rename = "_name")]
+    name_ext: Option<types::Element>,
+    title: Option<types::String>,
+    #[serde(rename = "_title")]
+    title_ext: Option<types::Element>,
+    short_title: Option<types::String>,
+    #[serde(rename = "_shortTitle")]
+    short_title_ext: Option<types::Element>,
+    status: crate::r5::coded::Coded<crate::r5::codes::PublicationStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    experimental: Option<types::Boolean>,
+    #[serde(rename = "_experimental")]
+    experimental_ext: Option<types::Element>,
+    date: Option<types::DateTime>,
+    #[serde(rename = "_date")]
+    date_ext: Option<types::Element>,
+    publisher: Option<types::String>,
+    #[serde(rename = "_publisher")]
+    publisher_ext: Option<types::Element>,
+    #[serde(default)]
+    contact: Vec<types::ContactDetail>,
+    description: Option<types::Markdown>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+    #[serde(default)]
+    use_context: Vec<types::UsageContext>,
+    purpose: Option<types::Markdown>,
+    #[serde(rename = "_purpose")]
+    purpose_ext: Option<types::Element>,
+    copyright: Option<types::Markdown>,
+    #[serde(rename = "_copyright")]
+    copyright_ext: Option<types::Element>,
+    copyright_label: Option<types::String>,
+    #[serde(rename = "_copyrightLabel")]
+    copyright_label_ext: Option<types::Element>,
+    approval_date: Option<types::Date>,
+    #[serde(rename = "_approvalDate")]
+    approval_date_ext: Option<types::Element>,
+    last_review_date: Option<types::Date>,
+    #[serde(rename = "_lastReviewDate")]
+    last_review_date_ext: Option<types::Element>,
+    effective_period: Option<types::Period>,
+    #[serde(default)]
+    author: Vec<types::ContactDetail>,
+    #[serde(default)]
+    editor: Vec<types::ContactDetail>,
+    #[serde(default)]
+    reviewer: Vec<types::ContactDetail>,
+    #[serde(default)]
+    endorser: Vec<types::ContactDetail>,
+    #[serde(default)]
+    related_artifact: Vec<types::RelatedArtifact>,
+    actual: Option<types::Boolean>,
+    #[serde(rename = "_actual")]
+    actual_ext: Option<types::Element>,
+    #[serde(default)]
+    characteristic: Vec<EvidenceVariableCharacteristic>,
+    handling: Option<crate::r5::coded::Coded<crate::r5::codes::VariableHandling>>,
+    #[serde(rename = "_handling")]
+    handling_ext: Option<types::Element>,
+    #[serde(default)]
+    category: Vec<EvidenceVariableCategory>,
+}
+
+impl ::core::convert::From<EvidenceVariableDe> for EvidenceVariable {
+    fn from(v: EvidenceVariableDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            url: v.url,
+            url_ext: v.url_ext,
+            identifier: v.identifier,
+            version: v.version,
+            version_ext: v.version_ext,
+            version_algorithm: v.version_algorithm.0,
+            name: v.name,
+            name_ext: v.name_ext,
+            title: v.title,
+            title_ext: v.title_ext,
+            short_title: v.short_title,
+            short_title_ext: v.short_title_ext,
+            status: v.status,
+            status_ext: v.status_ext,
+            experimental: v.experimental,
+            experimental_ext: v.experimental_ext,
+            date: v.date,
+            date_ext: v.date_ext,
+            publisher: v.publisher,
+            publisher_ext: v.publisher_ext,
+            contact: v.contact,
+            description: v.description,
+            description_ext: v.description_ext,
+            note: v.note,
+            use_context: v.use_context,
+            purpose: v.purpose,
+            purpose_ext: v.purpose_ext,
+            copyright: v.copyright,
+            copyright_ext: v.copyright_ext,
+            copyright_label: v.copyright_label,
+            copyright_label_ext: v.copyright_label_ext,
+            approval_date: v.approval_date,
+            approval_date_ext: v.approval_date_ext,
+            last_review_date: v.last_review_date,
+            last_review_date_ext: v.last_review_date_ext,
+            effective_period: v.effective_period,
+            author: v.author,
+            editor: v.editor,
+            reviewer: v.reviewer,
+            endorser: v.endorser,
+            related_artifact: v.related_artifact,
+            actual: v.actual,
+            actual_ext: v.actual_ext,
+            characteristic: v.characteristic,
+            handling: v.handling,
+            handling_ext: v.handling_ext,
+            category: v.category,
+        }
+    }
+}
+
 /// A defining factor of the EvidenceVariable.
 /// # Examples
 ///
@@ -275,6 +436,7 @@ pub struct EvidenceVariable {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "EvidenceVariableCharacteristicDe")]
 pub struct EvidenceVariableCharacteristic {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -350,6 +512,73 @@ pub struct EvidenceVariableCharacteristic {
     pub time_from_event: Vec<EvidenceVariableCharacteristicTimeFromEvent>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct EvidenceVariableCharacteristicDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    link_id: Option<types::Id>,
+    #[serde(rename = "_linkId")]
+    link_id_ext: Option<types::Element>,
+    description: Option<types::Markdown>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+    exclude: Option<types::Boolean>,
+    #[serde(rename = "_exclude")]
+    exclude_ext: Option<types::Element>,
+    definition_reference: Option<types::Reference>,
+    definition_canonical: Option<types::Canonical>,
+    #[serde(rename = "_definitionCanonical")]
+    definition_canonical_ext: Option<types::Element>,
+    definition_codeable_concept: Option<types::CodeableConcept>,
+    definition_expression: Option<types::Expression>,
+    definition_id: Option<types::Id>,
+    #[serde(rename = "_definitionId")]
+    definition_id_ext: Option<types::Element>,
+    definition_by_type_and_value: Option<EvidenceVariableCharacteristicDefinitionByTypeAndValue>,
+    definition_by_combination: Option<EvidenceVariableCharacteristicDefinitionByCombination>,
+    #[serde(flatten)]
+    instances: crate::r5::choice::Slot<EvidenceVariableCharacteristicInstances>,
+    #[serde(flatten)]
+    duration: crate::r5::choice::Slot<EvidenceVariableCharacteristicDuration>,
+    #[serde(default)]
+    time_from_event: Vec<EvidenceVariableCharacteristicTimeFromEvent>,
+}
+
+impl ::core::convert::From<EvidenceVariableCharacteristicDe> for EvidenceVariableCharacteristic {
+    fn from(v: EvidenceVariableCharacteristicDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            link_id: v.link_id,
+            link_id_ext: v.link_id_ext,
+            description: v.description,
+            description_ext: v.description_ext,
+            note: v.note,
+            exclude: v.exclude,
+            exclude_ext: v.exclude_ext,
+            definition_reference: v.definition_reference,
+            definition_canonical: v.definition_canonical,
+            definition_canonical_ext: v.definition_canonical_ext,
+            definition_codeable_concept: v.definition_codeable_concept,
+            definition_expression: v.definition_expression,
+            definition_id: v.definition_id,
+            definition_id_ext: v.definition_id_ext,
+            definition_by_type_and_value: v.definition_by_type_and_value,
+            definition_by_combination: v.definition_by_combination,
+            instances: v.instances.0,
+            duration: v.duration.0,
+            time_from_event: v.time_from_event,
+        }
+    }
+}
+
 /// Defines the characteristic using type and value.
 /// # Examples
 ///
@@ -371,6 +600,7 @@ pub struct EvidenceVariableCharacteristic {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "EvidenceVariableCharacteristicDefinitionByTypeAndValueDe")]
 pub struct EvidenceVariableCharacteristicDefinitionByTypeAndValue {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -399,6 +629,40 @@ pub struct EvidenceVariableCharacteristicDefinitionByTypeAndValue {
 
     /// Reference point for valueQuantity or valueRange
     pub offset: Option<types::CodeableConcept>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct EvidenceVariableCharacteristicDefinitionByTypeAndValueDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: types::CodeableConcept,
+    #[serde(default)]
+    method: Vec<types::CodeableConcept>,
+    device: Option<types::Reference>,
+    #[serde(flatten)]
+    value: crate::r5::choice::Slot<EvidenceVariableCharacteristicDefinitionByTypeAndValueValue>,
+    offset: Option<types::CodeableConcept>,
+}
+
+impl ::core::convert::From<EvidenceVariableCharacteristicDefinitionByTypeAndValueDe>
+    for EvidenceVariableCharacteristicDefinitionByTypeAndValue
+{
+    fn from(v: EvidenceVariableCharacteristicDefinitionByTypeAndValueDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            method: v.method,
+            device: v.device,
+            value: v.value.0,
+            offset: v.offset,
+        }
+    }
 }
 
 /// Used to specify how two or more characteristics are combined.
@@ -464,6 +728,7 @@ pub struct EvidenceVariableCharacteristicDefinitionByCombination {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "EvidenceVariableCharacteristicTimeFromEventDe")]
 pub struct EvidenceVariableCharacteristicTimeFromEvent {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -497,6 +762,43 @@ pub struct EvidenceVariableCharacteristicTimeFromEvent {
     pub range: Option<types::Range>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct EvidenceVariableCharacteristicTimeFromEventDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    description: Option<types::Markdown>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+    #[serde(flatten)]
+    event: crate::r5::choice::Slot<EvidenceVariableCharacteristicTimeFromEventEvent>,
+    quantity: Option<types::Quantity>,
+    range: Option<types::Range>,
+}
+
+impl ::core::convert::From<EvidenceVariableCharacteristicTimeFromEventDe>
+    for EvidenceVariableCharacteristicTimeFromEvent
+{
+    fn from(v: EvidenceVariableCharacteristicTimeFromEventDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            description: v.description,
+            description_ext: v.description_ext,
+            note: v.note,
+            event: v.event.0,
+            quantity: v.quantity,
+            range: v.range,
+        }
+    }
+}
+
 /// A grouping for ordinal or polychotomous variables.
 /// # Examples
 ///
@@ -518,6 +820,7 @@ pub struct EvidenceVariableCharacteristicTimeFromEvent {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "EvidenceVariableCategoryDe")]
 pub struct EvidenceVariableCategory {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -539,6 +842,34 @@ pub struct EvidenceVariableCategory {
     /// The `EvidenceVariable.category.value[x]` choice element (0..1); see [`EvidenceVariableCategoryValue`].
     #[serde(flatten)]
     pub value: Option<EvidenceVariableCategoryValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct EvidenceVariableCategoryDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    name: Option<types::String>,
+    #[serde(rename = "_name")]
+    name_ext: Option<types::Element>,
+    #[serde(flatten)]
+    value: crate::r5::choice::Slot<EvidenceVariableCategoryValue>,
+}
+
+impl ::core::convert::From<EvidenceVariableCategoryDe> for EvidenceVariableCategory {
+    fn from(v: EvidenceVariableCategoryDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            name: v.name,
+            name_ext: v.name_ext,
+            value: v.value.0,
+        }
+    }
 }
 
 #[cfg(test)]

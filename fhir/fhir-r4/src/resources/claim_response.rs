@@ -206,6 +206,7 @@ pub struct ClaimResponse {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ClaimResponseAddItemDe")]
 #[fhir_version("r4")]
 pub struct ClaimResponseAddItem {
     /// Unique id for inter-element referencing
@@ -309,6 +310,92 @@ pub struct ClaimResponseAddItem {
     /// Insurer added line details
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub detail: Vec<ClaimResponseAddItemDetail>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ClaimResponseAddItemDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    item_sequence: Vec<types::PositiveInt>,
+    #[serde(rename = "_itemSequence")]
+    #[serde(default)]
+    item_sequence_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    detail_sequence: Vec<types::PositiveInt>,
+    #[serde(rename = "_detailSequence")]
+    #[serde(default)]
+    detail_sequence_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    subdetail_sequence: Vec<types::PositiveInt>,
+    #[serde(rename = "_subdetailSequence")]
+    #[serde(default)]
+    subdetail_sequence_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    provider: Vec<types::Reference>,
+    product_or_service: types::CodeableConcept,
+    #[serde(default)]
+    modifier: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    program_code: Vec<types::CodeableConcept>,
+    #[serde(flatten)]
+    serviced: crate::r4::choice::Slot<ClaimResponseAddItemServiced>,
+    #[serde(flatten)]
+    location: crate::r4::choice::Slot<ClaimResponseAddItemLocation>,
+    quantity: Option<types::Quantity>,
+    unit_price: Option<types::Money>,
+    factor: Option<types::Decimal>,
+    #[serde(rename = "_factor")]
+    factor_ext: Option<types::Element>,
+    net: Option<types::Money>,
+    body_site: Option<types::CodeableConcept>,
+    #[serde(default)]
+    sub_site: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    note_number: Vec<types::PositiveInt>,
+    #[serde(rename = "_noteNumber")]
+    #[serde(default)]
+    note_number_ext: Vec<Option<types::Element>>,
+    adjudication: ::vec1::Vec1<ClaimResponseItemAdjudication>,
+    #[serde(default)]
+    detail: Vec<ClaimResponseAddItemDetail>,
+}
+
+impl ::core::convert::From<ClaimResponseAddItemDe> for ClaimResponseAddItem {
+    fn from(v: ClaimResponseAddItemDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            item_sequence: v.item_sequence,
+            item_sequence_ext: v.item_sequence_ext,
+            detail_sequence: v.detail_sequence,
+            detail_sequence_ext: v.detail_sequence_ext,
+            subdetail_sequence: v.subdetail_sequence,
+            subdetail_sequence_ext: v.subdetail_sequence_ext,
+            provider: v.provider,
+            product_or_service: v.product_or_service,
+            modifier: v.modifier,
+            program_code: v.program_code,
+            serviced: v.serviced.0,
+            location: v.location.0,
+            quantity: v.quantity,
+            unit_price: v.unit_price,
+            factor: v.factor,
+            factor_ext: v.factor_ext,
+            net: v.net,
+            body_site: v.body_site,
+            sub_site: v.sub_site,
+            note_number: v.note_number,
+            note_number_ext: v.note_number_ext,
+            adjudication: v.adjudication,
+            detail: v.detail,
+        }
+    }
 }
 
 /// The second-tier service adjudications for payor added services.

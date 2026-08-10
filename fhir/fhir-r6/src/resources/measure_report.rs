@@ -185,6 +185,7 @@ pub struct MeasureReport {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MeasureReportGroupDe")]
 #[fhir_version("r6")]
 pub struct MeasureReportGroup {
     /// Unique id for inter-element referencing
@@ -250,6 +251,63 @@ pub struct MeasureReportGroup {
     /// Stratification results
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub stratifier: Vec<MeasureReportGroupStratifier>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MeasureReportGroupDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    link_id: Option<types::String>,
+    #[serde(rename = "_linkId")]
+    link_id_ext: Option<types::Element>,
+    calculated_date: Option<types::DateTime>,
+    #[serde(rename = "_calculatedDate")]
+    calculated_date_ext: Option<types::Element>,
+    code: Option<types::CodeableConcept>,
+    description: Option<types::Markdown>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    subject: Option<types::Reference>,
+    scoring: Option<types::CodeableConcept>,
+    improvement_notation: Option<types::CodeableConcept>,
+    improvement_notation_guidance: Option<types::Markdown>,
+    #[serde(rename = "_improvementNotationGuidance")]
+    improvement_notation_guidance_ext: Option<types::Element>,
+    #[serde(default)]
+    population: Vec<MeasureReportGroupPopulation>,
+    #[serde(flatten)]
+    measure_score: crate::r6::choice::Slot<MeasureReportGroupMeasureScore>,
+    #[serde(default)]
+    stratifier: Vec<MeasureReportGroupStratifier>,
+}
+
+impl ::core::convert::From<MeasureReportGroupDe> for MeasureReportGroup {
+    fn from(v: MeasureReportGroupDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            link_id: v.link_id,
+            link_id_ext: v.link_id_ext,
+            calculated_date: v.calculated_date,
+            calculated_date_ext: v.calculated_date_ext,
+            code: v.code,
+            description: v.description,
+            description_ext: v.description_ext,
+            subject: v.subject,
+            scoring: v.scoring,
+            improvement_notation: v.improvement_notation,
+            improvement_notation_guidance: v.improvement_notation_guidance,
+            improvement_notation_guidance_ext: v.improvement_notation_guidance_ext,
+            population: v.population,
+            measure_score: v.measure_score.0,
+            stratifier: v.stratifier,
+        }
+    }
 }
 
 /// The populations that make up the population group, one for each type of
@@ -416,6 +474,7 @@ pub struct MeasureReportGroupStratifier {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MeasureReportGroupStratifierStratumDe")]
 #[fhir_version("r6")]
 pub struct MeasureReportGroupStratifierStratum {
     /// Unique id for inter-element referencing
@@ -448,6 +507,40 @@ pub struct MeasureReportGroupStratifierStratum {
     pub measure_score: Option<MeasureReportGroupStratifierStratumMeasureScore>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MeasureReportGroupStratifierStratumDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    value: crate::r6::choice::Slot<MeasureReportGroupStratifierStratumValue>,
+    #[serde(default)]
+    component: Vec<MeasureReportGroupStratifierStratumComponent>,
+    #[serde(default)]
+    population: Vec<MeasureReportGroupStratifierStratumPopulation>,
+    #[serde(flatten)]
+    measure_score: crate::r6::choice::Slot<MeasureReportGroupStratifierStratumMeasureScore>,
+}
+
+impl ::core::convert::From<MeasureReportGroupStratifierStratumDe>
+    for MeasureReportGroupStratifierStratum
+{
+    fn from(v: MeasureReportGroupStratifierStratumDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            value: v.value.0,
+            component: v.component,
+            population: v.population,
+            measure_score: v.measure_score.0,
+        }
+    }
+}
+
 /// A stratifier component value.
 ///
 /// # Examples
@@ -470,6 +563,7 @@ pub struct MeasureReportGroupStratifierStratum {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MeasureReportGroupStratifierStratumComponentDe")]
 #[fhir_version("r6")]
 pub struct MeasureReportGroupStratifierStratumComponent {
     /// Unique id for inter-element referencing
@@ -504,6 +598,43 @@ pub struct MeasureReportGroupStratifierStratumComponent {
     /// The `MeasureReport.group.stratifier.stratum.component.value[x]` choice element (1..1); see [`MeasureReportGroupStratifierStratumComponentValue`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub value: Option<MeasureReportGroupStratifierStratumComponentValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MeasureReportGroupStratifierStratumComponentDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    link_id: Option<types::String>,
+    #[serde(rename = "_linkId")]
+    link_id_ext: Option<types::Element>,
+    code: types::CodeableConcept,
+    description: Option<types::Markdown>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    #[serde(flatten)]
+    value: crate::r6::choice::Slot<MeasureReportGroupStratifierStratumComponentValue>,
+}
+
+impl ::core::convert::From<MeasureReportGroupStratifierStratumComponentDe>
+    for MeasureReportGroupStratifierStratumComponent
+{
+    fn from(v: MeasureReportGroupStratifierStratumComponentDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            link_id: v.link_id,
+            link_id_ext: v.link_id_ext,
+            code: v.code,
+            description: v.description,
+            description_ext: v.description_ext,
+            value: v.value.0,
+        }
+    }
 }
 
 /// The populations that make up the stratum, one for each type of population

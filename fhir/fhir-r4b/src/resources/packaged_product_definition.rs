@@ -349,6 +349,7 @@ pub struct PackagedProductDefinitionPackageContainedItem {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "PackagedProductDefinitionPackagePropertyDe")]
 #[fhir_version("r4b")]
 pub struct PackagedProductDefinitionPackageProperty {
     /// Unique id for inter-element referencing
@@ -369,6 +370,33 @@ pub struct PackagedProductDefinitionPackageProperty {
     /// The `PackagedProductDefinition.package.property.value[x]` choice element (0..1); see [`PackagedProductDefinitionPackagePropertyValue`].
     #[serde(flatten)]
     pub value: Option<PackagedProductDefinitionPackagePropertyValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PackagedProductDefinitionPackagePropertyDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: types::CodeableConcept,
+    #[serde(flatten)]
+    value: crate::r4b::choice::Slot<PackagedProductDefinitionPackagePropertyValue>,
+}
+
+impl ::core::convert::From<PackagedProductDefinitionPackagePropertyDe>
+    for PackagedProductDefinitionPackageProperty
+{
+    fn from(v: PackagedProductDefinitionPackagePropertyDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            value: v.value.0,
+        }
+    }
 }
 
 /// Shelf Life and storage information.
@@ -393,6 +421,7 @@ pub struct PackagedProductDefinitionPackageProperty {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "PackagedProductDefinitionPackageShelfLifeStorageDe")]
 #[fhir_version("r4b")]
 pub struct PackagedProductDefinitionPackageShelfLifeStorage {
     /// Unique id for inter-element referencing
@@ -428,6 +457,36 @@ pub struct PackagedProductDefinitionPackageShelfLifeStorage {
     /// controlled term identifier shall be specified
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub special_precautions_for_storage: Vec<types::CodeableConcept>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PackagedProductDefinitionPackageShelfLifeStorageDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: Option<types::CodeableConcept>,
+    #[serde(flatten)]
+    period: crate::r4b::choice::Slot<PackagedProductDefinitionPackageShelfLifeStoragePeriod>,
+    #[serde(default)]
+    special_precautions_for_storage: Vec<types::CodeableConcept>,
+}
+
+impl ::core::convert::From<PackagedProductDefinitionPackageShelfLifeStorageDe>
+    for PackagedProductDefinitionPackageShelfLifeStorage
+{
+    fn from(v: PackagedProductDefinitionPackageShelfLifeStorageDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            period: v.period.0,
+            special_precautions_for_storage: v.special_precautions_for_storage,
+        }
+    }
 }
 
 /// The `PackagedProductDefinition.package.property.value[x]` choice element (see `spec/11-choice-types.md`).

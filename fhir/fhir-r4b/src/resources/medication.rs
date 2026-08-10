@@ -179,6 +179,7 @@ pub struct MedicationBatch {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MedicationIngredientDe")]
 #[fhir_version("r4b")]
 pub struct MedicationIngredient {
     /// Unique id for inter-element referencing
@@ -206,6 +207,36 @@ pub struct MedicationIngredient {
 
     /// Quantity of ingredient present
     pub strength: Option<types::Ratio>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MedicationIngredientDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    item: crate::r4b::choice::Slot<MedicationIngredientItem>,
+    is_active: Option<types::Boolean>,
+    #[serde(rename = "_isActive")]
+    is_active_ext: Option<types::Element>,
+    strength: Option<types::Ratio>,
+}
+
+impl ::core::convert::From<MedicationIngredientDe> for MedicationIngredient {
+    fn from(v: MedicationIngredientDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            item: v.item.0,
+            is_active: v.is_active,
+            is_active_ext: v.is_active_ext,
+            strength: v.strength,
+        }
+    }
 }
 
 /// The `Medication.ingredient.item[x]` choice element (see `spec/11-choice-types.md`).

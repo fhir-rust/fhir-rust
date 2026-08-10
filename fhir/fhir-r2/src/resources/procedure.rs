@@ -37,6 +37,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ProcedureDe")]
 #[fhir_version("r2")]
 pub struct Procedure {
     /// Logical id of this artifact
@@ -158,6 +159,103 @@ pub struct Procedure {
     /// Items used during procedure
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub used: Vec<types::Reference>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ProcedureDe {
+    id: Option<types::Id>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r2::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    subject: types::Reference,
+    status: crate::coded::Coded<crate::r2::codes::ProcedureStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    category: Option<types::CodeableConcept>,
+    code: types::CodeableConcept,
+    not_performed: Option<types::Boolean>,
+    #[serde(rename = "_notPerformed")]
+    not_performed_ext: Option<types::Element>,
+    #[serde(default)]
+    reason_not_performed: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    body_site: Vec<types::CodeableConcept>,
+    #[serde(flatten)]
+    reason: crate::r2::choice::Slot<ProcedureReason>,
+    #[serde(default)]
+    performer: Vec<ProcedurePerformer>,
+    #[serde(flatten)]
+    performed: crate::r2::choice::Slot<ProcedurePerformed>,
+    encounter: Option<types::Reference<crate::r2::resources::Encounter>>,
+    location: Option<types::Reference<crate::r2::resources::Location>>,
+    outcome: Option<types::CodeableConcept>,
+    #[serde(default)]
+    report: Vec<types::Reference<crate::r2::resources::DiagnosticReport>>,
+    #[serde(default)]
+    complication: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    follow_up: Vec<types::CodeableConcept>,
+    request: Option<types::Reference>,
+    #[serde(default)]
+    notes: Vec<types::Annotation>,
+    #[serde(default)]
+    focal_device: Vec<ProcedureFocalDevice>,
+    #[serde(default)]
+    used: Vec<types::Reference>,
+}
+
+impl ::core::convert::From<ProcedureDe> for Procedure {
+    fn from(v: ProcedureDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            subject: v.subject,
+            status: v.status,
+            status_ext: v.status_ext,
+            category: v.category,
+            code: v.code,
+            not_performed: v.not_performed,
+            not_performed_ext: v.not_performed_ext,
+            reason_not_performed: v.reason_not_performed,
+            body_site: v.body_site,
+            reason: v.reason.0,
+            performer: v.performer,
+            performed: v.performed.0,
+            encounter: v.encounter,
+            location: v.location,
+            outcome: v.outcome,
+            report: v.report,
+            complication: v.complication,
+            follow_up: v.follow_up,
+            request: v.request,
+            notes: v.notes,
+            focal_device: v.focal_device,
+            used: v.used,
+        }
+    }
 }
 
 /// A device that is implanted, removed or otherwise manipulated (calibration,

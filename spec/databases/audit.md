@@ -185,7 +185,7 @@ type-/system-level history, multi-port wiring, is tracked in that crate's
 | [F-84](#f-84) | Medium | **All six** ports' `publish.yml` iterate a `fhir-<engine>-server` crate and a CLI crate, and all six `release.yml` build a `fhir-<engine>` binary — none of which has ever existed (wider than first recorded: not just the two former scaffolds) | **fixed** 2026-08-06 — publish loops corrected in all six; the six binary-release workflows deleted outright |
 | [F-85](#f-85) | Medium | `fhir-oracle` refused every root-level extension outright (`ORA-01400`): the empty attach path binds as NULL (`''` is NULL) against `"path" CLOB NOT NULL` — a US-Core-style Patient could not be stored at all | **fixed** 2026-08-10 — bounded `"path"` is nullable (`M14.39`), NULL means the empty path; fresh installs via `create_table`, existing ones via F-47 step 5's conversion; live-verified both ways |
 | [F-86](#f-86) | Medium | The `fhir/` model family (every release, R2–R6 and R4B) rejects FHIR JSON's null-padded primitive arrays (`"event": [null]` beside `_event`): repeating primitives are `Vec<T>` and cannot hold a placeholder position | open — found 2026-08-10 by R4B's full-corpus gate; the other corpora use the omit-the-value-array form and never exercised it. Representation decision needed (`Vec<Option<T>>` or equivalent) — an API-affecting change across six release crates |
-| [F-87](#f-87) | **High** | A choice element (`timing[x]` and kin) whose content fails to parse is **silently dropped** — the resource deserializes "successfully" minus the element, data loss masquerading as success | open — found 2026-08-10 with F-86 (the null-padded `Timing` is what failed to parse). The choice machinery must propagate the inner error, never yield `None` for present-but-unparseable content |
+| [F-87](#f-87) | **High** | A choice element (`timing[x]` and kin) whose content fails to parse is **silently dropped** — the resource deserializes "successfully" minus the element, data loss masquerading as success | **fixed** 2026-08-10, same day — every choice-bearing struct now deserializes through a generated shadow whose choice fields are non-`Option` `choice::Slot`s, so a present-but-invalid element errors loudly; all six release crates, five corpora green |
 
 ## What remains, and why
 
@@ -5001,6 +5001,11 @@ all six release crates at once. Recorded, not rushed: the R4B corpus gate
 carries the nine affected examples as named known failures citing this
 finding ("a bug with a note attached, not an exemption", R13.2).
 
+Since F-87's same-day fix, the failure mode is honest: such a document is
+**refused with a loud error** rather than parsed minus its element. The
+ext-only primitive-choice form (`_valueX` with no `valueX`) is likewise
+refused by name — it is this finding's other unrepresentable shape.
+
 ## F-87
 
 **A choice element that fails to parse is silently dropped.** Severity:
@@ -5021,6 +5026,32 @@ The fix is behavioural, not representational, and is independent of
 F-86's: the generated choice deserialization must propagate an inner
 parse error instead of treating it as "variant not present". F-86 decides
 what parses; F-87 decides that what does not parse **errors**.
+
+**Fixed 2026-08-10, the same day.** The root cause was pinned by a layered
+probe: the choice enum's own `Deserialize` propagates errors correctly;
+serde's flatten machinery is what turns any error inside a flattened
+`Option<T>` into `None` — and the swallow is `Option`-specific (a
+flattened non-`Option` field propagates). So the fix removes `Option` from
+the deserialization path without touching the public API: each release
+crate gains `choice::Slot<T>(pub Option<T>)`; `#[derive(FhirChoice)]` now
+emits a `Deserialize` for `Slot<Enum>` alongside the enum's own — absence
+of every variant key is the one legitimate `None`, a present-but-invalid
+payload propagates its error, and a consumed-but-unbuildable element (a
+`_valueX` extension without its value, previously also dropped silently)
+refuses by name. The generator emits, for every choice-bearing struct, a
+private shadow struct (same fields, choice fields as bare `Slot`s) and
+routes the real struct's derive through it with `#[serde(from = "…De")]` —
+public field types unchanged. Applied to all six release crates: five
+trees regenerated; R5's hand-documented tree spliced from its **own
+committed** field types (a first splice from the generated tree
+miscompiled exactly where R5's drift is sanctioned — `Coded<E>` versus
+plain codes — which is the drift gate's point). Verified: the probe that
+found the bug now errors loudly while the valid form round-trips
+unchanged; default and all-features suites green; the R2 spec suite and
+the full R3, R4, R5 and R4B corpora re-run green — the nine R4B
+known-failure examples now fail **deserialization** (the honest outcome)
+instead of silently losing their `timing[x]`, and remain allowlisted
+under F-86 until the representation gap closes.
 
 ---
 

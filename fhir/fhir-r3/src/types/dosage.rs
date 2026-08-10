@@ -37,6 +37,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "DosageDe")]
 #[fhir_version("r3")]
 pub struct Dosage {
     /// xml:id (or equivalent in JSON)
@@ -106,6 +107,64 @@ pub struct Dosage {
     /// The `Dosage.rate[x]` choice element (0..1); see [`DosageRate`].
     #[serde(flatten)]
     pub rate: Option<DosageRate>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DosageDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    sequence: Option<types::Integer>,
+    #[serde(rename = "_sequence")]
+    sequence_ext: Option<types::Element>,
+    text: Option<types::String>,
+    #[serde(rename = "_text")]
+    text_ext: Option<types::Element>,
+    #[serde(default)]
+    additional_instruction: Vec<types::CodeableConcept>,
+    patient_instruction: Option<types::String>,
+    #[serde(rename = "_patientInstruction")]
+    patient_instruction_ext: Option<types::Element>,
+    timing: Option<types::Timing>,
+    #[serde(flatten)]
+    as_needed: crate::r3::choice::Slot<DosageAsNeeded>,
+    site: Option<types::CodeableConcept>,
+    route: Option<types::CodeableConcept>,
+    method: Option<types::CodeableConcept>,
+    #[serde(flatten)]
+    dose: crate::r3::choice::Slot<DosageDose>,
+    max_dose_per_period: Option<types::Ratio>,
+    max_dose_per_administration: Option<types::Quantity>,
+    max_dose_per_lifetime: Option<types::Quantity>,
+    #[serde(flatten)]
+    rate: crate::r3::choice::Slot<DosageRate>,
+}
+
+impl ::core::convert::From<DosageDe> for Dosage {
+    fn from(v: DosageDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            sequence: v.sequence,
+            sequence_ext: v.sequence_ext,
+            text: v.text,
+            text_ext: v.text_ext,
+            additional_instruction: v.additional_instruction,
+            patient_instruction: v.patient_instruction,
+            patient_instruction_ext: v.patient_instruction_ext,
+            timing: v.timing,
+            as_needed: v.as_needed.0,
+            site: v.site,
+            route: v.route,
+            method: v.method,
+            dose: v.dose.0,
+            max_dose_per_period: v.max_dose_per_period,
+            max_dose_per_administration: v.max_dose_per_administration,
+            max_dose_per_lifetime: v.max_dose_per_lifetime,
+            rate: v.rate.0,
+        }
+    }
 }
 
 /// The `Dosage.asNeeded[x]` choice element (see `spec/11-choice-types.md`).

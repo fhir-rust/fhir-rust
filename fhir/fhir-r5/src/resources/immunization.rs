@@ -63,6 +63,7 @@ use fhir_derive_macros::Validate;
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ImmunizationDe")]
 pub struct Immunization {
     /// Logical id of this artifact
     pub id: Option<types::String>,
@@ -206,6 +207,125 @@ pub struct Immunization {
     /// Protocol followed by the provider
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub protocol_applied: Vec<ImmunizationProtocolApplied>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ImmunizationDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r5::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    #[serde(default)]
+    based_on: Vec<types::Reference>,
+    status: types::Code,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    status_reason: Option<types::CodeableConcept>,
+    vaccine_code: types::CodeableConcept,
+    administered_product: Option<types::CodeableReference>,
+    manufacturer: Option<types::CodeableReference>,
+    lot_number: Option<types::String>,
+    #[serde(rename = "_lotNumber")]
+    lot_number_ext: Option<types::Element>,
+    expiration_date: Option<types::Date>,
+    #[serde(rename = "_expirationDate")]
+    expiration_date_ext: Option<types::Element>,
+    patient: types::Reference<crate::r5::resources::Patient>,
+    encounter: Option<types::Reference<crate::r5::resources::Encounter>>,
+    #[serde(default)]
+    supporting_information: Vec<types::Reference>,
+    #[serde(flatten)]
+    occurrence: crate::r5::choice::Slot<ImmunizationOccurrence>,
+    primary_source: Option<types::Boolean>,
+    #[serde(rename = "_primarySource")]
+    primary_source_ext: Option<types::Element>,
+    information_source: Option<types::CodeableReference>,
+    location: Option<types::Reference<crate::r5::resources::Location>>,
+    site: Option<types::CodeableConcept>,
+    route: Option<types::CodeableConcept>,
+    dose_quantity: Option<types::Quantity>,
+    #[serde(default)]
+    performer: Vec<ImmunizationPerformer>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+    #[serde(default)]
+    reason: Vec<types::CodeableReference>,
+    is_subpotent: Option<types::Boolean>,
+    #[serde(rename = "_isSubpotent")]
+    is_subpotent_ext: Option<types::Element>,
+    #[serde(default)]
+    subpotent_reason: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    program_eligibility: Vec<ImmunizationProgramEligibility>,
+    funding_source: Option<types::CodeableConcept>,
+    #[serde(default)]
+    reaction: Vec<ImmunizationReaction>,
+    #[serde(default)]
+    protocol_applied: Vec<ImmunizationProtocolApplied>,
+}
+
+impl ::core::convert::From<ImmunizationDe> for Immunization {
+    fn from(v: ImmunizationDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            based_on: v.based_on,
+            status: v.status,
+            status_ext: v.status_ext,
+            status_reason: v.status_reason,
+            vaccine_code: v.vaccine_code,
+            administered_product: v.administered_product,
+            manufacturer: v.manufacturer,
+            lot_number: v.lot_number,
+            lot_number_ext: v.lot_number_ext,
+            expiration_date: v.expiration_date,
+            expiration_date_ext: v.expiration_date_ext,
+            patient: v.patient,
+            encounter: v.encounter,
+            supporting_information: v.supporting_information,
+            occurrence: v.occurrence.0,
+            primary_source: v.primary_source,
+            primary_source_ext: v.primary_source_ext,
+            information_source: v.information_source,
+            location: v.location,
+            site: v.site,
+            route: v.route,
+            dose_quantity: v.dose_quantity,
+            performer: v.performer,
+            note: v.note,
+            reason: v.reason,
+            is_subpotent: v.is_subpotent,
+            is_subpotent_ext: v.is_subpotent_ext,
+            subpotent_reason: v.subpotent_reason,
+            program_eligibility: v.program_eligibility,
+            funding_source: v.funding_source,
+            reaction: v.reaction,
+            protocol_applied: v.protocol_applied,
+        }
+    }
 }
 
 /// Immunization.performer: Who performed event

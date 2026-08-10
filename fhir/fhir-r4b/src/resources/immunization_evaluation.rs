@@ -39,6 +39,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ImmunizationEvaluationDe")]
 #[fhir_version("r4b")]
 pub struct ImmunizationEvaluation {
     /// Logical id of this artifact
@@ -136,6 +137,85 @@ pub struct ImmunizationEvaluation {
     /// The `ImmunizationEvaluation.seriesDoses[x]` choice element (0..1); see [`ImmunizationEvaluationSeriesDoses`].
     #[serde(flatten)]
     pub series_doses: Option<ImmunizationEvaluationSeriesDoses>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ImmunizationEvaluationDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r4b::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    status: types::Code,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    patient: types::Reference<crate::r4b::resources::Patient>,
+    date: Option<types::DateTime>,
+    #[serde(rename = "_date")]
+    date_ext: Option<types::Element>,
+    authority: Option<types::Reference<crate::r4b::resources::Organization>>,
+    target_disease: types::CodeableConcept,
+    immunization_event: types::Reference<crate::r4b::resources::Immunization>,
+    dose_status: types::CodeableConcept,
+    #[serde(default)]
+    dose_status_reason: Vec<types::CodeableConcept>,
+    description: Option<types::String>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    series: Option<types::String>,
+    #[serde(rename = "_series")]
+    series_ext: Option<types::Element>,
+    #[serde(flatten)]
+    dose_number: crate::r4b::choice::Slot<ImmunizationEvaluationDoseNumber>,
+    #[serde(flatten)]
+    series_doses: crate::r4b::choice::Slot<ImmunizationEvaluationSeriesDoses>,
+}
+
+impl ::core::convert::From<ImmunizationEvaluationDe> for ImmunizationEvaluation {
+    fn from(v: ImmunizationEvaluationDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            status: v.status,
+            status_ext: v.status_ext,
+            patient: v.patient,
+            date: v.date,
+            date_ext: v.date_ext,
+            authority: v.authority,
+            target_disease: v.target_disease,
+            immunization_event: v.immunization_event,
+            dose_status: v.dose_status,
+            dose_status_reason: v.dose_status_reason,
+            description: v.description,
+            description_ext: v.description_ext,
+            series: v.series,
+            series_ext: v.series_ext,
+            dose_number: v.dose_number.0,
+            series_doses: v.series_doses.0,
+        }
+    }
 }
 
 /// The `ImmunizationEvaluation.doseNumber[x]` choice element (see `spec/11-choice-types.md`).

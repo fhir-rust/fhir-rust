@@ -49,11 +49,14 @@ against crates.io the same day:
 - Registered and published under the **old** names only: `fhir-release-2`
   …`-6` at 3.0.0 and the reservations `fhir-release-1`, `-7`…`-10` at
   0.0.1. Those published versions are immutable and stay up; whether to
-  publish a deprecation notice on them is an owner decision. The **new**
-  names (`fhir-r1`…`fhir-r10`, `fhir-r4b`) were checked the same day and
-  are **unregistered** — publishing the model family next time is eleven
-  first registrations plus three bumps, in dependency order (release
-  crates before the facade, whose optional dependencies now name them).
+  publish a deprecation notice on them is an owner decision.
+- **Published under the new names the same day** (owner-directed), in
+  dependency order and verified against the live registry: `fhir-r2`…`-6`
+  and `fhir-r4b` first registered at 3.0.0, the five reservations at
+  0.0.1 (the last four through crates.io's new-crate rate limit), the
+  facade at 3.1.0. The F-87 fix followed the same afternoon: the six
+  release crates republished at **3.0.1** and `fhir-derive-macros` at
+  **1.4.0**, so no published version silently loses a choice element.
 
 [`scripts/check-published-match.sh`](../scripts/check-published-match.sh)
 still enforces the invariant: a crate whose current name+version is on

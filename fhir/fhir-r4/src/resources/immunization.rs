@@ -38,6 +38,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ImmunizationDe")]
 #[fhir_version("r4")]
 pub struct Immunization {
     /// Logical id of this artifact
@@ -196,6 +197,128 @@ pub struct Immunization {
     pub protocol_applied: Vec<ImmunizationProtocolApplied>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ImmunizationDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r4::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    status: types::Code,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    status_reason: Option<types::CodeableConcept>,
+    vaccine_code: types::CodeableConcept,
+    patient: types::Reference<crate::r4::resources::Patient>,
+    encounter: Option<types::Reference<crate::r4::resources::Encounter>>,
+    #[serde(flatten)]
+    occurrence: crate::r4::choice::Slot<ImmunizationOccurrence>,
+    recorded: Option<types::DateTime>,
+    #[serde(rename = "_recorded")]
+    recorded_ext: Option<types::Element>,
+    primary_source: Option<types::Boolean>,
+    #[serde(rename = "_primarySource")]
+    primary_source_ext: Option<types::Element>,
+    report_origin: Option<types::CodeableConcept>,
+    location: Option<types::Reference<crate::r4::resources::Location>>,
+    manufacturer: Option<types::Reference<crate::r4::resources::Organization>>,
+    lot_number: Option<types::String>,
+    #[serde(rename = "_lotNumber")]
+    lot_number_ext: Option<types::Element>,
+    expiration_date: Option<types::Date>,
+    #[serde(rename = "_expirationDate")]
+    expiration_date_ext: Option<types::Element>,
+    site: Option<types::CodeableConcept>,
+    route: Option<types::CodeableConcept>,
+    dose_quantity: Option<types::Quantity>,
+    #[serde(default)]
+    performer: Vec<ImmunizationPerformer>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+    #[serde(default)]
+    reason_code: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    reason_reference: Vec<types::Reference>,
+    is_subpotent: Option<types::Boolean>,
+    #[serde(rename = "_isSubpotent")]
+    is_subpotent_ext: Option<types::Element>,
+    #[serde(default)]
+    subpotent_reason: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    education: Vec<ImmunizationEducation>,
+    #[serde(default)]
+    program_eligibility: Vec<types::CodeableConcept>,
+    funding_source: Option<types::CodeableConcept>,
+    #[serde(default)]
+    reaction: Vec<ImmunizationReaction>,
+    #[serde(default)]
+    protocol_applied: Vec<ImmunizationProtocolApplied>,
+}
+
+impl ::core::convert::From<ImmunizationDe> for Immunization {
+    fn from(v: ImmunizationDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            status: v.status,
+            status_ext: v.status_ext,
+            status_reason: v.status_reason,
+            vaccine_code: v.vaccine_code,
+            patient: v.patient,
+            encounter: v.encounter,
+            occurrence: v.occurrence.0,
+            recorded: v.recorded,
+            recorded_ext: v.recorded_ext,
+            primary_source: v.primary_source,
+            primary_source_ext: v.primary_source_ext,
+            report_origin: v.report_origin,
+            location: v.location,
+            manufacturer: v.manufacturer,
+            lot_number: v.lot_number,
+            lot_number_ext: v.lot_number_ext,
+            expiration_date: v.expiration_date,
+            expiration_date_ext: v.expiration_date_ext,
+            site: v.site,
+            route: v.route,
+            dose_quantity: v.dose_quantity,
+            performer: v.performer,
+            note: v.note,
+            reason_code: v.reason_code,
+            reason_reference: v.reason_reference,
+            is_subpotent: v.is_subpotent,
+            is_subpotent_ext: v.is_subpotent_ext,
+            subpotent_reason: v.subpotent_reason,
+            education: v.education,
+            program_eligibility: v.program_eligibility,
+            funding_source: v.funding_source,
+            reaction: v.reaction,
+            protocol_applied: v.protocol_applied,
+        }
+    }
+}
+
 /// Educational material presented to the patient (or guardian) at the time of
 /// vaccine administration.
 ///
@@ -326,6 +449,7 @@ pub struct ImmunizationPerformer {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ImmunizationProtocolAppliedDe")]
 #[fhir_version("r4")]
 pub struct ImmunizationProtocolApplied {
     /// Unique id for inter-element referencing
@@ -362,6 +486,42 @@ pub struct ImmunizationProtocolApplied {
     /// The `Immunization.protocolApplied.seriesDoses[x]` choice element (0..1); see [`ImmunizationProtocolAppliedSeriesDoses`].
     #[serde(flatten)]
     pub series_doses: Option<ImmunizationProtocolAppliedSeriesDoses>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ImmunizationProtocolAppliedDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    series: Option<types::String>,
+    #[serde(rename = "_series")]
+    series_ext: Option<types::Element>,
+    authority: Option<types::Reference<crate::r4::resources::Organization>>,
+    #[serde(default)]
+    target_disease: Vec<types::CodeableConcept>,
+    #[serde(flatten)]
+    dose_number: crate::r4::choice::Slot<ImmunizationProtocolAppliedDoseNumber>,
+    #[serde(flatten)]
+    series_doses: crate::r4::choice::Slot<ImmunizationProtocolAppliedSeriesDoses>,
+}
+
+impl ::core::convert::From<ImmunizationProtocolAppliedDe> for ImmunizationProtocolApplied {
+    fn from(v: ImmunizationProtocolAppliedDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            series: v.series,
+            series_ext: v.series_ext,
+            authority: v.authority,
+            target_disease: v.target_disease,
+            dose_number: v.dose_number.0,
+            series_doses: v.series_doses.0,
+        }
+    }
 }
 
 /// Categorical data indicating that an adverse event is associated in time to

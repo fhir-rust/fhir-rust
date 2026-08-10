@@ -245,6 +245,7 @@ pub struct ClinicalUseDefinitionContraindicationOtherTherapy {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ClinicalUseDefinitionIndicationDe")]
 #[fhir_version("r4b")]
 pub struct ClinicalUseDefinitionIndication {
     /// Unique id for inter-element referencing
@@ -285,6 +286,44 @@ pub struct ClinicalUseDefinitionIndication {
     /// described as part of the indication
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub other_therapy: Vec<ClinicalUseDefinitionContraindicationOtherTherapy>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ClinicalUseDefinitionIndicationDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    disease_symptom_procedure: Option<types::CodeableReference>,
+    disease_status: Option<types::CodeableReference>,
+    #[serde(default)]
+    comorbidity: Vec<types::CodeableReference>,
+    intended_effect: Option<types::CodeableReference>,
+    #[serde(flatten)]
+    duration: crate::r4b::choice::Slot<ClinicalUseDefinitionIndicationDuration>,
+    #[serde(default)]
+    undesirable_effect: Vec<types::Reference<crate::r4b::resources::ClinicalUseDefinition>>,
+    #[serde(default)]
+    other_therapy: Vec<ClinicalUseDefinitionContraindicationOtherTherapy>,
+}
+
+impl ::core::convert::From<ClinicalUseDefinitionIndicationDe> for ClinicalUseDefinitionIndication {
+    fn from(v: ClinicalUseDefinitionIndicationDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            disease_symptom_procedure: v.disease_symptom_procedure,
+            disease_status: v.disease_status,
+            comorbidity: v.comorbidity,
+            intended_effect: v.intended_effect,
+            duration: v.duration.0,
+            undesirable_effect: v.undesirable_effect,
+            other_therapy: v.other_therapy,
+        }
+    }
 }
 
 /// Specifics for when this is an interaction.
@@ -365,6 +404,7 @@ pub struct ClinicalUseDefinitionInteraction {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ClinicalUseDefinitionInteractionInteractantDe")]
 #[fhir_version("r4b")]
 pub struct ClinicalUseDefinitionInteractionInteractant {
     /// Unique id for inter-element referencing
@@ -382,6 +422,31 @@ pub struct ClinicalUseDefinitionInteractionInteractant {
     /// The `ClinicalUseDefinition.interaction.interactant.item[x]` choice element (1..1); see [`ClinicalUseDefinitionInteractionInteractantItem`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub item: Option<ClinicalUseDefinitionInteractionInteractantItem>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ClinicalUseDefinitionInteractionInteractantDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    item: crate::r4b::choice::Slot<ClinicalUseDefinitionInteractionInteractantItem>,
+}
+
+impl ::core::convert::From<ClinicalUseDefinitionInteractionInteractantDe>
+    for ClinicalUseDefinitionInteractionInteractant
+{
+    fn from(v: ClinicalUseDefinitionInteractionInteractantDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            item: v.item.0,
+        }
+    }
 }
 
 /// Describe the possible undesirable effects (negative outcomes) from the use

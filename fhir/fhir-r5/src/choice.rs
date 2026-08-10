@@ -123,3 +123,15 @@ mod tests {
         assert!(!invalid.validate().is_empty());
     }
 }
+
+/// The deserialization slot for a `#[serde(flatten)]`ed choice field (audit
+/// **F-87**).
+///
+/// serde's flatten machinery turns any error inside a flattened `Option<T>`
+/// into `None`, which silently deleted a present-but-invalid choice element.
+/// `Slot` is not an `Option`, so its errors propagate; `#[derive(FhirChoice)]`
+/// emits its `Deserialize`, which answers absence — the only thing the old
+/// swallow legitimately expressed — with `Slot(None)`. Used by the generated
+/// shadow deserializers; not part of the modelling API.
+#[derive(Debug, Default)]
+pub struct Slot<T>(pub Option<T>);

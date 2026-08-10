@@ -37,6 +37,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ProcedureDe")]
 #[fhir_version("r3")]
 pub struct Procedure {
     /// Logical id of this artifact
@@ -178,6 +179,118 @@ pub struct Procedure {
     /// Coded items used during the procedure
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub used_code: Vec<types::CodeableConcept>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ProcedureDe {
+    id: Option<types::Id>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r3::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    #[serde(default)]
+    definition: Vec<types::Reference>,
+    #[serde(default)]
+    based_on: Vec<types::Reference>,
+    #[serde(default)]
+    part_of: Vec<types::Reference>,
+    status: crate::coded::Coded<crate::r3::codes::EventStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    not_done: Option<types::Boolean>,
+    #[serde(rename = "_notDone")]
+    not_done_ext: Option<types::Element>,
+    not_done_reason: Option<types::CodeableConcept>,
+    category: Option<types::CodeableConcept>,
+    code: Option<types::CodeableConcept>,
+    subject: types::Reference,
+    context: Option<types::Reference>,
+    #[serde(flatten)]
+    performed: crate::r3::choice::Slot<ProcedurePerformed>,
+    #[serde(default)]
+    performer: Vec<ProcedurePerformer>,
+    location: Option<types::Reference<crate::r3::resources::Location>>,
+    #[serde(default)]
+    reason_code: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    reason_reference: Vec<types::Reference>,
+    #[serde(default)]
+    body_site: Vec<types::CodeableConcept>,
+    outcome: Option<types::CodeableConcept>,
+    #[serde(default)]
+    report: Vec<types::Reference<crate::r3::resources::DiagnosticReport>>,
+    #[serde(default)]
+    complication: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    complication_detail: Vec<types::Reference<crate::r3::resources::Condition>>,
+    #[serde(default)]
+    follow_up: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+    #[serde(default)]
+    focal_device: Vec<ProcedureFocalDevice>,
+    #[serde(default)]
+    used_reference: Vec<types::Reference>,
+    #[serde(default)]
+    used_code: Vec<types::CodeableConcept>,
+}
+
+impl ::core::convert::From<ProcedureDe> for Procedure {
+    fn from(v: ProcedureDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            definition: v.definition,
+            based_on: v.based_on,
+            part_of: v.part_of,
+            status: v.status,
+            status_ext: v.status_ext,
+            not_done: v.not_done,
+            not_done_ext: v.not_done_ext,
+            not_done_reason: v.not_done_reason,
+            category: v.category,
+            code: v.code,
+            subject: v.subject,
+            context: v.context,
+            performed: v.performed.0,
+            performer: v.performer,
+            location: v.location,
+            reason_code: v.reason_code,
+            reason_reference: v.reason_reference,
+            body_site: v.body_site,
+            outcome: v.outcome,
+            report: v.report,
+            complication: v.complication,
+            complication_detail: v.complication_detail,
+            follow_up: v.follow_up,
+            note: v.note,
+            focal_device: v.focal_device,
+            used_reference: v.used_reference,
+            used_code: v.used_code,
+        }
+    }
 }
 
 /// A device that is implanted, removed or otherwise manipulated (calibration,

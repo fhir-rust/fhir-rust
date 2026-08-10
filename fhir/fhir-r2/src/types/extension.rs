@@ -35,6 +35,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ExtensionDe")]
 #[fhir_version("r2")]
 pub struct Extension {
     /// xml:id (or equivalent in JSON)
@@ -51,6 +52,28 @@ pub struct Extension {
     /// The `Extension.value[x]` choice element (0..1); see [`ExtensionValue`].
     #[serde(flatten)]
     pub value: Option<ExtensionValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ExtensionDe {
+    id: Option<types::Id>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    url: types::Uri,
+    #[serde(flatten)]
+    value: crate::r2::choice::Slot<ExtensionValue>,
+}
+
+impl ::core::convert::From<ExtensionDe> for Extension {
+    fn from(v: ExtensionDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            url: v.url,
+            value: v.value.0,
+        }
+    }
 }
 
 /// The `Extension.value[x]` choice element (see `spec/11-choice-types.md`).

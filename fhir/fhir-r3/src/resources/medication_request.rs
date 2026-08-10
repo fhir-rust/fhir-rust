@@ -37,6 +37,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MedicationRequestDe")]
 #[fhir_version("r3")]
 pub struct MedicationRequest {
     /// Logical id of this artifact
@@ -175,6 +176,114 @@ pub struct MedicationRequest {
     /// A list of events of interest in the lifecycle
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub event_history: Vec<types::Reference<crate::r3::resources::Provenance>>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MedicationRequestDe {
+    id: Option<types::Id>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r3::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    #[serde(default)]
+    definition: Vec<types::Reference>,
+    #[serde(default)]
+    based_on: Vec<types::Reference>,
+    group_identifier: Option<types::Identifier>,
+    status: Option<crate::coded::Coded<crate::r3::codes::MedicationRequestStatus>>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    intent: crate::coded::Coded<crate::r3::codes::MedicationRequestIntent>,
+    #[serde(rename = "_intent")]
+    intent_ext: Option<types::Element>,
+    category: Option<types::CodeableConcept>,
+    priority: Option<crate::coded::Coded<crate::r3::codes::MedicationRequestPriority>>,
+    #[serde(rename = "_priority")]
+    priority_ext: Option<types::Element>,
+    #[serde(flatten)]
+    medication: crate::r3::choice::Slot<MedicationRequestMedication>,
+    subject: types::Reference,
+    context: Option<types::Reference>,
+    #[serde(default)]
+    supporting_information: Vec<types::Reference>,
+    authored_on: Option<types::DateTime>,
+    #[serde(rename = "_authoredOn")]
+    authored_on_ext: Option<types::Element>,
+    requester: Option<MedicationRequestRequester>,
+    recorder: Option<types::Reference<crate::r3::resources::Practitioner>>,
+    #[serde(default)]
+    reason_code: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    reason_reference: Vec<types::Reference>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+    #[serde(default)]
+    dosage_instruction: Vec<types::Dosage>,
+    dispense_request: Option<MedicationRequestDispenseRequest>,
+    substitution: Option<MedicationRequestSubstitution>,
+    prior_prescription: Option<types::Reference<crate::r3::resources::MedicationRequest>>,
+    #[serde(default)]
+    detected_issue: Vec<types::Reference<crate::r3::resources::DetectedIssue>>,
+    #[serde(default)]
+    event_history: Vec<types::Reference<crate::r3::resources::Provenance>>,
+}
+
+impl ::core::convert::From<MedicationRequestDe> for MedicationRequest {
+    fn from(v: MedicationRequestDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            definition: v.definition,
+            based_on: v.based_on,
+            group_identifier: v.group_identifier,
+            status: v.status,
+            status_ext: v.status_ext,
+            intent: v.intent,
+            intent_ext: v.intent_ext,
+            category: v.category,
+            priority: v.priority,
+            priority_ext: v.priority_ext,
+            medication: v.medication.0,
+            subject: v.subject,
+            context: v.context,
+            supporting_information: v.supporting_information,
+            authored_on: v.authored_on,
+            authored_on_ext: v.authored_on_ext,
+            requester: v.requester,
+            recorder: v.recorder,
+            reason_code: v.reason_code,
+            reason_reference: v.reason_reference,
+            note: v.note,
+            dosage_instruction: v.dosage_instruction,
+            dispense_request: v.dispense_request,
+            substitution: v.substitution,
+            prior_prescription: v.prior_prescription,
+            detected_issue: v.detected_issue,
+            event_history: v.event_history,
+        }
+    }
 }
 
 /// Indicates the specific details for the dispense or medication supply part

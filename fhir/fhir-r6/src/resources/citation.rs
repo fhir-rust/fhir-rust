@@ -42,6 +42,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "CitationDe")]
 #[fhir_version("r6")]
 pub struct Citation {
     /// Logical id of this artifact
@@ -251,6 +252,165 @@ pub struct Citation {
 
     /// The article or artifact being described
     pub cited_artifact: Option<CitationCitedArtifact>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CitationDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r6::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    url: Option<types::Uri>,
+    #[serde(rename = "_url")]
+    url_ext: Option<types::Element>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    version: Option<types::String>,
+    #[serde(rename = "_version")]
+    version_ext: Option<types::Element>,
+    #[serde(flatten)]
+    version_algorithm: crate::r6::choice::Slot<CitationVersionAlgorithm>,
+    name: Option<types::String>,
+    #[serde(rename = "_name")]
+    name_ext: Option<types::Element>,
+    title: Option<types::String>,
+    #[serde(rename = "_title")]
+    title_ext: Option<types::Element>,
+    status: crate::coded::Coded<crate::r6::codes::PublicationStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    experimental: Option<types::Boolean>,
+    #[serde(rename = "_experimental")]
+    experimental_ext: Option<types::Element>,
+    date: Option<types::DateTime>,
+    #[serde(rename = "_date")]
+    date_ext: Option<types::Element>,
+    #[serde(default)]
+    author: Vec<types::ContactDetail>,
+    publisher: Option<types::String>,
+    #[serde(rename = "_publisher")]
+    publisher_ext: Option<types::Element>,
+    #[serde(default)]
+    contact: Vec<types::ContactDetail>,
+    description: Option<types::Markdown>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    #[serde(default)]
+    use_context: Vec<types::UsageContext>,
+    #[serde(default)]
+    jurisdiction: Vec<types::CodeableConcept>,
+    purpose: Option<types::Markdown>,
+    #[serde(rename = "_purpose")]
+    purpose_ext: Option<types::Element>,
+    copyright: Option<types::Markdown>,
+    #[serde(rename = "_copyright")]
+    copyright_ext: Option<types::Element>,
+    copyright_label: Option<types::String>,
+    #[serde(rename = "_copyrightLabel")]
+    copyright_label_ext: Option<types::Element>,
+    approval_date: Option<types::Date>,
+    #[serde(rename = "_approvalDate")]
+    approval_date_ext: Option<types::Element>,
+    last_review_date: Option<types::Date>,
+    #[serde(rename = "_lastReviewDate")]
+    last_review_date_ext: Option<types::Element>,
+    effective_period: Option<types::Period>,
+    #[serde(default)]
+    recorder: Vec<types::ContactDetail>,
+    #[serde(default)]
+    editor: Vec<types::ContactDetail>,
+    #[serde(default)]
+    reviewer: Vec<types::ContactDetail>,
+    #[serde(default)]
+    endorser: Vec<types::ContactDetail>,
+    #[serde(default)]
+    summary: Vec<CitationSummary>,
+    #[serde(default)]
+    classification: Vec<CitationClassification>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+    #[serde(default)]
+    current_state: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    status_date: Vec<CitationStatusDate>,
+    #[serde(default)]
+    relates_to: Vec<CitationRelatesTo>,
+    cited_artifact: Option<CitationCitedArtifact>,
+}
+
+impl ::core::convert::From<CitationDe> for Citation {
+    fn from(v: CitationDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            url: v.url,
+            url_ext: v.url_ext,
+            identifier: v.identifier,
+            version: v.version,
+            version_ext: v.version_ext,
+            version_algorithm: v.version_algorithm.0,
+            name: v.name,
+            name_ext: v.name_ext,
+            title: v.title,
+            title_ext: v.title_ext,
+            status: v.status,
+            status_ext: v.status_ext,
+            experimental: v.experimental,
+            experimental_ext: v.experimental_ext,
+            date: v.date,
+            date_ext: v.date_ext,
+            author: v.author,
+            publisher: v.publisher,
+            publisher_ext: v.publisher_ext,
+            contact: v.contact,
+            description: v.description,
+            description_ext: v.description_ext,
+            use_context: v.use_context,
+            jurisdiction: v.jurisdiction,
+            purpose: v.purpose,
+            purpose_ext: v.purpose_ext,
+            copyright: v.copyright,
+            copyright_ext: v.copyright_ext,
+            copyright_label: v.copyright_label,
+            copyright_label_ext: v.copyright_label_ext,
+            approval_date: v.approval_date,
+            approval_date_ext: v.approval_date_ext,
+            last_review_date: v.last_review_date,
+            last_review_date_ext: v.last_review_date_ext,
+            effective_period: v.effective_period,
+            recorder: v.recorder,
+            editor: v.editor,
+            reviewer: v.reviewer,
+            endorser: v.endorser,
+            summary: v.summary,
+            classification: v.classification,
+            note: v.note,
+            current_state: v.current_state,
+            status_date: v.status_date,
+            relates_to: v.relates_to,
+            cited_artifact: v.cited_artifact,
+        }
+    }
 }
 
 /// The article or artifact being described.
@@ -968,6 +1128,7 @@ pub struct CitationCitedArtifactPublicationFormPublishedIn {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "CitationCitedArtifactRelatesToDe")]
 #[fhir_version("r6")]
 pub struct CitationCitedArtifactRelatesTo {
     /// Unique id for inter-element referencing
@@ -1023,6 +1184,52 @@ pub struct CitationCitedArtifactRelatesTo {
     /// The `Citation.citedArtifact.relatesTo.target[x]` choice element (0..1); see [`CitationCitedArtifactRelatesToTarget`].
     #[serde(flatten)]
     pub target: Option<CitationCitedArtifactRelatesToTarget>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CitationCitedArtifactRelatesToDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: crate::coded::Coded<crate::r6::codes::ArtifactRelationshipType>,
+    #[serde(rename = "_type")]
+    type_ext: Option<types::Element>,
+    #[serde(default)]
+    classifier: Vec<types::CodeableConcept>,
+    label: Option<types::String>,
+    #[serde(rename = "_label")]
+    label_ext: Option<types::Element>,
+    display: Option<types::String>,
+    #[serde(rename = "_display")]
+    display_ext: Option<types::Element>,
+    citation: Option<types::Markdown>,
+    #[serde(rename = "_citation")]
+    citation_ext: Option<types::Element>,
+    #[serde(flatten)]
+    target: crate::r6::choice::Slot<CitationCitedArtifactRelatesToTarget>,
+}
+
+impl ::core::convert::From<CitationCitedArtifactRelatesToDe> for CitationCitedArtifactRelatesTo {
+    fn from(v: CitationCitedArtifactRelatesToDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            type_ext: v.type_ext,
+            classifier: v.classifier,
+            label: v.label,
+            label_ext: v.label_ext,
+            display: v.display,
+            display_ext: v.display_ext,
+            citation: v.citation,
+            citation_ext: v.citation_ext,
+            target: v.target.0,
+        }
+    }
 }
 
 /// An effective date or period, historical or future, actual or expected, for
@@ -1242,6 +1449,7 @@ pub struct CitationClassification {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "CitationRelatesToDe")]
 #[fhir_version("r6")]
 pub struct CitationRelatesTo {
     /// Unique id for inter-element referencing
@@ -1272,6 +1480,34 @@ pub struct CitationRelatesTo {
     /// The `Citation.relatesTo.target[x]` choice element (1..1); see [`CitationRelatesToTarget`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub target: Option<CitationRelatesToTarget>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CitationRelatesToDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: crate::coded::Coded<crate::r6::codes::ArtifactRelationshipType>,
+    #[serde(rename = "_type")]
+    type_ext: Option<types::Element>,
+    #[serde(flatten)]
+    target: crate::r6::choice::Slot<CitationRelatesToTarget>,
+}
+
+impl ::core::convert::From<CitationRelatesToDe> for CitationRelatesTo {
+    fn from(v: CitationRelatesToDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            type_ext: v.type_ext,
+            target: v.target.0,
+        }
+    }
 }
 
 /// The state or status of the citation record paired with an effective date or

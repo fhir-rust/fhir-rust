@@ -37,6 +37,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "SupplyRequestDe")]
 #[fhir_version("r2")]
 pub struct SupplyRequest {
     /// Logical id of this artifact
@@ -114,6 +115,71 @@ pub struct SupplyRequest {
 
     /// When the request should be fulfilled
     pub when: Option<SupplyRequestWhen>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SupplyRequestDe {
+    id: Option<types::Id>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r2::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    patient: Option<types::Reference<crate::r2::resources::Patient>>,
+    source: Option<types::Reference>,
+    date: Option<types::DateTime>,
+    #[serde(rename = "_date")]
+    date_ext: Option<types::Element>,
+    identifier: Option<types::Identifier>,
+    status: Option<crate::coded::Coded<crate::r2::codes::SupplyrequestStatus>>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    kind: Option<types::CodeableConcept>,
+    ordered_item: Option<types::Reference>,
+    #[serde(default)]
+    supplier: Vec<types::Reference<crate::r2::resources::Organization>>,
+    #[serde(flatten)]
+    reason: crate::r2::choice::Slot<SupplyRequestReason>,
+    when: Option<SupplyRequestWhen>,
+}
+
+impl ::core::convert::From<SupplyRequestDe> for SupplyRequest {
+    fn from(v: SupplyRequestDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            patient: v.patient,
+            source: v.source,
+            date: v.date,
+            date_ext: v.date_ext,
+            identifier: v.identifier,
+            status: v.status,
+            status_ext: v.status_ext,
+            kind: v.kind,
+            ordered_item: v.ordered_item,
+            supplier: v.supplier,
+            reason: v.reason.0,
+            when: v.when,
+        }
+    }
 }
 
 /// When the request should be fulfilled.

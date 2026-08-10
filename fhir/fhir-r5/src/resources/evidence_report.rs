@@ -67,6 +67,7 @@ use fhir_derive_macros::Validate;
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "EvidenceReportDe")]
 pub struct EvidenceReport {
     /// Logical id of this artifact
     pub id: Option<types::String>,
@@ -181,6 +182,101 @@ pub struct EvidenceReport {
     pub section: Vec<EvidenceReportSection>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct EvidenceReportDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r5::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    url: Option<types::Uri>,
+    #[serde(rename = "_url")]
+    url_ext: Option<types::Element>,
+    status: crate::r5::coded::Coded<crate::r5::codes::PublicationStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    #[serde(default)]
+    use_context: Vec<types::UsageContext>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    #[serde(default)]
+    related_identifier: Vec<types::Identifier>,
+    #[serde(flatten)]
+    cite_as: crate::r5::choice::Slot<EvidenceReportCiteAs>,
+    r#type: Option<types::CodeableConcept>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+    #[serde(default)]
+    related_artifact: Vec<types::RelatedArtifact>,
+    subject: EvidenceReportSubject,
+    publisher: Option<types::String>,
+    #[serde(rename = "_publisher")]
+    publisher_ext: Option<types::Element>,
+    #[serde(default)]
+    contact: Vec<types::ContactDetail>,
+    #[serde(default)]
+    author: Vec<types::ContactDetail>,
+    #[serde(default)]
+    editor: Vec<types::ContactDetail>,
+    #[serde(default)]
+    reviewer: Vec<types::ContactDetail>,
+    #[serde(default)]
+    endorser: Vec<types::ContactDetail>,
+    #[serde(default)]
+    relates_to: Vec<EvidenceReportRelatesTo>,
+    #[serde(default)]
+    section: Vec<EvidenceReportSection>,
+}
+
+impl ::core::convert::From<EvidenceReportDe> for EvidenceReport {
+    fn from(v: EvidenceReportDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            url: v.url,
+            url_ext: v.url_ext,
+            status: v.status,
+            status_ext: v.status_ext,
+            use_context: v.use_context,
+            identifier: v.identifier,
+            related_identifier: v.related_identifier,
+            cite_as: v.cite_as.0,
+            r#type: v.r#type,
+            note: v.note,
+            related_artifact: v.related_artifact,
+            subject: v.subject,
+            publisher: v.publisher,
+            publisher_ext: v.publisher_ext,
+            contact: v.contact,
+            author: v.author,
+            editor: v.editor,
+            reviewer: v.reviewer,
+            endorser: v.endorser,
+            relates_to: v.relates_to,
+            section: v.section,
+        }
+    }
+}
+
 /// EvidenceReportSubject
 ///
 /// Specifies the subject or focus of the report, describing the population,
@@ -250,6 +346,7 @@ pub struct EvidenceReportSubject {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "EvidenceReportSubjectCharacteristicDe")]
 pub struct EvidenceReportSubjectCharacteristic {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -277,6 +374,40 @@ pub struct EvidenceReportSubjectCharacteristic {
 
     /// Timeframe for the characteristic
     pub period: Option<types::Period>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct EvidenceReportSubjectCharacteristicDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    code: types::CodeableConcept,
+    #[serde(flatten)]
+    value: crate::r5::choice::Slot<EvidenceReportSubjectCharacteristicValue>,
+    exclude: Option<types::Boolean>,
+    #[serde(rename = "_exclude")]
+    exclude_ext: Option<types::Element>,
+    period: Option<types::Period>,
+}
+
+impl ::core::convert::From<EvidenceReportSubjectCharacteristicDe>
+    for EvidenceReportSubjectCharacteristic
+{
+    fn from(v: EvidenceReportSubjectCharacteristicDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            code: v.code,
+            value: v.value.0,
+            exclude: v.exclude,
+            exclude_ext: v.exclude_ext,
+            period: v.period,
+        }
+    }
 }
 
 /// EvidenceReportRelatesTo

@@ -162,6 +162,7 @@ pub struct CareTeam {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "CareTeamParticipantDe")]
 pub struct CareTeamParticipant {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -186,6 +187,35 @@ pub struct CareTeamParticipant {
     /// The `CareTeam.participant.coverage[x]` choice element (0..1); see [`CareTeamParticipantCoverage`].
     #[serde(flatten)]
     pub coverage: Option<CareTeamParticipantCoverage>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CareTeamParticipantDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    role: Option<types::CodeableConcept>,
+    member: Option<types::Reference>,
+    on_behalf_of: Option<types::Reference<crate::r5::resources::Organization>>,
+    #[serde(flatten)]
+    coverage: crate::r5::choice::Slot<CareTeamParticipantCoverage>,
+}
+
+impl ::core::convert::From<CareTeamParticipantDe> for CareTeamParticipant {
+    fn from(v: CareTeamParticipantDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            role: v.role,
+            member: v.member,
+            on_behalf_of: v.on_behalf_of,
+            coverage: v.coverage.0,
+        }
+    }
 }
 
 #[cfg(test)]

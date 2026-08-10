@@ -312,6 +312,7 @@ pub struct SubstanceDefinitionCode {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "SubstanceDefinitionMoietyDe")]
 #[fhir_version("r6")]
 pub struct SubstanceDefinitionMoiety {
     /// Unique id for inter-element referencing
@@ -358,6 +359,49 @@ pub struct SubstanceDefinitionMoiety {
 
     /// The measurement type of the quantitative value
     pub measurement_type: Option<types::CodeableConcept>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SubstanceDefinitionMoietyDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    role: Option<types::CodeableConcept>,
+    identifier: Option<types::Identifier>,
+    name: Option<types::String>,
+    #[serde(rename = "_name")]
+    name_ext: Option<types::Element>,
+    stereochemistry: Option<types::CodeableConcept>,
+    optical_activity: Option<types::CodeableConcept>,
+    molecular_formula: Option<types::String>,
+    #[serde(rename = "_molecularFormula")]
+    molecular_formula_ext: Option<types::Element>,
+    #[serde(flatten)]
+    amount: crate::r6::choice::Slot<SubstanceDefinitionMoietyAmount>,
+    measurement_type: Option<types::CodeableConcept>,
+}
+
+impl ::core::convert::From<SubstanceDefinitionMoietyDe> for SubstanceDefinitionMoiety {
+    fn from(v: SubstanceDefinitionMoietyDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            role: v.role,
+            identifier: v.identifier,
+            name: v.name,
+            name_ext: v.name_ext,
+            stereochemistry: v.stereochemistry,
+            optical_activity: v.optical_activity,
+            molecular_formula: v.molecular_formula,
+            molecular_formula_ext: v.molecular_formula_ext,
+            amount: v.amount.0,
+            measurement_type: v.measurement_type,
+        }
+    }
 }
 
 /// The average mass of a molecule of a compound compared to 1/12 the mass of
@@ -563,6 +607,7 @@ pub struct SubstanceDefinitionNameOfficial {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "SubstanceDefinitionPropertyDe")]
 #[fhir_version("r6")]
 pub struct SubstanceDefinitionProperty {
     /// Unique id for inter-element referencing
@@ -583,6 +628,31 @@ pub struct SubstanceDefinitionProperty {
     /// The `SubstanceDefinition.property.value[x]` choice element (0..1); see [`SubstanceDefinitionPropertyValue`].
     #[serde(flatten)]
     pub value: Option<SubstanceDefinitionPropertyValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SubstanceDefinitionPropertyDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: types::CodeableConcept,
+    #[serde(flatten)]
+    value: crate::r6::choice::Slot<SubstanceDefinitionPropertyValue>,
+}
+
+impl ::core::convert::From<SubstanceDefinitionPropertyDe> for SubstanceDefinitionProperty {
+    fn from(v: SubstanceDefinitionPropertyDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            value: v.value.0,
+        }
+    }
 }
 
 /// A link between this substance and another, with details of the
@@ -608,6 +678,7 @@ pub struct SubstanceDefinitionProperty {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "SubstanceDefinitionRelationshipDe")]
 #[fhir_version("r6")]
 pub struct SubstanceDefinitionRelationship {
     /// Unique id for inter-element referencing
@@ -655,6 +726,47 @@ pub struct SubstanceDefinitionRelationship {
     /// Supporting literature
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub source: Vec<types::Reference<crate::r6::resources::DocumentReference>>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SubstanceDefinitionRelationshipDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    substance_definition:
+        crate::r6::choice::Slot<SubstanceDefinitionRelationshipSubstanceDefinition>,
+    r#type: types::CodeableConcept,
+    is_defining: Option<types::Boolean>,
+    #[serde(rename = "_isDefining")]
+    is_defining_ext: Option<types::Element>,
+    #[serde(flatten)]
+    amount: crate::r6::choice::Slot<SubstanceDefinitionRelationshipAmount>,
+    ratio_high_limit_amount: Option<types::Ratio>,
+    comparator: Option<types::CodeableConcept>,
+    #[serde(default)]
+    source: Vec<types::Reference<crate::r6::resources::DocumentReference>>,
+}
+
+impl ::core::convert::From<SubstanceDefinitionRelationshipDe> for SubstanceDefinitionRelationship {
+    fn from(v: SubstanceDefinitionRelationshipDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            substance_definition: v.substance_definition.0,
+            r#type: v.r#type,
+            is_defining: v.is_defining,
+            is_defining_ext: v.is_defining_ext,
+            amount: v.amount.0,
+            ratio_high_limit_amount: v.ratio_high_limit_amount,
+            comparator: v.comparator,
+            source: v.source,
+        }
+    }
 }
 
 /// Material or taxonomic/anatomical source for the substance.

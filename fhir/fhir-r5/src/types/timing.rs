@@ -97,6 +97,7 @@ pub struct Timing {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "TimingRepeatDe")]
 pub struct TimingRepeat {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -198,6 +199,102 @@ pub struct TimingRepeat {
     /// Primitive extension sibling for [`offset`](Self::offset) (FHIR `_offset`).
     #[serde(rename = "_offset")]
     pub offset_ext: Option<types::Element>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct TimingRepeatDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    bounds: crate::r5::choice::Slot<TimingRepeatBounds>,
+    count: Option<types::PositiveInt>,
+    #[serde(rename = "_count")]
+    count_ext: Option<types::Element>,
+    count_max: Option<types::PositiveInt>,
+    #[serde(rename = "_countMax")]
+    count_max_ext: Option<types::Element>,
+    duration: Option<types::Decimal>,
+    #[serde(rename = "_duration")]
+    duration_ext: Option<types::Element>,
+    duration_max: Option<types::Decimal>,
+    #[serde(rename = "_durationMax")]
+    duration_max_ext: Option<types::Element>,
+    duration_unit: Option<types::Code>,
+    #[serde(rename = "_durationUnit")]
+    duration_unit_ext: Option<types::Element>,
+    frequency: Option<types::PositiveInt>,
+    #[serde(rename = "_frequency")]
+    frequency_ext: Option<types::Element>,
+    frequency_max: Option<types::PositiveInt>,
+    #[serde(rename = "_frequencyMax")]
+    frequency_max_ext: Option<types::Element>,
+    period: Option<types::Decimal>,
+    #[serde(rename = "_period")]
+    period_ext: Option<types::Element>,
+    period_max: Option<types::Decimal>,
+    #[serde(rename = "_periodMax")]
+    period_max_ext: Option<types::Element>,
+    period_unit: Option<types::Code>,
+    #[serde(rename = "_periodUnit")]
+    period_unit_ext: Option<types::Element>,
+    #[serde(default)]
+    day_of_week: Vec<crate::r5::coded::Coded<crate::r5::codes::DaysOfWeek>>,
+    #[serde(rename = "_dayOfWeek")]
+    #[serde(default)]
+    day_of_week_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    time_of_day: Vec<types::Time>,
+    #[serde(rename = "_timeOfDay")]
+    #[serde(default)]
+    time_of_day_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    when: Vec<crate::r5::coded::Coded<crate::r5::codes::EventTiming>>,
+    #[serde(rename = "_when")]
+    #[serde(default)]
+    when_ext: Vec<Option<types::Element>>,
+    offset: Option<types::UnsignedInt>,
+    #[serde(rename = "_offset")]
+    offset_ext: Option<types::Element>,
+}
+
+impl ::core::convert::From<TimingRepeatDe> for TimingRepeat {
+    fn from(v: TimingRepeatDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            bounds: v.bounds.0,
+            count: v.count,
+            count_ext: v.count_ext,
+            count_max: v.count_max,
+            count_max_ext: v.count_max_ext,
+            duration: v.duration,
+            duration_ext: v.duration_ext,
+            duration_max: v.duration_max,
+            duration_max_ext: v.duration_max_ext,
+            duration_unit: v.duration_unit,
+            duration_unit_ext: v.duration_unit_ext,
+            frequency: v.frequency,
+            frequency_ext: v.frequency_ext,
+            frequency_max: v.frequency_max,
+            frequency_max_ext: v.frequency_max_ext,
+            period: v.period,
+            period_ext: v.period_ext,
+            period_max: v.period_max,
+            period_max_ext: v.period_max_ext,
+            period_unit: v.period_unit,
+            period_unit_ext: v.period_unit_ext,
+            day_of_week: v.day_of_week,
+            day_of_week_ext: v.day_of_week_ext,
+            time_of_day: v.time_of_day,
+            time_of_day_ext: v.time_of_day_ext,
+            when: v.when,
+            when_ext: v.when_ext,
+            offset: v.offset,
+            offset_ext: v.offset_ext,
+        }
+    }
 }
 
 #[cfg(test)]

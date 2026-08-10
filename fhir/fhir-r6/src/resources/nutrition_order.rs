@@ -337,6 +337,7 @@ pub struct NutritionOrderEnteralFormula {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "NutritionOrderEnteralFormulaAdministrationDe")]
 #[fhir_version("r6")]
 pub struct NutritionOrderEnteralFormulaAdministration {
     /// Unique id for inter-element referencing
@@ -360,6 +361,35 @@ pub struct NutritionOrderEnteralFormulaAdministration {
     /// The `NutritionOrder.enteralFormula.administration.rate[x]` choice element (0..1); see [`NutritionOrderEnteralFormulaAdministrationRate`].
     #[serde(flatten)]
     pub rate: Option<NutritionOrderEnteralFormulaAdministrationRate>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct NutritionOrderEnteralFormulaAdministrationDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    schedule: Option<NutritionOrderEnteralFormulaAdministrationSchedule>,
+    quantity: Option<types::Quantity>,
+    #[serde(flatten)]
+    rate: crate::r6::choice::Slot<NutritionOrderEnteralFormulaAdministrationRate>,
+}
+
+impl ::core::convert::From<NutritionOrderEnteralFormulaAdministrationDe>
+    for NutritionOrderEnteralFormulaAdministration
+{
+    fn from(v: NutritionOrderEnteralFormulaAdministrationDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            schedule: v.schedule,
+            quantity: v.quantity,
+            rate: v.rate.0,
+        }
+    }
 }
 
 /// Schedule information for an enteral feeding.

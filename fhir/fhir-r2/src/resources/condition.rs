@@ -37,6 +37,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ConditionDe")]
 #[fhir_version("r2")]
 pub struct Condition {
     /// Logical id of this artifact
@@ -145,6 +146,92 @@ pub struct Condition {
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_notes")]
     pub notes_ext: Option<types::Element>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ConditionDe {
+    id: Option<types::Id>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r2::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    patient: types::Reference<crate::r2::resources::Patient>,
+    encounter: Option<types::Reference<crate::r2::resources::Encounter>>,
+    asserter: Option<types::Reference>,
+    date_recorded: Option<types::Date>,
+    #[serde(rename = "_dateRecorded")]
+    date_recorded_ext: Option<types::Element>,
+    code: types::CodeableConcept,
+    category: Option<types::CodeableConcept>,
+    clinical_status: Option<types::Code>,
+    #[serde(rename = "_clinicalStatus")]
+    clinical_status_ext: Option<types::Element>,
+    verification_status: crate::coded::Coded<crate::r2::codes::ConditionVerStatus>,
+    #[serde(rename = "_verificationStatus")]
+    verification_status_ext: Option<types::Element>,
+    severity: Option<types::CodeableConcept>,
+    #[serde(flatten)]
+    onset: crate::r2::choice::Slot<ConditionOnset>,
+    #[serde(flatten)]
+    abatement: crate::r2::choice::Slot<ConditionAbatement>,
+    stage: Option<ConditionStage>,
+    #[serde(default)]
+    evidence: Vec<ConditionEvidence>,
+    #[serde(default)]
+    body_site: Vec<types::CodeableConcept>,
+    notes: Option<types::String>,
+    #[serde(rename = "_notes")]
+    notes_ext: Option<types::Element>,
+}
+
+impl ::core::convert::From<ConditionDe> for Condition {
+    fn from(v: ConditionDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            patient: v.patient,
+            encounter: v.encounter,
+            asserter: v.asserter,
+            date_recorded: v.date_recorded,
+            date_recorded_ext: v.date_recorded_ext,
+            code: v.code,
+            category: v.category,
+            clinical_status: v.clinical_status,
+            clinical_status_ext: v.clinical_status_ext,
+            verification_status: v.verification_status,
+            verification_status_ext: v.verification_status_ext,
+            severity: v.severity,
+            onset: v.onset.0,
+            abatement: v.abatement.0,
+            stage: v.stage,
+            evidence: v.evidence,
+            body_site: v.body_site,
+            notes: v.notes,
+            notes_ext: v.notes_ext,
+        }
+    }
 }
 
 /// Supporting Evidence / manifestations that are the basis on which this

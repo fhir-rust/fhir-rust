@@ -111,6 +111,7 @@ pub struct ImmunizationRecommendation {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ImmunizationRecommendationRecommendationDe")]
 #[fhir_version("r4b")]
 pub struct ImmunizationRecommendationRecommendation {
     /// Unique id for inter-element referencing
@@ -177,6 +178,66 @@ pub struct ImmunizationRecommendationRecommendation {
     /// Patient observations supporting recommendation
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub supporting_patient_information: Vec<types::Reference>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ImmunizationRecommendationRecommendationDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    vaccine_code: Vec<types::CodeableConcept>,
+    target_disease: Option<types::CodeableConcept>,
+    #[serde(default)]
+    contraindicated_vaccine_code: Vec<types::CodeableConcept>,
+    forecast_status: types::CodeableConcept,
+    #[serde(default)]
+    forecast_reason: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    date_criterion: Vec<ImmunizationRecommendationRecommendationDateCriterion>,
+    description: Option<types::String>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    series: Option<types::String>,
+    #[serde(rename = "_series")]
+    series_ext: Option<types::Element>,
+    #[serde(flatten)]
+    dose_number: crate::r4b::choice::Slot<ImmunizationRecommendationRecommendationDoseNumber>,
+    #[serde(flatten)]
+    series_doses: crate::r4b::choice::Slot<ImmunizationRecommendationRecommendationSeriesDoses>,
+    #[serde(default)]
+    supporting_immunization: Vec<types::Reference>,
+    #[serde(default)]
+    supporting_patient_information: Vec<types::Reference>,
+}
+
+impl ::core::convert::From<ImmunizationRecommendationRecommendationDe>
+    for ImmunizationRecommendationRecommendation
+{
+    fn from(v: ImmunizationRecommendationRecommendationDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            vaccine_code: v.vaccine_code,
+            target_disease: v.target_disease,
+            contraindicated_vaccine_code: v.contraindicated_vaccine_code,
+            forecast_status: v.forecast_status,
+            forecast_reason: v.forecast_reason,
+            date_criterion: v.date_criterion,
+            description: v.description,
+            description_ext: v.description_ext,
+            series: v.series,
+            series_ext: v.series_ext,
+            dose_number: v.dose_number.0,
+            series_doses: v.series_doses.0,
+            supporting_immunization: v.supporting_immunization,
+            supporting_patient_information: v.supporting_patient_information,
+        }
+    }
 }
 
 /// Vaccine date recommendations. For example, earliest date to administer,

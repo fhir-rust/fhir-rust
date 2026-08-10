@@ -41,6 +41,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MessageHeaderDe")]
 #[fhir_version("r6")]
 pub struct MessageHeader {
     /// Logical id of this artifact
@@ -108,6 +109,63 @@ pub struct MessageHeader {
     pub definition_ext: Option<types::Element>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MessageHeaderDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r6::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    event: crate::r6::choice::Slot<MessageHeaderEvent>,
+    #[serde(default)]
+    destination: Vec<MessageHeaderDestination>,
+    source: MessageHeaderSource,
+    reason: Option<types::CodeableConcept>,
+    response: Option<MessageHeaderResponse>,
+    #[serde(default)]
+    focus: Vec<types::Reference>,
+    definition: Option<types::Canonical>,
+    #[serde(rename = "_definition")]
+    definition_ext: Option<types::Element>,
+}
+
+impl ::core::convert::From<MessageHeaderDe> for MessageHeader {
+    fn from(v: MessageHeaderDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            event: v.event.0,
+            destination: v.destination,
+            source: v.source,
+            reason: v.reason,
+            response: v.response,
+            focus: v.focus,
+            definition: v.definition,
+            definition_ext: v.definition_ext,
+        }
+    }
+}
+
 /// The destination application which the message is intended for.
 ///
 /// # Examples
@@ -130,6 +188,7 @@ pub struct MessageHeader {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MessageHeaderDestinationDe")]
 #[fhir_version("r6")]
 pub struct MessageHeaderDestination {
     /// Unique id for inter-element referencing
@@ -157,6 +216,36 @@ pub struct MessageHeaderDestination {
 
     /// Intended "real-world" recipient for the data
     pub receiver: Option<types::Reference>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MessageHeaderDestinationDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    endpoint: crate::r6::choice::Slot<MessageHeaderDestinationEndpoint>,
+    name: Option<types::String>,
+    #[serde(rename = "_name")]
+    name_ext: Option<types::Element>,
+    receiver: Option<types::Reference>,
+}
+
+impl ::core::convert::From<MessageHeaderDestinationDe> for MessageHeaderDestination {
+    fn from(v: MessageHeaderDestinationDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            endpoint: v.endpoint.0,
+            name: v.name,
+            name_ext: v.name_ext,
+            receiver: v.receiver,
+        }
+    }
 }
 
 /// Information about the message that this message is a response to. Only
@@ -231,6 +320,7 @@ pub struct MessageHeaderResponse {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MessageHeaderSourceDe")]
 #[fhir_version("r6")]
 pub struct MessageHeaderSource {
     /// Unique id for inter-element referencing
@@ -275,6 +365,48 @@ pub struct MessageHeaderSource {
 
     /// Real world sender of the message
     pub sender: Option<types::Reference>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MessageHeaderSourceDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    endpoint: crate::r6::choice::Slot<MessageHeaderSourceEndpoint>,
+    name: Option<types::String>,
+    #[serde(rename = "_name")]
+    name_ext: Option<types::Element>,
+    software: Option<types::String>,
+    #[serde(rename = "_software")]
+    software_ext: Option<types::Element>,
+    version: Option<types::String>,
+    #[serde(rename = "_version")]
+    version_ext: Option<types::Element>,
+    contact: Option<types::ContactPoint>,
+    sender: Option<types::Reference>,
+}
+
+impl ::core::convert::From<MessageHeaderSourceDe> for MessageHeaderSource {
+    fn from(v: MessageHeaderSourceDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            endpoint: v.endpoint.0,
+            name: v.name,
+            name_ext: v.name_ext,
+            software: v.software,
+            software_ext: v.software_ext,
+            version: v.version,
+            version_ext: v.version_ext,
+            contact: v.contact,
+            sender: v.sender,
+        }
+    }
 }
 
 /// The `MessageHeader.event[x]` choice element (see `spec/11-choice-types.md`).

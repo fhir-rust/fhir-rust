@@ -30,6 +30,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "OrderDe")]
 #[fhir_version("r2")]
 pub struct Order {
     /// Logical id of this artifact
@@ -97,6 +98,64 @@ pub struct Order {
 
     /// What action is being ordered
     pub detail: ::vec1::Vec1<types::Reference>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct OrderDe {
+    id: Option<types::Id>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r2::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    date: Option<types::DateTime>,
+    #[serde(rename = "_date")]
+    date_ext: Option<types::Element>,
+    subject: Option<types::Reference>,
+    source: Option<types::Reference>,
+    target: Option<types::Reference>,
+    #[serde(flatten)]
+    reason: crate::r2::choice::Slot<OrderReason>,
+    when: Option<OrderWhen>,
+    detail: ::vec1::Vec1<types::Reference>,
+}
+
+impl ::core::convert::From<OrderDe> for Order {
+    fn from(v: OrderDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            date: v.date,
+            date_ext: v.date_ext,
+            subject: v.subject,
+            source: v.source,
+            target: v.target,
+            reason: v.reason.0,
+            when: v.when,
+            detail: v.detail,
+        }
+    }
 }
 
 /// When order should be fulfilled.

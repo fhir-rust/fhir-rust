@@ -38,6 +38,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ConditionDe")]
 #[fhir_version("r4b")]
 pub struct Condition {
     /// Logical id of this artifact
@@ -140,6 +141,88 @@ pub struct Condition {
     /// Additional information about the Condition
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub note: Vec<types::Annotation>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ConditionDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r4b::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    clinical_status: Option<types::CodeableConcept>,
+    verification_status: Option<types::CodeableConcept>,
+    #[serde(default)]
+    category: Vec<types::CodeableConcept>,
+    severity: Option<types::CodeableConcept>,
+    code: Option<types::CodeableConcept>,
+    #[serde(default)]
+    body_site: Vec<types::CodeableConcept>,
+    subject: types::Reference,
+    encounter: Option<types::Reference<crate::r4b::resources::Encounter>>,
+    #[serde(flatten)]
+    onset: crate::r4b::choice::Slot<ConditionOnset>,
+    #[serde(flatten)]
+    abatement: crate::r4b::choice::Slot<ConditionAbatement>,
+    recorded_date: Option<types::DateTime>,
+    #[serde(rename = "_recordedDate")]
+    recorded_date_ext: Option<types::Element>,
+    recorder: Option<types::Reference>,
+    asserter: Option<types::Reference>,
+    #[serde(default)]
+    stage: Vec<ConditionStage>,
+    #[serde(default)]
+    evidence: Vec<ConditionEvidence>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+}
+
+impl ::core::convert::From<ConditionDe> for Condition {
+    fn from(v: ConditionDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            clinical_status: v.clinical_status,
+            verification_status: v.verification_status,
+            category: v.category,
+            severity: v.severity,
+            code: v.code,
+            body_site: v.body_site,
+            subject: v.subject,
+            encounter: v.encounter,
+            onset: v.onset.0,
+            abatement: v.abatement.0,
+            recorded_date: v.recorded_date,
+            recorded_date_ext: v.recorded_date_ext,
+            recorder: v.recorder,
+            asserter: v.asserter,
+            stage: v.stage,
+            evidence: v.evidence,
+            note: v.note,
+        }
+    }
 }
 
 /// Supporting evidence / manifestations that are the basis of the Condition's

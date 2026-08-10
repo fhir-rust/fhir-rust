@@ -37,6 +37,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ReferralRequestDe")]
 #[fhir_version("r3")]
 pub struct ReferralRequest {
     /// Logical id of this artifact
@@ -176,6 +177,116 @@ pub struct ReferralRequest {
     /// Key events in history of request
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub relevant_history: Vec<types::Reference<crate::r3::resources::Provenance>>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ReferralRequestDe {
+    id: Option<types::Id>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r3::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    #[serde(default)]
+    definition: Vec<types::Reference>,
+    #[serde(default)]
+    based_on: Vec<types::Reference>,
+    #[serde(default)]
+    replaces: Vec<types::Reference<crate::r3::resources::ReferralRequest>>,
+    group_identifier: Option<types::Identifier>,
+    status: crate::coded::Coded<crate::r3::codes::RequestStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    intent: crate::coded::Coded<crate::r3::codes::RequestIntent>,
+    #[serde(rename = "_intent")]
+    intent_ext: Option<types::Element>,
+    r#type: Option<types::CodeableConcept>,
+    priority: Option<crate::coded::Coded<crate::r3::codes::RequestPriority>>,
+    #[serde(rename = "_priority")]
+    priority_ext: Option<types::Element>,
+    #[serde(default)]
+    service_requested: Vec<types::CodeableConcept>,
+    subject: types::Reference,
+    context: Option<types::Reference>,
+    #[serde(flatten)]
+    occurrence: crate::r3::choice::Slot<ReferralRequestOccurrence>,
+    authored_on: Option<types::DateTime>,
+    #[serde(rename = "_authoredOn")]
+    authored_on_ext: Option<types::Element>,
+    requester: Option<ReferralRequestRequester>,
+    specialty: Option<types::CodeableConcept>,
+    #[serde(default)]
+    recipient: Vec<types::Reference>,
+    #[serde(default)]
+    reason_code: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    reason_reference: Vec<types::Reference>,
+    description: Option<types::String>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    #[serde(default)]
+    supporting_info: Vec<types::Reference>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+    #[serde(default)]
+    relevant_history: Vec<types::Reference<crate::r3::resources::Provenance>>,
+}
+
+impl ::core::convert::From<ReferralRequestDe> for ReferralRequest {
+    fn from(v: ReferralRequestDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            definition: v.definition,
+            based_on: v.based_on,
+            replaces: v.replaces,
+            group_identifier: v.group_identifier,
+            status: v.status,
+            status_ext: v.status_ext,
+            intent: v.intent,
+            intent_ext: v.intent_ext,
+            r#type: v.r#type,
+            priority: v.priority,
+            priority_ext: v.priority_ext,
+            service_requested: v.service_requested,
+            subject: v.subject,
+            context: v.context,
+            occurrence: v.occurrence.0,
+            authored_on: v.authored_on,
+            authored_on_ext: v.authored_on_ext,
+            requester: v.requester,
+            specialty: v.specialty,
+            recipient: v.recipient,
+            reason_code: v.reason_code,
+            reason_reference: v.reason_reference,
+            description: v.description,
+            description_ext: v.description_ext,
+            supporting_info: v.supporting_info,
+            note: v.note,
+            relevant_history: v.relevant_history,
+        }
+    }
 }
 
 /// The individual who initiated the request and has responsibility for its

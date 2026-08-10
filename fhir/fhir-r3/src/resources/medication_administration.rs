@@ -37,6 +37,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MedicationAdministrationDe")]
 #[fhir_version("r3")]
 pub struct MedicationAdministration {
     /// Logical id of this artifact
@@ -160,6 +161,102 @@ pub struct MedicationAdministration {
     pub event_history: Vec<types::Reference<crate::r3::resources::Provenance>>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MedicationAdministrationDe {
+    id: Option<types::Id>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r3::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    #[serde(default)]
+    definition: Vec<types::Reference>,
+    #[serde(default)]
+    part_of: Vec<types::Reference>,
+    status: crate::coded::Coded<crate::r3::codes::MedicationAdminStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    category: Option<types::CodeableConcept>,
+    #[serde(flatten)]
+    medication: crate::r3::choice::Slot<MedicationAdministrationMedication>,
+    subject: types::Reference,
+    context: Option<types::Reference>,
+    #[serde(default)]
+    supporting_information: Vec<types::Reference>,
+    #[serde(flatten)]
+    effective: crate::r3::choice::Slot<MedicationAdministrationEffective>,
+    #[serde(default)]
+    performer: Vec<MedicationAdministrationPerformer>,
+    not_given: Option<types::Boolean>,
+    #[serde(rename = "_notGiven")]
+    not_given_ext: Option<types::Element>,
+    #[serde(default)]
+    reason_not_given: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    reason_code: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    reason_reference: Vec<types::Reference>,
+    prescription: Option<types::Reference<crate::r3::resources::MedicationRequest>>,
+    #[serde(default)]
+    device: Vec<types::Reference<crate::r3::resources::Device>>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+    dosage: Option<MedicationAdministrationDosage>,
+    #[serde(default)]
+    event_history: Vec<types::Reference<crate::r3::resources::Provenance>>,
+}
+
+impl ::core::convert::From<MedicationAdministrationDe> for MedicationAdministration {
+    fn from(v: MedicationAdministrationDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            definition: v.definition,
+            part_of: v.part_of,
+            status: v.status,
+            status_ext: v.status_ext,
+            category: v.category,
+            medication: v.medication.0,
+            subject: v.subject,
+            context: v.context,
+            supporting_information: v.supporting_information,
+            effective: v.effective.0,
+            performer: v.performer,
+            not_given: v.not_given,
+            not_given_ext: v.not_given_ext,
+            reason_not_given: v.reason_not_given,
+            reason_code: v.reason_code,
+            reason_reference: v.reason_reference,
+            prescription: v.prescription,
+            device: v.device,
+            note: v.note,
+            dosage: v.dosage,
+            event_history: v.event_history,
+        }
+    }
+}
+
 /// Describes the medication dosage information details e.g. dose, rate, site,
 /// route, etc.
 ///
@@ -183,6 +280,7 @@ pub struct MedicationAdministration {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MedicationAdministrationDosageDe")]
 #[fhir_version("r3")]
 pub struct MedicationAdministrationDosage {
     /// xml:id (or equivalent in JSON)
@@ -219,6 +317,42 @@ pub struct MedicationAdministrationDosage {
     /// The `MedicationAdministration.dosage.rate[x]` choice element (0..1); see [`MedicationAdministrationDosageRate`].
     #[serde(flatten)]
     pub rate: Option<MedicationAdministrationDosageRate>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MedicationAdministrationDosageDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    text: Option<types::String>,
+    #[serde(rename = "_text")]
+    text_ext: Option<types::Element>,
+    site: Option<types::CodeableConcept>,
+    route: Option<types::CodeableConcept>,
+    method: Option<types::CodeableConcept>,
+    dose: Option<types::Quantity>,
+    #[serde(flatten)]
+    rate: crate::r3::choice::Slot<MedicationAdministrationDosageRate>,
+}
+
+impl ::core::convert::From<MedicationAdministrationDosageDe> for MedicationAdministrationDosage {
+    fn from(v: MedicationAdministrationDosageDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            text: v.text,
+            text_ext: v.text_ext,
+            site: v.site,
+            route: v.route,
+            method: v.method,
+            dose: v.dose,
+            rate: v.rate.0,
+        }
+    }
 }
 
 /// The individual who was responsible for giving the medication to the

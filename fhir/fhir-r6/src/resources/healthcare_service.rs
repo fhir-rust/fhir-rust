@@ -214,6 +214,7 @@ pub struct HealthcareService {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "HealthcareServiceEligibilityDe")]
 #[fhir_version("r6")]
 pub struct HealthcareServiceEligibility {
     /// Unique id for inter-element referencing
@@ -248,6 +249,41 @@ pub struct HealthcareServiceEligibility {
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_period")]
     pub period_ext: Option<types::Element>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct HealthcareServiceEligibilityDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    code: Option<types::CodeableConcept>,
+    #[serde(flatten)]
+    value: crate::r6::choice::Slot<HealthcareServiceEligibilityValue>,
+    comment: Option<types::Markdown>,
+    #[serde(rename = "_comment")]
+    comment_ext: Option<types::Element>,
+    period: Option<types::Markdown>,
+    #[serde(rename = "_period")]
+    period_ext: Option<types::Element>,
+}
+
+impl ::core::convert::From<HealthcareServiceEligibilityDe> for HealthcareServiceEligibility {
+    fn from(v: HealthcareServiceEligibilityDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            code: v.code,
+            value: v.value.0,
+            comment: v.comment,
+            comment_ext: v.comment_ext,
+            period: v.period,
+            period_ext: v.period_ext,
+        }
+    }
 }
 
 /// The `HealthcareService.eligibility.value[x]` choice element (see `spec/11-choice-types.md`).

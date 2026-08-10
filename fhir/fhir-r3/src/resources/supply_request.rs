@@ -37,6 +37,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "SupplyRequestDe")]
 #[fhir_version("r3")]
 pub struct SupplyRequest {
     /// Logical id of this artifact
@@ -128,6 +129,79 @@ pub struct SupplyRequest {
     pub deliver_to: Option<types::Reference>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SupplyRequestDe {
+    id: Option<types::Id>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r3::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    identifier: Option<types::Identifier>,
+    status: Option<crate::coded::Coded<crate::r3::codes::SupplyrequestStatus>>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    category: Option<types::CodeableConcept>,
+    priority: Option<crate::coded::Coded<crate::r3::codes::RequestPriority>>,
+    #[serde(rename = "_priority")]
+    priority_ext: Option<types::Element>,
+    ordered_item: Option<SupplyRequestOrderedItem>,
+    #[serde(flatten)]
+    occurrence: crate::r3::choice::Slot<SupplyRequestOccurrence>,
+    authored_on: Option<types::DateTime>,
+    #[serde(rename = "_authoredOn")]
+    authored_on_ext: Option<types::Element>,
+    requester: Option<SupplyRequestRequester>,
+    #[serde(default)]
+    supplier: Vec<types::Reference<crate::r3::resources::Organization>>,
+    #[serde(flatten)]
+    reason: crate::r3::choice::Slot<SupplyRequestReason>,
+    deliver_from: Option<types::Reference>,
+    deliver_to: Option<types::Reference>,
+}
+
+impl ::core::convert::From<SupplyRequestDe> for SupplyRequest {
+    fn from(v: SupplyRequestDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            status: v.status,
+            status_ext: v.status_ext,
+            category: v.category,
+            priority: v.priority,
+            priority_ext: v.priority_ext,
+            ordered_item: v.ordered_item,
+            occurrence: v.occurrence.0,
+            authored_on: v.authored_on,
+            authored_on_ext: v.authored_on_ext,
+            requester: v.requester,
+            supplier: v.supplier,
+            reason: v.reason.0,
+            deliver_from: v.deliver_from,
+            deliver_to: v.deliver_to,
+        }
+    }
+}
+
 /// The item being requested.
 ///
 /// # Examples
@@ -150,6 +224,7 @@ pub struct SupplyRequest {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "SupplyRequestOrderedItemDe")]
 #[fhir_version("r3")]
 pub struct SupplyRequestOrderedItem {
     /// xml:id (or equivalent in JSON)
@@ -170,6 +245,31 @@ pub struct SupplyRequestOrderedItem {
     /// The `SupplyRequest.orderedItem.item[x]` choice element (0..1); see [`SupplyRequestOrderedItemItem`].
     #[serde(flatten)]
     pub item: Option<SupplyRequestOrderedItemItem>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SupplyRequestOrderedItemDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    quantity: types::Quantity,
+    #[serde(flatten)]
+    item: crate::r3::choice::Slot<SupplyRequestOrderedItemItem>,
+}
+
+impl ::core::convert::From<SupplyRequestOrderedItemDe> for SupplyRequestOrderedItem {
+    fn from(v: SupplyRequestOrderedItemDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            quantity: v.quantity,
+            item: v.item.0,
+        }
+    }
 }
 
 /// The individual who initiated the request and has responsibility for its

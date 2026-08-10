@@ -723,6 +723,7 @@ pub struct DeviceDefinitionVersion {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "DeviceDefinitionPropertyDe")]
 pub struct DeviceDefinitionProperty {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -741,6 +742,31 @@ pub struct DeviceDefinitionProperty {
     /// The `DeviceDefinition.property.value[x]` choice element (0..1); see [`DeviceDefinitionPropertyValue`].
     #[serde(flatten)]
     pub value: Option<DeviceDefinitionPropertyValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DeviceDefinitionPropertyDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: types::CodeableConcept,
+    #[serde(flatten)]
+    value: crate::r5::choice::Slot<DeviceDefinitionPropertyValue>,
+}
+
+impl ::core::convert::From<DeviceDefinitionPropertyDe> for DeviceDefinitionProperty {
+    fn from(v: DeviceDefinitionPropertyDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            value: v.value.0,
+        }
+    }
 }
 
 /// An associated device, linking a previous or new device model to the focal

@@ -40,6 +40,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ResearchDefinitionDe")]
 #[fhir_version("r4b")]
 pub struct ResearchDefinition {
     /// Logical id of this artifact
@@ -270,6 +271,181 @@ pub struct ResearchDefinition {
 
     /// What outcome?
     pub outcome: Option<types::Reference<crate::r4b::resources::ResearchElementDefinition>>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ResearchDefinitionDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r4b::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    url: Option<types::Uri>,
+    #[serde(rename = "_url")]
+    url_ext: Option<types::Element>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    version: Option<types::String>,
+    #[serde(rename = "_version")]
+    version_ext: Option<types::Element>,
+    name: Option<types::String>,
+    #[serde(rename = "_name")]
+    name_ext: Option<types::Element>,
+    title: Option<types::String>,
+    #[serde(rename = "_title")]
+    title_ext: Option<types::Element>,
+    short_title: Option<types::String>,
+    #[serde(rename = "_shortTitle")]
+    short_title_ext: Option<types::Element>,
+    subtitle: Option<types::String>,
+    #[serde(rename = "_subtitle")]
+    subtitle_ext: Option<types::Element>,
+    status: crate::coded::Coded<crate::r4b::codes::PublicationStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    experimental: Option<types::Boolean>,
+    #[serde(rename = "_experimental")]
+    experimental_ext: Option<types::Element>,
+    #[serde(flatten)]
+    subject: crate::r4b::choice::Slot<ResearchDefinitionSubject>,
+    date: Option<types::DateTime>,
+    #[serde(rename = "_date")]
+    date_ext: Option<types::Element>,
+    publisher: Option<types::String>,
+    #[serde(rename = "_publisher")]
+    publisher_ext: Option<types::Element>,
+    #[serde(default)]
+    contact: Vec<types::ContactDetail>,
+    description: Option<types::Markdown>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    #[serde(default)]
+    comment: Vec<types::String>,
+    #[serde(rename = "_comment")]
+    #[serde(default)]
+    comment_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    use_context: Vec<types::UsageContext>,
+    #[serde(default)]
+    jurisdiction: Vec<types::CodeableConcept>,
+    purpose: Option<types::Markdown>,
+    #[serde(rename = "_purpose")]
+    purpose_ext: Option<types::Element>,
+    usage: Option<types::String>,
+    #[serde(rename = "_usage")]
+    usage_ext: Option<types::Element>,
+    copyright: Option<types::Markdown>,
+    #[serde(rename = "_copyright")]
+    copyright_ext: Option<types::Element>,
+    approval_date: Option<types::Date>,
+    #[serde(rename = "_approvalDate")]
+    approval_date_ext: Option<types::Element>,
+    last_review_date: Option<types::Date>,
+    #[serde(rename = "_lastReviewDate")]
+    last_review_date_ext: Option<types::Element>,
+    effective_period: Option<types::Period>,
+    #[serde(default)]
+    topic: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    author: Vec<types::ContactDetail>,
+    #[serde(default)]
+    editor: Vec<types::ContactDetail>,
+    #[serde(default)]
+    reviewer: Vec<types::ContactDetail>,
+    #[serde(default)]
+    endorser: Vec<types::ContactDetail>,
+    #[serde(default)]
+    related_artifact: Vec<types::RelatedArtifact>,
+    #[serde(default)]
+    library: Vec<types::Canonical>,
+    #[serde(rename = "_library")]
+    #[serde(default)]
+    library_ext: Vec<Option<types::Element>>,
+    population: types::Reference<crate::r4b::resources::ResearchElementDefinition>,
+    exposure: Option<types::Reference<crate::r4b::resources::ResearchElementDefinition>>,
+    exposure_alternative:
+        Option<types::Reference<crate::r4b::resources::ResearchElementDefinition>>,
+    outcome: Option<types::Reference<crate::r4b::resources::ResearchElementDefinition>>,
+}
+
+impl ::core::convert::From<ResearchDefinitionDe> for ResearchDefinition {
+    fn from(v: ResearchDefinitionDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            url: v.url,
+            url_ext: v.url_ext,
+            identifier: v.identifier,
+            version: v.version,
+            version_ext: v.version_ext,
+            name: v.name,
+            name_ext: v.name_ext,
+            title: v.title,
+            title_ext: v.title_ext,
+            short_title: v.short_title,
+            short_title_ext: v.short_title_ext,
+            subtitle: v.subtitle,
+            subtitle_ext: v.subtitle_ext,
+            status: v.status,
+            status_ext: v.status_ext,
+            experimental: v.experimental,
+            experimental_ext: v.experimental_ext,
+            subject: v.subject.0,
+            date: v.date,
+            date_ext: v.date_ext,
+            publisher: v.publisher,
+            publisher_ext: v.publisher_ext,
+            contact: v.contact,
+            description: v.description,
+            description_ext: v.description_ext,
+            comment: v.comment,
+            comment_ext: v.comment_ext,
+            use_context: v.use_context,
+            jurisdiction: v.jurisdiction,
+            purpose: v.purpose,
+            purpose_ext: v.purpose_ext,
+            usage: v.usage,
+            usage_ext: v.usage_ext,
+            copyright: v.copyright,
+            copyright_ext: v.copyright_ext,
+            approval_date: v.approval_date,
+            approval_date_ext: v.approval_date_ext,
+            last_review_date: v.last_review_date,
+            last_review_date_ext: v.last_review_date_ext,
+            effective_period: v.effective_period,
+            topic: v.topic,
+            author: v.author,
+            editor: v.editor,
+            reviewer: v.reviewer,
+            endorser: v.endorser,
+            related_artifact: v.related_artifact,
+            library: v.library,
+            library_ext: v.library_ext,
+            population: v.population,
+            exposure: v.exposure,
+            exposure_alternative: v.exposure_alternative,
+            outcome: v.outcome,
+        }
+    }
 }
 
 /// The `ResearchDefinition.subject[x]` choice element (see `spec/11-choice-types.md`).

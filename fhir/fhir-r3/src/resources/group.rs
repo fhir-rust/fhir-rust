@@ -147,6 +147,7 @@ pub struct Group {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "GroupCharacteristicDe")]
 #[fhir_version("r3")]
 pub struct GroupCharacteristic {
     /// xml:id (or equivalent in JSON)
@@ -177,6 +178,38 @@ pub struct GroupCharacteristic {
 
     /// Period over which characteristic is tested
     pub period: Option<types::Period>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct GroupCharacteristicDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    code: types::CodeableConcept,
+    #[serde(flatten)]
+    value: crate::r3::choice::Slot<GroupCharacteristicValue>,
+    exclude: types::Boolean,
+    #[serde(rename = "_exclude")]
+    exclude_ext: Option<types::Element>,
+    period: Option<types::Period>,
+}
+
+impl ::core::convert::From<GroupCharacteristicDe> for GroupCharacteristic {
+    fn from(v: GroupCharacteristicDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            code: v.code,
+            value: v.value.0,
+            exclude: v.exclude,
+            exclude_ext: v.exclude_ext,
+            period: v.period,
+        }
+    }
 }
 
 /// Identifies the resource instances that are members of the group.

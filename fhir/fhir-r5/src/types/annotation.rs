@@ -43,6 +43,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "AnnotationDe")]
 pub struct Annotation {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -73,6 +74,36 @@ pub struct Annotation {
     /// Primitive extension sibling for [`text`](Self::text) (FHIR `_text`).
     #[serde(rename = "_text")]
     pub text_ext: Option<types::Element>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AnnotationDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    author: crate::r5::choice::Slot<AnnotationAuthor>,
+    time: Option<types::DateTime>,
+    #[serde(rename = "_time")]
+    time_ext: Option<types::Element>,
+    text: types::Markdown,
+    #[serde(rename = "_text")]
+    text_ext: Option<types::Element>,
+}
+
+impl ::core::convert::From<AnnotationDe> for Annotation {
+    fn from(v: AnnotationDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            author: v.author.0,
+            time: v.time,
+            time_ext: v.time_ext,
+            text: v.text,
+            text_ext: v.text_ext,
+        }
+    }
 }
 
 /// The `Annotation.author[x]` choice: who made the annotation.

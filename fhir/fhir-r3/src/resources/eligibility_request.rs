@@ -37,6 +37,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "EligibilityRequestDe")]
 #[fhir_version("r3")]
 pub struct EligibilityRequest {
     /// Logical id of this artifact
@@ -133,6 +134,84 @@ pub struct EligibilityRequest {
 
     /// Detailed services covered within the type
     pub benefit_sub_category: Option<types::CodeableConcept>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct EligibilityRequestDe {
+    id: Option<types::Id>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r3::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    status: Option<crate::coded::Coded<crate::r3::codes::FmStatus>>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    priority: Option<types::CodeableConcept>,
+    patient: Option<types::Reference<crate::r3::resources::Patient>>,
+    #[serde(flatten)]
+    serviced: crate::r3::choice::Slot<EligibilityRequestServiced>,
+    created: Option<types::DateTime>,
+    #[serde(rename = "_created")]
+    created_ext: Option<types::Element>,
+    enterer: Option<types::Reference<crate::r3::resources::Practitioner>>,
+    provider: Option<types::Reference<crate::r3::resources::Practitioner>>,
+    organization: Option<types::Reference<crate::r3::resources::Organization>>,
+    insurer: Option<types::Reference<crate::r3::resources::Organization>>,
+    facility: Option<types::Reference<crate::r3::resources::Location>>,
+    coverage: Option<types::Reference<crate::r3::resources::Coverage>>,
+    business_arrangement: Option<types::String>,
+    #[serde(rename = "_businessArrangement")]
+    business_arrangement_ext: Option<types::Element>,
+    benefit_category: Option<types::CodeableConcept>,
+    benefit_sub_category: Option<types::CodeableConcept>,
+}
+
+impl ::core::convert::From<EligibilityRequestDe> for EligibilityRequest {
+    fn from(v: EligibilityRequestDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            status: v.status,
+            status_ext: v.status_ext,
+            priority: v.priority,
+            patient: v.patient,
+            serviced: v.serviced.0,
+            created: v.created,
+            created_ext: v.created_ext,
+            enterer: v.enterer,
+            provider: v.provider,
+            organization: v.organization,
+            insurer: v.insurer,
+            facility: v.facility,
+            coverage: v.coverage,
+            business_arrangement: v.business_arrangement,
+            business_arrangement_ext: v.business_arrangement_ext,
+            benefit_category: v.benefit_category,
+            benefit_sub_category: v.benefit_sub_category,
+        }
+    }
 }
 
 /// The `EligibilityRequest.serviced[x]` choice element (see `spec/11-choice-types.md`).

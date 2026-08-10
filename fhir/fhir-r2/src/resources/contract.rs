@@ -37,6 +37,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ContractDe")]
 #[fhir_version("r2")]
 pub struct Contract {
     /// Logical id of this artifact
@@ -148,6 +149,96 @@ pub struct Contract {
     pub rule: Vec<ContractRule>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ContractDe {
+    id: Option<types::Id>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r2::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    identifier: Option<types::Identifier>,
+    issued: Option<types::DateTime>,
+    #[serde(rename = "_issued")]
+    issued_ext: Option<types::Element>,
+    applies: Option<types::Period>,
+    #[serde(default)]
+    subject: Vec<types::Reference>,
+    #[serde(default)]
+    authority: Vec<types::Reference<crate::r2::resources::Organization>>,
+    #[serde(default)]
+    domain: Vec<types::Reference<crate::r2::resources::Location>>,
+    r#type: Option<types::CodeableConcept>,
+    #[serde(default)]
+    sub_type: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    action: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    action_reason: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    actor: Vec<ContractActor>,
+    #[serde(default)]
+    valued_item: Vec<ContractValuedItem>,
+    #[serde(default)]
+    signer: Vec<ContractSigner>,
+    #[serde(default)]
+    term: Vec<ContractTerm>,
+    #[serde(flatten)]
+    binding: crate::r2::choice::Slot<ContractBinding>,
+    #[serde(default)]
+    friendly: Vec<ContractFriendly>,
+    #[serde(default)]
+    legal: Vec<ContractLegal>,
+    #[serde(default)]
+    rule: Vec<ContractRule>,
+}
+
+impl ::core::convert::From<ContractDe> for Contract {
+    fn from(v: ContractDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            issued: v.issued,
+            issued_ext: v.issued_ext,
+            applies: v.applies,
+            subject: v.subject,
+            authority: v.authority,
+            domain: v.domain,
+            r#type: v.r#type,
+            sub_type: v.sub_type,
+            action: v.action,
+            action_reason: v.action_reason,
+            actor: v.actor,
+            valued_item: v.valued_item,
+            signer: v.signer,
+            term: v.term,
+            binding: v.binding.0,
+            friendly: v.friendly,
+            legal: v.legal,
+            rule: v.rule,
+        }
+    }
+}
+
 /// List of Contract actors.
 ///
 /// # Examples
@@ -219,6 +310,7 @@ pub struct ContractActor {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ContractFriendlyDe")]
 #[fhir_version("r2")]
 pub struct ContractFriendly {
     /// xml:id (or equivalent in JSON)
@@ -236,6 +328,29 @@ pub struct ContractFriendly {
     /// The `Contract.friendly.content[x]` choice element (1..1); see [`ContractFriendlyContent`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub content: Option<ContractFriendlyContent>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ContractFriendlyDe {
+    id: Option<types::Id>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    content: crate::r2::choice::Slot<ContractFriendlyContent>,
+}
+
+impl ::core::convert::From<ContractFriendlyDe> for ContractFriendly {
+    fn from(v: ContractFriendlyDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            content: v.content.0,
+        }
+    }
 }
 
 /// List of Legal expressions or representations of this Contract.
@@ -260,6 +375,7 @@ pub struct ContractFriendly {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ContractLegalDe")]
 #[fhir_version("r2")]
 pub struct ContractLegal {
     /// xml:id (or equivalent in JSON)
@@ -277,6 +393,29 @@ pub struct ContractLegal {
     /// The `Contract.legal.content[x]` choice element (1..1); see [`ContractLegalContent`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub content: Option<ContractLegalContent>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ContractLegalDe {
+    id: Option<types::Id>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    content: crate::r2::choice::Slot<ContractLegalContent>,
+}
+
+impl ::core::convert::From<ContractLegalDe> for ContractLegal {
+    fn from(v: ContractLegalDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            content: v.content.0,
+        }
+    }
 }
 
 /// List of Computable Policy Rule Language Representations of this Contract.
@@ -301,6 +440,7 @@ pub struct ContractLegal {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ContractRuleDe")]
 #[fhir_version("r2")]
 pub struct ContractRule {
     /// xml:id (or equivalent in JSON)
@@ -318,6 +458,29 @@ pub struct ContractRule {
     /// The `Contract.rule.content[x]` choice element (1..1); see [`ContractRuleContent`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub content: Option<ContractRuleContent>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ContractRuleDe {
+    id: Option<types::Id>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    content: crate::r2::choice::Slot<ContractRuleContent>,
+}
+
+impl ::core::convert::From<ContractRuleDe> for ContractRule {
+    fn from(v: ContractRuleDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            content: v.content.0,
+        }
+    }
 }
 
 /// Party signing this Contract.
@@ -520,6 +683,7 @@ pub struct ContractTermActor {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ContractTermValuedItemDe")]
 #[fhir_version("r2")]
 pub struct ContractTermValuedItem {
     /// xml:id (or equivalent in JSON)
@@ -572,6 +736,52 @@ pub struct ContractTermValuedItem {
     pub net: Option<types::Quantity>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ContractTermValuedItemDe {
+    id: Option<types::Id>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    entity: crate::r2::choice::Slot<ContractTermValuedItemEntity>,
+    identifier: Option<types::Identifier>,
+    effective_time: Option<types::DateTime>,
+    #[serde(rename = "_effectiveTime")]
+    effective_time_ext: Option<types::Element>,
+    quantity: Option<types::Quantity>,
+    unit_price: Option<types::Quantity>,
+    factor: Option<types::Decimal>,
+    #[serde(rename = "_factor")]
+    factor_ext: Option<types::Element>,
+    points: Option<types::Decimal>,
+    #[serde(rename = "_points")]
+    points_ext: Option<types::Element>,
+    net: Option<types::Quantity>,
+}
+
+impl ::core::convert::From<ContractTermValuedItemDe> for ContractTermValuedItem {
+    fn from(v: ContractTermValuedItemDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            entity: v.entity.0,
+            identifier: v.identifier,
+            effective_time: v.effective_time,
+            effective_time_ext: v.effective_time_ext,
+            quantity: v.quantity,
+            unit_price: v.unit_price,
+            factor: v.factor,
+            factor_ext: v.factor_ext,
+            points: v.points,
+            points_ext: v.points_ext,
+            net: v.net,
+        }
+    }
+}
+
 /// Contract Valued Item List.
 ///
 /// # Examples
@@ -594,6 +804,7 @@ pub struct ContractTermValuedItem {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ContractValuedItemDe")]
 #[fhir_version("r2")]
 pub struct ContractValuedItem {
     /// xml:id (or equivalent in JSON)
@@ -644,6 +855,52 @@ pub struct ContractValuedItem {
 
     /// Total Contract Valued Item Value
     pub net: Option<types::Quantity>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ContractValuedItemDe {
+    id: Option<types::Id>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    entity: crate::r2::choice::Slot<ContractValuedItemEntity>,
+    identifier: Option<types::Identifier>,
+    effective_time: Option<types::DateTime>,
+    #[serde(rename = "_effectiveTime")]
+    effective_time_ext: Option<types::Element>,
+    quantity: Option<types::Quantity>,
+    unit_price: Option<types::Quantity>,
+    factor: Option<types::Decimal>,
+    #[serde(rename = "_factor")]
+    factor_ext: Option<types::Element>,
+    points: Option<types::Decimal>,
+    #[serde(rename = "_points")]
+    points_ext: Option<types::Element>,
+    net: Option<types::Quantity>,
+}
+
+impl ::core::convert::From<ContractValuedItemDe> for ContractValuedItem {
+    fn from(v: ContractValuedItemDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            entity: v.entity.0,
+            identifier: v.identifier,
+            effective_time: v.effective_time,
+            effective_time_ext: v.effective_time_ext,
+            quantity: v.quantity,
+            unit_price: v.unit_price,
+            factor: v.factor,
+            factor_ext: v.factor_ext,
+            points: v.points,
+            points_ext: v.points_ext,
+            net: v.net,
+        }
+    }
 }
 
 /// The `Contract.binding[x]` choice element (see `spec/11-choice-types.md`).

@@ -104,6 +104,7 @@ pub struct DataRequirement {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "DataRequirementCodeFilterDe")]
 #[fhir_version("r3")]
 pub struct DataRequirementCodeFilter {
     /// xml:id (or equivalent in JSON)
@@ -143,6 +144,44 @@ pub struct DataRequirementCodeFilter {
     pub value_codeable_concept: Vec<types::CodeableConcept>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DataRequirementCodeFilterDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    path: types::String,
+    #[serde(rename = "_path")]
+    path_ext: Option<types::Element>,
+    #[serde(flatten)]
+    value_set: crate::r3::choice::Slot<DataRequirementCodeFilterValueSet>,
+    #[serde(default)]
+    value_code: Vec<types::Code>,
+    #[serde(rename = "_valueCode")]
+    #[serde(default)]
+    value_code_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    value_coding: Vec<types::Coding>,
+    #[serde(default)]
+    value_codeable_concept: Vec<types::CodeableConcept>,
+}
+
+impl ::core::convert::From<DataRequirementCodeFilterDe> for DataRequirementCodeFilter {
+    fn from(v: DataRequirementCodeFilterDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            path: v.path,
+            path_ext: v.path_ext,
+            value_set: v.value_set.0,
+            value_code: v.value_code,
+            value_code_ext: v.value_code_ext,
+            value_coding: v.value_coding,
+            value_codeable_concept: v.value_codeable_concept,
+        }
+    }
+}
+
 /// Date filters specify additional constraints on the data in terms of the
 /// applicable date range for specific elements.
 ///
@@ -166,6 +205,7 @@ pub struct DataRequirementCodeFilter {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "DataRequirementDateFilterDe")]
 #[fhir_version("r3")]
 pub struct DataRequirementDateFilter {
     /// xml:id (or equivalent in JSON)
@@ -186,6 +226,31 @@ pub struct DataRequirementDateFilter {
     /// The `DataRequirement.dateFilter.value[x]` choice element (0..1); see [`DataRequirementDateFilterValue`].
     #[serde(flatten)]
     pub value: Option<DataRequirementDateFilterValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DataRequirementDateFilterDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    path: types::String,
+    #[serde(rename = "_path")]
+    path_ext: Option<types::Element>,
+    #[serde(flatten)]
+    value: crate::r3::choice::Slot<DataRequirementDateFilterValue>,
+}
+
+impl ::core::convert::From<DataRequirementDateFilterDe> for DataRequirementDateFilter {
+    fn from(v: DataRequirementDateFilterDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            path: v.path,
+            path_ext: v.path_ext,
+            value: v.value.0,
+        }
+    }
 }
 
 /// The `DataRequirement.codeFilter.valueSet[x]` choice element (see `spec/11-choice-types.md`).

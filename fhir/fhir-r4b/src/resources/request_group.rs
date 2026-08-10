@@ -189,6 +189,7 @@ pub struct RequestGroup {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "RequestGroupActionDe")]
 #[fhir_version("r4b")]
 pub struct RequestGroupAction {
     /// Unique id for inter-element referencing
@@ -310,6 +311,101 @@ pub struct RequestGroupAction {
     pub action: Vec<RequestGroupAction>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RequestGroupActionDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    prefix: Option<types::String>,
+    #[serde(rename = "_prefix")]
+    prefix_ext: Option<types::Element>,
+    title: Option<types::String>,
+    #[serde(rename = "_title")]
+    title_ext: Option<types::Element>,
+    description: Option<types::String>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    text_equivalent: Option<types::String>,
+    #[serde(rename = "_textEquivalent")]
+    text_equivalent_ext: Option<types::Element>,
+    priority: Option<crate::coded::Coded<crate::r4b::codes::RequestPriority>>,
+    #[serde(rename = "_priority")]
+    priority_ext: Option<types::Element>,
+    #[serde(default)]
+    code: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    documentation: Vec<types::RelatedArtifact>,
+    #[serde(default)]
+    condition: Vec<RequestGroupActionCondition>,
+    #[serde(default)]
+    related_action: Vec<RequestGroupActionRelatedAction>,
+    #[serde(flatten)]
+    timing: crate::r4b::choice::Slot<RequestGroupActionTiming>,
+    #[serde(default)]
+    participant: Vec<types::Reference>,
+    r#type: Option<types::CodeableConcept>,
+    grouping_behavior: Option<crate::coded::Coded<crate::r4b::codes::ActionGroupingBehavior>>,
+    #[serde(rename = "_groupingBehavior")]
+    grouping_behavior_ext: Option<types::Element>,
+    selection_behavior: Option<crate::coded::Coded<crate::r4b::codes::ActionSelectionBehavior>>,
+    #[serde(rename = "_selectionBehavior")]
+    selection_behavior_ext: Option<types::Element>,
+    required_behavior: Option<crate::coded::Coded<crate::r4b::codes::ActionRequiredBehavior>>,
+    #[serde(rename = "_requiredBehavior")]
+    required_behavior_ext: Option<types::Element>,
+    precheck_behavior: Option<crate::coded::Coded<crate::r4b::codes::ActionPrecheckBehavior>>,
+    #[serde(rename = "_precheckBehavior")]
+    precheck_behavior_ext: Option<types::Element>,
+    cardinality_behavior: Option<crate::coded::Coded<crate::r4b::codes::ActionCardinalityBehavior>>,
+    #[serde(rename = "_cardinalityBehavior")]
+    cardinality_behavior_ext: Option<types::Element>,
+    resource: Option<types::Reference>,
+    #[serde(default)]
+    action: Vec<RequestGroupAction>,
+}
+
+impl ::core::convert::From<RequestGroupActionDe> for RequestGroupAction {
+    fn from(v: RequestGroupActionDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            prefix: v.prefix,
+            prefix_ext: v.prefix_ext,
+            title: v.title,
+            title_ext: v.title_ext,
+            description: v.description,
+            description_ext: v.description_ext,
+            text_equivalent: v.text_equivalent,
+            text_equivalent_ext: v.text_equivalent_ext,
+            priority: v.priority,
+            priority_ext: v.priority_ext,
+            code: v.code,
+            documentation: v.documentation,
+            condition: v.condition,
+            related_action: v.related_action,
+            timing: v.timing.0,
+            participant: v.participant,
+            r#type: v.r#type,
+            grouping_behavior: v.grouping_behavior,
+            grouping_behavior_ext: v.grouping_behavior_ext,
+            selection_behavior: v.selection_behavior,
+            selection_behavior_ext: v.selection_behavior_ext,
+            required_behavior: v.required_behavior,
+            required_behavior_ext: v.required_behavior_ext,
+            precheck_behavior: v.precheck_behavior,
+            precheck_behavior_ext: v.precheck_behavior_ext,
+            cardinality_behavior: v.cardinality_behavior,
+            cardinality_behavior_ext: v.cardinality_behavior_ext,
+            resource: v.resource,
+            action: v.action,
+        }
+    }
+}
+
 /// An expression that describes applicability criteria, or start/stop
 /// conditions for the action.
 ///
@@ -380,6 +476,7 @@ pub struct RequestGroupActionCondition {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "RequestGroupActionRelatedActionDe")]
 #[fhir_version("r4b")]
 pub struct RequestGroupActionRelatedAction {
     /// Unique id for inter-element referencing
@@ -412,6 +509,39 @@ pub struct RequestGroupActionRelatedAction {
     /// The `RequestGroup.action.relatedAction.offset[x]` choice element (0..1); see [`RequestGroupActionRelatedActionOffset`].
     #[serde(flatten)]
     pub offset: Option<RequestGroupActionRelatedActionOffset>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RequestGroupActionRelatedActionDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    action_id: types::Id,
+    #[serde(rename = "_actionId")]
+    action_id_ext: Option<types::Element>,
+    relationship: crate::coded::Coded<crate::r4b::codes::ActionRelationshipType>,
+    #[serde(rename = "_relationship")]
+    relationship_ext: Option<types::Element>,
+    #[serde(flatten)]
+    offset: crate::r4b::choice::Slot<RequestGroupActionRelatedActionOffset>,
+}
+
+impl ::core::convert::From<RequestGroupActionRelatedActionDe> for RequestGroupActionRelatedAction {
+    fn from(v: RequestGroupActionRelatedActionDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            action_id: v.action_id,
+            action_id_ext: v.action_id_ext,
+            relationship: v.relationship,
+            relationship_ext: v.relationship_ext,
+            offset: v.offset.0,
+        }
+    }
 }
 
 /// The `RequestGroup.action.timing[x]` choice element (see `spec/11-choice-types.md`).

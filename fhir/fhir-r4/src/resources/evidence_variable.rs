@@ -242,6 +242,7 @@ pub struct EvidenceVariable {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "EvidenceVariableCharacteristicDe")]
 #[fhir_version("r4")]
 pub struct EvidenceVariableCharacteristic {
     /// Unique id for inter-element referencing
@@ -293,6 +294,53 @@ pub struct EvidenceVariableCharacteristic {
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_groupMeasure")]
     pub group_measure_ext: Option<types::Element>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct EvidenceVariableCharacteristicDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    description: Option<types::String>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    #[serde(flatten)]
+    definition: crate::r4::choice::Slot<EvidenceVariableCharacteristicDefinition>,
+    #[serde(default)]
+    usage_context: Vec<types::UsageContext>,
+    exclude: Option<types::Boolean>,
+    #[serde(rename = "_exclude")]
+    exclude_ext: Option<types::Element>,
+    #[serde(flatten)]
+    participant_effective:
+        crate::r4::choice::Slot<EvidenceVariableCharacteristicParticipantEffective>,
+    time_from_start: Option<types::Duration>,
+    group_measure: Option<crate::coded::Coded<crate::r4::codes::GroupMeasure>>,
+    #[serde(rename = "_groupMeasure")]
+    group_measure_ext: Option<types::Element>,
+}
+
+impl ::core::convert::From<EvidenceVariableCharacteristicDe> for EvidenceVariableCharacteristic {
+    fn from(v: EvidenceVariableCharacteristicDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            description: v.description,
+            description_ext: v.description_ext,
+            definition: v.definition.0,
+            usage_context: v.usage_context,
+            exclude: v.exclude,
+            exclude_ext: v.exclude_ext,
+            participant_effective: v.participant_effective.0,
+            time_from_start: v.time_from_start,
+            group_measure: v.group_measure,
+            group_measure_ext: v.group_measure_ext,
+        }
+    }
 }
 
 /// The `EvidenceVariable.characteristic.definition[x]` choice element (see `spec/11-choice-types.md`).

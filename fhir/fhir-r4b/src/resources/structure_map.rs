@@ -433,6 +433,7 @@ pub struct StructureMapGroupRuleDependent {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "StructureMapGroupRuleSourceDe")]
 #[fhir_version("r4b")]
 pub struct StructureMapGroupRuleSource {
     /// Unique id for inter-element referencing
@@ -521,6 +522,79 @@ pub struct StructureMapGroupRuleSource {
     /// carries `id` and/or `extension` for the primitive value.
     #[serde(rename = "_logMessage")]
     pub log_message_ext: Option<types::Element>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct StructureMapGroupRuleSourceDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    context: types::Id,
+    #[serde(rename = "_context")]
+    context_ext: Option<types::Element>,
+    min: Option<types::Integer>,
+    #[serde(rename = "_min")]
+    min_ext: Option<types::Element>,
+    max: Option<types::String>,
+    #[serde(rename = "_max")]
+    max_ext: Option<types::Element>,
+    r#type: Option<types::String>,
+    #[serde(rename = "_type")]
+    type_ext: Option<types::Element>,
+    #[serde(flatten)]
+    default_value: crate::r4b::choice::Slot<StructureMapGroupRuleSourceDefaultValue>,
+    element: Option<types::String>,
+    #[serde(rename = "_element")]
+    element_ext: Option<types::Element>,
+    list_mode: Option<crate::coded::Coded<crate::r4b::codes::MapSourceListMode>>,
+    #[serde(rename = "_listMode")]
+    list_mode_ext: Option<types::Element>,
+    variable: Option<types::Id>,
+    #[serde(rename = "_variable")]
+    variable_ext: Option<types::Element>,
+    condition: Option<types::String>,
+    #[serde(rename = "_condition")]
+    condition_ext: Option<types::Element>,
+    check: Option<types::String>,
+    #[serde(rename = "_check")]
+    check_ext: Option<types::Element>,
+    log_message: Option<types::String>,
+    #[serde(rename = "_logMessage")]
+    log_message_ext: Option<types::Element>,
+}
+
+impl ::core::convert::From<StructureMapGroupRuleSourceDe> for StructureMapGroupRuleSource {
+    fn from(v: StructureMapGroupRuleSourceDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            context: v.context,
+            context_ext: v.context_ext,
+            min: v.min,
+            min_ext: v.min_ext,
+            max: v.max,
+            max_ext: v.max_ext,
+            r#type: v.r#type,
+            type_ext: v.type_ext,
+            default_value: v.default_value.0,
+            element: v.element,
+            element_ext: v.element_ext,
+            list_mode: v.list_mode,
+            list_mode_ext: v.list_mode_ext,
+            variable: v.variable,
+            variable_ext: v.variable_ext,
+            condition: v.condition,
+            condition_ext: v.condition_ext,
+            check: v.check,
+            check_ext: v.check_ext,
+            log_message: v.log_message,
+            log_message_ext: v.log_message_ext,
+        }
+    }
 }
 
 /// Content to create because of this mapping rule.
@@ -636,6 +710,7 @@ pub struct StructureMapGroupRuleTarget {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "StructureMapGroupRuleTargetParameterDe")]
 #[fhir_version("r4b")]
 pub struct StructureMapGroupRuleTargetParameter {
     /// Unique id for inter-element referencing
@@ -653,6 +728,31 @@ pub struct StructureMapGroupRuleTargetParameter {
     /// The `StructureMap.group.rule.target.parameter.value[x]` choice element (1..1); see [`StructureMapGroupRuleTargetParameterValue`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub value: Option<StructureMapGroupRuleTargetParameterValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct StructureMapGroupRuleTargetParameterDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    value: crate::r4b::choice::Slot<StructureMapGroupRuleTargetParameterValue>,
+}
+
+impl ::core::convert::From<StructureMapGroupRuleTargetParameterDe>
+    for StructureMapGroupRuleTargetParameter
+{
+    fn from(v: StructureMapGroupRuleTargetParameterDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            value: v.value.0,
+        }
+    }
 }
 
 /// A structure definition used by this map. The structure definition may

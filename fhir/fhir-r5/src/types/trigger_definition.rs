@@ -44,6 +44,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "TriggerDefinitionDe")]
 pub struct TriggerDefinition {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -83,6 +84,48 @@ pub struct TriggerDefinition {
 
     /// Whether the event triggers (boolean expression)
     pub condition: Option<types::Expression>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct TriggerDefinitionDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    r#type: crate::r5::coded::Coded<crate::r5::codes::TriggerType>,
+    #[serde(rename = "_type")]
+    type_ext: Option<types::Element>,
+    name: Option<types::String>,
+    #[serde(rename = "_name")]
+    name_ext: Option<types::Element>,
+    code: Option<types::CodeableConcept>,
+    subscription_topic: Option<types::Canonical>,
+    #[serde(rename = "_subscriptionTopic")]
+    subscription_topic_ext: Option<types::Element>,
+    #[serde(flatten)]
+    timing: crate::r5::choice::Slot<TriggerDefinitionTiming>,
+    #[serde(default)]
+    data: Vec<types::DataRequirement>,
+    condition: Option<types::Expression>,
+}
+
+impl ::core::convert::From<TriggerDefinitionDe> for TriggerDefinition {
+    fn from(v: TriggerDefinitionDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            r#type: v.r#type,
+            type_ext: v.type_ext,
+            name: v.name,
+            name_ext: v.name_ext,
+            code: v.code,
+            subscription_topic: v.subscription_topic,
+            subscription_topic_ext: v.subscription_topic_ext,
+            timing: v.timing.0,
+            data: v.data,
+            condition: v.condition,
+        }
+    }
 }
 
 #[cfg(test)]

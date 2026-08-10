@@ -38,6 +38,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ElementDefinitionDe")]
 #[fhir_version("r4b")]
 pub struct ElementDefinition {
     /// Unique id for inter-element referencing
@@ -260,6 +261,173 @@ pub struct ElementDefinition {
     pub mapping: Vec<ElementDefinitionMapping>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ElementDefinitionDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    path: types::String,
+    #[serde(rename = "_path")]
+    path_ext: Option<types::Element>,
+    #[serde(default)]
+    representation: Vec<crate::coded::Coded<crate::r4b::codes::PropertyRepresentation>>,
+    #[serde(rename = "_representation")]
+    #[serde(default)]
+    representation_ext: Vec<Option<types::Element>>,
+    slice_name: Option<types::String>,
+    #[serde(rename = "_sliceName")]
+    slice_name_ext: Option<types::Element>,
+    slice_is_constraining: Option<types::Boolean>,
+    #[serde(rename = "_sliceIsConstraining")]
+    slice_is_constraining_ext: Option<types::Element>,
+    label: Option<types::String>,
+    #[serde(rename = "_label")]
+    label_ext: Option<types::Element>,
+    #[serde(default)]
+    code: Vec<types::Coding>,
+    slicing: Option<ElementDefinitionSlicing>,
+    short: Option<types::String>,
+    #[serde(rename = "_short")]
+    short_ext: Option<types::Element>,
+    definition: Option<types::Markdown>,
+    #[serde(rename = "_definition")]
+    definition_ext: Option<types::Element>,
+    comment: Option<types::Markdown>,
+    #[serde(rename = "_comment")]
+    comment_ext: Option<types::Element>,
+    requirements: Option<types::Markdown>,
+    #[serde(rename = "_requirements")]
+    requirements_ext: Option<types::Element>,
+    #[serde(default)]
+    alias: Vec<types::String>,
+    #[serde(rename = "_alias")]
+    #[serde(default)]
+    alias_ext: Vec<Option<types::Element>>,
+    min: Option<types::UnsignedInt>,
+    #[serde(rename = "_min")]
+    min_ext: Option<types::Element>,
+    max: Option<types::String>,
+    #[serde(rename = "_max")]
+    max_ext: Option<types::Element>,
+    base: Option<ElementDefinitionBase>,
+    content_reference: Option<types::Uri>,
+    #[serde(rename = "_contentReference")]
+    content_reference_ext: Option<types::Element>,
+    #[serde(default)]
+    r#type: Vec<ElementDefinitionType>,
+    #[serde(flatten)]
+    default_value: crate::r4b::choice::Slot<ElementDefinitionDefaultValue>,
+    meaning_when_missing: Option<types::Markdown>,
+    #[serde(rename = "_meaningWhenMissing")]
+    meaning_when_missing_ext: Option<types::Element>,
+    order_meaning: Option<types::String>,
+    #[serde(rename = "_orderMeaning")]
+    order_meaning_ext: Option<types::Element>,
+    #[serde(flatten)]
+    fixed: crate::r4b::choice::Slot<ElementDefinitionFixed>,
+    #[serde(flatten)]
+    pattern: crate::r4b::choice::Slot<ElementDefinitionPattern>,
+    #[serde(default)]
+    example: Vec<ElementDefinitionExample>,
+    #[serde(flatten)]
+    min_value: crate::r4b::choice::Slot<ElementDefinitionMinValue>,
+    #[serde(flatten)]
+    max_value: crate::r4b::choice::Slot<ElementDefinitionMaxValue>,
+    max_length: Option<types::Integer>,
+    #[serde(rename = "_maxLength")]
+    max_length_ext: Option<types::Element>,
+    #[serde(default)]
+    condition: Vec<types::Id>,
+    #[serde(rename = "_condition")]
+    #[serde(default)]
+    condition_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    constraint: Vec<ElementDefinitionConstraint>,
+    must_support: Option<types::Boolean>,
+    #[serde(rename = "_mustSupport")]
+    must_support_ext: Option<types::Element>,
+    is_modifier: Option<types::Boolean>,
+    #[serde(rename = "_isModifier")]
+    is_modifier_ext: Option<types::Element>,
+    is_modifier_reason: Option<types::String>,
+    #[serde(rename = "_isModifierReason")]
+    is_modifier_reason_ext: Option<types::Element>,
+    is_summary: Option<types::Boolean>,
+    #[serde(rename = "_isSummary")]
+    is_summary_ext: Option<types::Element>,
+    binding: Option<ElementDefinitionBinding>,
+    #[serde(default)]
+    mapping: Vec<ElementDefinitionMapping>,
+}
+
+impl ::core::convert::From<ElementDefinitionDe> for ElementDefinition {
+    fn from(v: ElementDefinitionDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            path: v.path,
+            path_ext: v.path_ext,
+            representation: v.representation,
+            representation_ext: v.representation_ext,
+            slice_name: v.slice_name,
+            slice_name_ext: v.slice_name_ext,
+            slice_is_constraining: v.slice_is_constraining,
+            slice_is_constraining_ext: v.slice_is_constraining_ext,
+            label: v.label,
+            label_ext: v.label_ext,
+            code: v.code,
+            slicing: v.slicing,
+            short: v.short,
+            short_ext: v.short_ext,
+            definition: v.definition,
+            definition_ext: v.definition_ext,
+            comment: v.comment,
+            comment_ext: v.comment_ext,
+            requirements: v.requirements,
+            requirements_ext: v.requirements_ext,
+            alias: v.alias,
+            alias_ext: v.alias_ext,
+            min: v.min,
+            min_ext: v.min_ext,
+            max: v.max,
+            max_ext: v.max_ext,
+            base: v.base,
+            content_reference: v.content_reference,
+            content_reference_ext: v.content_reference_ext,
+            r#type: v.r#type,
+            default_value: v.default_value.0,
+            meaning_when_missing: v.meaning_when_missing,
+            meaning_when_missing_ext: v.meaning_when_missing_ext,
+            order_meaning: v.order_meaning,
+            order_meaning_ext: v.order_meaning_ext,
+            fixed: v.fixed.0,
+            pattern: v.pattern.0,
+            example: v.example,
+            min_value: v.min_value.0,
+            max_value: v.max_value.0,
+            max_length: v.max_length,
+            max_length_ext: v.max_length_ext,
+            condition: v.condition,
+            condition_ext: v.condition_ext,
+            constraint: v.constraint,
+            must_support: v.must_support,
+            must_support_ext: v.must_support_ext,
+            is_modifier: v.is_modifier,
+            is_modifier_ext: v.is_modifier_ext,
+            is_modifier_reason: v.is_modifier_reason,
+            is_modifier_reason_ext: v.is_modifier_reason_ext,
+            is_summary: v.is_summary,
+            is_summary_ext: v.is_summary_ext,
+            binding: v.binding,
+            mapping: v.mapping,
+        }
+    }
+}
+
 /// Information about the base definition of the element, provided to make it
 /// unnecessary for tools to trace the deviation of the element through the
 /// derived and related profiles. When the element definition is not the
@@ -479,6 +647,7 @@ pub struct ElementDefinitionConstraint {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ElementDefinitionExampleDe")]
 #[fhir_version("r4b")]
 pub struct ElementDefinitionExample {
     /// Unique id for inter-element referencing
@@ -499,6 +668,31 @@ pub struct ElementDefinitionExample {
     /// The `ElementDefinition.example.value[x]` choice element (1..1); see [`ElementDefinitionExampleValue`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub value: Option<ElementDefinitionExampleValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ElementDefinitionExampleDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    label: types::String,
+    #[serde(rename = "_label")]
+    label_ext: Option<types::Element>,
+    #[serde(flatten)]
+    value: crate::r4b::choice::Slot<ElementDefinitionExampleValue>,
+}
+
+impl ::core::convert::From<ElementDefinitionExampleDe> for ElementDefinitionExample {
+    fn from(v: ElementDefinitionExampleDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            label: v.label,
+            label_ext: v.label_ext,
+            value: v.value.0,
+        }
+    }
 }
 
 /// Identifies a concept from an external specification that roughly

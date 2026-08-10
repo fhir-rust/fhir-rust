@@ -37,6 +37,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MedicationDispenseDe")]
 #[fhir_version("r2")]
 pub struct MedicationDispense {
     /// Logical id of this artifact
@@ -144,6 +145,91 @@ pub struct MedicationDispense {
     pub substitution: Option<MedicationDispenseSubstitution>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MedicationDispenseDe {
+    id: Option<types::Id>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r2::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    identifier: Option<types::Identifier>,
+    status: Option<crate::coded::Coded<crate::r2::codes::MedicationDispenseStatus>>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    patient: Option<types::Reference<crate::r2::resources::Patient>>,
+    dispenser: Option<types::Reference<crate::r2::resources::Practitioner>>,
+    #[serde(default)]
+    authorizing_prescription: Vec<types::Reference<crate::r2::resources::MedicationOrder>>,
+    r#type: Option<types::CodeableConcept>,
+    quantity: Option<types::Quantity>,
+    days_supply: Option<types::Quantity>,
+    #[serde(flatten)]
+    medication: crate::r2::choice::Slot<MedicationDispenseMedication>,
+    when_prepared: Option<types::DateTime>,
+    #[serde(rename = "_whenPrepared")]
+    when_prepared_ext: Option<types::Element>,
+    when_handed_over: Option<types::DateTime>,
+    #[serde(rename = "_whenHandedOver")]
+    when_handed_over_ext: Option<types::Element>,
+    destination: Option<types::Reference<crate::r2::resources::Location>>,
+    #[serde(default)]
+    receiver: Vec<types::Reference>,
+    note: Option<types::String>,
+    #[serde(rename = "_note")]
+    note_ext: Option<types::Element>,
+    #[serde(default)]
+    dosage_instruction: Vec<MedicationDispenseDosageInstruction>,
+    substitution: Option<MedicationDispenseSubstitution>,
+}
+
+impl ::core::convert::From<MedicationDispenseDe> for MedicationDispense {
+    fn from(v: MedicationDispenseDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            status: v.status,
+            status_ext: v.status_ext,
+            patient: v.patient,
+            dispenser: v.dispenser,
+            authorizing_prescription: v.authorizing_prescription,
+            r#type: v.r#type,
+            quantity: v.quantity,
+            days_supply: v.days_supply,
+            medication: v.medication.0,
+            when_prepared: v.when_prepared,
+            when_prepared_ext: v.when_prepared_ext,
+            when_handed_over: v.when_handed_over,
+            when_handed_over_ext: v.when_handed_over_ext,
+            destination: v.destination,
+            receiver: v.receiver,
+            note: v.note,
+            note_ext: v.note_ext,
+            dosage_instruction: v.dosage_instruction,
+            substitution: v.substitution,
+        }
+    }
+}
+
 /// Indicates how the medication is to be used by the patient.
 ///
 /// # Examples
@@ -166,6 +252,7 @@ pub struct MedicationDispense {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MedicationDispenseDosageInstructionDe")]
 #[fhir_version("r2")]
 pub struct MedicationDispenseDosageInstruction {
     /// xml:id (or equivalent in JSON)
@@ -220,6 +307,55 @@ pub struct MedicationDispenseDosageInstruction {
 
     /// Upper limit on medication per unit of time
     pub max_dose_per_period: Option<types::Ratio>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MedicationDispenseDosageInstructionDe {
+    id: Option<types::Id>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    text: Option<types::String>,
+    #[serde(rename = "_text")]
+    text_ext: Option<types::Element>,
+    additional_instructions: Option<types::CodeableConcept>,
+    timing: Option<types::Timing>,
+    #[serde(flatten)]
+    as_needed: crate::r2::choice::Slot<MedicationDispenseDosageInstructionAsNeeded>,
+    #[serde(flatten)]
+    site: crate::r2::choice::Slot<MedicationDispenseDosageInstructionSite>,
+    route: Option<types::CodeableConcept>,
+    method: Option<types::CodeableConcept>,
+    #[serde(flatten)]
+    dose: crate::r2::choice::Slot<MedicationDispenseDosageInstructionDose>,
+    #[serde(flatten)]
+    rate: crate::r2::choice::Slot<MedicationDispenseDosageInstructionRate>,
+    max_dose_per_period: Option<types::Ratio>,
+}
+
+impl ::core::convert::From<MedicationDispenseDosageInstructionDe>
+    for MedicationDispenseDosageInstruction
+{
+    fn from(v: MedicationDispenseDosageInstructionDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            text: v.text,
+            text_ext: v.text_ext,
+            additional_instructions: v.additional_instructions,
+            timing: v.timing,
+            as_needed: v.as_needed.0,
+            site: v.site.0,
+            route: v.route,
+            method: v.method,
+            dose: v.dose.0,
+            rate: v.rate.0,
+            max_dose_per_period: v.max_dose_per_period,
+        }
+    }
 }
 
 /// Indicates whether or not substitution was made as part of the dispense. In

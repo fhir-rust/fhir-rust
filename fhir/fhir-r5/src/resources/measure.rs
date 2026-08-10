@@ -65,6 +65,7 @@ use fhir_derive_macros::Validate;
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MeasureDe")]
 pub struct Measure {
     /// Logical id of this artifact
     pub id: Option<types::String>,
@@ -325,6 +326,223 @@ pub struct Measure {
     pub supplemental_data: Vec<MeasureSupplementalData>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MeasureDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r5::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    url: Option<types::Uri>,
+    #[serde(rename = "_url")]
+    url_ext: Option<types::Element>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    version: Option<types::String>,
+    #[serde(rename = "_version")]
+    version_ext: Option<types::Element>,
+    #[serde(flatten)]
+    version_algorithm: crate::r5::choice::Slot<MeasureVersionAlgorithm>,
+    name: Option<types::String>,
+    #[serde(rename = "_name")]
+    name_ext: Option<types::Element>,
+    title: Option<types::String>,
+    #[serde(rename = "_title")]
+    title_ext: Option<types::Element>,
+    subtitle: Option<types::String>,
+    #[serde(rename = "_subtitle")]
+    subtitle_ext: Option<types::Element>,
+    status: crate::r5::coded::Coded<crate::r5::codes::PublicationStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    experimental: Option<types::Boolean>,
+    #[serde(rename = "_experimental")]
+    experimental_ext: Option<types::Element>,
+    #[serde(flatten)]
+    subject: crate::r5::choice::Slot<MeasureSubject>,
+    basis: Option<crate::r5::coded::Coded<crate::r5::codes::FhirTypes>>,
+    #[serde(rename = "_basis")]
+    basis_ext: Option<types::Element>,
+    date: Option<types::DateTime>,
+    #[serde(rename = "_date")]
+    date_ext: Option<types::Element>,
+    publisher: Option<types::String>,
+    #[serde(rename = "_publisher")]
+    publisher_ext: Option<types::Element>,
+    #[serde(default)]
+    contact: Vec<types::ContactDetail>,
+    description: Option<types::Markdown>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    #[serde(default)]
+    use_context: Vec<types::UsageContext>,
+    #[serde(default)]
+    jurisdiction: Vec<types::CodeableConcept>,
+    purpose: Option<types::Markdown>,
+    #[serde(rename = "_purpose")]
+    purpose_ext: Option<types::Element>,
+    usage: Option<types::Markdown>,
+    #[serde(rename = "_usage")]
+    usage_ext: Option<types::Element>,
+    copyright: Option<types::Markdown>,
+    #[serde(rename = "_copyright")]
+    copyright_ext: Option<types::Element>,
+    copyright_label: Option<types::String>,
+    #[serde(rename = "_copyrightLabel")]
+    copyright_label_ext: Option<types::Element>,
+    approval_date: Option<types::Date>,
+    #[serde(rename = "_approvalDate")]
+    approval_date_ext: Option<types::Element>,
+    last_review_date: Option<types::Date>,
+    #[serde(rename = "_lastReviewDate")]
+    last_review_date_ext: Option<types::Element>,
+    effective_period: Option<types::Period>,
+    #[serde(default)]
+    topic: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    author: Vec<types::ContactDetail>,
+    #[serde(default)]
+    editor: Vec<types::ContactDetail>,
+    #[serde(default)]
+    reviewer: Vec<types::ContactDetail>,
+    #[serde(default)]
+    endorser: Vec<types::ContactDetail>,
+    #[serde(default)]
+    related_artifact: Vec<types::RelatedArtifact>,
+    #[serde(default)]
+    library: Vec<types::Canonical>,
+    #[serde(rename = "_library")]
+    #[serde(default)]
+    library_ext: Vec<Option<types::Element>>,
+    disclaimer: Option<types::Markdown>,
+    #[serde(rename = "_disclaimer")]
+    disclaimer_ext: Option<types::Element>,
+    scoring: Option<types::CodeableConcept>,
+    scoring_unit: Option<types::CodeableConcept>,
+    composite_scoring: Option<types::CodeableConcept>,
+    #[serde(default)]
+    r#type: Vec<types::CodeableConcept>,
+    risk_adjustment: Option<types::Markdown>,
+    #[serde(rename = "_riskAdjustment")]
+    risk_adjustment_ext: Option<types::Element>,
+    rate_aggregation: Option<types::Markdown>,
+    #[serde(rename = "_rateAggregation")]
+    rate_aggregation_ext: Option<types::Element>,
+    rationale: Option<types::Markdown>,
+    #[serde(rename = "_rationale")]
+    rationale_ext: Option<types::Element>,
+    clinical_recommendation_statement: Option<types::Markdown>,
+    #[serde(rename = "_clinicalRecommendationStatement")]
+    clinical_recommendation_statement_ext: Option<types::Element>,
+    improvement_notation: Option<types::CodeableConcept>,
+    #[serde(default)]
+    term: Vec<MeasureTerm>,
+    guidance: Option<types::Markdown>,
+    #[serde(rename = "_guidance")]
+    guidance_ext: Option<types::Element>,
+    #[serde(default)]
+    group: Vec<MeasureGroup>,
+    #[serde(default)]
+    supplemental_data: Vec<MeasureSupplementalData>,
+}
+
+impl ::core::convert::From<MeasureDe> for Measure {
+    fn from(v: MeasureDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            url: v.url,
+            url_ext: v.url_ext,
+            identifier: v.identifier,
+            version: v.version,
+            version_ext: v.version_ext,
+            version_algorithm: v.version_algorithm.0,
+            name: v.name,
+            name_ext: v.name_ext,
+            title: v.title,
+            title_ext: v.title_ext,
+            subtitle: v.subtitle,
+            subtitle_ext: v.subtitle_ext,
+            status: v.status,
+            status_ext: v.status_ext,
+            experimental: v.experimental,
+            experimental_ext: v.experimental_ext,
+            subject: v.subject.0,
+            basis: v.basis,
+            basis_ext: v.basis_ext,
+            date: v.date,
+            date_ext: v.date_ext,
+            publisher: v.publisher,
+            publisher_ext: v.publisher_ext,
+            contact: v.contact,
+            description: v.description,
+            description_ext: v.description_ext,
+            use_context: v.use_context,
+            jurisdiction: v.jurisdiction,
+            purpose: v.purpose,
+            purpose_ext: v.purpose_ext,
+            usage: v.usage,
+            usage_ext: v.usage_ext,
+            copyright: v.copyright,
+            copyright_ext: v.copyright_ext,
+            copyright_label: v.copyright_label,
+            copyright_label_ext: v.copyright_label_ext,
+            approval_date: v.approval_date,
+            approval_date_ext: v.approval_date_ext,
+            last_review_date: v.last_review_date,
+            last_review_date_ext: v.last_review_date_ext,
+            effective_period: v.effective_period,
+            topic: v.topic,
+            author: v.author,
+            editor: v.editor,
+            reviewer: v.reviewer,
+            endorser: v.endorser,
+            related_artifact: v.related_artifact,
+            library: v.library,
+            library_ext: v.library_ext,
+            disclaimer: v.disclaimer,
+            disclaimer_ext: v.disclaimer_ext,
+            scoring: v.scoring,
+            scoring_unit: v.scoring_unit,
+            composite_scoring: v.composite_scoring,
+            r#type: v.r#type,
+            risk_adjustment: v.risk_adjustment,
+            risk_adjustment_ext: v.risk_adjustment_ext,
+            rate_aggregation: v.rate_aggregation,
+            rate_aggregation_ext: v.rate_aggregation_ext,
+            rationale: v.rationale,
+            rationale_ext: v.rationale_ext,
+            clinical_recommendation_statement: v.clinical_recommendation_statement,
+            clinical_recommendation_statement_ext: v.clinical_recommendation_statement_ext,
+            improvement_notation: v.improvement_notation,
+            term: v.term,
+            guidance: v.guidance,
+            guidance_ext: v.guidance_ext,
+            group: v.group,
+            supplemental_data: v.supplemental_data,
+        }
+    }
+}
+
 /// Defined terms used in the measure documentation.
 /// # Examples
 ///
@@ -389,6 +607,7 @@ pub struct MeasureTerm {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "MeasureGroupDe")]
 pub struct MeasureGroup {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -460,6 +679,73 @@ pub struct MeasureGroup {
     /// Stratifier criteria for the measure
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub stratifier: Vec<MeasureGroupStratifier>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct MeasureGroupDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    link_id: Option<types::String>,
+    #[serde(rename = "_linkId")]
+    link_id_ext: Option<types::Element>,
+    code: Option<types::CodeableConcept>,
+    description: Option<types::Markdown>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    #[serde(default)]
+    r#type: Vec<types::CodeableConcept>,
+    #[serde(flatten)]
+    subject: crate::r5::choice::Slot<MeasureGroupSubject>,
+    basis: Option<crate::r5::coded::Coded<crate::r5::codes::FhirTypes>>,
+    #[serde(rename = "_basis")]
+    basis_ext: Option<types::Element>,
+    scoring: Option<types::CodeableConcept>,
+    scoring_unit: Option<types::CodeableConcept>,
+    rate_aggregation: Option<types::Markdown>,
+    #[serde(rename = "_rateAggregation")]
+    rate_aggregation_ext: Option<types::Element>,
+    improvement_notation: Option<types::CodeableConcept>,
+    #[serde(default)]
+    library: Vec<types::Canonical>,
+    #[serde(rename = "_library")]
+    #[serde(default)]
+    library_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    population: Vec<MeasureGroupPopulation>,
+    #[serde(default)]
+    stratifier: Vec<MeasureGroupStratifier>,
+}
+
+impl ::core::convert::From<MeasureGroupDe> for MeasureGroup {
+    fn from(v: MeasureGroupDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            link_id: v.link_id,
+            link_id_ext: v.link_id_ext,
+            code: v.code,
+            description: v.description,
+            description_ext: v.description_ext,
+            r#type: v.r#type,
+            subject: v.subject.0,
+            basis: v.basis,
+            basis_ext: v.basis_ext,
+            scoring: v.scoring,
+            scoring_unit: v.scoring_unit,
+            rate_aggregation: v.rate_aggregation,
+            rate_aggregation_ext: v.rate_aggregation_ext,
+            improvement_notation: v.improvement_notation,
+            library: v.library,
+            library_ext: v.library_ext,
+            population: v.population,
+            stratifier: v.stratifier,
+        }
+    }
 }
 
 /// Population criteria.

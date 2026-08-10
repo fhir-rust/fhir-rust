@@ -50,6 +50,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "AdverseEventDe")]
 #[fhir_version("r6")]
 pub struct AdverseEvent {
     /// Logical id of this artifact
@@ -202,6 +203,122 @@ pub struct AdverseEvent {
     /// Comment on adverse event
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub note: Vec<types::Annotation>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AdverseEventDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r6::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    status: types::Code,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    actuality: crate::coded::Coded<crate::r6::codes::AdverseEventActuality>,
+    #[serde(rename = "_actuality")]
+    actuality_ext: Option<types::Element>,
+    #[serde(default)]
+    category: Vec<types::CodeableConcept>,
+    code: Option<types::CodeableConcept>,
+    subject: types::Reference,
+    encounter: Option<types::Reference<crate::r6::resources::Encounter>>,
+    #[serde(flatten)]
+    cause: crate::r6::choice::Slot<AdverseEventCause>,
+    #[serde(flatten)]
+    effect: crate::r6::choice::Slot<AdverseEventEffect>,
+    detected: Option<types::DateTime>,
+    #[serde(rename = "_detected")]
+    detected_ext: Option<types::Element>,
+    recorded_date: Option<types::DateTime>,
+    #[serde(rename = "_recordedDate")]
+    recorded_date_ext: Option<types::Element>,
+    #[serde(default)]
+    resulting_effect: Vec<types::CodeableReference>,
+    location: Option<types::Reference<crate::r6::resources::Location>>,
+    seriousness: Option<types::CodeableConcept>,
+    #[serde(default)]
+    outcome: Vec<types::CodeableConcept>,
+    recorder: Option<types::Reference>,
+    #[serde(default)]
+    participant: Vec<AdverseEventParticipant>,
+    #[serde(default)]
+    study: Vec<types::Reference<crate::r6::resources::ResearchStudy>>,
+    expected_in_research_study: Option<types::Boolean>,
+    #[serde(rename = "_expectedInResearchStudy")]
+    expected_in_research_study_ext: Option<types::Element>,
+    #[serde(default)]
+    suspect_entity: Vec<AdverseEventSuspectEntity>,
+    #[serde(default)]
+    contributing_factor: Vec<types::CodeableReference>,
+    #[serde(default)]
+    preventive_action: Vec<types::CodeableReference>,
+    #[serde(default)]
+    mitigating_action: Vec<types::CodeableReference>,
+    #[serde(default)]
+    supporting_info: Vec<types::CodeableReference>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+}
+
+impl ::core::convert::From<AdverseEventDe> for AdverseEvent {
+    fn from(v: AdverseEventDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            status: v.status,
+            status_ext: v.status_ext,
+            actuality: v.actuality,
+            actuality_ext: v.actuality_ext,
+            category: v.category,
+            code: v.code,
+            subject: v.subject,
+            encounter: v.encounter,
+            cause: v.cause.0,
+            effect: v.effect.0,
+            detected: v.detected,
+            detected_ext: v.detected_ext,
+            recorded_date: v.recorded_date,
+            recorded_date_ext: v.recorded_date_ext,
+            resulting_effect: v.resulting_effect,
+            location: v.location,
+            seriousness: v.seriousness,
+            outcome: v.outcome,
+            recorder: v.recorder,
+            participant: v.participant,
+            study: v.study,
+            expected_in_research_study: v.expected_in_research_study,
+            expected_in_research_study_ext: v.expected_in_research_study_ext,
+            suspect_entity: v.suspect_entity,
+            contributing_factor: v.contributing_factor,
+            preventive_action: v.preventive_action,
+            mitigating_action: v.mitigating_action,
+            supporting_info: v.supporting_info,
+            note: v.note,
+        }
+    }
 }
 
 /// Indicates who or what participated in the adverse event and how they were

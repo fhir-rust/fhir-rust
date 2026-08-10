@@ -38,6 +38,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "FamilyMemberHistoryDe")]
 #[fhir_version("r4b")]
 pub struct FamilyMemberHistory {
     /// Logical id of this artifact
@@ -169,6 +170,109 @@ pub struct FamilyMemberHistory {
     pub condition: Vec<FamilyMemberHistoryCondition>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct FamilyMemberHistoryDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r4b::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    #[serde(default)]
+    instantiates_canonical: Vec<types::Canonical>,
+    #[serde(rename = "_instantiatesCanonical")]
+    #[serde(default)]
+    instantiates_canonical_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    instantiates_uri: Vec<types::Uri>,
+    #[serde(rename = "_instantiatesUri")]
+    #[serde(default)]
+    instantiates_uri_ext: Vec<Option<types::Element>>,
+    status: crate::coded::Coded<crate::r4b::codes::HistoryStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    data_absent_reason: Option<types::CodeableConcept>,
+    patient: types::Reference<crate::r4b::resources::Patient>,
+    date: Option<types::DateTime>,
+    #[serde(rename = "_date")]
+    date_ext: Option<types::Element>,
+    name: Option<types::String>,
+    #[serde(rename = "_name")]
+    name_ext: Option<types::Element>,
+    relationship: types::CodeableConcept,
+    sex: Option<types::CodeableConcept>,
+    #[serde(flatten)]
+    born: crate::r4b::choice::Slot<FamilyMemberHistoryBorn>,
+    #[serde(flatten)]
+    age: crate::r4b::choice::Slot<FamilyMemberHistoryAge>,
+    estimated_age: Option<types::Boolean>,
+    #[serde(rename = "_estimatedAge")]
+    estimated_age_ext: Option<types::Element>,
+    #[serde(flatten)]
+    deceased: crate::r4b::choice::Slot<FamilyMemberHistoryDeceased>,
+    #[serde(default)]
+    reason_code: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    reason_reference: Vec<types::Reference>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+    #[serde(default)]
+    condition: Vec<FamilyMemberHistoryCondition>,
+}
+
+impl ::core::convert::From<FamilyMemberHistoryDe> for FamilyMemberHistory {
+    fn from(v: FamilyMemberHistoryDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            instantiates_canonical: v.instantiates_canonical,
+            instantiates_canonical_ext: v.instantiates_canonical_ext,
+            instantiates_uri: v.instantiates_uri,
+            instantiates_uri_ext: v.instantiates_uri_ext,
+            status: v.status,
+            status_ext: v.status_ext,
+            data_absent_reason: v.data_absent_reason,
+            patient: v.patient,
+            date: v.date,
+            date_ext: v.date_ext,
+            name: v.name,
+            name_ext: v.name_ext,
+            relationship: v.relationship,
+            sex: v.sex,
+            born: v.born.0,
+            age: v.age.0,
+            estimated_age: v.estimated_age,
+            estimated_age_ext: v.estimated_age_ext,
+            deceased: v.deceased.0,
+            reason_code: v.reason_code,
+            reason_reference: v.reason_reference,
+            note: v.note,
+            condition: v.condition,
+        }
+    }
+}
+
 /// The significant Conditions (or condition) that the family member had. This
 /// is a repeating section to allow a system to represent more than one
 /// condition per resource, though there is nothing stopping multiple resources
@@ -194,6 +298,7 @@ pub struct FamilyMemberHistory {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "FamilyMemberHistoryConditionDe")]
 #[fhir_version("r4b")]
 pub struct FamilyMemberHistoryCondition {
     /// Unique id for inter-element referencing
@@ -228,6 +333,41 @@ pub struct FamilyMemberHistoryCondition {
     /// Extra information about condition
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub note: Vec<types::Annotation>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct FamilyMemberHistoryConditionDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    code: types::CodeableConcept,
+    outcome: Option<types::CodeableConcept>,
+    contributed_to_death: Option<types::Boolean>,
+    #[serde(rename = "_contributedToDeath")]
+    contributed_to_death_ext: Option<types::Element>,
+    #[serde(flatten)]
+    onset: crate::r4b::choice::Slot<FamilyMemberHistoryConditionOnset>,
+    #[serde(default)]
+    note: Vec<types::Annotation>,
+}
+
+impl ::core::convert::From<FamilyMemberHistoryConditionDe> for FamilyMemberHistoryCondition {
+    fn from(v: FamilyMemberHistoryConditionDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            code: v.code,
+            outcome: v.outcome,
+            contributed_to_death: v.contributed_to_death,
+            contributed_to_death_ext: v.contributed_to_death_ext,
+            onset: v.onset.0,
+            note: v.note,
+        }
+    }
 }
 
 /// The `FamilyMemberHistory.born[x]` choice element (see `spec/11-choice-types.md`).

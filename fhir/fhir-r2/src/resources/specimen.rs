@@ -140,6 +140,7 @@ pub struct Specimen {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "SpecimenCollectionDe")]
 #[fhir_version("r2")]
 pub struct SpecimenCollection {
     /// xml:id (or equivalent in JSON)
@@ -180,6 +181,44 @@ pub struct SpecimenCollection {
     pub body_site: Option<types::CodeableConcept>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SpecimenCollectionDe {
+    id: Option<types::Id>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    collector: Option<types::Reference<crate::r2::resources::Practitioner>>,
+    #[serde(default)]
+    comment: Vec<types::String>,
+    #[serde(rename = "_comment")]
+    #[serde(default)]
+    comment_ext: Vec<Option<types::Element>>,
+    #[serde(flatten)]
+    collected: crate::r2::choice::Slot<SpecimenCollectionCollected>,
+    quantity: Option<types::Quantity>,
+    method: Option<types::CodeableConcept>,
+    body_site: Option<types::CodeableConcept>,
+}
+
+impl ::core::convert::From<SpecimenCollectionDe> for SpecimenCollection {
+    fn from(v: SpecimenCollectionDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            collector: v.collector,
+            comment: v.comment,
+            comment_ext: v.comment_ext,
+            collected: v.collected.0,
+            quantity: v.quantity,
+            method: v.method,
+            body_site: v.body_site,
+        }
+    }
+}
+
 /// The container holding the specimen. The recursive nature of containers;
 /// i.e. blood in tube in tray in rack is not addressed here.
 ///
@@ -203,6 +242,7 @@ pub struct SpecimenCollection {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "SpecimenContainerDe")]
 #[fhir_version("r2")]
 pub struct SpecimenContainer {
     /// xml:id (or equivalent in JSON)
@@ -240,6 +280,43 @@ pub struct SpecimenContainer {
     /// The `Specimen.container.additive[x]` choice element (0..1); see [`SpecimenContainerAdditive`].
     #[serde(flatten)]
     pub additive: Option<SpecimenContainerAdditive>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SpecimenContainerDe {
+    id: Option<types::Id>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    description: Option<types::String>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    r#type: Option<types::CodeableConcept>,
+    capacity: Option<types::Quantity>,
+    specimen_quantity: Option<types::Quantity>,
+    #[serde(flatten)]
+    additive: crate::r2::choice::Slot<SpecimenContainerAdditive>,
+}
+
+impl ::core::convert::From<SpecimenContainerDe> for SpecimenContainer {
+    fn from(v: SpecimenContainerDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            description: v.description,
+            description_ext: v.description_ext,
+            r#type: v.r#type,
+            capacity: v.capacity,
+            specimen_quantity: v.specimen_quantity,
+            additive: v.additive.0,
+        }
+    }
 }
 
 /// Details concerning treatment and processing steps for the specimen.

@@ -33,6 +33,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ImplementationGuideDe")]
 #[fhir_version("r6")]
 pub struct ImplementationGuide {
     /// Logical id of this artifact
@@ -214,6 +215,144 @@ pub struct ImplementationGuide {
     pub manifest: Option<ImplementationGuideManifest>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ImplementationGuideDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r6::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    url: types::Uri,
+    #[serde(rename = "_url")]
+    url_ext: Option<types::Element>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    version: Option<types::String>,
+    #[serde(rename = "_version")]
+    version_ext: Option<types::Element>,
+    #[serde(flatten)]
+    version_algorithm: crate::r6::choice::Slot<ImplementationGuideVersionAlgorithm>,
+    name: types::String,
+    #[serde(rename = "_name")]
+    name_ext: Option<types::Element>,
+    title: Option<types::String>,
+    #[serde(rename = "_title")]
+    title_ext: Option<types::Element>,
+    status: crate::coded::Coded<crate::r6::codes::PublicationStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    experimental: Option<types::Boolean>,
+    #[serde(rename = "_experimental")]
+    experimental_ext: Option<types::Element>,
+    date: Option<types::DateTime>,
+    #[serde(rename = "_date")]
+    date_ext: Option<types::Element>,
+    publisher: Option<types::String>,
+    #[serde(rename = "_publisher")]
+    publisher_ext: Option<types::Element>,
+    #[serde(default)]
+    contact: Vec<types::ContactDetail>,
+    description: Option<types::Markdown>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    #[serde(default)]
+    use_context: Vec<types::UsageContext>,
+    #[serde(default)]
+    jurisdiction: Vec<types::CodeableConcept>,
+    purpose: Option<types::Markdown>,
+    #[serde(rename = "_purpose")]
+    purpose_ext: Option<types::Element>,
+    copyright: Option<types::Markdown>,
+    #[serde(rename = "_copyright")]
+    copyright_ext: Option<types::Element>,
+    copyright_label: Option<types::String>,
+    #[serde(rename = "_copyrightLabel")]
+    copyright_label_ext: Option<types::Element>,
+    package_id: types::Id,
+    #[serde(rename = "_packageId")]
+    package_id_ext: Option<types::Element>,
+    license: Option<crate::coded::Coded<crate::r6::codes::SpdxLicense>>,
+    #[serde(rename = "_license")]
+    license_ext: Option<types::Element>,
+    fhir_version: ::vec1::Vec1<crate::coded::Coded<crate::r6::codes::FhirVersion>>,
+    #[serde(rename = "_fhirVersion")]
+    #[serde(default)]
+    fhir_version_ext: Vec<Option<types::Element>>,
+    #[serde(default)]
+    depends_on: Vec<ImplementationGuideDependsOn>,
+    #[serde(default)]
+    global: Vec<ImplementationGuideGlobal>,
+    definition: Option<ImplementationGuideDefinition>,
+    manifest: Option<ImplementationGuideManifest>,
+}
+
+impl ::core::convert::From<ImplementationGuideDe> for ImplementationGuide {
+    fn from(v: ImplementationGuideDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            url: v.url,
+            url_ext: v.url_ext,
+            identifier: v.identifier,
+            version: v.version,
+            version_ext: v.version_ext,
+            version_algorithm: v.version_algorithm.0,
+            name: v.name,
+            name_ext: v.name_ext,
+            title: v.title,
+            title_ext: v.title_ext,
+            status: v.status,
+            status_ext: v.status_ext,
+            experimental: v.experimental,
+            experimental_ext: v.experimental_ext,
+            date: v.date,
+            date_ext: v.date_ext,
+            publisher: v.publisher,
+            publisher_ext: v.publisher_ext,
+            contact: v.contact,
+            description: v.description,
+            description_ext: v.description_ext,
+            use_context: v.use_context,
+            jurisdiction: v.jurisdiction,
+            purpose: v.purpose,
+            purpose_ext: v.purpose_ext,
+            copyright: v.copyright,
+            copyright_ext: v.copyright_ext,
+            copyright_label: v.copyright_label,
+            copyright_label_ext: v.copyright_label_ext,
+            package_id: v.package_id,
+            package_id_ext: v.package_id_ext,
+            license: v.license,
+            license_ext: v.license_ext,
+            fhir_version: v.fhir_version,
+            fhir_version_ext: v.fhir_version_ext,
+            depends_on: v.depends_on,
+            global: v.global,
+            definition: v.definition,
+            manifest: v.manifest,
+        }
+    }
+}
+
 /// The information needed by an IG publisher tool to publish the whole
 /// implementation guide.
 ///
@@ -344,6 +483,7 @@ pub struct ImplementationGuideDefinitionGrouping {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ImplementationGuideDefinitionPageDe")]
 #[fhir_version("r6")]
 pub struct ImplementationGuideDefinitionPage {
     /// Unique id for inter-element referencing
@@ -386,6 +526,49 @@ pub struct ImplementationGuideDefinitionPage {
     /// Nested Pages / Sections
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub page: Vec<ImplementationGuideDefinitionPage>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ImplementationGuideDefinitionPageDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    source: crate::r6::choice::Slot<ImplementationGuideDefinitionPageSource>,
+    name: types::Url,
+    #[serde(rename = "_name")]
+    name_ext: Option<types::Element>,
+    title: types::String,
+    #[serde(rename = "_title")]
+    title_ext: Option<types::Element>,
+    generation: crate::coded::Coded<crate::r6::codes::GuidePageGeneration>,
+    #[serde(rename = "_generation")]
+    generation_ext: Option<types::Element>,
+    #[serde(default)]
+    page: Vec<ImplementationGuideDefinitionPage>,
+}
+
+impl ::core::convert::From<ImplementationGuideDefinitionPageDe>
+    for ImplementationGuideDefinitionPage
+{
+    fn from(v: ImplementationGuideDefinitionPageDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            source: v.source.0,
+            name: v.name,
+            name_ext: v.name_ext,
+            title: v.title,
+            title_ext: v.title_ext,
+            generation: v.generation,
+            generation_ext: v.generation_ext,
+            page: v.page,
+        }
+    }
 }
 
 /// A set of parameters that defines how the implementation guide is built. The

@@ -50,6 +50,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ExtensionDe")]
 pub struct Extension {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -64,6 +65,28 @@ pub struct Extension {
     /// The `Extension.value[x]` choice element (0..1); see [`ExtensionValue`].
     #[serde(flatten)]
     pub value: Option<ExtensionValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ExtensionDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    url: types::String,
+    #[serde(flatten)]
+    value: crate::r5::choice::Slot<ExtensionValue>,
+}
+
+impl ::core::convert::From<ExtensionDe> for Extension {
+    fn from(v: ExtensionDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            url: v.url,
+            value: v.value.0,
+        }
+    }
 }
 
 #[cfg(test)]

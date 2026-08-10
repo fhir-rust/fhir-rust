@@ -58,6 +58,7 @@ use fhir_derive_macros::Validate;
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "CoverageEligibilityResponseDe")]
 pub struct CoverageEligibilityResponse {
     /// Logical id of this artifact
     pub id: Option<types::String>,
@@ -165,6 +166,99 @@ pub struct CoverageEligibilityResponse {
     pub error: Vec<CoverageEligibilityResponseError>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CoverageEligibilityResponseDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r5::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    status: crate::r5::coded::Coded<crate::r5::codes::FmStatus>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    purpose: vec1::Vec1<crate::r5::coded::Coded<crate::r5::codes::EligibilityresponsePurpose>>,
+    #[serde(rename = "_purpose")]
+    #[serde(default)]
+    purpose_ext: Vec<Option<types::Element>>,
+    patient: types::Reference<crate::r5::resources::Patient>,
+    #[serde(default)]
+    event: Vec<CoverageEligibilityResponseEvent>,
+    #[serde(flatten)]
+    serviced: crate::r5::choice::Slot<CoverageEligibilityResponseServiced>,
+    created: types::DateTime,
+    #[serde(rename = "_created")]
+    created_ext: Option<types::Element>,
+    requestor: Option<types::Reference>,
+    request: types::Reference<crate::r5::resources::CoverageEligibilityRequest>,
+    outcome: crate::r5::coded::Coded<crate::r5::codes::EligibilityOutcome>,
+    #[serde(rename = "_outcome")]
+    outcome_ext: Option<types::Element>,
+    disposition: Option<types::String>,
+    #[serde(rename = "_disposition")]
+    disposition_ext: Option<types::Element>,
+    insurer: types::Reference<crate::r5::resources::Organization>,
+    #[serde(default)]
+    insurance: Vec<CoverageEligibilityResponseInsurance>,
+    pre_auth_ref: Option<types::String>,
+    #[serde(rename = "_preAuthRef")]
+    pre_auth_ref_ext: Option<types::Element>,
+    form: Option<types::CodeableConcept>,
+    #[serde(default)]
+    error: Vec<CoverageEligibilityResponseError>,
+}
+
+impl ::core::convert::From<CoverageEligibilityResponseDe> for CoverageEligibilityResponse {
+    fn from(v: CoverageEligibilityResponseDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            status: v.status,
+            status_ext: v.status_ext,
+            purpose: v.purpose,
+            purpose_ext: v.purpose_ext,
+            patient: v.patient,
+            event: v.event,
+            serviced: v.serviced.0,
+            created: v.created,
+            created_ext: v.created_ext,
+            requestor: v.requestor,
+            request: v.request,
+            outcome: v.outcome,
+            outcome_ext: v.outcome_ext,
+            disposition: v.disposition,
+            disposition_ext: v.disposition_ext,
+            insurer: v.insurer,
+            insurance: v.insurance,
+            pre_auth_ref: v.pre_auth_ref,
+            pre_auth_ref_ext: v.pre_auth_ref_ext,
+            form: v.form,
+            error: v.error,
+        }
+    }
+}
+
 /// Event information for a CoverageEligibilityResponse.
 /// # Examples
 ///
@@ -186,6 +280,7 @@ pub struct CoverageEligibilityResponse {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "CoverageEligibilityResponseEventDe")]
 pub struct CoverageEligibilityResponseEvent {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -204,6 +299,33 @@ pub struct CoverageEligibilityResponseEvent {
     /// The `CoverageEligibilityResponse.event.when[x]` choice element (0..1); see [`CoverageEligibilityResponseEventWhen`].
     #[serde(flatten)]
     pub when: Option<CoverageEligibilityResponseEventWhen>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CoverageEligibilityResponseEventDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: types::CodeableConcept,
+    #[serde(flatten)]
+    when: crate::r5::choice::Slot<CoverageEligibilityResponseEventWhen>,
+}
+
+impl ::core::convert::From<CoverageEligibilityResponseEventDe>
+    for CoverageEligibilityResponseEvent
+{
+    fn from(v: CoverageEligibilityResponseEventDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            when: v.when.0,
+        }
+    }
 }
 
 /// Patient insurance information within a CoverageEligibilityResponse.
@@ -371,6 +493,7 @@ pub struct CoverageEligibilityResponseInsuranceItem {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "CoverageEligibilityResponseInsuranceItemBenefitDe")]
 pub struct CoverageEligibilityResponseInsuranceItemBenefit {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -393,6 +516,36 @@ pub struct CoverageEligibilityResponseInsuranceItemBenefit {
     /// The `CoverageEligibilityResponse.insurance.item.benefit.used[x]` choice element (0..1); see [`CoverageEligibilityResponseInsuranceItemBenefitUsed`].
     #[serde(flatten)]
     pub used: Option<CoverageEligibilityResponseInsuranceItemBenefitUsed>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CoverageEligibilityResponseInsuranceItemBenefitDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: types::CodeableConcept,
+    #[serde(flatten)]
+    allowed: crate::r5::choice::Slot<CoverageEligibilityResponseInsuranceItemBenefitAllowed>,
+    #[serde(flatten)]
+    used: crate::r5::choice::Slot<CoverageEligibilityResponseInsuranceItemBenefitUsed>,
+}
+
+impl ::core::convert::From<CoverageEligibilityResponseInsuranceItemBenefitDe>
+    for CoverageEligibilityResponseInsuranceItemBenefit
+{
+    fn from(v: CoverageEligibilityResponseInsuranceItemBenefitDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            allowed: v.allowed.0,
+            used: v.used.0,
+        }
+    }
 }
 
 /// Processing errors reported in a CoverageEligibilityResponse.

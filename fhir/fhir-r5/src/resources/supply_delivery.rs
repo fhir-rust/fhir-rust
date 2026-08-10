@@ -62,6 +62,7 @@ use fhir_derive_macros::Validate;
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "SupplyDeliveryDe")]
 pub struct SupplyDelivery {
     /// Logical id of this artifact
     pub id: Option<types::String>,
@@ -139,6 +140,74 @@ pub struct SupplyDelivery {
     pub receiver: Vec<types::Reference>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SupplyDeliveryDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r5::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    #[serde(default)]
+    based_on: Vec<types::Reference<crate::r5::resources::SupplyRequest>>,
+    #[serde(default)]
+    part_of: Vec<types::Reference>,
+    status: Option<crate::r5::coded::Coded<crate::r5::codes::SupplydeliveryStatus>>,
+    #[serde(rename = "_status")]
+    status_ext: Option<types::Element>,
+    patient: Option<types::Reference<crate::r5::resources::Patient>>,
+    r#type: Option<types::CodeableConcept>,
+    #[serde(default)]
+    supplied_item: Vec<SupplyDeliverySuppliedItem>,
+    #[serde(flatten)]
+    occurrence: crate::r5::choice::Slot<SupplyDeliveryOccurrence>,
+    supplier: Option<types::Reference>,
+    destination: Option<types::Reference<crate::r5::resources::Location>>,
+    #[serde(default)]
+    receiver: Vec<types::Reference>,
+}
+
+impl ::core::convert::From<SupplyDeliveryDe> for SupplyDelivery {
+    fn from(v: SupplyDeliveryDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            based_on: v.based_on,
+            part_of: v.part_of,
+            status: v.status,
+            status_ext: v.status_ext,
+            patient: v.patient,
+            r#type: v.r#type,
+            supplied_item: v.supplied_item,
+            occurrence: v.occurrence.0,
+            supplier: v.supplier,
+            destination: v.destination,
+            receiver: v.receiver,
+        }
+    }
+}
+
 /// The item that is delivered or supplied.
 ///
 /// Describes a single item that is delivered as part of the supply delivery,
@@ -164,6 +233,7 @@ pub struct SupplyDelivery {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "SupplyDeliverySuppliedItemDe")]
 pub struct SupplyDeliverySuppliedItem {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -182,6 +252,31 @@ pub struct SupplyDeliverySuppliedItem {
     /// The `SupplyDelivery.suppliedItem.item[x]` choice element (0..1); see [`SupplyDeliverySuppliedItemItem`].
     #[serde(flatten)]
     pub item: Option<SupplyDeliverySuppliedItemItem>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SupplyDeliverySuppliedItemDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    quantity: Option<types::Quantity>,
+    #[serde(flatten)]
+    item: crate::r5::choice::Slot<SupplyDeliverySuppliedItemItem>,
+}
+
+impl ::core::convert::From<SupplyDeliverySuppliedItemDe> for SupplyDeliverySuppliedItem {
+    fn from(v: SupplyDeliverySuppliedItemDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            quantity: v.quantity,
+            item: v.item.0,
+        }
+    }
 }
 
 #[cfg(test)]

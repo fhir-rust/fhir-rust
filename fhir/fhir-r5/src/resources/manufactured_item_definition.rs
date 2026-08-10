@@ -160,6 +160,7 @@ pub struct ManufacturedItemDefinition {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ManufacturedItemDefinitionPropertyDe")]
 pub struct ManufacturedItemDefinitionProperty {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -178,6 +179,33 @@ pub struct ManufacturedItemDefinitionProperty {
     /// The `ManufacturedItemDefinition.property.value[x]` choice element (0..1); see [`ManufacturedItemDefinitionPropertyValue`].
     #[serde(flatten)]
     pub value: Option<ManufacturedItemDefinitionPropertyValue>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ManufacturedItemDefinitionPropertyDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    r#type: types::CodeableConcept,
+    #[serde(flatten)]
+    value: crate::r5::choice::Slot<ManufacturedItemDefinitionPropertyValue>,
+}
+
+impl ::core::convert::From<ManufacturedItemDefinitionPropertyDe>
+    for ManufacturedItemDefinitionProperty
+{
+    fn from(v: ManufacturedItemDefinitionPropertyDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            r#type: v.r#type,
+            value: v.value.0,
+        }
+    }
 }
 
 /// Physical parts of the manufactured item, that it is intrisically made from.

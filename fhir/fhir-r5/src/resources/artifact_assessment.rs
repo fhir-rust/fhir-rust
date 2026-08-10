@@ -58,6 +58,7 @@ use fhir_derive_macros::Validate;
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ArtifactAssessmentDe")]
 pub struct ArtifactAssessment {
     /// Logical id of this artifact
     pub id: Option<types::String>,
@@ -151,6 +152,91 @@ pub struct ArtifactAssessment {
     /// Primitive extension sibling for [`disposition`](Self::disposition) (FHIR `_disposition`).
     #[serde(rename = "_disposition")]
     pub disposition_ext: Option<types::Element>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ArtifactAssessmentDe {
+    id: Option<types::String>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r5::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    title: Option<types::String>,
+    #[serde(rename = "_title")]
+    title_ext: Option<types::Element>,
+    #[serde(flatten)]
+    cite_as: crate::r5::choice::Slot<ArtifactAssessmentCiteAs>,
+    date: Option<types::DateTime>,
+    #[serde(rename = "_date")]
+    date_ext: Option<types::Element>,
+    copyright: Option<types::Markdown>,
+    #[serde(rename = "_copyright")]
+    copyright_ext: Option<types::Element>,
+    approval_date: Option<types::Date>,
+    #[serde(rename = "_approvalDate")]
+    approval_date_ext: Option<types::Element>,
+    last_review_date: Option<types::Date>,
+    #[serde(rename = "_lastReviewDate")]
+    last_review_date_ext: Option<types::Element>,
+    #[serde(flatten)]
+    artifact: crate::r5::choice::Slot<ArtifactAssessmentArtifact>,
+    #[serde(default)]
+    content: Vec<ArtifactAssessmentContent>,
+    workflow_status:
+        Option<crate::r5::coded::Coded<crate::r5::codes::ArtifactassessmentWorkflowStatus>>,
+    #[serde(rename = "_workflowStatus")]
+    workflow_status_ext: Option<types::Element>,
+    disposition: Option<crate::r5::coded::Coded<crate::r5::codes::ArtifactassessmentDisposition>>,
+    #[serde(rename = "_disposition")]
+    disposition_ext: Option<types::Element>,
+}
+
+impl ::core::convert::From<ArtifactAssessmentDe> for ArtifactAssessment {
+    fn from(v: ArtifactAssessmentDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            identifier: v.identifier,
+            title: v.title,
+            title_ext: v.title_ext,
+            cite_as: v.cite_as.0,
+            date: v.date,
+            date_ext: v.date_ext,
+            copyright: v.copyright,
+            copyright_ext: v.copyright_ext,
+            approval_date: v.approval_date,
+            approval_date_ext: v.approval_date_ext,
+            last_review_date: v.last_review_date,
+            last_review_date_ext: v.last_review_date_ext,
+            artifact: v.artifact.0,
+            content: v.content,
+            workflow_status: v.workflow_status,
+            workflow_status_ext: v.workflow_status_ext,
+            disposition: v.disposition,
+            disposition_ext: v.disposition_ext,
+        }
+    }
 }
 
 /// Comment, classifier, or rating content of an [`ArtifactAssessment`].

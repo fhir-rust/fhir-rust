@@ -146,6 +146,7 @@ pub struct DocumentManifest {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "DocumentManifestContentDe")]
 #[fhir_version("r2")]
 pub struct DocumentManifestContent {
     /// xml:id (or equivalent in JSON)
@@ -163,6 +164,29 @@ pub struct DocumentManifestContent {
     /// The `DocumentManifest.content.p[x]` choice element (1..1); see [`DocumentManifestContentP`]. It is `Option` even though the specification makes it mandatory, because a choice enum has no default.
     #[serde(flatten)]
     pub p: Option<DocumentManifestContentP>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DocumentManifestContentDe {
+    id: Option<types::Id>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    p: crate::r2::choice::Slot<DocumentManifestContentP>,
+}
+
+impl ::core::convert::From<DocumentManifestContentDe> for DocumentManifestContent {
+    fn from(v: DocumentManifestContentDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            p: v.p.0,
+        }
+    }
 }
 
 /// Related identifiers or resources associated with the DocumentManifest.

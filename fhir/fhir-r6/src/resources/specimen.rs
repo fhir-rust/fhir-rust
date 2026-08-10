@@ -168,6 +168,7 @@ pub struct Specimen {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "SpecimenCollectionDe")]
 #[fhir_version("r6")]
 pub struct SpecimenCollection {
     /// Unique id for inter-element referencing
@@ -211,6 +212,46 @@ pub struct SpecimenCollection {
     /// The `Specimen.collection.fastingStatus[x]` choice element (0..1); see [`SpecimenCollectionFastingStatus`].
     #[serde(flatten)]
     pub fasting_status: Option<SpecimenCollectionFastingStatus>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SpecimenCollectionDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    collector: Option<types::Reference>,
+    #[serde(flatten)]
+    collected: crate::r6::choice::Slot<SpecimenCollectionCollected>,
+    duration: Option<types::Duration>,
+    quantity: Option<types::Quantity>,
+    method: Option<types::CodeableConcept>,
+    device: Option<types::CodeableReference>,
+    procedure: Option<types::Reference<crate::r6::resources::Procedure>>,
+    body_site: Option<types::CodeableReference>,
+    #[serde(flatten)]
+    fasting_status: crate::r6::choice::Slot<SpecimenCollectionFastingStatus>,
+}
+
+impl ::core::convert::From<SpecimenCollectionDe> for SpecimenCollection {
+    fn from(v: SpecimenCollectionDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            collector: v.collector,
+            collected: v.collected.0,
+            duration: v.duration,
+            quantity: v.quantity,
+            method: v.method,
+            device: v.device,
+            procedure: v.procedure,
+            body_site: v.body_site,
+            fasting_status: v.fasting_status.0,
+        }
+    }
 }
 
 /// The container holding the specimen. The recursive nature of containers;
@@ -328,6 +369,7 @@ pub struct SpecimenFeature {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "SpecimenProcessingDe")]
 #[fhir_version("r6")]
 pub struct SpecimenProcessing {
     /// Unique id for inter-element referencing
@@ -365,6 +407,43 @@ pub struct SpecimenProcessing {
     /// The `Specimen.processing.time[x]` choice element (0..1); see [`SpecimenProcessingTime`].
     #[serde(flatten)]
     pub time: Option<SpecimenProcessingTime>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SpecimenProcessingDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    description: Option<types::String>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    method: Option<types::CodeableConcept>,
+    performer: Option<types::Reference>,
+    device: Option<types::Reference<crate::r6::resources::Device>>,
+    #[serde(default)]
+    additive: Vec<types::Reference<crate::r6::resources::Substance>>,
+    #[serde(flatten)]
+    time: crate::r6::choice::Slot<SpecimenProcessingTime>,
+}
+
+impl ::core::convert::From<SpecimenProcessingDe> for SpecimenProcessing {
+    fn from(v: SpecimenProcessingDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            description: v.description,
+            description_ext: v.description_ext,
+            method: v.method,
+            performer: v.performer,
+            device: v.device,
+            additive: v.additive,
+            time: v.time.0,
+        }
+    }
 }
 
 /// The `Specimen.collection.collected[x]` choice element (see `spec/11-choice-types.md`).

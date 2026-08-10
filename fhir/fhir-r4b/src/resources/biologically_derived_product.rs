@@ -148,6 +148,7 @@ pub struct BiologicallyDerivedProduct {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "BiologicallyDerivedProductCollectionDe")]
 #[fhir_version("r4b")]
 pub struct BiologicallyDerivedProductCollection {
     /// Unique id for inter-element referencing
@@ -171,6 +172,35 @@ pub struct BiologicallyDerivedProductCollection {
     /// The `BiologicallyDerivedProduct.collection.collected[x]` choice element (0..1); see [`BiologicallyDerivedProductCollectionCollected`].
     #[serde(flatten)]
     pub collected: Option<BiologicallyDerivedProductCollectionCollected>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct BiologicallyDerivedProductCollectionDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    collector: Option<types::Reference>,
+    source: Option<types::Reference>,
+    #[serde(flatten)]
+    collected: crate::r4b::choice::Slot<BiologicallyDerivedProductCollectionCollected>,
+}
+
+impl ::core::convert::From<BiologicallyDerivedProductCollectionDe>
+    for BiologicallyDerivedProductCollection
+{
+    fn from(v: BiologicallyDerivedProductCollectionDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            collector: v.collector,
+            source: v.source,
+            collected: v.collected.0,
+        }
+    }
 }
 
 /// Any manipulation of product post-collection that is intended to alter the
@@ -197,6 +227,7 @@ pub struct BiologicallyDerivedProductCollection {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "BiologicallyDerivedProductManipulationDe")]
 #[fhir_version("r4b")]
 pub struct BiologicallyDerivedProductManipulation {
     /// Unique id for inter-element referencing
@@ -223,6 +254,36 @@ pub struct BiologicallyDerivedProductManipulation {
     pub time: Option<BiologicallyDerivedProductManipulationTime>,
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct BiologicallyDerivedProductManipulationDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    description: Option<types::String>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    #[serde(flatten)]
+    time: crate::r4b::choice::Slot<BiologicallyDerivedProductManipulationTime>,
+}
+
+impl ::core::convert::From<BiologicallyDerivedProductManipulationDe>
+    for BiologicallyDerivedProductManipulation
+{
+    fn from(v: BiologicallyDerivedProductManipulationDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            description: v.description,
+            description_ext: v.description_ext,
+            time: v.time.0,
+        }
+    }
+}
+
 /// Any processing of the product during collection that does not change the
 /// fundamental nature of the product. For example adding anti-coagulants
 /// during the collection of Peripheral Blood Stem Cells.
@@ -247,6 +308,7 @@ pub struct BiologicallyDerivedProductManipulation {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "BiologicallyDerivedProductProcessingDe")]
 #[fhir_version("r4b")]
 pub struct BiologicallyDerivedProductProcessing {
     /// Unique id for inter-element referencing
@@ -277,6 +339,40 @@ pub struct BiologicallyDerivedProductProcessing {
     /// The `BiologicallyDerivedProduct.processing.time[x]` choice element (0..1); see [`BiologicallyDerivedProductProcessingTime`].
     #[serde(flatten)]
     pub time: Option<BiologicallyDerivedProductProcessingTime>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct BiologicallyDerivedProductProcessingDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    description: Option<types::String>,
+    #[serde(rename = "_description")]
+    description_ext: Option<types::Element>,
+    procedure: Option<types::CodeableConcept>,
+    additive: Option<types::Reference<crate::r4b::resources::Substance>>,
+    #[serde(flatten)]
+    time: crate::r4b::choice::Slot<BiologicallyDerivedProductProcessingTime>,
+}
+
+impl ::core::convert::From<BiologicallyDerivedProductProcessingDe>
+    for BiologicallyDerivedProductProcessing
+{
+    fn from(v: BiologicallyDerivedProductProcessingDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            description: v.description,
+            description_ext: v.description_ext,
+            procedure: v.procedure,
+            additive: v.additive,
+            time: v.time.0,
+        }
+    }
 }
 
 /// Product storage.

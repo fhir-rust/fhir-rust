@@ -107,6 +107,7 @@ pub struct Parameters {
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "ParametersParameterDe")]
 pub struct ParametersParameter {
     /// Unique id for inter-element referencing
     pub id: Option<types::String>,
@@ -135,6 +136,39 @@ pub struct ParametersParameter {
     /// Nested child parameters that let this parameter group several named values together as a multi-part structure.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub part: Vec<ParametersParameter>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ParametersParameterDe {
+    id: Option<types::String>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    name: types::String,
+    #[serde(rename = "_name")]
+    name_ext: Option<types::Element>,
+    #[serde(flatten)]
+    value: crate::r5::choice::Slot<ParametersParameterValue>,
+    resource: Option<::serde_json::Value>,
+    #[serde(default)]
+    part: Vec<ParametersParameter>,
+}
+
+impl ::core::convert::From<ParametersParameterDe> for ParametersParameter {
+    fn from(v: ParametersParameterDe) -> Self {
+        Self {
+            id: v.id,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            name: v.name,
+            name_ext: v.name_ext,
+            value: v.value.0,
+            resource: v.resource,
+            part: v.part,
+        }
+    }
 }
 
 #[cfg(test)]

@@ -35,6 +35,7 @@ use fhir_derive_macros::{Builder, Validate};
 #[serde_with::skip_serializing_none]
 #[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq, Eq, Validate, Builder)]
 #[serde(rename_all = "camelCase")]
+#[serde(from = "DeviceUseStatementDe")]
 #[fhir_version("r2")]
 pub struct DeviceUseStatement {
     /// Logical id of this artifact
@@ -106,6 +107,73 @@ pub struct DeviceUseStatement {
     /// The `DeviceUseStatement.timing[x]` choice element (0..1); see [`DeviceUseStatementTiming`].
     #[serde(flatten)]
     pub timing: Option<DeviceUseStatementTiming>,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DeviceUseStatementDe {
+    id: Option<types::Id>,
+    meta: Option<types::Meta>,
+    implicit_rules: Option<types::Uri>,
+    #[serde(rename = "_implicitRules")]
+    implicit_rules_ext: Option<types::Element>,
+    language: Option<types::Code>,
+    #[serde(rename = "_language")]
+    language_ext: Option<types::Element>,
+    text: Option<types::Narrative>,
+    #[serde(default)]
+    contained: Vec<crate::r2::resources::Resource>,
+    #[serde(default)]
+    extension: Vec<types::Extension>,
+    #[serde(default)]
+    modifier_extension: Vec<types::Extension>,
+    #[serde(flatten)]
+    body_site: crate::r2::choice::Slot<DeviceUseStatementBodySite>,
+    when_used: Option<types::Period>,
+    device: types::Reference<crate::r2::resources::Device>,
+    #[serde(default)]
+    identifier: Vec<types::Identifier>,
+    #[serde(default)]
+    indication: Vec<types::CodeableConcept>,
+    #[serde(default)]
+    notes: Vec<types::String>,
+    #[serde(rename = "_notes")]
+    #[serde(default)]
+    notes_ext: Vec<Option<types::Element>>,
+    recorded_on: Option<types::DateTime>,
+    #[serde(rename = "_recordedOn")]
+    recorded_on_ext: Option<types::Element>,
+    subject: types::Reference<crate::r2::resources::Patient>,
+    #[serde(flatten)]
+    timing: crate::r2::choice::Slot<DeviceUseStatementTiming>,
+}
+
+impl ::core::convert::From<DeviceUseStatementDe> for DeviceUseStatement {
+    fn from(v: DeviceUseStatementDe) -> Self {
+        Self {
+            id: v.id,
+            meta: v.meta,
+            implicit_rules: v.implicit_rules,
+            implicit_rules_ext: v.implicit_rules_ext,
+            language: v.language,
+            language_ext: v.language_ext,
+            text: v.text,
+            contained: v.contained,
+            extension: v.extension,
+            modifier_extension: v.modifier_extension,
+            body_site: v.body_site.0,
+            when_used: v.when_used,
+            device: v.device,
+            identifier: v.identifier,
+            indication: v.indication,
+            notes: v.notes,
+            notes_ext: v.notes_ext,
+            recorded_on: v.recorded_on,
+            recorded_on_ext: v.recorded_on_ext,
+            subject: v.subject,
+            timing: v.timing.0,
+        }
+    }
 }
 
 /// The `DeviceUseStatement.bodySite[x]` choice element (see `spec/11-choice-types.md`).
