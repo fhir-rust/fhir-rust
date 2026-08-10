@@ -686,6 +686,48 @@ async fn metadata_declares_history_scopes() {
 
 #[tokio::test]
 #[serial]
+async fn transaction_and_batch_bundles_are_refused_with_the_reason() {
+    // SV2.18: the refusal is served to clients, not left as a bare 405.
+    store_ready().await;
+    request::<App, _, _>(|request, _ctx| async move {
+        let res = request
+            .post("/r5")
+            .add_header("content-type", FHIR_JSON)
+            .add_header("authorization", &bearer("dr-who"))
+            .text(r#"{"resourceType":"Bundle","type":"transaction","entry":[]}"#.to_string())
+            .await;
+        assert_eq!(res.status_code(), 501);
+        let body = res.text();
+        assert!(
+            body.contains("atomic") && body.contains("half-applied"),
+            "the refusal must carry the reasoning: {body}"
+        );
+
+        let res = request
+            .post("/r5")
+            .add_header("content-type", FHIR_JSON)
+            .add_header("authorization", &bearer("dr-who"))
+            .text(r#"{"resourceType":"Bundle","type":"batch","entry":[]}"#.to_string())
+            .await;
+        assert_eq!(res.status_code(), 501);
+        assert!(
+            res.text().contains("unbuilt rather than rejected"),
+            "batch is refused by its own name"
+        );
+
+        let res = request
+            .post("/r5")
+            .add_header("content-type", FHIR_JSON)
+            .add_header("authorization", &bearer("dr-who"))
+            .text(r#"{"resourceType":"Patient"}"#.to_string())
+            .await;
+        assert_eq!(res.status_code(), 400);
+    })
+    .await;
+}
+
+#[tokio::test]
+#[serial]
 async fn reads_are_recorded_as_disclosures() {
     // "Who looked at this patient" is usually an audit's first question, and the
     // read path is where recording it is easiest to forget — it was missing here

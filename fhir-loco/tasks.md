@@ -49,11 +49,14 @@ ports this service sits over.
   `include_and_revinclude_resolve_references`,
   `includes_are_refused_by_name_never_dropped`,
   `metadata_declares_search_includes`.
-- [ ] **Transaction Bundles.** `fhir-sqlite`'s `transact_audited`
-  deliberately returns `Unsupported` — atomicity by compensation was
-  rejected because it would claim an atomicity it does not have. Needs a
-  store that can hold one transaction across the operations, or a
-  documented refusal.
+- [x] **Transaction Bundles: the documented refusal** (`SV2.18`) — *done
+  2026-08-10*. `POST /{version}` now answers with a `501`
+  `OperationOutcome` that says *why* (atomicity by compensation was
+  rejected; the store refuses rather than pretending), instead of a bare
+  405 from an unrouted path; `batch` is refused by its own name as
+  unbuilt-not-rejected. Serving transactions for real still needs the
+  store's `put`/`delete` split to run inside one caller-held transaction —
+  that remains tracked in `fhir-sqlite`'s `tasks.md`.
 - [x] **Type-level and system-level `_history`** (`SV2.17`) — *done
   2026-08-10*. `GET /{version}/{type}/_history` and `GET
   /{version}/_history` over `fhir-sqlite`'s new `history_page` (merged

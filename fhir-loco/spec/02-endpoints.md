@@ -238,6 +238,31 @@
   *Served since 2026-08-10; until then only instance-level history
   existed (a gap `tasks.md` tracked from F-58's account).*
 
+## Transaction and batch Bundles
+
+- **SV2.18** `POST /{version}` MUST answer — and MUST answer with a
+  **refusal that says why**, not a bare 405 from an unrouted path:
+
+  - A `Bundle` of type `transaction` is refused with `501` and an
+    `OperationOutcome` naming the reason: a FHIR transaction is atomic by
+    definition, the store's `transact_audited` deliberately returns
+    `Unsupported` because atomicity by compensation was rejected (readers
+    between operations would observe a half-applied bundle, and a process
+    dying mid-unwind leaves the partial state permanently), and an
+    endpoint that emulated it would claim a guarantee the system does not
+    provide (`C0.11`'s shape). Serving it for real needs the store's
+    `put`/`delete` split to run inside one caller-held transaction —
+    tracked in `fhir-sqlite`'s `tasks.md`, not promised here.
+  - A `Bundle` of type `batch` is refused with `501` too, by its own
+    name: batch is *not* atomic and is implementable without the question
+    above, so its refusal names it as unbuilt rather than rejected.
+  - Anything else — a non-Bundle body, another Bundle type — is a plain
+    `400`.
+
+  This requirement is the "documented refusal" its task entry called for:
+  the decision is served to clients instead of living only in a doc
+  comment.
+
 ---
 
 Part of the [fhir-loco specification](index.md).

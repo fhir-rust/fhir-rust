@@ -1040,9 +1040,65 @@ async fn scoped_history(
     fhir_json(StatusCode::OK, &bundle("history", out, total), None)
 }
 
+/// `POST /{version}` — transaction/batch Bundles, refused by name
+/// (`SV2.18`): the decision is served to clients, not left as a bare 405.
+#[debug_handler]
+async fn system_post(Path(version): Path<String>, body: Bytes) -> AxumResponse {
+    if let Err(r) = version_of(&version) {
+        return r;
+    }
+    // `Bytes`, not `axum::Json`: the body arrives as application/fhir+json,
+    // which the Json extractor answers with 415.
+    let b: serde_json::Value = match serde_json::from_slice(&body) {
+        Ok(v) => v,
+        Err(e) => {
+            return outcome(
+                StatusCode::BAD_REQUEST,
+                "error",
+                "invalid",
+                &format!("body is not JSON: {e}"),
+            );
+        }
+    };
+    if b["resourceType"] != "Bundle" {
+        return outcome(
+            StatusCode::BAD_REQUEST,
+            "error",
+            "invalid",
+            "the system endpoint takes a Bundle (SV2.18)",
+        );
+    }
+    match b["type"].as_str() {
+        Some("transaction") => outcome(
+            StatusCode::NOT_IMPLEMENTED,
+            "error",
+            "not-supported",
+            "transaction Bundles are not served: a FHIR transaction is atomic \
+             by definition, and this store cannot yet hold one transaction \
+             across the operations — emulating atomicity by compensation was \
+             rejected because readers between operations would observe a \
+             half-applied bundle (SV2.18)",
+        ),
+        Some("batch") => outcome(
+            StatusCode::NOT_IMPLEMENTED,
+            "error",
+            "not-supported",
+            "batch Bundles are not served yet — unbuilt rather than rejected; \
+             batch claims no atomicity (SV2.18)",
+        ),
+        other => outcome(
+            StatusCode::BAD_REQUEST,
+            "error",
+            "invalid",
+            &format!("unsupported Bundle type {other:?} (SV2.18)"),
+        ),
+    }
+}
+
 pub fn routes() -> Routes {
     Routes::new()
         .add("/{version}/metadata", get(metadata))
+        .add("/{version}", post(system_post))
         .add("/{version}/_history", get(system_history))
         .add("/{version}/{rtype}", get(search).post(create))
         .add("/{version}/{rtype}/_history", get(type_history))
