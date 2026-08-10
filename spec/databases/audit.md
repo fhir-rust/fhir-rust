@@ -140,7 +140,7 @@ not a code fix).
 | [F-44](#f-44) | Medium | `check-shared-core.sh` aborted under `set -u` on the empty `EXEMPT` array — only reachable once a file diverged | **fixed** |
 | [F-45](#f-45) | Medium | The shared-core gate stopped at the store; `chain.rs` was 618 identical lines duplicated six times, unwatched | **fixed** — extracted to `fhir-store`, all six rewired |
 | [F-46](#f-46) | Medium | `U11` cannot reach the extension and deep tables: they have no columns in the map, and the cheaper workaround contradicts `U2b` | **fixed** 2026-08-02, verified live |
-| [F-47](#f-47) | Low | `path` is bound to unbounded types on mssql and oracle, so `U12` is unsatisfied; fixing it is a physical-schema migration for all six (the `v_kind` half proved moot, 2026-08-10) | open — **migration scheduled 2026-08-09**, six sequenced steps in the entry; steps 1–4 done (oracle's `upgrade`; the `U12a` bound decision; the shared-core change; mssql's live-verified conversion of existing installs 2026-08-10). Step 5 (oracle's conversion) then the close remain |
+| [F-47](#f-47) | Low | `path` is bound to unbounded types on mssql and oracle, so `U12` is unsatisfied; fixing it is a physical-schema migration for all six (the `v_kind` half proved moot, 2026-08-10) | open — **migration scheduled 2026-08-09**, six sequenced steps in the entry; steps 1–5 done (oracle's `upgrade`; the `U12a` bound decision; the shared-core change; mssql's and oracle's live-verified conversions of existing installs, 2026-08-10 — step 5 also surfacing and fixing **F-85**). Only step 6, the close, remains |
 | [F-48](#f-48) | Low | the shared-core gate did not watch `gen/tests/`, and could not while its normalization was line-based — rustfmt wraps by crate-name *length* | **fixed** 2026-08-02 — token-based verdict, 75→100 files |
 | [F-49](#f-49) | **High** | No workflow in this repository runs: all 20-odd sit under `<family>/.github/workflows/`, which GitHub does not read. Every "gated in CI" claim is unverified | **fixed** 2026-08-06 — root gates first (`gates.yml`), then every family's CI consolidated to root files with paths filters and working-directory defaults; first hosted run pending a push |
 | [F-50](#f-50) | Medium | The `U2a` reference rule attached an adjunct to `c_url`, which no index uses, while every port indexes `(c_type, c_id)` — 453 of R5's 1,947 search targets unindexable on Oracle | **fixed** 2026-08-02 — all six; gaps now 0 |
@@ -178,6 +178,7 @@ not a code fix).
 | [F-82](#f-82) | Medium | `fhir-loco/tasks.md` predated the crate's own spec: zero `SV` ids, shipped features omitted, three provably-obsolete open items (git remotes, shared history, the fixed T70 fold) | **fixed** 2026-08-06 — replaced |
 | [F-83](#f-83) | Low | `fhir-oracle`'s book lacks the F-56 banner that root `CLAUDE.md` says all six books carry | **fixed** 2026-08-06 |
 | [F-84](#f-84) | Medium | **All six** ports' `publish.yml` iterate a `fhir-<engine>-server` crate and a CLI crate, and all six `release.yml` build a `fhir-<engine>` binary — none of which has ever existed (wider than first recorded: not just the two former scaffolds) | **fixed** 2026-08-06 — publish loops corrected in all six; the six binary-release workflows deleted outright |
+| [F-85](#f-85) | Medium | `fhir-oracle` refused every root-level extension outright (`ORA-01400`): the empty attach path binds as NULL (`''` is NULL) against `"path" CLOB NOT NULL` — a US-Core-style Patient could not be stored at all | **fixed** 2026-08-10 — bounded `"path"` is nullable (`M14.39`), NULL means the empty path; fresh installs via `create_table`, existing ones via F-47 step 5's conversion; live-verified both ways |
 
 ## What remains, and why
 
@@ -2868,6 +2869,18 @@ is live-verified:
    `CLOB` to `VARCHAR2` in place — add-column, copy, drop, rename, each
    statement autocommitting (no transactional DDL, `M14`), with the
    half-applied-upgrade story the annex must state before the code exists.
+   **Done 2026-08-10**: `convert_path_columns`, a catalog-driven state
+   machine per table (`user_tab_columns` says which prefix of the sequence
+   already ran; a rerun finishes the rest) — data pre-check refusing named
+   over-bound rows, add, resumable copy, drop, rename; widening additive,
+   narrowing refused; the replacement column nullable (`M14.39` — designing
+   this step surfaced **F-85**, root-level extensions refused outright,
+   fixed the same day). Live-verified: `tests/upgrade.rs` 9→12 including a
+   real partial-failure rerun (the refusal leaves earlier tables
+   converted, autocommitted, and the retry completes the rest — the
+   resumability the annex promised), plus `tests/root_extension.rs`; full
+   port live suite 84/84 serial; mutation-checked (`T11.10`: stubbing the
+   conversion call fails the pre-U12a test).
 6. **Close**: `U12` cells flip in the matrix, per-port `tasks.md` entries
    tick with their live evidence, this finding closes.
 
@@ -4908,6 +4921,47 @@ publish loops now name only the three real crates, each with a comment citing
 this finding, and the six binary-release workflows are deleted outright — a
 release pipeline for a binary that violates `C0.18` by existing is not
 machinery worth keeping inert.
+
+## F-85
+
+**`fhir-oracle` refused every root-level extension.** Severity: Medium.
+Violates `db:R4.1` (any valid resource stores losslessly). Found 2026-08-10,
+by measurement, while designing **F-47** step 5's `path` conversion — not by
+any of the port's seven live store tests, none of which stored a root-level
+extension.
+
+A root-level extension — `{"resourceType": "Patient", "extension": […]}`,
+the shape every US Core profile uses — shreds to an ext row whose attach
+path is `""`. This engine binds `''` as NULL (`M14.29a`'s root cause), and
+the `"path"` column was `CLOB NOT NULL`, so the insert failed outright:
+
+```text
+ORA-01400: cannot insert NULL into ("R5"."patient_ext"."path")
+```
+
+The read side had already half-anticipated the answer: it maps a NULL
+`path` back to `""` (`unwrap_or_default`). What was missing was the write
+side's half — the column must be **nullable on this engine**, because
+`NOT NULL` here forbids a value every other port stores routinely. That is
+now `M14.39`: NULL is the empty attach path's stored form; the columns
+(`ext` and `deep` both, for one rule) are nullable where every other
+port's annex says `NOT NULL`.
+
+**Fixed both ways, live-verified (`tests/root_extension.rs`,
+`tests/upgrade.rs`):** a fresh install gets the nullable bounded column
+from `create_table` (F-47 step 3's arm, corrected); an existing install
+gets it from F-47 step 5's conversion, whose replacement column is
+nullable — and the step-5 test's sharpest assertion is exactly this
+finding's payoff: after upgrading a legacy schema, the root-level
+extension that ORA-01400'd before now round-trips. The legacy DDL arm
+(`path_bound = 0`) deliberately keeps `CLOB NOT NULL`: it reproduces the
+historical schema *including this defect*, because `G2.2` says an old
+asset reinstalls the schema it always made — the upgrade, not the
+emitter, is what fixes deployments.
+
+`leaf` was checked for the same exposure and does not have it: an empty
+leaf arises only from a spilled scalar, and every spilled FHIR datatype
+is an object.
 
 ---
 

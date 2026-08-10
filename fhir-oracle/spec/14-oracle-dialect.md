@@ -744,12 +744,34 @@ Three requirements are this engine's own:
 
 - **M14.38** **`path` binds to `VARCHAR2(path_bound CHAR)`; the
   conversion cannot be in-place.** Decided 2026-08-09 (`U12a`, **F-47**
-  step 2), corrected 2026-08-10. Step 3 landed the same day:
-  `create_table` reads the asset's `path_bound`, so a **fresh** install is
-  bounded (`VARCHAR2(384 CHAR)` on R5, live-verified). An **existing**
-  install keeps its `CLOB` until step 5's add-copy-drop-rename converts
-  it, and until then this port does not claim `U12` for `path` on
-  upgraded-in-place deployments.
+  step 2), corrected 2026-08-10; built and live-verified the same day
+  (steps 3 and 5). `create_table` reads the asset's `path_bound`, so a
+  fresh install is bounded (`VARCHAR2(384 CHAR)` on R5), and `upgrade`
+  converts an existing install by add-column, copy, drop, rename — a
+  catalog-driven state machine per table, because each statement
+  implicitly commits (`M14.35`): whatever prefix of the sequence already
+  ran, a rerun reads `user_tab_columns` fresh and finishes the rest,
+  which `tests/upgrade.rs` exercises across a real partial failure. The
+  copy pre-checks the data and refuses, naming rows, if anything stored
+  exceeds the bound; widening a bounded column is additive; narrowing one
+  is refused (`U12a`). This port now satisfies `U12` for `path` on both
+  fresh and upgraded deployments; the matrix flip is F-47 step 6.
+
+- **M14.39** **The empty attach path is stored as NULL, and `"path"` is
+  therefore nullable — on this engine only.** `''` is NULL here
+  (`M14.29a`'s root cause), and the empty attach path is a legitimate,
+  common value: a root-level extension's, the shape every US Core profile
+  uses. With the historical `CLOB NOT NULL` binding, every such resource
+  was refused outright with `ORA-01400` — **F-85**, found 2026-08-10 by
+  probing before building the step-5 conversion; none of the seven store
+  tests had ever stored a root-level extension. The bounded `"path"` on
+  the `ext` and `deep` tables (one rule for both) carries no `NOT NULL`;
+  writes bind the empty path as NULL by the engine's own semantics, and
+  reads map NULL back to `""`. The legacy DDL arm keeps `CLOB NOT NULL`
+  deliberately: an old asset reproduces its historical schema, defect
+  included (`G2.2`) — the upgrade is what fixes deployments, not the
+  emitter. Live-verified both ways: `tests/root_extension.rs` (fresh) and
+  the step-5 conversion test (upgraded).
 
   (The correction: this requirement first said `v_kind` was also a `CLOB`
   needing `VARCHAR2(1 CHAR)` — repeating F-47's table instead of reading

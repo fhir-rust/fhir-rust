@@ -680,16 +680,23 @@ fn index_name(table: &str, cols: &[&str]) -> String {
 
 /// One `CREATE TABLE`. Indexes are **not** included: Oracle has no inline index
 /// clause, so `ddl_in` emits them separately (`M14.30`).
-/// `path`'s type on the ext and deep tables: bounded when the asset
-/// records `U12a`'s `path_bound` (`M14.38`), the legacy `CLOB` for a
+/// `path`'s column definition on the ext and deep tables: bounded when the
+/// asset records `U12a`'s `path_bound` (`M14.38`), the legacy `CLOB` for a
 /// pre-`U12a` asset — the emitted schema follows the asset it was handed
 /// (`G2.2`). `VARCHAR2`, never `CHAR`: the values vary in length, which
 /// is where PAD SPACE would bite (`M3.6b`).
+///
+/// The bounded form is **nullable** where every other port says `NOT
+/// NULL`: `''` is NULL on this engine, and the empty attach path is a
+/// legitimate value — a root-level extension's (`M14.39`). The legacy
+/// form keeps `NOT NULL`, reproducing the historical schema *including*
+/// its defect (**F-85**: root-level extensions were uninsertable), which
+/// the upgrade's conversion is what fixes.
 fn path_type(rm: &ResourceMap) -> String {
     if rm.path_bound > 0 {
         format!("VARCHAR2({} CHAR)", rm.path_bound)
     } else {
-        "CLOB".to_string()
+        "CLOB NOT NULL".to_string()
     }
 }
 
@@ -734,7 +741,7 @@ pub fn create_table(schema: &str, rm: &ResourceMap, t: &Table) -> String {
                 sql,
                 "  \"key_hash\" RAW(32) NOT NULL PRIMARY KEY,\n\
                  \x20 \"rid\" {ID_COL} NOT NULL,\n\
-                 \x20 \"path\" {path_ty} NOT NULL,\n\
+                 \x20 \"path\" {path_ty},\n\
                  \x20 \"ords\" RAW(255) NOT NULL,\n\
                  \x20 \"modifier\" NUMBER(1) NOT NULL,\n\
                  \x20 \"ext_ord\" NUMBER(5) NOT NULL,\n\
@@ -758,7 +765,7 @@ pub fn create_table(schema: &str, rm: &ResourceMap, t: &Table) -> String {
                 sql,
                 "  \"key_hash\" RAW(32) NOT NULL PRIMARY KEY,\n\
                  \x20 \"rid\" {ID_COL} NOT NULL,\n\
-                 \x20 \"path\" {path_ty} NOT NULL,\n\
+                 \x20 \"path\" {path_ty},\n\
                  \x20 \"ords\" RAW(255) NOT NULL,\n\
                  \x20 \"leaf\" CLOB NOT NULL,\n\
                  \x20 \"v_kind\" CHAR(1 CHAR) NOT NULL,\n\
@@ -1132,9 +1139,12 @@ mod tests {
         };
         let sql = create_table("r5", &rm, &rm.tables[0]);
         assert!(
-            sql.contains("\"path\" VARCHAR2(192 CHAR) NOT NULL"),
+            sql.contains("\"path\" VARCHAR2(192 CHAR),"),
             "recorded bound not applied:\n{sql}"
         );
+        // Nullable, deliberately: '' is NULL here, and the empty attach
+        // path is a root-level extension's (M14.39, F-85).
+        assert!(!sql.contains("VARCHAR2(192 CHAR) NOT NULL"));
         assert!(!sql.contains("\"path\" CLOB"));
 
         rm.path_bound = 0;

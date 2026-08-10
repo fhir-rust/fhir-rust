@@ -58,14 +58,17 @@ Not "planned and unstarted" — **absent**.
   via `SELECT … FOR UPDATE`, but no test races concurrent writers against it
   the way `fhir-mssql`'s and `fhir-mysql`'s `concurrency.rs` do.
 - [ ] **A redaction test**, or benchmarks.
-- [ ] **`path` to `VARCHAR2(path_bound CHAR)`** (`M14.38`, `U12a`) —
-  decided 2026-08-09, corrected 2026-08-10 (`v_kind` is already
-  `CHAR(1 CHAR)` and out of the migration). **Fresh installs bounded since
-  F-47 step 3 (2026-08-10, live-verified 80/80)**; what remains is step 5,
-  converting existing installs: `CLOB` → `VARCHAR2(path_bound CHAR)` via
-  add-column–copy–drop–rename, each statement autocommitting and
-  rerun-safe (`M14.35`'s rule). Until then an upgraded-in-place deployment
-  keeps its `CLOB` and `U12` is not claimed for it.
+- [x] **`path` to `VARCHAR2(path_bound CHAR)`** (`M14.38`, `U12a`) —
+  *done 2026-08-10* (**F-47** steps 3 and 5). Fresh installs bounded by
+  `create_table`; existing installs converted by `upgrade`
+  (`convert_path_columns`: a catalog-driven add-copy-drop-rename state
+  machine, rerun-safe per `M14.35`, data pre-check, widening additive,
+  narrowing refused). Doing it surfaced and fixed **F-85** — root-level
+  extensions were uninsertable (`ORA-01400`); bounded `"path"` is now
+  nullable, NULL = the empty path (`M14.39`). Live-verified: 84/84 serial
+  incl. `tests/root_extension.rs` and a real partial-failure rerun;
+  mutation-checked. `U12` holds for `path` here; the matrix flip is
+  step 6.
 - [x] **`upgrade` / `backfill_norm`** — *done 2026-08-09* (**F-15**'s last
   port, **F-47** step 1). Diffs the stored map asset, applies resumable DDL
   (`M14.35`), chunks the meta asset past `ORA-01461` (`M14.36`), backfills

@@ -501,6 +501,12 @@ impl OracleStore {
                 for stmt in &drops {
                     apply(stmt, &[-942, -904])?;
                 }
+                // 4b. F-47 step 5: legacy "path" columns to the recorded
+                //     bound (M14.38, M14.39) — a catalog-driven state
+                //     machine, resumable like everything above, run before
+                //     the meta write so a refusal leaves the old asset
+                //     recorded.
+                let converted = convert_path_columns(&conn, &map.schema, map.path_bound())?;
                 // 5. Record what is now installed.
                 let new_hex = hex_encode(
                     &map.to_gz_bytes()
@@ -514,7 +520,7 @@ impl OracleStore {
                     write_meta_chunked(&conn, &meta, k, v)?;
                 }
                 conn.commit().map_err(db_err)?;
-                Ok((n_add, n_drop))
+                Ok((n_add + converted, n_drop))
             })
             .await
             .map_err(join_err)??;
@@ -2224,6 +2230,153 @@ fn hist_entry(r: &Row) -> Result<crate::HistEntry, StoreError> {
 /// must design (`L12`). `DROP TABLE … CASCADE CONSTRAINTS` makes drop order
 /// irrelevant on this engine — the clause drops referencing constraints with
 /// the table, unlike SQL Server's error 3726 (`M14.36` there).
+/// `M14.38` (**F-47** step 5): bring every installed `"path"` column to
+/// the map's recorded `path_bound` (`U12a`). Oracle cannot `ALTER … MODIFY`
+/// a `CLOB` into a `VARCHAR2`, so the conversion is add-column, copy,
+/// drop, rename — each statement implicitly committing (`M14.35`: no
+/// transactional DDL). It is therefore a catalog-driven state machine per
+/// table: whatever prefix of the sequence already ran, a rerun reads
+/// `user_tab_columns` fresh and finishes the rest — the resumability story
+/// the annex stated before this code existed.
+///
+/// The new column is **nullable** (`M14.39`): `''` is NULL on this engine
+/// and the empty attach path is a root-level extension's, so the `NOT
+/// NULL` the legacy column carried is exactly what made **F-85** fail.
+/// The copy pre-checks the data and refuses, naming rows, if any stored
+/// path exceeds the bound; widening a bounded column is additive;
+/// narrowing one refuses (`U12a`: a recorded bound never shrinks in
+/// place).
+fn convert_path_columns(
+    conn: &oracle::Connection,
+    schema: &str,
+    bound: u32,
+) -> Result<usize, StoreError> {
+    if bound == 0 {
+        return Ok(0);
+    }
+    let s = quote_ident(schema);
+    #[derive(Default)]
+    struct St {
+        /// (data_type, nullable, char_length) of `"path"`, if present.
+        path: Option<(String, String, u32)>,
+        path_new: bool,
+    }
+    let mut tables: std::collections::BTreeMap<String, St> = std::collections::BTreeMap::new();
+    let rows = conn
+        .query(
+            "SELECT table_name, column_name, data_type, nullable, char_length \
+             FROM user_tab_columns WHERE column_name IN ('path', 'path_new')",
+            &[],
+        )
+        .map_err(db_err)?;
+    for row in rows.flatten() {
+        let t: String = row.get(0).map_err(db_err)?;
+        let c: String = row.get(1).map_err(db_err)?;
+        let dt: String = row.get(2).map_err(db_err)?;
+        let nn: String = row.get(3).map_err(db_err)?;
+        let ch: Option<u32> = row.get(4).map_err(db_err)?;
+        let e = tables.entry(t).or_default();
+        if c == "path" {
+            e.path = Some((dt, nn, ch.unwrap_or(0)));
+        } else {
+            e.path_new = true;
+        }
+    }
+    let mut converted = 0usize;
+    for (t, st) in tables {
+        let tq = format!("{s}.{}", quote_ident(&t));
+        match st.path {
+            Some((dt, _, _)) if dt == "CLOB" => {
+                // Rows longer than the bound predate it (`U12a` shreds
+                // refuse anything longer) and rewriting them is a migration
+                // somebody must design — refused before any DDL touches
+                // this table.
+                let row = conn
+                    .query_row(
+                        &format!(
+                            "SELECT COUNT(*), NVL(MAX(LENGTH(\"path\")), 0) \
+                             FROM {tq} WHERE LENGTH(\"path\") > :1"
+                        ),
+                        &[&i64::from(bound)],
+                    )
+                    .map_err(db_err)?;
+                let n: i64 = row.get(0).map_err(db_err)?;
+                if n > 0 {
+                    let longest: i64 = row.get(1).map_err(db_err)?;
+                    return Err(StoreError::Other(format!(
+                        "{tq} holds {n} row(s) whose \"path\" exceeds \
+                         path_bound {bound} (longest: {longest} characters); \
+                         they predate the bound and need a manual migration \
+                         (U12a)"
+                    )));
+                }
+                if !st.path_new {
+                    conn.execute(
+                        &format!("ALTER TABLE {tq} ADD (\"path_new\" VARCHAR2({bound} CHAR))"),
+                        &[],
+                    )
+                    .map_err(db_err)?;
+                }
+                // Resumable: only rows an interrupted attempt did not
+                // reach. An empty path stays NULL — its stored form here
+                // (`M14.39`).
+                conn.execute(
+                    &format!(
+                        "UPDATE {tq} SET \"path_new\" = \"path\" \
+                         WHERE \"path_new\" IS NULL AND \"path\" IS NOT NULL"
+                    ),
+                    &[],
+                )
+                .map_err(db_err)?;
+                conn.commit().map_err(db_err)?;
+                conn.execute(&format!("ALTER TABLE {tq} DROP COLUMN \"path\""), &[])
+                    .map_err(db_err)?;
+                conn.execute(
+                    &format!("ALTER TABLE {tq} RENAME COLUMN \"path_new\" TO \"path\""),
+                    &[],
+                )
+                .map_err(db_err)?;
+                converted += 1;
+            }
+            Some((_, nn, ch)) => {
+                if ch > bound {
+                    return Err(StoreError::Other(format!(
+                        "narrowing {tq}.\"path\" from VARCHAR2({ch} CHAR) to \
+                         VARCHAR2({bound} CHAR) is a manual migration (U12a): \
+                         a recorded bound never shrinks in place"
+                    )));
+                }
+                if ch < bound {
+                    conn.execute(
+                        &format!("ALTER TABLE {tq} MODIFY (\"path\" VARCHAR2({bound} CHAR))"),
+                        &[],
+                    )
+                    .map_err(db_err)?;
+                    converted += 1;
+                }
+                if nn == "N" {
+                    // F-85's fix for a bounded-but-NOT-NULL column: the
+                    // empty path is NULL here, and NOT NULL forbids it.
+                    conn.execute(&format!("ALTER TABLE {tq} MODIFY (\"path\" NULL)"), &[])
+                        .map_err(db_err)?;
+                    converted += 1;
+                }
+            }
+            None if st.path_new => {
+                // An interrupted run that stopped between DROP and RENAME.
+                conn.execute(
+                    &format!("ALTER TABLE {tq} RENAME COLUMN \"path_new\" TO \"path\""),
+                    &[],
+                )
+                .map_err(db_err)?;
+                converted += 1;
+            }
+            None => {}
+        }
+    }
+    Ok(converted)
+}
+
 fn diff_maps(map: &RelMap, old_map: &RelMap) -> Result<(Vec<String>, Vec<String>), StoreError> {
     use std::collections::{HashMap, HashSet};
     let s = &map.schema;
