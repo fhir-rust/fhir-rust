@@ -6,7 +6,7 @@ A Rust implementation of the **HL7 FHIR®** data model, plus a code generator
 that produces it from the official FHIR specification JSON files. Five
 releases are modelled: **R5 (5.0.0)**, **R4 (4.0.1)**, **R3 (3.0.2, STU3)**,
 **R2 (1.0.2, DSTU2)**, and **R6 (6.0.0-ballot3, unpublished-final, see
-below)**. Five more release numbers (`fhir-release-1`, `-7`–`-10`) are
+below)**. Five more release numbers (`fhir-r1`, `-7`–`-10`) are
 reserved crate names with no model in them — R1/DSTU1 predates a JSON
 representation this generator can consume, and R7–R10 do not exist yet.
 
@@ -294,20 +294,20 @@ compile, or vendor R3 and R5.
 | --- | --- |
 | [`fhir`](https://crates.io/crates/fhir) | The facade you depend on. Re-exports the models behind features. |
 | [`fhir-core`](https://crates.io/crates/fhir-core) | Everything release-independent: `Decimal`, `Validate`, `Coded<E>`, `BuilderError`, temporal parsing, `_summary` pruning, XML, the REST client, the `Release` trait. |
-| [`fhir-release-5`](https://crates.io/crates/fhir-release-5) | 158 resources, 50 datatypes, 21 primitives, 442 code enums |
-| [`fhir-release-4`](https://crates.io/crates/fhir-release-4) | 146 resources, 43 datatypes, 20 primitives, 486 code enums |
-| [`fhir-release-3`](https://crates.io/crates/fhir-release-3) | 117 resources, 36 datatypes, 18 primitives, 386 code enums |
-| [`fhir-release-2`](https://crates.io/crates/fhir-release-2) | 94 resources, 28 datatypes, 18 primitives, 265 code enums — DSTU2 |
-| [`fhir-release-6`](https://crates.io/crates/fhir-release-6) | 161 resources, 51 datatypes, 21 primitives, 459 code enums — **ballot draft**, outside the semver promise |
-| [`fhir-release-1`](https://crates.io/crates/fhir-release-1) | Name reservation. DSTU1 (0.0.82) is a real specification but is not modelled here; contains no types. |
-| [`fhir-release-7`](https://crates.io/crates/fhir-release-7), `-8`, `-9`, `-10` | Name reservations. No such specifications exist; these contain no model. |
+| [`fhir-r5`](https://crates.io/crates/fhir-r5) | 158 resources, 50 datatypes, 21 primitives, 442 code enums |
+| [`fhir-r4`](https://crates.io/crates/fhir-r4) | 146 resources, 43 datatypes, 20 primitives, 486 code enums |
+| [`fhir-r3`](https://crates.io/crates/fhir-r3) | 117 resources, 36 datatypes, 18 primitives, 386 code enums |
+| [`fhir-r2`](https://crates.io/crates/fhir-r2) | 94 resources, 28 datatypes, 18 primitives, 265 code enums — DSTU2 |
+| [`fhir-r6`](https://crates.io/crates/fhir-r6) | 161 resources, 51 datatypes, 21 primitives, 459 code enums — **ballot draft**, outside the semver promise |
+| [`fhir-r1`](https://crates.io/crates/fhir-r1) | Name reservation. DSTU1 (0.0.82) is a real specification but is not modelled here; contains no types. |
+| [`fhir-r7`](https://crates.io/crates/fhir-r7), `-8`, `-9`, `-10` | Name reservations. No such specifications exist; these contain no model. |
 | [`fhir-derive-macros`](https://crates.io/crates/fhir-derive-macros) | `#[derive(Validate)]`, `Builder`, `FhirChoice` |
 
 Every release crate has the same shape, so porting between releases is a
 matter of changing one path segment:
 
 ```txt
-fhir-release-5/
+fhir-r5/
   src/
     resources/      Resource structs + the polymorphic `Resource` enum
     types/          Complex datatypes + primitive newtypes
@@ -347,12 +347,12 @@ from that release's official specification JSON in
 under `src/codegen`; the binary in `src/main.rs` drives it:
 
 ```sh
-cargo run -- r3                    # rewrite fhir-release-3/src from the R3 definitions
-cargo run -- r4                    # rewrite fhir-release-4/src from the R4 definitions
+cargo run -- r3                    # rewrite fhir-r3/src from the R3 definitions
+cargo run -- r4                    # rewrite fhir-r4/src from the R4 definitions
 cargo run -- r5 --out tmp/out/r5   # emit R5 elsewhere, to compare
 ```
 
-`fhir-release-3/src` and `fhir-release-4/src` are entirely generated and safe to rewrite. `fhir-release-5/src` is not: it carries
+`fhir-r3/src` and `fhir-r4/src` are entirely generated and safe to rewrite. `fhir-r5/src` is not: it carries
 hand-written prose on top of generated shapes, so `cargo run -- r5` refuses to
 write there without an explicit `--out`. See [`AGENTS.md`](AGENTS.md) and
 [`spec/`](spec/) for the generator's design and conventions.

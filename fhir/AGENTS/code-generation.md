@@ -12,8 +12,8 @@ you are working with:
 | --- | --- | --- |
 | Releases | any (`Version::R2` … `R6`) | R5 only |
 | Emits | the **finished** module tree | a rough **starting point** |
-| Output | `fhir-release-N/src/…` | `tmp/out/*.rs` |
-| Used for | all of `fhir-release-2/-3/-4/-6/src` | the original authoring of `fhir-release-5/src` |
+| Output | `fhir-rN/src/…` | `tmp/out/*.rs` |
+| Used for | all of `fhir-r2/-3/-4/-6/src` | the original authoring of `fhir-r5/src` |
 
 New work belongs in `codegen`. `r5::parse` is kept because the shipped R5 model
 was authored through it and its splicing generators are still how R5 is edited
@@ -56,12 +56,12 @@ produced no `Coded<E>` fields at all.
 ## Running it
 
 ```sh
-cargo run -- r3                    # rewrite fhir-release-3/src from the R3 definitions
-cargo run -- r4                    # rewrite fhir-release-4/src from the R4 definitions
+cargo run -- r3                    # rewrite fhir-r3/src from the R3 definitions
+cargo run -- r4                    # rewrite fhir-r4/src from the R4 definitions
 cargo run -- r5 --out tmp/out/r5   # emit R5 somewhere safe, to compare
 ```
 
-`cargo run -- r5` with no `--out` **refuses to run**. `fhir-release-5/src` carries
+`cargo run -- r5` with no `--out` **refuses to run**. `fhir-r5/src` carries
 hand-written prose that regeneration would destroy; emitting elsewhere and
 diffing is how you check the generator against the shipped model.
 
@@ -156,7 +156,7 @@ fix-ups, or reverted to a compiling state first.
   `codegen::Version`. A `match` on the release anywhere else is a smell.
 - After any generator change, regenerate **every** release it can affect:
   `cargo run -- r3 && cargo run -- r4`, run the green gate with
-  `--features "r3 r4 xml client"`, then check `git diff --stat fhir-release-3/src fhir-release-4/src`
+  `--features "r3 r4 xml client"`, then check `git diff --stat fhir-r3/src fhir-r4/src`
   looks like what you meant.
 - Validate against reality with the official examples:
   `bin/fetch-examples r4` then

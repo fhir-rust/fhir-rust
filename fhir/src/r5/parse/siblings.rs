@@ -361,7 +361,7 @@ pub fn apply_element_base_group() -> usize {
 
 /// List the source files for a group: `types` or `resources`.
 fn group_files(group: &str) -> Vec<PathBuf> {
-    let dir = crate_root().join("fhir-release-5").join("src").join(group);
+    let dir = crate_root().join("fhir-r5").join("src").join(group);
     let mut files: Vec<PathBuf> = std::fs::read_dir(&dir)
         .expect("read group dir")
         .filter_map(Result::ok)
@@ -465,7 +465,7 @@ mod tests {
 
     /// Apply the datatype splice. Ignored (writes source files).
     #[test]
-    #[ignore = "writes fhir-release-5/src/types/*.rs"]
+    #[ignore = "writes fhir-r5/src/types/*.rs"]
     fn apply_types() {
         let n = apply_group("types");
         println!("types: applied {n} sibling insertions");
@@ -473,7 +473,7 @@ mod tests {
 
     /// Apply the resource splice. Ignored (writes source files).
     #[test]
-    #[ignore = "writes fhir-release-5/src/resources/*.rs"]
+    #[ignore = "writes fhir-r5/src/resources/*.rs"]
     fn apply_resources() {
         let n = apply_group("resources");
         println!("resources: applied {n} sibling insertions");
@@ -481,7 +481,7 @@ mod tests {
 
     /// Add id + extension to complex datatypes. Ignored (writes source files).
     #[test]
-    #[ignore = "writes fhir-release-5/src/types/*.rs"]
+    #[ignore = "writes fhir-r5/src/types/*.rs"]
     fn apply_element_base() {
         let n = apply_element_base_group();
         println!("types: added Element base (id + extension) to {n} datatypes");

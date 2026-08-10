@@ -31,7 +31,7 @@ use syn::{
 };
 
 /// The FHIR releases whose model modules the generated code can name.
-const KNOWN_VERSIONS: [&str; 5] = ["r2", "r3", "r4", "r5", "r6"];
+const KNOWN_VERSIONS: [&str; 6] = ["r2", "r3", "r4", "r4b", "r5", "r6"];
 
 /// Resolve `#[fhir_version("r4")]` into the release module path `crate::r4`.
 ///

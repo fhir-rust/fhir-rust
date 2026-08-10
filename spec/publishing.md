@@ -31,23 +31,34 @@ name is **`fhir-loco`**. Both names were checked and are unregistered.
 
 | Family | Crates | Names on crates.io |
 | --- | --- | --- |
-| Model (`fhir/`) | 13 | **all 13 already registered by this author** |
+| Model (`fhir/`) | 13 | 3 registered under current names; the 11 release crates registered under their **old** names only (see below) |
 | Databases (`fhir-<engine>/`) | 18 | all 18 available |
 | Persistence core (`fhir-store/`) | 1 | available |
 | HTTP surface (`fhir-loco/`) | 1 | available |
 
-The model family is therefore a **version bump**, not a first registration:
-`fhir` 2.1.0, `fhir-core` 2.2.0, `fhir-derive-macros` 1.1.0, `fhir-release-2`
-through `-6` at 2.1.0, and `fhir-release-1`, `-7`, `-8`, `-9`, `-10` reserved at
-0.0.0. The database family, `fhir-store` and `fhir-loco` are unregistered, so
-their names are free but also unclaimed by anyone else.
+**The 2026-08-10 rename changed this table's meaning** (owner-directed:
+`fhir-release-N` → `fhir-rN`, matching the module names). Measured live
+against crates.io the same day:
 
-Local versions against those, after the bumps this pass made: `fhir` and
-`fhir-core` at `3.0.0`, `fhir-release-2`…`-6` at `3.0.0`, `fhir-derive-macros`
-at `1.2.0` (**P-4**), and the five reservations at `0.0.1` (**P-4a**). Every one
-now clears its published number, which
+- Registered and published under **unchanged** names: `fhir` 3.0.0,
+  `fhir-core` 3.0.0, `fhir-derive-macros` 1.2.0. All three now carry local
+  changes, so all three were bumped — `fhir` 3.1.0 (the `r4b` feature),
+  `fhir-core` 3.0.1, `fhir-derive-macros` 1.3.0 (the `r4b` version token) —
+  keeping **P-4**/`O10.11` (an immutable published version must match the
+  source that claims it).
+- Registered and published under the **old** names only: `fhir-release-2`
+  …`-6` at 3.0.0 and the reservations `fhir-release-1`, `-7`…`-10` at
+  0.0.1. Those published versions are immutable and stay up; whether to
+  publish a deprecation notice on them is an owner decision. The **new**
+  names (`fhir-r1`…`fhir-r10`, `fhir-r4b`) were checked the same day and
+  are **unregistered** — publishing the model family next time is eleven
+  first registrations plus three bumps, in dependency order (release
+  crates before the facade, whose optional dependencies now name them).
+
 [`scripts/check-published-match.sh`](../scripts/check-published-match.sh)
-enforces from here on.
+still enforces the invariant: a crate whose current name+version is on
+crates.io must match it byte for byte; the renamed crates are reported as
+not-yet-published skips, never silently.
 
 ## Blockers
 
@@ -184,7 +195,7 @@ anyone writing `fhir-derive-macros = "1.1.0"` gets 554. The tree and the artifac
 of the same name are different code, and nothing in CI checks it.
 
 **Fixed: bumped to `1.2.0`**, along with its six dependency pins in `fhir` and
-`fhir-release-2` … `-6`. `1.2.0` is the honest number — the change adds
+`fhir-r2` … `-6`. `1.2.0` is the honest number — the change adds
 validation behaviour rather than altering existing behaviour.
 
 And the gate that would have caught it now exists:
@@ -199,7 +210,7 @@ on comparing `src/` trees and manifests-minus-the-license-line — a narrower
 check than the claim implied. Running the new `O10.11` gate, which compares
 *every* packaged file, found two things that comparison had missed:
 
-- **`fhir-release-1`'s `README.md`** had gained a "What is actually available"
+- **`fhir-r1`'s `README.md`** had gained a "What is actually available"
   section describing which releases are modelled. Not in the published `0.0.0`.
   Pre-existing, unrelated to any change made during this audit.
 - **All five manifests** carry a `license` line changed by the P-7
@@ -300,7 +311,7 @@ naming question is **P-1**'s, which is decided.
 ### P-7 — Split licensing inside the model family — **RESOLVED**
 
 **Severity: Medium.** Was: `fhir` and `fhir-derive-macros` declared the
-five-license form while `fhir-core` and `fhir-release-1` … `-10` declared bare
+five-license form while `fhir-core` and `fhir-r1` … `-10` declared bare
 `MIT`, and the HTTP crate declared none at all. The facade's declaration did not
 describe the set it pulls in.
 
@@ -311,7 +322,7 @@ declare, identically:
 MIT OR Apache-2.0 OR BSD-3-Clause OR GPL-2.0-only OR GPL-3.0-only
 ```
 
-Twelve manifests changed — `fhir-core`, the ten `fhir-release-*`, and
+Twelve manifests changed — `fhir-core`, the ten `fhir-r*`, and
 `fhir-store`. Verified by resolving `cargo metadata` across every
 workspace: 32 packages, one distinct licence string. `cargo deny check
 licenses` re-run on `fhir/` and `fhir-sqlite/` — **ok** in both; the `OR`
@@ -325,7 +336,7 @@ Two things it deliberately does **not** do:
 
 - **It does not relicense what is already published.** A crates.io version is
   immutable, metadata included, so the releases of `fhir`, `fhir-core`,
-  `fhir-derive-macros`, and `fhir-release-1` … `-10` that predate this stay
+  `fhir-derive-macros`, and `fhir-r1` … `-10` that predate this stay
   under the terms they shipped with. The quintuple applies from each crate's
   next version.
 - **It does not add licence texts to the crate packages.** See P-9.
@@ -340,7 +351,7 @@ the five licences it names.
 
 **Fixed.** `LICENSE.md` — the repository's canonical statement of the quintuple
 — now sits in every crate directory. The eleven crates in `fhir/` that declare
-an explicit `include` list (`fhir-core`, `fhir-release-1` … `-10`) had it added
+an explicit `include` list (`fhir-core`, `fhir-r1` … `-10`) had it added
 there too, since an `include` list means nothing is packaged by default.
 
 Verified across **all 32**, not sampled: each `cargo package --list` contains
@@ -443,7 +454,7 @@ one crate a hard prerequisite for eighteen others.
 1. **`fhir-store`** — the persistence core. Nothing in the database family can
    publish until it is on the registry: all eighteen port crates now depend on
    it by version, so this is no longer convenient ordering but a gate.
-2. **Model** — `fhir-core` and `fhir-derive-macros`, then `fhir-release-2` … `-6`
+2. **Model** — `fhir-core` and `fhir-derive-macros`, then `fhir-r2` … `-6`
    (each depends on both), then `fhir` (depends on all). The five reserved
    `0.0.0` crates need nothing. Independent of step 1.
 3. **Databases**, per port and independently of the others (`W16.11`) —

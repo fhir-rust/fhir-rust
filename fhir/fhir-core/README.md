@@ -3,7 +3,7 @@
 Everything in the [`fhir`](https://crates.io/crates/fhir) data model that does
 **not** depend on which FHIR release you are using.
 
-The releases — `fhir-release-2` through `fhir-release-6` — are ~135,000
+The releases — `fhir-r2` through `fhir-r6` — are ~135,000
 generated lines each. This crate is what they share, so a fix to `Decimal` or
 to validation is made once rather than five times.
 

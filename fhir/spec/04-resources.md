@@ -44,9 +44,9 @@ A resource is a top-level FHIR entity that can be exchanged on its own
   else, and typing it makes contained resources validate with their
   container. *(Amended 2026-08-06, T47; before the amendment `contained` was
   also required to stay raw.)*
-- **R4.6** Each resource lives in `fhir-release-N/src/resources/<snake>.rs`,
-  declared in `fhir-release-N/src/resources.rs` (`pub mod` + `pub use <Pascal>`).
-- **R4.7** `fhir-release-N/src/resources.rs` MUST define a **polymorphic
+- **R4.6** Each resource lives in `fhir-rN/src/resources/<snake>.rs`,
+  declared in `fhir-rN/src/resources.rs` (`pub mod` + `pub use <Pascal>`).
+- **R4.7** `fhir-rN/src/resources.rs` MUST define a **polymorphic
   `Resource` enum**:
 
   ```rust

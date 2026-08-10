@@ -32,13 +32,8 @@ fn crate_root() -> PathBuf {
 
 /// The set of enum names declared in `codes.rs`.
 fn code_enum_names() -> std::collections::HashSet<String> {
-    let codes = std::fs::read_to_string(
-        crate_root()
-            .join("fhir-release-5")
-            .join("src")
-            .join("codes.rs"),
-    )
-    .expect("read codes.rs");
+    let codes = std::fs::read_to_string(crate_root().join("fhir-r5").join("src").join("codes.rs"))
+        .expect("read codes.rs");
     codes
         .lines()
         .filter_map(|l| l.trim().strip_prefix("pub enum "))
@@ -263,7 +258,7 @@ pub fn apply_file(text: &str, fields: &[CodedField]) -> (String, usize) {
 /// Apply to a group (`types` or `resources`), writing files. Returns count.
 pub fn apply_group(group: &str) -> usize {
     let plan = plan();
-    let dir = crate_root().join("fhir-release-5").join("src").join(group);
+    let dir = crate_root().join("fhir-r5").join("src").join(group);
     let mut total = 0;
     let mut files: Vec<PathBuf> = std::fs::read_dir(&dir)
         .expect("read dir")
@@ -317,13 +312,13 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "writes fhir-release-5/src/types/*.rs"]
+    #[ignore = "writes fhir-r5/src/types/*.rs"]
     fn apply_types() {
         println!("types: retyped {} coded fields", apply_group("types"));
     }
 
     #[test]
-    #[ignore = "writes fhir-release-5/src/resources/*.rs"]
+    #[ignore = "writes fhir-r5/src/resources/*.rs"]
     fn apply_resources() {
         println!(
             "resources: retyped {} coded fields",

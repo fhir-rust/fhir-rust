@@ -184,6 +184,8 @@ type-/system-level history, multi-port wiring, is tracked in that crate's
 | [F-83](#f-83) | Low | `fhir-oracle`'s book lacks the F-56 banner that root `CLAUDE.md` says all six books carry | **fixed** 2026-08-06 |
 | [F-84](#f-84) | Medium | **All six** ports' `publish.yml` iterate a `fhir-<engine>-server` crate and a CLI crate, and all six `release.yml` build a `fhir-<engine>` binary — none of which has ever existed (wider than first recorded: not just the two former scaffolds) | **fixed** 2026-08-06 — publish loops corrected in all six; the six binary-release workflows deleted outright |
 | [F-85](#f-85) | Medium | `fhir-oracle` refused every root-level extension outright (`ORA-01400`): the empty attach path binds as NULL (`''` is NULL) against `"path" CLOB NOT NULL` — a US-Core-style Patient could not be stored at all | **fixed** 2026-08-10 — bounded `"path"` is nullable (`M14.39`), NULL means the empty path; fresh installs via `create_table`, existing ones via F-47 step 5's conversion; live-verified both ways |
+| [F-86](#f-86) | Medium | The `fhir/` model family (every release, R2–R6 and R4B) rejects FHIR JSON's null-padded primitive arrays (`"event": [null]` beside `_event`): repeating primitives are `Vec<T>` and cannot hold a placeholder position | open — found 2026-08-10 by R4B's full-corpus gate; the other corpora use the omit-the-value-array form and never exercised it. Representation decision needed (`Vec<Option<T>>` or equivalent) — an API-affecting change across six release crates |
+| [F-87](#f-87) | **High** | A choice element (`timing[x]` and kin) whose content fails to parse is **silently dropped** — the resource deserializes "successfully" minus the element, data loss masquerading as success | open — found 2026-08-10 with F-86 (the null-padded `Timing` is what failed to parse). The choice machinery must propagate the inner error, never yield `None` for present-but-unparseable content |
 
 ## What remains, and why
 
@@ -1962,9 +1964,9 @@ gaps let the same defect through again:
 
 1. **They compare `src/` only** — `diff -rq .../src "$dir/src"`. A changed
    `README.md`, `Cargo.toml`, or `LICENSE` is invisible to them, which is
-   exactly how `fhir-release-1`'s README drift and five changed `license` lines
+   exactly how `fhir-r1`'s README drift and five changed `license` lines
    survived.
-2. **`fhir/`'s job omits five published crates** — `fhir-release-1`, `-7`,
+2. **`fhir/`'s job omits five published crates** — `fhir-r1`, `-7`,
    `-8`, `-9`, `-10`, all registered at `0.0.0` and none of them checked.
 3. **None of them has ever run.** Nothing in this tree has been pushed
    (**F-11**), so every one of these jobs is unexecuted. A gate that has never
@@ -2008,14 +2010,14 @@ silently passed, and a run that compares zero crates says so explicitly rather
 than reporting a green it did not earn (`T11.12`).
 
 Running it found two more divergences beyond `fhir-derive-macros`, both at
-`0.0.0`: `fhir-release-1`'s `README.md` had gained a "What is actually
+`0.0.0`: `fhir-r1`'s `README.md` had gained a "What is actually
 available" section not in the published copy, and all five reservation crates
 had a `license` line changed by the quintuple harmonization earlier the same
 day. Every one is the same defect — a changed tree on a published number.
 
 Versions bumped so the tree stops claiming numbers it no longer matches:
 `fhir-derive-macros` to `1.2.0` (behaviour added, nothing altered) with its six
-dependency pins, and `fhir-release-1`, `-7`, `-8`, `-9`, `-10` to `0.0.1`. The
+dependency pins, and `fhir-r1`, `-7`, `-8`, `-9`, `-10` to `0.0.1`. The
 gate is green afterwards, and reports that it is green *vacuously*.
 
 ## F-36
@@ -4973,6 +4975,52 @@ emitter, is what fixes deployments.
 `leaf` was checked for the same exposure and does not have it: an empty
 leaf arises only from a spilled scalar, and every spilled FHIR datatype
 is an object.
+
+## F-86
+
+**The model family rejects null-padded primitive arrays.** Severity: Medium.
+Family: `fhir/` (every release crate — verified on R5 and R4B; the
+representation is shared). Violates the losslessness the model claims for
+valid FHIR JSON. Found 2026-08-10, by `fhir-r4b`'s full-corpus gate — the
+first corpus to exercise the form.
+
+FHIR JSON represents a repeating primitive with extensions as two parallel
+arrays, and a position that carries only an extension is a **null** in the
+value array: `"event": [null]` beside `"_event": [{…}]`. That is valid —
+HL7's own R4B examples use it (nine of them). The model's repeating
+primitives are `Vec<T>`, so the null cannot deserialize (`invalid type:
+null, expected a string`) and, worse, cannot be *represented*: there is no
+way to hold "no value at index 0" in a `Vec<types::DateTime>`. The R3/R4/R5
+corpora pass only because HL7's copies of the same examples omit the value
+array entirely (`"_event"` alone), which the parallel-`Vec` layout happens
+to accept.
+
+Fixing this is a representation decision — `Vec<Option<T>>` for repeating
+primitives, or a dedicated container — that changes the generated API in
+all six release crates at once. Recorded, not rushed: the R4B corpus gate
+carries the nine affected examples as named known failures citing this
+finding ("a bug with a note attached, not an exemption", R13.2).
+
+## F-87
+
+**A choice element that fails to parse is silently dropped.** Severity:
+**High** — this is data loss masquerading as success, in a clinical data
+model. Family: `fhir/` (the choice machinery is shared by every release).
+Found 2026-08-10, in the same nine examples as F-86.
+
+The probe that proves it, run against `fhir-r4b`: a `Timing` whose `event`
+is null-padded fails to deserialize **as a type** (`invalid type: null` —
+F-86), but the *resource* containing it in `timing[x]` deserializes
+without error and simply lacks the element; re-serialization then emits
+the resource minus its `timingTiming`. A round-trip that quietly deletes
+a dosing schedule is the exact failure mode a health-data model exists to
+prevent — worse than refusing the document outright, because nothing
+tells the caller anything happened.
+
+The fix is behavioural, not representational, and is independent of
+F-86's: the generated choice deserialization must propagate an inner
+parse error instead of treating it as "variant not present". F-86 decides
+what parses; F-87 decides that what does not parse **errors**.
 
 ---
 

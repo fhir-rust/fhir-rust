@@ -153,7 +153,7 @@ fn r5_matches_the_generator_except_where_stated() {
         eprintln!("skipping: no bundled R5 definitions");
         return;
     }
-    let tmp = std::env::temp_dir().join(format!("fhir-release-5-drift-{}", std::process::id()));
+    let tmp = std::env::temp_dir().join(format!("fhir-r5-drift-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&tmp);
     if fhir::codegen::generate_into(fhir::codegen::Version::R5, &tmp).is_err() {
         eprintln!("skipping: generator could not run");
@@ -179,7 +179,7 @@ fn r5_matches_the_generator_except_where_stated() {
                 continue;
             }
             let name = gen_path.file_name().expect("file name");
-            let src_path = Path::new("fhir-release-5/src").join(sub).join(name);
+            let src_path = Path::new("fhir-r5/src").join(sub).join(name);
             if !src_path.exists() {
                 continue;
             }
@@ -211,7 +211,7 @@ fn r5_matches_the_generator_except_where_stated() {
 
     assert!(
         unexplained.is_empty(),
-        "fhir-release-5/src differs from the generator in {} place(s) that nobody has \
+        "fhir-r5/src differs from the generator in {} place(s) that nobody has \
          accounted for. Each is either a generator fix R5 never received, or \
          an intentional divergence that belongs in SANCTIONED with a reason:\n\n{}",
         unexplained.len(),

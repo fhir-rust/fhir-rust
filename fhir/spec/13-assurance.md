@@ -184,8 +184,10 @@ for a v1 client and disqualifying for a mission-critical one.
 
 ## Future work
 
-- R4B model (spec 12; R6 shipped as a ballot draft, and the typed
-  `Reference<T>` rollout completed 2026-08-09 — spec 04, T11).
+- ~~R4B model~~ — shipped 2026-08-10 (`fhir-r4b`, spec 12), its corpus
+  gate measured against all 3,022 official examples (11 known failures,
+  each with a reason: 9 are the model's own — audit **F-86**/**F-87** —
+  and 2 are HL7's non-conformant examples).
 
 ## Acceptance criteria
 

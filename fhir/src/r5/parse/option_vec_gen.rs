@@ -111,7 +111,7 @@ fn retype_line(line: &str) -> String {
 
 /// Apply to a group (`types` or `resources`), writing files. Returns count.
 pub fn apply_group(group: &str) -> usize {
-    let dir = crate_root().join("fhir-release-5").join("src").join(group);
+    let dir = crate_root().join("fhir-r5").join("src").join(group);
     let mut total = 0;
     let mut files: Vec<PathBuf> = std::fs::read_dir(&dir)
         .expect("read dir")
@@ -157,7 +157,7 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "writes fhir-release-5/src/resources/*.rs"]
+    #[ignore = "writes fhir-r5/src/resources/*.rs"]
     fn apply_resources() {
         println!(
             "resources: converted {} Option<Vec> fields",
@@ -166,7 +166,7 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "writes fhir-release-5/src/types/*.rs"]
+    #[ignore = "writes fhir-r5/src/types/*.rs"]
     fn apply_types() {
         println!(
             "types: converted {} Option<Vec> fields",

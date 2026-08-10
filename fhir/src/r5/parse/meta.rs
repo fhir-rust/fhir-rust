@@ -254,7 +254,7 @@ pub fn generate() {
     // Compiled lookup.
     let rs = render_generated_rs(&table);
     let rs_path = crate_root()
-        .join("fhir-release-5")
+        .join("fhir-r5")
         .join("src")
         .join("meta")
         .join("generated.rs");
@@ -285,7 +285,7 @@ mod tests {
     /// Regenerate the committed artifacts. Ignored so it does not run in the
     /// normal test gate (it writes into the source tree).
     #[test]
-    #[ignore = "writes fhir-release-5/src/meta/generated.rs and tmp/out/meta.json"]
+    #[ignore = "writes fhir-r5/src/meta/generated.rs and tmp/out/meta.json"]
     fn regenerate() {
         generate();
     }

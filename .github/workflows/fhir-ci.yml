@@ -53,6 +53,7 @@ jobs:
         include:
           - { name: r5, flags: "" }
           - { name: r4, flags: "--no-default-features --features r4" }
+          - { name: r4b, flags: "--no-default-features --features r4b" }
           - { name: r3, flags: "--no-default-features --features r3" }
           - { name: r2, flags: "--no-default-features --features r2" }
     steps:
@@ -76,6 +77,7 @@ jobs:
           # the same split the `features` job already uses.
           - { name: r5, flags: "", scope: "" }
           - { name: r4, flags: "--no-default-features --features r4", scope: "--lib" }
+          - { name: r4b, flags: "--no-default-features --features r4b", scope: "--lib" }
           - { name: r3, flags: "--no-default-features --features r3", scope: "--lib" }
           - { name: r2, flags: "--no-default-features --features r2", scope: "--lib" }
     steps:
@@ -114,16 +116,16 @@ jobs:
         run: cargo test -p fhir-core --doc
 
   release-crate-tests:
-    name: Tests (fhir-release-${{ matrix.release }})
+    name: Tests (fhir-r${{ matrix.release }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         # 5 belongs here too: it is the default model, but its own
-        # doctests live in the fhir-release-5 package, and the `test`
+        # doctests live in the fhir-r5 package, and the `test`
         # job's `cargo test --doc` only covers the root package. All
         # 220 of them had never run in CI.
-        release: [2, 3, 4, 5, 6]
+        release: [2, 3, 4, 4b, 5, 6]
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -139,7 +141,7 @@ jobs:
       #
       # Each crate's README is included here as doctests too, so the examples
       # in it are compiled and run rather than merely written.
-      - run: cargo test -p fhir-release-${{ matrix.release }} --doc
+      - run: cargo test -p fhir-r${{ matrix.release }} --doc
       # `--doc` runs doctests and nothing else, so each release crate's own unit
       # tests — 276 to 496 of them, including the invariant checks the derive
       # macro emits — were as invisible here as fhir-core's were in the `test`
@@ -148,7 +150,7 @@ jobs:
       # R3 types `DataRequirement.codeFilter.path` as `1..1`) and the default
       # gate stayed green, because neither release is in the default features
       # and nothing compiled their test targets.
-      - run: cargo test -p fhir-release-${{ matrix.release }} --lib
+      - run: cargo test -p fhir-r${{ matrix.release }} --lib
 
   all-releases:
     name: All releases together
@@ -167,9 +169,9 @@ jobs:
       # by every model.
       - run: cargo test --features r2 --test roundtrip_r2_spec
       - run: cargo test --test content_reference
-      - run: cargo build --all-targets --features "r3 r4 xml client"
-      - run: cargo test --features "r3 r4 xml client"
-      - run: cargo clippy --all-targets --features "r3 r4 xml client" -- -D warnings
+      - run: cargo build --all-targets --features "r3 r4 r4b xml client"
+      - run: cargo test --features "r3 r4 r4b xml client"
+      - run: cargo clippy --all-targets --features "r3 r4 r4b xml client" -- -D warnings
 
   clippy:
     name: Clippy
@@ -269,7 +271,7 @@ jobs:
       - name: A published version must match what is published
         run: |
           fail=0
-          for crate in fhir fhir-core fhir-release-2 fhir-release-3 fhir-release-4 fhir-release-5 fhir-release-6 fhir-derive-macros; do
+          for crate in fhir fhir-core fhir-r2 fhir-r3 fhir-r4 fhir-r4b fhir-r5 fhir-r6 fhir-derive-macros; do
             dir=$crate
             [ "$crate" = fhir ] && dir=.
             version=$(cargo metadata --format-version 1 --no-deps \
@@ -297,7 +299,7 @@ jobs:
       # The release crates and the facade resolve their path dependencies
       # against the registry, so they cannot dry-run until the crates below
       # them are published. Publish order is: fhir-derive-macros, fhir-core,
-      # fhir-release-2 … fhir-release-6, then fhir.
+      # fhir-r2 … fhir-r6, then fhir.
       #
       # This is not cosmetic. The local fhir-derive-macros 1.0.1 knew releases
       # r2 and r6; the *published* 1.0.1 knows only r3, r4 and r5, and a
@@ -351,7 +353,7 @@ jobs:
           # a no-op if every crate ends up skipped.
           measured=0
           fail=0
-          for crate in fhir-core fhir-release-2 fhir-release-3 fhir-release-4 fhir-release-5 fhir-release-6; do
+          for crate in fhir-core fhir-r2 fhir-r3 fhir-r4 fhir-r4b fhir-r5 fhir-r6; do
             if ! out=$(cargo package --allow-dirty --no-verify -p "$crate" 2>&1); then
               if grep -q "failed to select a version for the requirement" <<<"$out"; then
                 echo "$crate: skipped — depends on a workspace version not yet on crates.io"
@@ -469,6 +471,7 @@ jobs:
         run: |
           bin/fetch-examples r5
           bin/fetch-examples r4
+          bin/fetch-examples r4b
           bin/fetch-examples r3
       - name: Round-trip every example
-        run: cargo test --release --features "r3 r4" --test roundtrip_r5_examples --test roundtrip_r4_examples --test roundtrip_r3_examples -- --nocapture
+        run: cargo test --release --features "r3 r4 r4b" --test roundtrip_r5_examples --test roundtrip_r4_examples --test roundtrip_r4b_examples --test roundtrip_r3_examples -- --nocapture

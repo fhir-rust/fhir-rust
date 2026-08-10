@@ -20,7 +20,7 @@
 //!
 //! Both releases' [`ElementMeta`] tables, which are generated from the official
 //! `ElementDefinition`s. Nothing here is a hand-written rule about a particular
-//! resource, so the layer does not rot as releases are added: `fhir-release-6`
+//! resource, so the layer does not rot as releases are added: `fhir-r6`
 //! became convertible by existing, not by anyone editing this file.
 //!
 //! The consequence worth stating plainly: this is a **structural** conversion.

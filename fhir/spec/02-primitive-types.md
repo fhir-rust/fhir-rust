@@ -97,8 +97,8 @@ FHIR JSON they serialize as bare scalars â€” a JSON string, number, or boolean â
   numbers are 64-bit floats). Implemented with `serde_with`'s `DisplayFromStr`.
 - **R2.4** Every primitive MUST derive `Debug, Default, Clone, PartialEq, Eq`
   and be `serde` (de)serializable. No primitive may contain `f64`/`f32`.
-- **R2.5** Each primitive lives in `fhir-release-N/src/types/<snake>.rs` and is
-  re-exported from `fhir-release-N/src/types.rs` as `pub use <snake>::<Pascal>;`.
+- **R2.5** Each primitive lives in `fhir-rN/src/types/<snake>.rs` and is
+  re-exported from `fhir-rN/src/types.rs` as `pub use <snake>::<Pascal>;`.
 - **R2.6** Each primitive MUST implement `Validate` (spec 07) with its FHIR
   format constraint where one exists (`code`, `id`, `oid`, `uuid`, `uri`,
   `canonical`, `url`); the rest are structurally valid by construction.

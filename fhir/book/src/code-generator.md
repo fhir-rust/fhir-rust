@@ -1,7 +1,7 @@
 # Code generator internals
 
-Each release lives in its own crate, `fhir-release-2` … `fhir-release-6`. The
-model under `fhir-release-<n>/src/{types,resources,codes.rs}` is **generated**
+Each release lives in its own crate, `fhir-r2` … `fhir-r6`. The
+model under `fhir-r<n>/src/{types,resources,codes.rs}` is **generated**
 from that release's official FHIR specification JSON in
 `doc/fhir-specifications/<release>/`. This chapter sketches how, for
 contributors.
@@ -12,10 +12,10 @@ The generator lives under `src/codegen/` (in the `fhir` facade crate) and is
 driven by the thin binary in `src/main.rs`:
 
 ```sh
-cargo run -- r2                    # rewrite fhir-release-2/src from the R2 (DSTU2) definitions
-cargo run -- r3                    # rewrite fhir-release-3/src from the R3 definitions
-cargo run -- r4                    # rewrite fhir-release-4/src from the R4 definitions
-cargo run -- r6                    # rewrite fhir-release-6/src from the R6 ballot definitions
+cargo run -- r2                    # rewrite fhir-r2/src from the R2 (DSTU2) definitions
+cargo run -- r3                    # rewrite fhir-r3/src from the R3 definitions
+cargo run -- r4                    # rewrite fhir-r4/src from the R4 definitions
+cargo run -- r6                    # rewrite fhir-r6/src from the R6 ballot definitions
 cargo run -- r5 --out tmp/out/r5   # emit R5 elsewhere, to compare
 ```
 
@@ -25,9 +25,9 @@ structure — then plans each type and renders it, applying the uniform
 conventions (`rename_all = "camelCase"`, `skip_serializing_none`, the
 cardinality mapping).
 
-`fhir-release-2/src`, `fhir-release-3/src`, `fhir-release-4/src`, and
-`fhir-release-6/src` are entirely generated and safe to rewrite.
-`fhir-release-5/src` is not: it carries hand-written prose on top of generated
+`fhir-r2/src`, `fhir-r3/src`, `fhir-r4/src`, and
+`fhir-r6/src` are entirely generated and safe to rewrite.
+`fhir-r5/src` is not: it carries hand-written prose on top of generated
 shapes, so `cargo run -- r5` refuses to write there without an explicit
 `--out`. Everything that varies by release is reachable from
 `codegen::Version`.
@@ -73,7 +73,7 @@ releases. Each release crate also carries its own several-hundred doctests,
 which run only when that crate is named directly:
 
 ```sh
-for r in 2 3 4 6; do cargo test -p fhir-release-$r --doc; done
+for r in 2 3 4 6; do cargo test -p fhir-r$r --doc; done
 ```
 
 If you touched the generator, the derive macros, `fhir-core`, or a generated

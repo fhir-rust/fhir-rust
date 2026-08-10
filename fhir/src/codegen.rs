@@ -7,7 +7,7 @@
 //! the `meta` element table:
 //!
 //! ```sh
-//! cargo run -- r4      # writes fhir-release-4/src/
+//! cargo run -- r4      # writes fhir-r4/src/
 //! ```
 //!
 //! # What it emits
@@ -17,7 +17,7 @@
 //! the finished shape in one pass: nested backbone structs (not flattened
 //! ones), `value[x]` choice enums, `Coded<E>` fields for required bindings,
 //! `Vec1` for `1..*`, primitive-extension siblings, builders, and per-module
-//! round-trip tests. `fhir-release-4/src` is therefore fully regenerable; `fhir-release-5/src` is not,
+//! round-trip tests. `fhir-r4/src` is therefore fully regenerable; `fhir-r5/src` is not,
 //! because its documentation was written by hand on top of generated shapes.
 //!
 //! # The pipeline

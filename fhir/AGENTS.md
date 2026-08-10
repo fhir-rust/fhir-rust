@@ -26,8 +26,8 @@ R6 is a **ballot draft**: off by default and outside the semver promise —
 but **published**, necessarily: the facade's optional dependency on it needs
 a registry version (`R12.14a`; an earlier revision of this paragraph said
 "unpublished", which was never something a workspace member of a published
-facade could be). `fhir-release-1`, `fhir-release-7` through
-`fhir-release-10` are name reservations only (0.0.1) — no such
+facade could be). `fhir-r1`, `fhir-r7` through
+`fhir-r10` are name reservations only (0.0.1) — no such
 specifications exist (or, for R1/DSTU1, none is modelled) and those crates
 contain no model.
 
@@ -46,12 +46,12 @@ below).
 
 This distinction governs how you edit each one:
 
-- **`fhir-release-5/src/` carries hand-written prose documentation** on top of generated
+- **`fhir-r5/src/` carries hand-written prose documentation** on top of generated
   shapes. Never blind-regenerate it. Change it with the metadata-driven splicing
   generators described in [`AGENTS/code-generation.md`](AGENTS/code-generation.md),
   or by hand. `cargo run -- r5` refuses to write there for this reason.
-- **`fhir-release-2/src/`, `fhir-release-3/src/`, `fhir-release-4/src/` and
-  `fhir-release-6/src/` are entirely generated** by `cargo run -- r2` … `-- r6`.
+- **`fhir-r2/src/`, `fhir-r3/src/`, `fhir-r4/src/` and
+  `fhir-r6/src/` are entirely generated** by `cargo run -- r2` … `-- r6`.
   Do not hand-edit them; change the generator and regenerate. (Their few
   hand-written support modules — `validate.rs`, `choice.rs`,
   `bundle_util.rs`, `prelude.rs`, … — are not generated and are edited
@@ -84,17 +84,17 @@ fhir-core/src/        # release-independent. One implementation, shared by all.
   release.rs          # the `Release` trait: naming a release in generic code
 
 # One crate per release, identical in shape.
-fhir-release-5/src/          # R5: hand-tended prose over generated shapes
+fhir-r5/src/          # R5: hand-tended prose over generated shapes
   types/              # 21 primitives + 50 complex datatypes (one module each)
   resources/          # 158 resources (one module each) + `Resource` enum
   codes.rs            # 442 code-system enums
   meta/generated.rs   # the generated element table
-fhir-release-4/src/          # R4: fully generated. 146 resources, 486 code enums
-fhir-release-3/src/          # R3 (STU3): fully generated. 117 resources, 386 code enums
-fhir-release-2/src/          # R2 (DSTU2): fully generated. 94 resources, 265 code enums
-fhir-release-6/src/          # R6: generated from 6.0.0-ballot3. 161 resources, 459 enums
+fhir-r4/src/          # R4: fully generated. 146 resources, 486 code enums
+fhir-r3/src/          # R3 (STU3): fully generated. 117 resources, 386 code enums
+fhir-r2/src/          # R2 (DSTU2): fully generated. 94 resources, 265 code enums
+fhir-r6/src/          # R6: generated from 6.0.0-ballot3. 161 resources, 459 enums
                       #     outside the semver promise (published — R12.14a)
-fhir-release-1/, fhir-release-7/ … fhir-release-10/   # name reservations (0.0.1); no model
+fhir-r1/, fhir-r7/ … fhir-r10/   # name reservations (0.0.1); no model
 fhir-derive-macros/   # proc-macro crate: #[derive(Validate, FhirChoice, Builder)]
 
 doc/fhir-specifications/<release>/fhir-definitions-json/  # the official spec JSON
@@ -114,17 +114,17 @@ split untouched.
 | Task | Command |
 | --- | --- |
 | Build | `cargo build` |
-| Build every release | `cargo build --all-targets --features "r2 r3 r4 r6"` |
+| Build every release | `cargo build --all-targets --features "r2 r3 r4 r4b r6"` |
 | Test (unit + doctests) | `cargo test` |
-| Test every release | `cargo test --features "r2 r3 r4 r6"` |
+| Test every release | `cargo test --features "r2 r3 r4 r4b r6"` |
 | Doctests only | `cargo test --doc` |
-| Doctests of one release crate | `cargo test -p fhir-release-2 --doc` |
+| Doctests of one release crate | `cargo test -p fhir-r2 --doc` |
 | Lint (pedantic; must be 0) | `cargo clippy --all-targets -- -D warnings` |
 | Lint every release | `cargo clippy --all-targets --features "r3 r4 xml client" -- -D warnings` |
 | Docs (deny warnings) | `RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --features "r3 r4 xml client"` |
 | Feature builds | `cargo test --features client` / `--features xml` / `cargo build --features precise-decimal` |
 | Regenerate a release | `cargo run -- r2` … `cargo run -- r4`, `cargo run -- r6` |
-| Regenerate R5 to compare | `cargo run -- r5 --out tmp/out/r5` (never over `fhir-release-5/src`) |
+| Regenerate R5 to compare | `cargo run -- r5 --out tmp/out/r5` (never over `fhir-r5/src`) |
 | Build only the proc-macro | `cargo build -p fhir-derive-macros` |
 | Publish dry-run | `cargo publish --dry-run -p fhir-derive-macros` |
 
@@ -198,8 +198,8 @@ mdBook build, and the proc-macro publish dry-run.
 - Never commit to the default branch; branch first. End commit messages with
   the `Co-Authored-By` trailer if you are an agent.
 - `tmp/out/` (untracked scratch) and the generated release trees
-  (`fhir-release-2/-3/-4/-6/src/`) are generator output — regenerate them, do not
-  hand-edit them. `fhir-release-5/src/` is hand-tended and must not be regenerated over.
+  (`fhir-r2/-3/-4/-6/src/`) are generator output — regenerate them, do not
+  hand-edit them. `fhir-r5/src/` is hand-tended and must not be regenerated over.
 - When adding a FHIR release, everything release-specific must be reachable from
   `codegen::Version`; if you find yourself adding a `match` on the release
   anywhere else, that is a sign the fact belongs on `Version`.

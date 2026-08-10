@@ -1,9 +1,9 @@
 # Adding a FHIR release
 
-Each FHIR release is its own crate: `fhir-release-2`, `fhir-release-3`, `fhir-release-4`, `fhir-release-5`,
-`fhir-release-6`, all siblings of `fhir-core` and re-exported by the `fhir` facade
+Each FHIR release is its own crate: `fhir-r2`, `fhir-r3`, `fhir-r4`, `fhir-r5`,
+`fhir-r6`, all siblings of `fhir-core` and re-exported by the `fhir` facade
 behind a feature. Adding one is mostly mechanical. This is the procedure that
-produced `fhir-release-6`, written down while it was fresh.
+produced `fhir-r6`, written down while it was fresh.
 
 Budget roughly an hour, most of it waiting for the generator and the test
 suite.
@@ -115,7 +115,7 @@ generator, in `src/r5/parse/`, and in `tests/`.
 
 ## Reserved names
 
-`fhir-release-7`, `fhir-release-8` and `fhir-release-9` exist as name reservations only. There is
+`fhir-r7`, `fhir-r8` and `fhir-r9` exist as name reservations only. There is
 no R7, R8 or R9 specification; R6 is the newest release HL7 has published in
 any form, and it is still in ballot. Those crates hold their names and this
 procedure, and contain no model — a placeholder type would be a guess about a

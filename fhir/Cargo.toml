@@ -1,6 +1,6 @@
 [package]
 name = "fhir"
-version = "3.0.0"
+version = "3.1.0"
 edition = "2024"
 authors = ["Joel Parker Henderson <joel@joelparkerhenderson.com>"]
 homepage = "https://github.com/fhir-rust/fhir-rust/"
@@ -41,16 +41,19 @@ default = ["r5"]
 # The FHIR Release 3 (3.0.2, also called STU3) model: `fhir::r3`.
 # FHIR DSTU2 (1.0.2). Retired by HL7 but still deployed.
 # FHIR DSTU1 (0.0.82). Retired; modelled for systems that still speak it.
-r2 = ["dep:fhir-release-2"]
-r3 = ["dep:fhir-release-3"]
+r2 = ["dep:fhir-r2"]
+r3 = ["dep:fhir-r3"]
 # The FHIR Release 4 (4.0.1) model: `fhir::r4`.
-r4 = ["dep:fhir-release-4"]
+r4 = ["dep:fhir-r4"]
+# The FHIR R4B (4.3.0) model: R4 plus the medication-definition rework,
+# published by HL7 between R4 and R5. `4b` is HL7's own name for it.
+r4b = ["dep:fhir-r4b"]
 # The FHIR Release 5 (5.0.0) model: `fhir::r5`.
-r5 = ["dep:fhir-release-5"]
+r5 = ["dep:fhir-r5"]
 # FHIR R6, **in ballot and not final**. Off by default: the model is generated
 # from a draft specification (6.0.0-ballot3) and can change between ballots in
 # ways a released FHIR version never would.
-r6 = ["dep:fhir-release-6"]
+r6 = ["dep:fhir-r6"]
 # Deprecated, and now a no-op: `serde_json/arbitrary_precision` is always on,
 # because decimal precision is clinical data rather than an opt-in (R2.2).
 # Kept for one release so dependents' manifests keep building.
@@ -64,19 +67,20 @@ xml = ["fhir-core/xml"]
 [workspace]
 members = [
     "fhir-core",
-    "fhir-release-1",
-    "fhir-release-2",
-    "fhir-release-3",
-    "fhir-release-4",
-    "fhir-release-5",
-    "fhir-release-6",
+    "fhir-r1",
+    "fhir-r2",
+    "fhir-r3",
+    "fhir-r4",
+    "fhir-r4b",
+    "fhir-r5",
+    "fhir-r6",
     # Name reservations. No specification exists for these releases; they hold
     # the crate names and the layout, and carry the procedure for filling
     # them in. They are not dependencies of this crate and enable no feature.
-    "fhir-release-7",
-    "fhir-release-8",
-    "fhir-release-9",
-    "fhir-release-10",
+    "fhir-r7",
+    "fhir-r8",
+    "fhir-r9",
+    "fhir-r10",
     "fhir-derive-macros",
 ]
 # The fuzz crate needs nightly-only libfuzzer-sys, so it stays out of the
@@ -172,11 +176,12 @@ required-features = ["r4", "r5"]
 
 [dependencies]
 fhir-core = { path = "fhir-core", version = "3.0.0" } # Release-independent core: Decimal, Validate, Coded, temporal, XML, client.
-fhir-release-2 = { path = "fhir-release-2", version = "3.0.0", optional = true } # The FHIR DSTU2 model (feature `r2`).
-fhir-release-3 = { path = "fhir-release-3", version = "3.0.0", optional = true } # The FHIR R3 model (feature `r3`).
-fhir-release-4 = { path = "fhir-release-4", version = "3.0.0", optional = true } # The FHIR R4 model (feature `r4`).
-fhir-release-5 = { path = "fhir-release-5", version = "3.0.0", optional = true } # The FHIR R5 model (feature `r5`).
-fhir-release-6 = { path = "fhir-release-6", version = "3.0.0", optional = true } # The FHIR R6 draft model (feature `r6`), off by default.
+fhir-r2 = { path = "fhir-r2", version = "3.0.0", optional = true } # The FHIR DSTU2 model (feature `r2`).
+fhir-r3 = { path = "fhir-r3", version = "3.0.0", optional = true } # The FHIR R3 model (feature `r3`).
+fhir-r4 = { path = "fhir-r4", version = "3.0.0", optional = true } # The FHIR R4 model (feature `r4`).
+fhir-r4b = { path = "fhir-r4b", version = "3.0.0", optional = true } # The FHIR R4B model (feature `r4b`).
+fhir-r5 = { path = "fhir-r5", version = "3.0.0", optional = true } # The FHIR R5 model (feature `r5`).
+fhir-r6 = { path = "fhir-r6", version = "3.0.0", optional = true } # The FHIR R6 draft model (feature `r6`), off by default.
 fhir-derive-macros = { path = "fhir-derive-macros", version = "1.2.0" } # Procedural macros for this crate (e.g. #[derive(Validate)]).
 serde = { version = "~1.0.229", features = ["derive"] } # A serialization/deserialization framework.
 # `arbitrary_precision` is not optional: FHIR treats decimal precision as

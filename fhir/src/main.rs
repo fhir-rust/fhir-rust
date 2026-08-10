@@ -1,7 +1,7 @@
 //! Command-line entry point for the FHIR specifications code generator.
 //!
 //! ```sh
-//! cargo run -- r4                  # regenerate fhir-release-4/src from the R4 definitions
+//! cargo run -- r4                  # regenerate fhir-r4/src from the R4 definitions
 //! cargo run -- r5 --out tmp/out/r5 # regenerate R5 somewhere safe, to compare
 //! ```
 //!
@@ -52,9 +52,9 @@ Usage: cargo run -- <release> [--out <dir>]
 
   <release>     r2, r3, r4, r5, or r6 (also accepts dstu2/stu3 and
                 version numbers like 1.0.2, 6.0.0-ballot3)
-  --out <dir>   where to write the model (default: fhir-release-N/src)
+  --out <dir>   where to write the model (default: fhir-rN/src)
 
-R5 has no default output directory: the shipped fhir-release-5/src modules carry
+R5 has no default output directory: the shipped fhir-r5/src modules carry
 hand-written documentation that regeneration would overwrite, so an explicit
 --out is required for it.";
 
@@ -86,7 +86,7 @@ fn parse_args(args: &[String]) -> Result<Options, String> {
         // regeneration would destroy.
         (None, Version::R5) => {
             return Err(
-                "refusing to regenerate over fhir-release-5/src, which is hand-documented; \
+                "refusing to regenerate over fhir-r5/src, which is hand-documented; \
                  pass --out to write elsewhere"
                     .to_string(),
             );

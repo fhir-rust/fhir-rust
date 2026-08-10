@@ -37,8 +37,8 @@ FHIR.
   Nesting recurses to any depth. Each nested struct carries the full derive set
   and serde attributes.
 - **R3.5** Choice elements `[x]` MUST expand per spec 06 and spec 11.
-- **R3.6** Each datatype lives in `fhir-release-N/src/types/<snake>.rs`, declared
-  in `fhir-release-N/src/types.rs` (`pub mod` + `pub use <Pascal>`).
+- **R3.6** Each datatype lives in `fhir-rN/src/types/<snake>.rs`, declared
+  in `fhir-rN/src/types.rs` (`pub mod` + `pub use <Pascal>`).
 - **R3.7** A datatype that constrains another (a *profile*) MUST be named for
   itself, not for the type it constrains. `MoneyQuantity`, `SimpleQuantity`,
   `Age`, `Distance`, `Count` and `Duration` are all `type: "Quantity"` in the

@@ -16,7 +16,7 @@ cargo clippy --all-targets # must print zero warnings
 
 **Only `r5` is on by default, so those commands do not see R3 or R4.** If you
 touched anything they use — the generator, the derive macros, `fhir-core`,
-modules, `fhir-release-3/src`, `fhir-release-4/src` — run the gate with those releases enabled too:
+modules, `fhir-r3/src`, `fhir-r4/src` — run the gate with those releases enabled too:
 
 ```sh
 cargo build --all-targets --features "r3 r4 xml client"
@@ -76,7 +76,7 @@ Doctests run **only because the crate has a library target**. Keep them:
 - Import via the crate name `fhir`, e.g.
   `use fhir::r5::resources::Patient;`.
 - **A doctest that names a release only runs when that release is enabled.** A
-  doctest inside `fhir-release-4/src/…` is compiled out with the feature, which is why a
+  doctest inside `fhir-r4/src/…` is compiled out with the feature, which is why a
   release's examples belong in its own modules. A doctest on a `fhir-core` item
   must not name a release at all — write it against the generic item, defining a stand-in enum
   or struct inline if it needs one (see `src/coded.rs`).

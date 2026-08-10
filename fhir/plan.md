@@ -25,7 +25,7 @@ The 2026-07-11 plan ran to completion or was overtaken, phase by phase:
 | A — assurance | (added later) | T26–T36 all done: lexical `Decimal`, full-corpus CI gate, client hardening, fuzzing, supply chain, R5 drift audit, cross-release conversion (`fhir::convert`, the 3.0.0 headline). |
 
 The current tree: `fhir` 3.0.0 (facade, features `r2`–`r6`/`client`/`xml`),
-`fhir-core` 3.0.0, `fhir-release-2`…`-6` 3.0.0, `fhir-derive-macros` 1.2.0,
+`fhir-core` 3.0.0, `fhir-r2`…`-6` 3.0.0, `fhir-derive-macros` 1.2.0,
 and five reservation crates at 0.0.1 — 13 crates, all published.
 
 ## What remains
@@ -43,13 +43,19 @@ Tracked as discrete tasks in [`tasks.md`](tasks.md); the plan-level view:
    2026-08-06 (T47), the temporal accessors were done all along (T12), and
    the typed `Reference<T>` rollout — machinery and field emission —
    completed 2026-08-09 (T11). What remains from the old plan is only R4B.
-3. **R4B** (spec 12 future work) — the only FHIR release published by HL7 and
-   not modelled here. The generator and the adding-a-release procedure
+3. ~~**R4B**~~ — **decided (a) and built, 2026-08-10**: `fhir-r4b`,
+   feature `r4b`, module `fhir::r4b` (the crate family was renamed
+   `fhir-release-N` → `fhir-rN` the same day, owner-directed, so the name
+   landed as `fhir-r4b` rather than the drafted `fhir-release-4b`).
+   1,035 crate tests, the 59-file curated subset, and the full-corpus gate
+   green; the corpus surfaced audit **F-86**/**F-87**. The original
+   decision draft, kept for the record: the only FHIR release published by
+   HL7 and not modelled here. The generator and the adding-a-release procedure
    (`doc/adding-a-release.md`, budgeted at roughly an hour) are proven by
    five releases; the definitions bundle is one documented download
    (`hl7.org/fhir/R4B/definitions.json.zip` — not vendored yet). What blocks
    it is the **name decision**, drafted here for the owner:
-   - *(a)* `fhir-release-4b`, feature `r4b`, module `fhir::r4b` — breaks the
+   - *(a)* `fhir-r4b`, feature `r4b`, module `fhir::r4b` — breaks the
      numeric reservation scheme's pattern but says exactly what it is;
      crates.io accepts the name, and none of the reservation crates
      (`-1`, `-7`…`-10`) is disturbed. **Recommended**: the scheme exists to
@@ -59,7 +65,7 @@ Tracked as discrete tasks in [`tasks.md`](tasks.md); the plan-level view:
      (the `Medicinal*`→`…Definition` swap and a handful of resources), and
      `fhir::convert` already moves documents between the neighbours it
      shares. Costs nothing; leaves the one HL7-published gap standing.
-   - Not an option: shoehorning it into a numeric slot (`fhir-release-7` is
+   - Not an option: shoehorning it into a numeric slot (`fhir-r7` is
      a reservation for a future *R7*, and `C0.5`-style permanence applies to
      what the names promise).
 4. ~~mdBook deploy~~ — closed by decision (T46, 2026-08-06): the website is
@@ -77,8 +83,8 @@ Tracked as discrete tasks in [`tasks.md`](tasks.md); the plan-level view:
    "breaking changes are batched per minor since the crate is pre-1.0" is
    history.)
 3. **Generator-first.** Mass model changes are made in `src/codegen/` and
-   regenerated — `fhir-release-2/-3/-4/-6/src` are generated trees;
-   `fhir-release-5/src` is hand-documented, protected by `tests/r5_drift.rs`
+   regenerated — `fhir-r2/-3/-4/-6/src` are generated trees;
+   `fhir-r5/src` is hand-documented, protected by `tests/r5_drift.rs`
    (generate-and-compare with a sanctioned-differences table), and must never
    be blindly regenerated.
 4. **Operational lesson (hard-won):** when fanning out parallel agents that

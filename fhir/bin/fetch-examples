@@ -1,7 +1,7 @@
 #!/bin/sh
 # Fetch a FHIR release's official example resources for the round-trip tests.
 #
-# Usage: bin/fetch-examples [r3|r4|r5]     (default: r5)
+# Usage: bin/fetch-examples [r3|r4|r4b|r5]     (default: r5)
 #
 # Downloads `examples-json.zip` from hl7.org and unpacks it into
 # `doc/fhir-specifications/<release>/fhir-examples-json/`. That directory is
@@ -22,8 +22,9 @@ case "$RELEASE" in
     # the clinical examples are published as individual files.
     r3) URL="https://hl7.org/fhir/STU3/examples-json.zip" ;;
     r4) URL="https://hl7.org/fhir/R4/examples-json.zip" ;;
+    r4b) URL="https://hl7.org/fhir/R4B/examples-json.zip" ;;
     r5) URL="https://hl7.org/fhir/R5/examples-json.zip" ;;
-    *)  echo "unknown release: $RELEASE (expected r3, r4 or r5)" >&2; exit 2 ;;
+    *)  echo "unknown release: $RELEASE (expected r3, r4, r4b or r5)" >&2; exit 2 ;;
 esac
 
 ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
@@ -39,6 +40,15 @@ echo "Unpacking into $DEST"
 # -o overwrite without prompting; -q quiet.
 unzip -oq "$ZIP" -d "$DEST"
 rm -f "$ZIP"
+
+# The R4B archive nests everything under an `examples-json/` directory (and
+# adds macOS resource-fork noise); the other releases unpack flat. Flatten,
+# so the tests see one layout everywhere.
+if [ -d "$DEST/examples-json" ]; then
+    mv "$DEST/examples-json/"* "$DEST/"
+    rmdir "$DEST/examples-json"
+fi
+rm -rf "$DEST/__MACOSX"
 
 count="$(find "$DEST" -name '*.json' | wc -l | tr -d ' ')"
 echo "Done: $count JSON files in $DEST"

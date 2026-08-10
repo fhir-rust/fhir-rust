@@ -153,7 +153,7 @@ codegen::codes_gen::plan   ──┐   (the enum names field typing depends on)
 codegen::plan::plan_type ──▶ break_type_cycles ──▶ resolve_defaults
         │
         ▼  codegen::render / primitives / codes_gen / meta_gen / extension_ext_gen
-fhir-release-N/src/{types,resources,codes.rs,extension_ext.rs,meta/generated.rs}
+fhir-rN/src/{types,resources,codes.rs,extension_ext.rs,meta/generated.rs}
 ```
 
 `Version` is the only thing that knows a release apart: which bundles to read,

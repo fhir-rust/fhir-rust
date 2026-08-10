@@ -1,0 +1,18 @@
+[package]
+name = "fhir-r8"
+description = "Reserved for a future FHIR Release 8 data model. No such specification exists yet; this crate contains no model."
+version = "0.0.1"
+edition = "2024"
+rust-version = "1.88"
+license = "MIT OR Apache-2.0 OR BSD-3-Clause OR GPL-2.0-only OR GPL-3.0-only"
+repository = "https://github.com/fhir-rust/fhir-rust/"
+keywords = ["fhir", "hl7", "healthcare", "medical", "placeholder"]
+categories = ["data-structures"]
+include = ["/src/**", "/README.md",
+    "/LICENSE.md",
+]
+
+[dependencies]
+
+[lints.rust]
+unsafe_code = "forbid"

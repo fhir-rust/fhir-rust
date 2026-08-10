@@ -315,7 +315,7 @@ pub mod prelude;
 /// change as the ballot does; it is not covered by this crate's semver
 /// promise.
 #[cfg(feature = "r6")]
-pub use ::fhir_release_6 as r6;
+pub use ::fhir_r6 as r6;
 
 #[cfg(feature = "r5")]
 pub mod r5 {
@@ -327,7 +327,7 @@ pub mod r5 {
     //! this repository's specification files through
     //! [`DEFINITIONS_DIR`](crate::DEFINITIONS_DIR), which a published model
     //! crate has no business carrying.
-    pub use ::fhir_release_5::*;
+    pub use ::fhir_r5::*;
 
     /// Work-in-progress helpers that parse the FHIR specification.
     pub mod parse;
@@ -335,18 +335,20 @@ pub mod r5 {
 
 /// The FHIR Release 4 (4.0.1) model (feature `r4`).
 #[cfg(feature = "r4")]
-pub use ::fhir_release_4 as r4;
+pub use ::fhir_r4 as r4;
+#[cfg(feature = "r4b")]
+pub use ::fhir_r4b as r4b;
 
 /// The FHIR Release 3 (3.0.2, also called STU3) model (feature `r3`).
 #[cfg(feature = "r3")]
-pub use ::fhir_release_3 as r3;
+pub use ::fhir_r3 as r3;
 
 /// The FHIR DSTU2 (1.0.2) model (feature `r2`).
 ///
 /// Retired by HL7 in favour of R3, and modelled because deployed systems
 /// still speak it.
 #[cfg(feature = "r2")]
-pub use ::fhir_release_2 as r2;
+pub use ::fhir_r2 as r2;
 
 pub use ::fhir_core::util;
 

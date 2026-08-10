@@ -15,7 +15,7 @@
 #
 #   - those jobs diff `src/` only, so a changed README, Cargo.toml or LICENSE
 #     is invisible to them; this compares every packaged file
-#   - `fhir/`'s job omits fhir-release-1/7/8/9/10, all published at 0.0.0;
+#   - `fhir/`'s job omits fhir-r1/7/8/9/10, all published at 0.0.0;
 #     this walks every [package] in the tree
 #   - none of them has ever run, because nothing here has been pushed (F-11);
 #     this is a script, so it runs before a push rather than after

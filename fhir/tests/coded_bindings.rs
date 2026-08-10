@@ -136,7 +136,7 @@ fn no_required_binding_resolves_to_a_degenerate_enum() {
         eprintln!("skipping: no bundled R5 definitions");
         return;
     }
-    let codes = std::fs::read_to_string("fhir-release-5/src/codes.rs").expect("codes.rs");
+    let codes = std::fs::read_to_string("fhir-r5/src/codes.rs").expect("codes.rs");
 
     // enum name -> variant count
     let mut sizes = std::collections::BTreeMap::new();

@@ -37,7 +37,7 @@ generator able to produce them all.
   siblings, builders, and per-module tests — not an intermediate that needs
   hand-finishing.
 - **R8.5** The generator MUST refuse to overwrite a hand-documented release
-  tree. `fhir-release-5/src` is such a tree; writing it requires an explicit output
+  tree. `fhir-r5/src` is such a tree; writing it requires an explicit output
   directory.
 
 ## Element → field mapping
@@ -110,7 +110,7 @@ generators are still how R5 is edited in bulk. New work goes in `codegen`.
 
 ## Acceptance criteria
 
-1. `cargo run -- r4` regenerates `fhir-release-4/src` without error, and a second run
+1. `cargo run -- r4` regenerates `fhir-r4/src` without error, and a second run
    produces no diff.
 2. `cargo run -- r5` without `--out` exits non-zero and writes nothing.
 3. Generated field types, cardinalities, choice expansions, keyword escaping and

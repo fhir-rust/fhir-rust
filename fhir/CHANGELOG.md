@@ -5,6 +5,24 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 3.1.0 — 2026-08-10
+
+- **R4B modelled**: new crate `fhir-r4b` (FHIR 4.3.0), feature `r4b`,
+  module `fhir::r4b` — 141 resources, 44 datatypes, 20 primitives, 531
+  code enums, generated from the official definitions and gated against
+  the full 3,022-example corpus (11 known failures, each with a stated
+  reason).
+- **Crates renamed** (owner-directed): `fhir-release-N` → `fhir-rN`,
+  matching the module names. The old names' published versions remain on
+  crates.io, immutable; new publishes use the new names.
+- Versions: `fhir` 3.1.0, `fhir-core` 3.0.1, `fhir-derive-macros` 1.3.0
+  (the `r4b` version token). Release crates stay at 3.0.0 for their first
+  publish under the new names.
+- Known model defects surfaced by the R4B corpus and recorded (monorepo
+  audit F-86, F-87): null-padded primitive arrays are rejected, and a
+  choice element whose content fails to parse is silently dropped. Both
+  affect every release crate and predate R4B.
+
 ## Unreleased - 4.0.0-dev
 
 ### Added - the typed-`Reference<T>` machinery in every release (T11, phase 1)
@@ -66,7 +84,7 @@ that forced the bump (F-35, in the database family's register).
 
 ## [3.0.0] - 2026-08-01
 
-`fhir`, `fhir-core` and `fhir-release-2` … `fhir-release-6` all move to 3.0.0
+`fhir`, `fhir-core` and `fhir-r2` … `fhir-r6` all move to 3.0.0
 together. The whole family takes the major bump because the breaking change is
 in a type every one of them re-exports, so a version that merely *looked*
 unaffected would still break its dependents. `fhir-derive-macros` moved to
@@ -171,7 +189,7 @@ gets wrong.
 
 ### Fixed — the release crates' unit tests never ran in CI either
 
-`release-crate-doctests` ran `cargo test -p fhir-release-N --doc`, and `--doc`
+`release-crate-doctests` ran `cargo test -p fhir-rN --doc`, and `--doc`
 runs doctests and nothing else, so between 276 and 500 unit tests per release
 crate were never compiled in CI. The job is now `release-crate-tests` and runs
 `--lib` as well.
@@ -212,7 +230,7 @@ all three.
 
 ### Fixed — a stale `target_profiles` in the R5 element table
 
-`fhir-release-5/src/meta/generated.rs` had drifted from the generator: 63
+`fhir-r5/src/meta/generated.rs` had drifted from the generator: 63
 elements whose type carries a profile (`SimpleQuantity`, and one
 `OperationOutcome`) had an empty `target_profiles` where the generator produces
 the profile URL. R5's table is generated into a hand-documented crate and had
@@ -304,7 +322,7 @@ work-in-progress generator machinery that never belonged in a data model.
   draft that can still change.
 - `fhir-r7`, `fhir-r8`, `fhir-r9` as name reservations at `0.0.0`. No such
   specifications exist; the crates contain no model, deliberately.
-- `fhir-release-2` (DSTU2, 1.0.2): 94 resources, 28 datatypes, 18 primitives, 265
+- `fhir-r2` (DSTU2, 1.0.2): 94 resources, 28 datatypes, 18 primitives, 265
   code enums.
 
   A `fhir-1` (DSTU1, 0.0.82) crate was built and then withdrawn before
@@ -334,7 +352,7 @@ work-in-progress generator machinery that never belonged in a data model.
   model — among them `Bundle.entry.link`,
   `ValueSet.codeSystem.concept.concept` and
   `ValueSet.expansion.contains.contains`. Nothing errored; parsing a DSTU2
-  bundle just discarded its entry links and nested concepts. `fhir-release-2` gains
+  bundle just discarded its entry links and nested concepts. `fhir-r2` gains
   exactly 92 fields. Found by round-tripping published data, which is the
   only kind of test that can: a test written in Rust can only name fields
   that exist.

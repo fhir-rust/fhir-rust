@@ -34,7 +34,7 @@ multiple-versions = "warn"
 wildcards = "deny"
 # Each release crate dev-depends on the facade by path with no version, so
 # its doctests can be written `use fhir::r4::…` — the path a user actually
-# types — rather than `use fhir_release_4::…`, which would document an internal crate
+# types — rather than `use fhir_r4::…`, which would document an internal crate
 # name. A path dependency carries no version to pin, so `wildcards = "deny"`
 # flags all seven. They are not a supply-chain risk: a path dependency
 # resolves inside this workspace and is stripped from the published package,

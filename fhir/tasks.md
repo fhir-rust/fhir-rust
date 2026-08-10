@@ -14,7 +14,7 @@ Conventions for the executing session:
   shipped; see T2/T28).
 - **Branch + commit** a baseline before any mass edit; commit again after
   verification. Never leave large uncommitted work while agents run.
-- **Mass edits across `fhir-release-N/src/{types,resources}`** must use
+- **Mass edits across `fhir-rN/src/{types,resources}`** must use
   Read+Edit-only agents (no Bash) or generator output — see memory note
   `parallel-file-edit-agents-no-bash`.
 - Breaking changes land only in the phase's designated version bump.
@@ -238,7 +238,7 @@ Conventions for the executing session:
 
 ### T15. `OperationOutcome` bridge — *done*
 - *Status:* `impl From<Vec<ValidationIssue>> for OperationOutcome` per release
-  (e.g. `fhir-release-5/src/validate.rs`).
+  (e.g. `fhir-r5/src/validate.rs`).
 - **Do:** `impl From<Vec<ValidationIssue>> for OperationOutcome` + severity
   mapping; example `examples/operation_outcome.rs`.
 - **Accept:** doctest + example run.
@@ -312,9 +312,9 @@ Conventions for the executing session:
 
 ## Phase 6 — Multi-version (0.7+)
 
-### T22. EPIC: R4B model — *obsolete, superseded*
+### T22. EPIC: R4B model — *obsolete, superseded; delivered 2026-08-10 as `fhir-r4b` (see plan item 3)*
 - *Status:* multi-release support shipped as R2–R6 in separate
-  `fhir-release-N` crates instead of `src/r4b/`. R4B itself remains future
+  `fhir-rN` crates instead of `src/r4b/`. R4B itself remains future
   work (spec 12).
 - **Do:** Point generator at R4B definitions → `src/r4b/`; feature flags
   `r5` (default) / `r4b`; shared primitives where identical.
@@ -761,7 +761,7 @@ items are defects in shipped behaviour; P1 items are missing guarantees.
   (the walk's own oracle), and that every corpus document the target rejects
   was predicted by the report — with a guard asserting that check is not
   vacuous.
-- **Also fixed on the way:** `fhir-release-5`'s generated element table had
+- **Also fixed on the way:** `fhir-r5`'s generated element table had
   drifted from the generator in 63 `target_profiles` entries.
 
 ---
@@ -792,8 +792,8 @@ above.
   `llms` CI job could not pass. `llms.json` was stale: version 1.1.0, "419"
   code enums, no mention of `r2`, `r6` or `convert`.
 - **Done (2026-08-06):** the check now collects from the real roots —
-  `src/lib.rs` (`pub mod` + the `pub use ::fhir_release_N as rN` aliases)
-  and `fhir-release-5/src/lib.rs` (every release exposes the same module
+  `src/lib.rs` (`pub mod` + the `pub use ::fhir_rN as rN` aliases)
+  and `fhir-r5/src/lib.rs` (every release exposes the same module
   shape, R12.2) — and refuses to pass vacuously if extraction finds fewer
   than 15 modules (R13.20). `llms.json` updated: version 3.0.0, five
   releases with per-release counts (incl. r2 94/265 and r6 161/459), R5
@@ -824,15 +824,15 @@ above.
 - *Status (2026-08-06):* AGENTS.md now says five releases (R2 row added),
   R6 published-by-necessity (R12.14a), reservations -1/-7..-10 at 0.0.1,
   tmp/out/ untracked, and "the other four are generated"; architecture,
-  conventions, glossary and code-generation updated to `fhir-release-N/src`.
+  conventions, glossary and code-generation updated to `fhir-rN/src`.
 - **Why (all verified):** AGENTS.md says "Four releases are modelled" and its
   table omits R2; it calls R6 "unpublished" and annotates it `publish =
   false` (no crate sets `publish`, and R6 *must* be published — R12.14a); its
-  reservation list omits `fhir-release-1` and `fhir-release-10`; it claims
+  reservation list omits `fhir-r1` and `fhir-r10`; it claims
   `tmp/out/` is tracked (it is not). `AGENTS/code-generation.md`,
   `conventions.md` and `glossary.md` still use `src/<release>/` output paths.
 - **Do:** one consistency pass over AGENTS.md and AGENTS/, against the same
-  ground truth as this audit (five releases, `fhir-release-N/src` paths, all
+  ground truth as this audit (five releases, `fhir-rN/src` paths, all
   five release crates published).
 
 ### T41. CHANGELOG and identity-string drift — **P2** — *done*
@@ -874,10 +874,10 @@ above.
 
 ### T44. `main.rs` usage text is stale — **P2** — *done*
 - *Status (2026-08-06):* USAGE now lists r2-r6 (and the alias/version
-  spellings) and the real `fhir-release-N/src` default; `cargo check` clean.
+  spellings) and the real `fhir-rN/src` default; `cargo check` clean.
 - **Why:** the USAGE string says the release argument is "r3, r4, or r5" and
   that `--out` defaults to `src/<release>`. The parser accepts `r2` through
-  `r6`, and the default output is `fhir-release-N/src`.
+  `r6`, and the default output is `fhir-rN/src`.
 - **Do:** make the USAGE string match `codegen::Version::parse` and
   `source_dir()`.
 

@@ -367,7 +367,7 @@ pub fn apply_file(
 /// Apply choice conversions to a group (`types` or `resources`), writing files.
 pub fn apply_group(group: &str, skipped: &mut Vec<String>) -> usize {
     let plan = plan();
-    let dir = crate_root().join("fhir-release-5").join("src").join(group);
+    let dir = crate_root().join("fhir-r5").join("src").join(group);
     let mut total = 0;
     let mut files: Vec<PathBuf> = std::fs::read_dir(&dir)
         .expect("read dir")
@@ -406,7 +406,7 @@ pub fn apply_group(group: &str, skipped: &mut Vec<String>) -> usize {
 fn all_source() -> String {
     let mut s = String::new();
     for group in ["types", "resources"] {
-        let dir = crate_root().join("fhir-release-5").join("src").join(group);
+        let dir = crate_root().join("fhir-r5").join("src").join(group);
         for entry in std::fs::read_dir(&dir).expect("read dir").flatten() {
             let p = entry.path();
             if p.extension().is_some_and(|x| x == "rs") {
@@ -475,7 +475,7 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "writes fhir-release-5/src/types/*.rs"]
+    #[ignore = "writes fhir-r5/src/types/*.rs"]
     fn apply_types() {
         let mut skipped = Vec::new();
         let n = apply_group("types", &mut skipped);
@@ -489,7 +489,7 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "writes fhir-release-5/src/resources/*.rs"]
+    #[ignore = "writes fhir-r5/src/resources/*.rs"]
     fn apply_resources() {
         let mut skipped = Vec::new();
         let n = apply_group("resources", &mut skipped);

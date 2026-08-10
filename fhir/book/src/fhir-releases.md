@@ -1,7 +1,7 @@
 # FHIR releases
 
 This crate models **five** FHIR releases, each a complete, independent crate
-(`fhir-release-2` … `fhir-release-6`) exposed as a facade feature:
+(`fhir-r2` … `fhir-r6`) exposed as a facade feature:
 
 | Release | Module | Cargo feature | Resources | Datatypes | Primitives | Code enums |
 | --- | --- | --- | ---: | ---: | ---: | ---: |

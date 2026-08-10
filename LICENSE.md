@@ -31,8 +31,10 @@ of the five. They are the same grant as above, not a narrower one.
 
 Versions already on crates.io keep the licence they were published under —
 a published version is immutable, including its metadata. `fhir`, `fhir-core`,
-`fhir-derive-macros`, and `fhir-release-1` through `-10` have releases that
-predate this harmonization; the terms above apply from the next version of each.
+`fhir-derive-macros`, and the release crates under their pre-2026-08-10
+names (`fhir-release-1` through `-10` — since renamed `fhir-r1`…`fhir-r10`
+in this tree) have releases that predate this harmonization; the terms
+above apply from the next published version of each.
 
 ## FHIR itself
 

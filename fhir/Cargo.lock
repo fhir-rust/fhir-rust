@@ -264,16 +264,17 @@ checksum = "da7c62ceae207dd37ea5b845da6a0696c799f85e97da1ab5b7910be3c1c80223"
 
 [[package]]
 name = "fhir"
-version = "3.0.0"
+version = "3.1.0"
 dependencies = [
  "convert_case",
  "fhir-core",
  "fhir-derive-macros",
- "fhir-release-2",
- "fhir-release-3",
- "fhir-release-4",
- "fhir-release-5",
- "fhir-release-6",
+ "fhir-r2",
+ "fhir-r3",
+ "fhir-r4",
+ "fhir-r4b",
+ "fhir-r5",
+ "fhir-r6",
  "indoc",
  "proptest",
  "reqwest",
@@ -287,7 +288,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-core"
-version = "3.0.0"
+version = "3.0.1"
 dependencies = [
  "convert_case",
  "fhir",
@@ -301,7 +302,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-derive-macros"
-version = "1.2.0"
+version = "1.3.0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -309,15 +310,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "fhir-release-1"
+name = "fhir-r1"
 version = "0.0.1"
 
 [[package]]
-name = "fhir-release-10"
+name = "fhir-r10"
 version = "0.0.1"
 
 [[package]]
-name = "fhir-release-2"
+name = "fhir-r2"
 version = "3.0.0"
 dependencies = [
  "fhir",
@@ -330,7 +331,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "fhir-release-3"
+name = "fhir-r3"
 version = "3.0.0"
 dependencies = [
  "fhir",
@@ -343,7 +344,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "fhir-release-4"
+name = "fhir-r4"
 version = "3.0.0"
 dependencies = [
  "fhir",
@@ -356,7 +357,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "fhir-release-5"
+name = "fhir-r4b"
+version = "3.0.0"
+dependencies = [
+ "fhir",
+ "fhir-core",
+ "fhir-derive-macros",
+ "serde",
+ "serde_json",
+ "serde_with",
+ "vec1",
+]
+
+[[package]]
+name = "fhir-r5"
 version = "3.0.0"
 dependencies = [
  "convert_case",
@@ -370,7 +384,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "fhir-release-6"
+name = "fhir-r6"
 version = "3.0.0"
 dependencies = [
  "convert_case",
@@ -384,15 +398,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "fhir-release-7"
+name = "fhir-r7"
 version = "0.0.1"
 
 [[package]]
-name = "fhir-release-8"
+name = "fhir-r8"
 version = "0.0.1"
 
 [[package]]
-name = "fhir-release-9"
+name = "fhir-r9"
 version = "0.0.1"
 
 [[package]]

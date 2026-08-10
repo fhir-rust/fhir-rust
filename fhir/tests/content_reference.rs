@@ -61,25 +61,25 @@ const RELEASES: &[Release] = &[
     Release {
         name: "R2",
         defs: "doc/fhir-specifications/r2/fhir-definitions-json",
-        crate_dir: "fhir-release-2",
+        crate_dir: "fhir-r2",
         snapshot: "tests/data/recursive_elements_r2.txt",
     },
     Release {
         name: "R3",
         defs: "doc/fhir-specifications/r3/fhir-definitions-json",
-        crate_dir: "fhir-release-3",
+        crate_dir: "fhir-r3",
         snapshot: "tests/data/recursive_elements_r3.txt",
     },
     Release {
         name: "R4",
         defs: "doc/fhir-specifications/r4/fhir-definitions-json",
-        crate_dir: "fhir-release-4",
+        crate_dir: "fhir-r4",
         snapshot: "tests/data/recursive_elements_r4.txt",
     },
     Release {
         name: "R5",
         defs: "doc/fhir-specifications/r5/fhir-definitions-json",
-        crate_dir: "fhir-release-5",
+        crate_dir: "fhir-r5",
         snapshot: "tests/data/recursive_elements_r5.txt",
     },
 ];

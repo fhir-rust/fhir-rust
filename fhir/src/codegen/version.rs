@@ -19,6 +19,12 @@ pub enum Version {
     R3,
     /// FHIR Release 4 (4.0.1).
     R4,
+    /// FHIR Release 4B (4.3.0): R4 plus the medication-definition rework
+    /// (`Medicinal*` → `…Definition`) and a handful of new resources,
+    /// published as the step toward R5. Named `4b` because that is HL7's
+    /// own name for it — the numeric reservation crates reserve *future*
+    /// numbers, not HL7's naming.
+    R4B,
     /// FHIR Release 5 (5.0.0).
     R5,
     /// FHIR Release 6, **in ballot and not final** (6.0.0-ballot3).
@@ -31,10 +37,11 @@ pub enum Version {
 
 impl Version {
     /// Every release the generator knows about.
-    pub const ALL: [Version; 5] = [
+    pub const ALL: [Version; 6] = [
         Version::R2,
         Version::R3,
         Version::R4,
+        Version::R4B,
         Version::R5,
         Version::R6,
     ];
@@ -47,6 +54,7 @@ impl Version {
             "r2" | "dstu2" | "2" | "1.0" | "1.0.2" => Some(Version::R2),
             "r3" | "stu3" | "3" | "3.0" | "3.0.1" | "3.0.2" => Some(Version::R3),
             "r4" | "4" | "4.0" | "4.0.1" => Some(Version::R4),
+            "r4b" | "4b" | "4.3" | "4.3.0" => Some(Version::R4B),
             "r5" | "5" | "5.0" | "5.0.0" => Some(Version::R5),
             "r6" | "6" | "6.0" | "6.0.0-ballot3" => Some(Version::R6),
             _ => None,
@@ -60,6 +68,7 @@ impl Version {
             Version::R2 => "r2",
             Version::R3 => "r3",
             Version::R4 => "r4",
+            Version::R4B => "r4b",
             Version::R5 => "r5",
             Version::R6 => "r6",
         }
@@ -72,6 +81,7 @@ impl Version {
             Version::R2 => "R2",
             Version::R3 => "R3",
             Version::R4 => "R4",
+            Version::R4B => "R4B",
             Version::R5 => "R5",
             Version::R6 => "R6",
         }
@@ -84,6 +94,7 @@ impl Version {
             Version::R2 => "1.0.2",
             Version::R3 => "3.0.2",
             Version::R4 => "4.0.1",
+            Version::R4B => "4.3.0",
             Version::R5 => "5.0.0",
             // The ballot identifier, not a release number: it is what the
             // specification calls itself and what CapabilityStatement must say.
@@ -99,6 +110,7 @@ impl Version {
             // R3 is published under its STU3 name.
             Version::R3 => "https://hl7.org/fhir/STU3/",
             Version::R4 => "https://hl7.org/fhir/R4/",
+            Version::R4B => "https://hl7.org/fhir/R4B/",
             Version::R5 => "https://hl7.org/fhir/R5/",
             Version::R6 => "https://hl7.org/fhir/6.0.0-ballot3/",
         }
@@ -118,18 +130,15 @@ impl Version {
     ///
     /// Each release is its own crate, so the model no longer lands in this
     /// crate's `src/`. Writing to the old location would recreate `src/r3`
-    /// alongside `fhir-release-3` and shadow nothing — the build would keep using
+    /// alongside `fhir-r3` and shadow nothing — the build would keep using
     /// the crate while the generator quietly updated a directory nobody
     /// compiles.
     #[must_use]
     pub fn source_dir(self) -> PathBuf {
-        // The crate is `fhir-<digit>` while the module is `r<digit>`: the
-        // crates are named for the release number, not the module path.
+        // The crate is `fhir-<module>`: `fhir-r4b` for module `r4b`
+        // (renamed from `fhir-release-N` 2026-08-10, owner-directed).
         crate_root()
-            .join(format!(
-                "fhir-release-{}",
-                self.module().trim_start_matches('r')
-            ))
+            .join(format!("fhir-{}", self.module()))
             .join("src")
     }
 
@@ -176,6 +185,9 @@ mod tests {
         assert_eq!(Version::parse("r4"), Some(Version::R4));
         assert_eq!(Version::parse("R5"), Some(Version::R5));
         assert_eq!(Version::parse("4.0.1"), Some(Version::R4));
+        assert_eq!(Version::parse("r4b"), Some(Version::R4B));
+        assert_eq!(Version::parse("R4B"), Some(Version::R4B));
+        assert_eq!(Version::parse("4.3.0"), Some(Version::R4B));
         assert_eq!(Version::parse("r6"), Some(Version::R6));
         assert_eq!(Version::parse("6.0.0-ballot3"), Some(Version::R6));
         // A release that does not exist must not parse. R7 is the next
@@ -188,14 +200,14 @@ mod tests {
     fn paths_are_release_scoped() {
         for version in Version::ALL {
             assert!(version.definitions_dir().ends_with("fhir-definitions-json"));
-            // Each release is its own crate now: `fhir-release-4/src`, not `src/r4`.
+            // Each release is its own crate now: `fhir-r4/src`, not `src/r4`.
             assert!(version.source_dir().ends_with("src"));
-            assert!(version.source_dir().parent().is_some_and(|p| {
-                p.ends_with(format!(
-                    "fhir-release-{}",
-                    version.module().trim_start_matches('r')
-                ))
-            }));
+            assert!(
+                version
+                    .source_dir()
+                    .parent()
+                    .is_some_and(|p| p.ends_with(format!("fhir-{}", version.module())))
+            );
             assert!(version.types_bundle().ends_with("profiles-types.json"));
         }
     }

@@ -43,7 +43,7 @@ Rules any representation must honour:
 - **R9.1** For every primitive-typed element `x` — including primitive `value[x]`
   choice variants such as `deceasedBoolean` — the owning struct MUST have a
   sibling field `x_ext` typed by that release's
-  [`Element`](../fhir-release-5/src/types/element.rs) (`{ id, extension }`):
+  [`Element`](../fhir-r5/src/types/element.rs) (`{ id, extension }`):
 
   ```rust
   pub birth_date: Option<types::Date>,

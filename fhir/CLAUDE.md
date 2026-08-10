@@ -35,9 +35,9 @@ This is a workspace, not a single crate:
 | Crate | What it holds |
 | --- | --- |
 | `fhir-core` | Everything release-independent: `Decimal`, `Validate`, `Coded<E>`, builders, temporal parsing, XML, the REST client |
-| `fhir-release-2` … `fhir-release-6` | One FHIR release each, ~90k–240k generated lines |
+| `fhir-r2` … `fhir-r6` (incl. `fhir-r4b`) | One FHIR release each, ~90k–240k generated lines |
 | `fhir` | The facade: re-exports the above behind features `r2`…`r6` |
-| `fhir-release-1`, `fhir-release-7` … `fhir-release-10` | Name reservations at `0.0.1`. No such specifications exist (or, for R1/DSTU1, none is modelled); they contain no model |
+| `fhir-r1`, `fhir-r7` … `fhir-r10` | Name reservations at `0.0.1`. No such specifications exist (or, for R1/DSTU1, none is modelled); they contain no model |
 | `fhir-derive-macros` | `#[derive(Validate)]`, `Builder`, `FhirChoice` |
 
 The models are separate crates so that compiling all of them is several
@@ -49,17 +49,17 @@ the generator, the derive macros, `fhir-core`, or any release crate, run the
 gate with the others enabled too:
 
 ```sh
-cargo test --features "r2 r3 r4 r6 xml client"
-cargo clippy --all-targets --features "r2 r3 r4 r6 xml client" -- -D warnings
+cargo test --features "r2 r3 r4 r4b r6 xml client"
+cargo clippy --all-targets --features "r2 r3 r4 r4b r6 xml client" -- -D warnings
 ```
 
 ## Which tree you are editing
 
-- **`fhir-release-2/src` … `fhir-release-4/src` are generated.** Change `src/codegen/`,
-  then `cargo run -- r2` … `cargo run -- r4`.
-- **`fhir-release-5/src` is hand-documented.** Never regenerate over it; `cargo run
+- **`fhir-r2/src` … `fhir-r4/src`, and `fhir-r4b/src`, are generated.**
+  Change `src/codegen/`, then `cargo run -- r2` … `cargo run -- r4b`.
+- **`fhir-r5/src` is hand-documented.** Never regenerate over it; `cargo run
   -- r5` refuses without an explicit `--out`.
-- **`fhir-release-6/src` is generated from a ballot draft** (6.0.0-ballot3). Its
+- **`fhir-r6/src` is generated from a ballot draft** (6.0.0-ballot3). Its
   feature is off by default and it is outside the semver promise until R6 is
   final — but it **is** published, and has to be: the facade's optional
   dependency on it needs a registry version, so holding it back would make
