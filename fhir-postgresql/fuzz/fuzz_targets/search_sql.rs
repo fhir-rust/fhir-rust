@@ -79,20 +79,75 @@ fuzz_target!(|data: &[u8]| {
         return;
     };
 
-    for (_, value) in &params {
-        if value.len() < 4 || !is_dangerous(value) {
-            continue;
+    // Two oracles, each covering the other's blind spot.
+    //
+    // The old single oracle substring-searched each "dangerous" value in the
+    // SQL, and ~a million executions minimized to `= p.\"` — a value that is
+    // a substring of the *structure* (`\"rid\" = p.\"id\"`), a false positive
+    // by construction.
+    //
+    // Oracle 1 — structural invariance: rebuild with every value replaced by
+    // a *shape-preserving* sentinel (letters flattened, digits rotated,
+    // punctuation and comparison prefixes kept, so the builder takes the
+    // same branches) and require the SQL text to be identical: the text must
+    // be a function of parameter names and value *shapes*, never value
+    // content. Oracle 2 — differential leak check: a value appearing in the
+    // real SQL but not the sentinel SQL got there from the value itself, not
+    // from the structure.
+    fn sentinel_of(v: &str) -> String {
+        const PREFIXES: [&str; 8] = ["ge", "le", "gt", "lt", "ne", "eq", "sa", "eb"];
+        let keep = PREFIXES
+            .iter()
+            .find(|p| v.starts_with(**p))
+            .map_or(0, |p| p.len());
+        v.chars()
+            .enumerate()
+            .map(|(i, c)| {
+                if i < keep {
+                    c
+                } else {
+                    match c {
+                        'a'..='z' | 'A'..='Z' => 'z',
+                        '0'..='9' => {
+                            char::from_digit((c.to_digit(10).unwrap() + 1) % 10, 10).unwrap()
+                        }
+                        other => other,
+                    }
+                }
+            })
+            .collect()
+    }
+    let replaced: Vec<(String, String)> = params
+        .iter()
+        .map(|(k, v)| (k.clone(), sentinel_of(v)))
+        .collect();
+    if let Ok(shadow) = fhir_postgresql_store::search::build_search_sql(
+        map,
+        rm,
+        &replaced,
+        50,
+        0,
+        &sort,
+        replaced.first().map(|(_, v)| v.as_str()),
+    ) {
+        assert!(
+            query.sql == shadow.sql && query.count_sql == shadow.count_sql,
+            "the SQL text depends on parameter values beyond their shape — an \
+             injection shape:\n  with values:   {}\n  with sentinel: {}",
+            query.sql,
+            shadow.sql
+        );
+        for (_, value) in &params {
+            if value.len() < 4 || !is_dangerous(value) {
+                continue;
+            }
+            if query.sql.contains(value.as_str()) && !shadow.sql.contains(value.as_str()) {
+                panic!(
+                    "a search value reached the SQL instead of the bind list:\n  \
+                     value: {value:?}\n  sql: {}",
+                    query.sql
+                );
+            }
         }
-        assert!(
-            !query.sql.contains(value.as_str()),
-            "a search value reached the SQL instead of the bind list:\n  \
-             value: {value:?}\n  sql: {}",
-            query.sql
-        );
-        assert!(
-            !query.count_sql.contains(value.as_str()),
-            "a search value reached the count SQL instead of the bind list:\n  \
-             value: {value:?}"
-        );
     }
 });
