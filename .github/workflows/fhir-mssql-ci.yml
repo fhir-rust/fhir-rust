@@ -103,8 +103,8 @@ jobs:
         run: cargo test --release -p fhir-mssql-map --test mssql_ddl -- --nocapture --test-threads=1
       - name: Round-trip and property tests + 10k proptests
         env:
-          FHIR_MSSQL_SPEC_DIR: ${{ github.workspace }}/spec-cache
-          FHIR_MSSQL_CORPUS_DIR: ${{ github.workspace }}/corpus
+          FHIR_MSSQL_SPEC_DIR: ${{ github.workspace }}/fhir-mssql/spec-cache
+          FHIR_MSSQL_CORPUS_DIR: ${{ github.workspace }}/fhir-mssql/corpus
           FHIR_MSSQL_TEST_CORPUS_LIMIT: "400"
           FHIR_MSSQL_PROPTEST_CASES: "10000"
         run: |
@@ -229,8 +229,12 @@ jobs:
       # and expensive to reconstruct after the fact.
       - name: cargo-deny (advisories, licenses, sources, bans)
         uses: EmbarkStudios/cargo-deny-action@v2
+        # `uses:` steps ignore defaults.run.working-directory, so the
+        # manifest must be named explicitly (found by the first hosted run:
+        # the action ran at the repo root, where there is no Cargo.toml).
         with:
           command: check
+          manifest-path: fhir-mssql/Cargo.toml
       - name: CycloneDX SBOM
         run: |
           cargo install cargo-cyclonedx --locked

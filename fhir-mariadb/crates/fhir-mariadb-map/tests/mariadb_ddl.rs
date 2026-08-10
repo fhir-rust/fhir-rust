@@ -44,6 +44,16 @@ fn mysql_cli() -> Option<&'static str> {
     })
 }
 
+/// Whether the client is MariaDB-flavored (vs Oracle's mysql 8 client),
+/// which decides the TLS flag spelling it understands.
+fn client_is_mariadb(cli: &str) -> bool {
+    Command::new(cli)
+        .arg("--version")
+        .output()
+        .map(|o| String::from_utf8_lossy(&o.stdout).contains("MariaDB"))
+        .unwrap_or(false)
+}
+
 /// Render statements into a client script.
 ///
 /// The append-only DELETE trigger has a compound `BEGIN … END` body containing
@@ -71,29 +81,44 @@ fn run_script(script: &str) -> Result<String, String> {
     use std::process::Stdio;
     let (host, port, user) = dsn().ok_or("no dsn")?;
     let cli = mysql_cli().ok_or("no mysql client")?;
+    // --default-character-set: the runner's client may default to utf8mb3,
+    // and a utf8mb4 collation named against a utf8mb3 literal is ERROR 1253
+    // (found by the first hosted CI run). --skip-ssl-verify-server-cert is
+    // MariaDB's client flag; Oracle's mysql 8 client rejects it as unknown
+    // (its TLS default, PREFERRED, does not verify — no flag needed).
+    let mut args = vec![
+        "-h".to_string(),
+        host,
+        "-P".to_string(),
+        port,
+        "-u".to_string(),
+        user,
+        "--batch".to_string(),
+        "--raw".to_string(),
+        "--default-character-set=utf8mb4".to_string(),
+    ];
+    if client_is_mariadb(cli) {
+        args.push("--skip-ssl-verify-server-cert".to_string());
+    }
     let mut child = Command::new(cli)
-        .args([
-            "-h",
-            &host,
-            "-P",
-            &port,
-            "-u",
-            &user,
-            "--batch",
-            "--raw",
-            "--skip-ssl-verify-server-cert",
-        ])
+        .args(&args)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
         .map_err(|e| e.to_string())?;
-    child
+    // A client that exits early — an unknown option, or an SQL error under
+    // --batch — closes stdin, and the write fails with EPIPE. The diagnosis
+    // is on the client's stderr, so fall through and collect it rather than
+    // masking it as "Broken pipe" (the first hosted CI run did exactly
+    // that, hiding the real error).
+    let write_err = child
         .stdin
         .as_mut()
         .unwrap()
         .write_all(script.as_bytes())
-        .map_err(|e| e.to_string())?;
+        .err();
+    drop(child.stdin.take());
     let out = child.wait_with_output().map_err(|e| e.to_string())?;
     let err = String::from_utf8_lossy(&out.stderr).to_string();
     // The client warns about passwordless TLS; that is not a failure.
@@ -104,10 +129,14 @@ fn run_script(script: &str) -> Result<String, String> {
     if out.status.success() && fatal.is_empty() {
         return Ok(String::from_utf8_lossy(&out.stdout).to_string());
     }
-    Err(if fatal.is_empty() {
-        err
-    } else {
+    Err(if !fatal.is_empty() {
         fatal.join("\n")
+    } else if !err.trim().is_empty() {
+        err
+    } else if let Some(w) = write_err {
+        format!("client exited early: {w}")
+    } else {
+        "client failed with no diagnostics".to_string()
     })
 }
 

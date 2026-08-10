@@ -78,6 +78,11 @@ jobs:
       PGUSER: fhir-postgresql
       PGPASSWORD: fhir-postgresql
       FHIR_POSTGRESQL_TEST_DB: fhir-postgresql
+      # Explicit, because the store's default is `require` (O10.7, F-17) and
+      # this job's service speaks plaintext by design — the TLS-only job
+      # below is where `require` is exercised. Without this, every live test
+      # refuses the plaintext link, exactly as the default promises.
+      PGSSLMODE: disable
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -100,8 +105,8 @@ jobs:
           done
       - name: Live tests (round trip, M2 semantics, search) + 10k proptests
         env:
-          FHIR_POSTGRESQL_SPEC_DIR: ${{ github.workspace }}/spec-cache
-          FHIR_POSTGRESQL_CORPUS_DIR: ${{ github.workspace }}/corpus
+          FHIR_POSTGRESQL_SPEC_DIR: ${{ github.workspace }}/fhir-postgresql/spec-cache
+          FHIR_POSTGRESQL_CORPUS_DIR: ${{ github.workspace }}/fhir-postgresql/corpus
           FHIR_POSTGRESQL_TEST_CORPUS_LIMIT: "400"
           FHIR_POSTGRESQL_PROPTEST_CASES: "10000"
         run: |
@@ -135,6 +140,17 @@ jobs:
       # The key below is a throwaway constant, deliberately committed: it
       # protects nothing, and a workflow that pulled a real key from secrets
       # would put one in reach of every fork's pull-request runner.
+      - name: The live suite must not pass by skipping (T11.12)
+        run: |
+          # The first hosted run was green here while every spec-dependent
+          # live test self-skipped ("spec missing" — the env pointed at an
+          # unrooted path). A skip on CI is indistinguishable from a pass
+          # unless something looks, so something looks.
+          if grep -q "skipping:" live-tests.log; then
+            grep "skipping:" live-tests.log | sort -u
+            echo "::error::live tests skipped on CI; the gate would be green while testing nothing"
+            exit 1
+          fi
       - name: Audit suite, keyed
         env:
           FHIR_POSTGRESQL_CHAIN_KEY: 4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f
@@ -215,7 +231,7 @@ jobs:
           # Self-signed, so the server certificate is its own trust anchor.
           PGSSLROOTCERT: ${{ github.workspace }}/pgtls/server.crt
           FHIR_POSTGRESQL_TEST_DB: fhir-postgresql
-          FHIR_POSTGRESQL_SPEC_DIR: ${{ github.workspace }}/spec-cache
+          FHIR_POSTGRESQL_SPEC_DIR: ${{ github.workspace }}/fhir-postgresql/spec-cache
         run: cargo test -p fhir-postgresql-store --test live -- --nocapture
 
   msrv:
@@ -328,8 +344,12 @@ jobs:
       # and expensive to reconstruct after the fact.
       - name: cargo-deny (advisories, licenses, sources, bans)
         uses: EmbarkStudios/cargo-deny-action@v2
+        # `uses:` steps ignore defaults.run.working-directory, so the
+        # manifest must be named explicitly (found by the first hosted run:
+        # the action ran at the repo root, where there is no Cargo.toml).
         with:
           command: check
+          manifest-path: fhir-postgresql/Cargo.toml
       - name: CycloneDX SBOM
         run: |
           cargo install cargo-cyclonedx --locked

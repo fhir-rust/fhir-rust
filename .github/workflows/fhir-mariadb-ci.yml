@@ -103,8 +103,8 @@ jobs:
         run: cargo test --release -p fhir-mariadb-map --test mariadb_ddl -- --nocapture --test-threads=1
       - name: Round-trip and property tests + 10k proptests
         env:
-          FHIR_MARIADB_SPEC_DIR: ${{ github.workspace }}/spec-cache
-          FHIR_MARIADB_CORPUS_DIR: ${{ github.workspace }}/corpus
+          FHIR_MARIADB_SPEC_DIR: ${{ github.workspace }}/fhir-mariadb/spec-cache
+          FHIR_MARIADB_CORPUS_DIR: ${{ github.workspace }}/fhir-mariadb/corpus
           FHIR_MARIADB_TEST_CORPUS_LIMIT: "400"
           FHIR_MARIADB_PROPTEST_CASES: "10000"
         run: |
@@ -115,8 +115,8 @@ jobs:
       # so the gap is visible in the run rather than inferred from its absence.
       - name: Store and server suites (expected to skip until T64)
         env:
-          FHIR_MARIADB_SPEC_DIR: ${{ github.workspace }}/spec-cache
-          FHIR_MARIADB_CORPUS_DIR: ${{ github.workspace }}/corpus
+          FHIR_MARIADB_SPEC_DIR: ${{ github.workspace }}/fhir-mariadb/spec-cache
+          FHIR_MARIADB_CORPUS_DIR: ${{ github.workspace }}/fhir-mariadb/corpus
         run: |
           echo "::notice::store live suite are not yet ported to MariaDB 11.4 (T64); they self-skip"
           cargo test --release -p fhir-mariadb-store -- --nocapture --test-threads=1
@@ -238,8 +238,12 @@ jobs:
       # and expensive to reconstruct after the fact.
       - name: cargo-deny (advisories, licenses, sources, bans)
         uses: EmbarkStudios/cargo-deny-action@v2
+        # `uses:` steps ignore defaults.run.working-directory, so the
+        # manifest must be named explicitly (found by the first hosted run:
+        # the action ran at the repo root, where there is no Cargo.toml).
         with:
           command: check
+          manifest-path: fhir-mariadb/Cargo.toml
       - name: CycloneDX SBOM
         run: |
           cargo install cargo-cyclonedx --locked
