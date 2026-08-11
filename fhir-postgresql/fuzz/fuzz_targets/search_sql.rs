@@ -95,31 +95,38 @@ fuzz_target!(|data: &[u8]| {
     // real SQL but not the sentinel SQL got there from the value itself, not
     // from the structure.
     fn sentinel_of(v: &str) -> String {
-        // Prefixes that steer the builder's branch and must survive the
-        // flattening: comparison operators, and `urn:` (a reference value
-        // that routes to the URL column — CI's fuzzer found the sentinel
-        // flipping that branch and flagging a legitimate difference).
-        const PREFIXES: [&str; 9] = ["ge", "le", "gt", "lt", "ne", "eq", "sa", "eb", "urn:"];
-        let keep = PREFIXES
-            .iter()
-            .find(|p| v.starts_with(**p))
-            .map_or(0, |p| p.len());
-        v.chars()
-            .enumerate()
-            .map(|(i, c)| {
-                if i < keep {
-                    c
-                } else {
-                    match c {
-                        'a'..='z' | 'A'..='Z' => 'z',
-                        '0'..='9' => {
-                            char::from_digit((c.to_digit(10).unwrap() + 1) % 10, 10).unwrap()
+        // The builder splits a value on commas (an OR-list) and branches per
+        // segment, so the sentinel must too — CI's fuzzer found a mid-list
+        // `urn:` segment (`link=1,…,urn:c,…`) flipping the URL-column branch
+        // after the whole-value pass only preserved a *leading* prefix.
+        fn sentinel_segment(v: &str) -> String {
+            // Prefixes that steer the builder's branch and must survive the
+            // flattening: comparison operators, and `urn:` (a reference value
+            // that routes to the URL column — CI's fuzzer found the sentinel
+            // flipping that branch and flagging a legitimate difference).
+            const PREFIXES: [&str; 9] = ["ge", "le", "gt", "lt", "ne", "eq", "sa", "eb", "urn:"];
+            let keep = PREFIXES
+                .iter()
+                .find(|p| v.starts_with(**p))
+                .map_or(0, |p| p.len());
+            v.chars()
+                .enumerate()
+                .map(|(i, c)| {
+                    if i < keep {
+                        c
+                    } else {
+                        match c {
+                            'a'..='z' | 'A'..='Z' => 'z',
+                            '0'..='9' => {
+                                char::from_digit((c.to_digit(10).unwrap() + 1) % 10, 10).unwrap()
+                            }
+                            other => other,
                         }
-                        other => other,
                     }
-                }
-            })
-            .collect()
+                })
+                .collect()
+        }
+        v.split(',').map(sentinel_segment).collect::<Vec<_>>().join(",")
     }
     let replaced: Vec<(String, String)> = params
         .iter()
