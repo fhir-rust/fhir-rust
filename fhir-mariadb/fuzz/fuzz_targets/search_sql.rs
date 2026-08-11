@@ -31,7 +31,11 @@ fn map() -> &'static RelMap {
 /// containing one of these appearing verbatim in the SQL is the signature of
 /// an injection; a value without one could coincide with a column name.
 fn is_dangerous(value: &str) -> bool {
-    value.contains('\'') || value.contains(';') || value.contains("--") || value.contains('"')
+    value.contains('\'')
+        || value.contains(';')
+        || value.contains("--")
+        || value.contains('"')
+        || value.contains('`')
 }
 
 fuzz_target!(|data: &[u8]| {
@@ -79,20 +83,86 @@ fuzz_target!(|data: &[u8]| {
         return;
     };
 
-    for (_, value) in &params {
-        if value.len() < 4 || !is_dangerous(value) {
-            continue;
+    // Two oracles, each covering the other's blind spot.
+    //
+    // The old single oracle substring-searched each "dangerous" value in the
+    // SQL, and ~a million executions minimized to `= p.` plus a quote — a value that is
+    // a substring of the *structure* (the join predicate), a false positive
+    // by construction.
+    //
+    // Oracle 1 — structural invariance: rebuild with every value replaced by
+    // a *shape-preserving* sentinel (letters flattened, digits rotated,
+    // punctuation and comparison prefixes kept, so the builder takes the
+    // same branches) and require the SQL text to be identical: the text must
+    // be a function of parameter names and value *shapes*, never value
+    // content. Oracle 2 — differential leak check: a value appearing in the
+    // real SQL but not the sentinel SQL got there from the value itself, not
+    // from the structure.
+    fn sentinel_of(v: &str) -> String {
+        // The builder splits a value on commas (an OR-list) and branches per
+        // segment, so the sentinel must too — CI's fuzzer found a mid-list
+        // `urn:` segment (`link=1,…,urn:c,…`) flipping the URL-column branch
+        // after the whole-value pass only preserved a *leading* prefix.
+        fn sentinel_segment(v: &str) -> String {
+            // Prefixes that steer the builder's branch and must survive the
+            // flattening: comparison operators, and `urn:` (a reference value
+            // that routes to the URL column — CI's fuzzer found the sentinel
+            // flipping that branch and flagging a legitimate difference).
+            const PREFIXES: [&str; 9] = ["ge", "le", "gt", "lt", "ne", "eq", "sa", "eb", "urn:"];
+            let keep = PREFIXES
+                .iter()
+                .find(|p| v.starts_with(**p))
+                .map_or(0, |p| p.len());
+            v.chars()
+                .enumerate()
+                .map(|(i, c)| {
+                    if i < keep {
+                        c
+                    } else {
+                        match c {
+                            'a'..='z' | 'A'..='Z' => 'z',
+                            '0'..='9' => {
+                                char::from_digit((c.to_digit(10).unwrap() + 1) % 10, 10).unwrap()
+                            }
+                            other => other,
+                        }
+                    }
+                })
+                .collect()
         }
+        v.split(',').map(sentinel_segment).collect::<Vec<_>>().join(",")
+    }
+    let replaced: Vec<(String, String)> = params
+        .iter()
+        .map(|(k, v)| (k.clone(), sentinel_of(v)))
+        .collect();
+    if let Ok(shadow) = fhir_mariadb_store::mariadb_search::build_search_sql(
+        map,
+        rm,
+        &replaced,
+        50,
+        0,
+        &sort,
+        replaced.first().map(|(_, v)| v.as_str()),
+    ) {
         assert!(
-            !query.sql.contains(value.as_str()),
-            "a search value reached the SQL instead of the bind list:\n  \
-             value: {value:?}\n  sql: {}",
-            query.sql
+            query.sql == shadow.sql && query.count_sql == shadow.count_sql,
+            "the SQL text depends on parameter values beyond their shape — an \
+             injection shape:\n  with values:   {}\n  with sentinel: {}",
+            query.sql,
+            shadow.sql
         );
-        assert!(
-            !query.count_sql.contains(value.as_str()),
-            "a search value reached the count SQL instead of the bind list:\n  \
-             value: {value:?}"
-        );
+        for (_, value) in &params {
+            if value.len() < 4 || !is_dangerous(value) {
+                continue;
+            }
+            if query.sql.contains(value.as_str()) && !shadow.sql.contains(value.as_str()) {
+                panic!(
+                    "a search value reached the SQL instead of the bind list:\n  \
+                     value: {value:?}\n  sql: {}",
+                    query.sql
+                );
+            }
+        }
     }
 });
