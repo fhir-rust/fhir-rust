@@ -5,6 +5,13 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.0.1 — 2026-08-11
+
+- Facade only; no API change. The legacy R5 generator's
+  `resource_into_rust` (a `src/r5/parse` module that ships in this crate)
+  now creates its `tmp/out/` output directory instead of failing on a
+  fresh checkout — found by the first full scheduled CI run.
+
 ## 4.0.0 — 2026-08-10
 
 - **F-86 fixed** (monorepo audit) — **breaking**: every `0..*` primitive
