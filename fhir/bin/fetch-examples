@@ -43,9 +43,10 @@ rm -f "$ZIP"
 
 # The R4B archive nests everything under an `examples-json/` directory (and
 # adds macOS resource-fork noise); the other releases unpack flat. Flatten,
-# so the tests see one layout everywhere.
+# so the tests see one layout everywhere. No glob here: `set -f` above
+# disables globbing, so `mv .../*` would pass the literal `*` and fail.
 if [ -d "$DEST/examples-json" ]; then
-    mv "$DEST/examples-json/"* "$DEST/"
+    find "$DEST/examples-json" -mindepth 1 -maxdepth 1 -exec mv -f '{}' "$DEST/" ';'
     rmdir "$DEST/examples-json"
 fi
 rm -rf "$DEST/__MACOSX"
