@@ -44,8 +44,7 @@ fn bundled_assets_fit_the_innodb_row_budget() {
         let mut worst = (0usize, String::new());
         for rm in map.resources.values() {
             for t in &rm.tables {
-                let c: usize =
-                    fixed(t.kind) + t.cols.iter().map(|c| charge(c.ty)).sum::<usize>();
+                let c: usize = fixed(t.kind) + t.cols.iter().map(|c| charge(c.ty)).sum::<usize>();
                 if c > worst.0 {
                     worst = (c, t.name.clone());
                 }

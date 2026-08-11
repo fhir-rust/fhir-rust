@@ -67,6 +67,16 @@ jobs:
           --health-retries 30
     env:
       FHIR_MYSQL_TEST_DSN: mysql://root@127.0.0.1:3306
+      # The store verifies TLS by default, and this job's service presents
+      # only its auto-generated self-signed certificate, so every env-driven
+      # connect would refuse it (UnknownIssuer) — unmasked 2026-08-11 the
+      # moment F-90's fix let the DDL step pass and the store suite actually
+      # ran here for the first time. This job's link is plaintext by design,
+      # mirroring the PostgreSQL job's `PGSSLMODE: disable`; `ssl_live.rs`
+      # sets its own modes programmatically and still exercises TLS against
+      # this same server, including the failing verification that matters
+      # (F-54).
+      FHIR_MYSQL_SSL_MODE: DISABLED
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -110,23 +120,25 @@ jobs:
         run: |
           set -o pipefail
           cargo test --release -p fhir-mysql-gen --test proptest_roundtrip -- --nocapture
-      # NOTE: the store suite still speak tokio-postgres (T64), so
-      # they self-skip here rather than exercising MySQL 8.4. This step exists
-      # so the gap is visible in the run rather than inferred from its absence.
-      - name: Store and server suites (expected to skip until T64)
+      # The step name used to say "expected to skip until T64" — stale twice
+      # over: the store has spoken native MySQL since T64 closed, and the
+      # suite never actually ran here anyway because the DDL step ahead of it
+      # failed (F-90) and masked it. First real CI execution: 2026-08-11.
+      - name: Store live suite
         env:
           FHIR_MYSQL_SPEC_DIR: ${{ github.workspace }}/fhir-mysql/spec-cache
           FHIR_MYSQL_CORPUS_DIR: ${{ github.workspace }}/fhir-mysql/corpus
-        run: |
-          echo "::notice::store live suite are not yet ported to MySQL 8.4 (T64); they self-skip"
-          cargo test --release -p fhir-mysql-store -- --nocapture --test-threads=1
+        run: cargo test --release -p fhir-mysql-store -- --nocapture --test-threads=1
 
   # The TLS-only database job from the PostgreSQL original is removed here, not
   # ported. MySQL is a network server, so transport security does
-  # apply and this job should come back — but it cannot be written honestly
-  # until the store speaks MySQL (T64), because SslPolicy and the
-  # plaintext-refusal guard are store-layer behaviour. Tracked as an open task
-  # rather than left as a PostgreSQL job pretending to cover this port.
+  # apply and this job should come back. The old reason given here — "cannot
+  # be written honestly until the store speaks MySQL (T64)" — is obsolete:
+  # the store speaks MySQL and `ssl_live.rs` exercises TLS against the plain
+  # job's server. What is still missing is a server configured with
+  # `require_secure_transport=ON`, so the plaintext-refusal half of the
+  # guarantee gets exercised too. Tracked as an open task rather than left
+  # as a PostgreSQL job pretending to cover this port.
 
   msrv:
     name: Minimum supported Rust version

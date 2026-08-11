@@ -302,8 +302,8 @@ impl<'s> ResourceBuilder<'s> {
         // would-be inline contribution passes the trigger, anything that can
         // own a table does. Primitives cannot and land regardless — the
         // trigger-to-budget gap is their headroom.
-        let force = self.table_charge(table) + self.charge_est_elem(e, def, stack)
-            > ROW_CHARGE_TRIGGER;
+        let force =
+            self.table_charge(table) + self.charge_est_elem(e, def, stack) > ROW_CHARGE_TRIGGER;
         // Backbone: children defined in place take precedence over the
         // BackboneElement/Element type code.
         if !def.kids(&e.path).is_empty() && e.content_ref.is_none() && !e.choice {
@@ -513,8 +513,8 @@ impl<'s> ResourceBuilder<'s> {
             // `G2.6a` again, per variant: an open-typed `value[x]` splat is
             // wider than any budget on its own, so complex variants spill
             // into their own tables once the choice table fills.
-            let var_force = self.table_charge(var_table) + self.charge_of_one(ty, stack)
-                > ROW_CHARGE_TRIGGER;
+            let var_force =
+                self.table_charge(var_table) + self.charge_of_one(ty, stack) > ROW_CHARGE_TRIGGER;
             let var = self.build_typed_named(
                 json,
                 &e.path,
@@ -830,8 +830,7 @@ impl<'s> ResourceBuilder<'s> {
 
     fn charge_of_one(&mut self, ty: &str, stack: &[String]) -> usize {
         if let Some(prim) = self.prim_of(ty) {
-            return row_charge(prim.col_ty())
-                + prim.sort_ty().map_or(0, row_charge);
+            return row_charge(prim.col_ty()) + prim.sort_ty().map_or(0, row_charge);
         }
         if ty == "Resource" || ty == "DomainResource" {
             return row_charge(ColTy::Jsonb);

@@ -188,6 +188,7 @@ type-/system-level history, multi-port wiring, is tracked in that crate's
 | [F-87](#f-87) | **High** | A choice element (`timing[x]` and kin) whose content fails to parse is **silently dropped** — the resource deserializes "successfully" minus the element, data loss masquerading as success | **fixed** 2026-08-10, same day — every choice-bearing struct now deserializes through a generated shadow whose choice fields are non-`Option` `choice::Slot`s, so a present-but-invalid element errors loudly; all six release crates, five corpora green |
 | [F-88](#f-88) | **High** | The consolidated port workflows (F-49) left three per-job settings unrooted, and the first hosted runs exposed all three: `cargo-deny` ran at the repo root and errored; the spec/corpus env paths pointed at the root while the fetch steps wrote under the port directory, so **every spec-dependent live test silently skipped and the "live gate" was green while testing nothing** (T11.12's nightmare at workflow scale); and the plaintext pg job lacked an explicit `PGSSLMODE`, so the store's secure-by-default `require` (O10.7) correctly refused it — surfaced only by the two new `history_page` tests, the sole live tests that actually connected | **fixed** 2026-08-10 — paths re-rooted and deny given its manifest in all six workflows; the plaintext job says `disable` explicitly with the TLS-only job carrying `require`; and a vacuity guard now fails the pg live step if anything skipped on CI |
 | [F-90](#f-90) | **High** | The full R3/R4/R5 schemas **do not install** on stock MySQL 8.4 / MariaDB 11.4: InnoDB's create-time row-size check (`ERROR 1118`, > 8126 bytes) charges ~41 bytes per `TEXT` column (measured by bisection: 195 fit, 196 fail) and the widest generated tables carry up to 232–257 columns with ~190–211 `TEXT`s — the open-typed `value[x]` splats (`parameters_parameter_value`, `task_input_value`, the `StructureDefinition` element `defaultValue`/`fixed`/`pattern`/`example` tables) and `explanation_of_benefit`'s base | open — found by the first full-schema CI install (`DDL_FULL=1` is CI-only; local suites sample and the 2026-08-03 "green against live MySQL 8.4" predates the widest tables' exercise). Unmasked by F-89's harness fix. The dialect cannot fix it alone (tables are map-shaped and the stores write by table name); the recommended fix is a byte-aware force-split in the shared generator (`SPLIT_WIDTH` is column-count only), budgeted for the tightest engine (~7,500 conservative bytes), which changes table shapes in all six ports — owner-directed 2026-08-11: the byte-aware force-split landed at the shared generator (`G2.6a`), trigger 6,600 / budget 7,900 charged bytes, widest resulting table 6,611; all assets and fixtures regenerated, `row_budget.rs` gates the artifacts. Closes when the mysql/mariadb DDL jobs verify the install live; the upgrade moved-column guard is the sequenced remainder (see the entry) |
+| [F-91](#f-91) | Medium | The mysql/mariadb **store suites never ran in CI**: the DDL step ahead of them failed (F-90) and cargo stops at the first failing test binary, while the step still called itself "expected to skip until T64" — stale twice over, since the stores have spoken their own engines for weeks. Their first real execution (2026-08-11, the moment F-90's fix let the DDL step pass) refused the service container's self-signed certificate under the verifying default (`UnknownIssuer`) — the store keeping exactly the promise F-54 measures, against a job that had never declared its TLS intent | **fixed** 2026-08-11 — both live jobs declare `FHIR_*_SSL_MODE: DISABLED` (plaintext by design, mirroring the pg job's explicit `PGSSLMODE: disable`, F-88), the step is named honestly, and the stale T64 rationale for the missing TLS-only job is rewritten: what is actually missing is a `require_secure_transport=ON` server for the plaintext-refusal half |
 | [F-89](#f-89) | Medium | The mysql/mariadb DDL test harness was unportable and **masked real errors**: it passed MariaDB's `--skip-ssl-verify-server-cert` to whatever client exists (Oracle's mysql 8 client rejects it), assumed a utf8mb4 default charset (the runner's client defaults utf8mb3 → ERROR 1253 on the collation probe), and on any early client exit reported the stdin `Broken pipe` instead of reading the client's stderr — hiding whatever the real failure was | **fixed** 2026-08-10 — client-flavor-gated TLS flag, explicit `--default-character-set=utf8mb4`, and EPIPE falls through to collect stderr, so the next failure names itself |
 
 ## What remains, and why
@@ -5134,6 +5135,35 @@ shared-core gate covers the new file (110 files identical).
    base. A resource-level re-shred migration (reconstruct under the
    stored old map, shred under the new) remains the clean long-term
    mechanism if an installed base ever materializes.
+
+## F-91
+
+**The mysql/mariadb store suites never ran in CI, and their first run
+found the job's TLS story missing.** Severity: Medium (test coverage —
+the store itself behaved correctly). Found 2026-08-11, by F-90's fix:
+the DDL step ahead of the store step had failed on every hosted run, and
+cargo stops at the first failing test binary, so `concurrency.rs` (first
+alphabetically) and everything after it had never executed here. The
+step's own name still said "expected to skip until T64", which had been
+false since the stores were ported to their native drivers — the
+2026-08-03 "green against live MySQL 8.4 / MariaDB 11.4, 102 tests" was
+measured locally and stayed unexamined in CI behind the mask.
+
+The failure itself was the store working: `connect` verifies TLS by
+default (F-54), the service containers present auto-generated
+self-signed certificates, and the suite refused them with
+`UnknownIssuer`. The job, unlike the pg one after F-88, had never
+declared whether its link is plaintext-by-design.
+
+**Fixed 2026-08-11**: both live jobs set `FHIR_MYSQL_SSL_MODE` /
+`FHIR_MARIADB_SSL_MODE: DISABLED` with the same comment discipline as
+pg's `PGSSLMODE: disable`; `ssl_live.rs` is unaffected — it constructs
+its modes programmatically and still proves verification fails against
+the same self-signed server. The step is renamed to what it does, and
+the workflow's rationale for the still-missing TLS-only job no longer
+cites T64: the honest gap is a `require_secure_transport=ON` server, so
+the plaintext-refusal half of `O10.7` gets exercised on these engines
+too.
 
 ---
 
