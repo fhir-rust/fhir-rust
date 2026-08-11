@@ -15,12 +15,13 @@
 //!   `tests/data/roundtrip_examples_r4b/`. These are chosen to pass today, so
 //!   this test guards against regressions.
 //!
-//! - [`roundtrip_full_official_examples`] — `#[ignore]` by default. It scans the
-//!   complete official example set, which is *not* committed. Populate it first
+//! - [`roundtrip_full_official_examples`] — skips itself when the corpus is
+//!   absent. It scans the complete official example set, which is *not*
+//!   committed. Populate it first
 //!   with `bin/fetch-examples r4b`, then run:
 //!
 //!   ```sh
-//!   cargo test --features r4b --test roundtrip_r4_examples -- --ignored --nocapture
+//!   cargo test --features r4b --test roundtrip_r4b_examples -- --nocapture
 //!   ```
 //!
 //!   Point it at an alternate directory with `FHIR_ROUNDTRIP_DIR_R4B`.

@@ -23,10 +23,11 @@ pub fn resource_into_rust(resource: &Resource) -> std::io::Result<()> {
         resource.id.to_case(Case::Pascal),
         resource.id.to_case(Case::Snake),
     );
-    std::fs::write(
-        resource_into_rust_struct_path(&resource),
-        resource_into_rust_struct_block(&resource),
-    )
+    let path = resource_into_rust_struct_path(&resource);
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    std::fs::write(path, resource_into_rust_struct_block(&resource))
 }
 
 /// FHIR resource => Rust struct file path.

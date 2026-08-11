@@ -14,6 +14,8 @@
 //! general — several unenforced rules it would fail are listed in spec 10. It
 //! asserts only that the rules this crate *does* enforce are satisfied by it.
 
+#![cfg(feature = "r5")]
+
 use std::collections::BTreeMap;
 use std::path::Path;
 

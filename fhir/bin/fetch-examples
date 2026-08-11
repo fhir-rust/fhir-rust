@@ -6,10 +6,11 @@
 # Downloads `examples-json.zip` from hl7.org and unpacks it into
 # `doc/fhir-specifications/<release>/fhir-examples-json/`. That directory is
 # git-ignored (~190 MB unpacked, ~2900 files) and is consumed by the
-# `#[ignore]`-by-default `roundtrip_full_official_examples` test:
+# `roundtrip_full_official_examples` test, which skips itself when the
+# corpus is absent:
 #
 #     bin/fetch-examples r4
-#     cargo test --features r4 --test roundtrip_r4_examples -- --ignored --nocapture
+#     cargo test --features r4 --test roundtrip_r4_examples -- --nocapture
 #
 # The always-on `roundtrip_curated_subset` test does NOT need this download; it
 # uses the ~50 files committed under `tests/data/roundtrip_examples_<release>/`.

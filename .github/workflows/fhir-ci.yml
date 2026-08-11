@@ -474,4 +474,13 @@ jobs:
           bin/fetch-examples r4b
           bin/fetch-examples r3
       - name: Round-trip every example
+        # The crate split makes peak RSS the largest model, not the sum (see
+        # the comment at `jobs:`) — but only while the models compile one at
+        # a time. Cargo defaults to one rustc per core, and this runner put
+        # all four release models in flight at once, re-creating the sum and
+        # the SIGTERM the split was meant to end (observed 2026-08-11, exit
+        # 143 while fhir-r3/r4/r4b/r5 compiled concurrently). One crate at a
+        # time; rustc still parallelizes codegen inside each.
+        env:
+          CARGO_BUILD_JOBS: "1"
         run: cargo test --release --features "r3 r4 r4b" --test roundtrip_r5_examples --test roundtrip_r4_examples --test roundtrip_r4b_examples --test roundtrip_r3_examples -- --nocapture
