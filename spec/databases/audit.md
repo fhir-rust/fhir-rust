@@ -187,7 +187,7 @@ type-/system-level history, multi-port wiring, is tracked in that crate's
 | [F-86](#f-86) | Medium | The `fhir/` model family (every release, R2–R6 and R4B) rejects FHIR JSON's null-padded primitive arrays (`"event": [null]` beside `_event`): repeating primitives are `Vec<T>` and cannot hold a placeholder position | **fixed** 2026-08-10 (owner-directed: a dedicated container) — `0..*` primitives are now `fhir_core::PrimVec<T>` (`R6.7a`), a transparent `Vec<Option<T>>` whose `None` is the extension-only placeholder; the nine R4B corpus examples round-trip and left the allowlist at the gate's own demand. Stated residual: `1..*` primitives keep `Vec1` and its type-level non-emptiness, so an ext-only position there stays unrepresentable (loudly refused, F-87; no corpus example uses it) |
 | [F-87](#f-87) | **High** | A choice element (`timing[x]` and kin) whose content fails to parse is **silently dropped** — the resource deserializes "successfully" minus the element, data loss masquerading as success | **fixed** 2026-08-10, same day — every choice-bearing struct now deserializes through a generated shadow whose choice fields are non-`Option` `choice::Slot`s, so a present-but-invalid element errors loudly; all six release crates, five corpora green |
 | [F-88](#f-88) | **High** | The consolidated port workflows (F-49) left three per-job settings unrooted, and the first hosted runs exposed all three: `cargo-deny` ran at the repo root and errored; the spec/corpus env paths pointed at the root while the fetch steps wrote under the port directory, so **every spec-dependent live test silently skipped and the "live gate" was green while testing nothing** (T11.12's nightmare at workflow scale); and the plaintext pg job lacked an explicit `PGSSLMODE`, so the store's secure-by-default `require` (O10.7) correctly refused it — surfaced only by the two new `history_page` tests, the sole live tests that actually connected | **fixed** 2026-08-10 — paths re-rooted and deny given its manifest in all six workflows; the plaintext job says `disable` explicitly with the TLS-only job carrying `require`; and a vacuity guard now fails the pg live step if anything skipped on CI |
-| [F-90](#f-90) | **High** | The full R3/R4/R5 schemas **do not install** on stock MySQL 8.4 / MariaDB 11.4: InnoDB's create-time row-size check (`ERROR 1118`, > 8126 bytes) charges ~41 bytes per `TEXT` column (measured by bisection: 195 fit, 196 fail) and the widest generated tables carry up to 232–257 columns with ~190–211 `TEXT`s — the open-typed `value[x]` splats (`parameters_parameter_value`, `task_input_value`, the `StructureDefinition` element `defaultValue`/`fixed`/`pattern`/`example` tables) and `explanation_of_benefit`'s base | open — found by the first full-schema CI install (`DDL_FULL=1` is CI-only; local suites sample and the 2026-08-03 "green against live MySQL 8.4" predates the widest tables' exercise). Unmasked by F-89's harness fix. The dialect cannot fix it alone (tables are map-shaped and the stores write by table name); the recommended fix is a byte-aware force-split in the shared generator (`SPLIT_WIDTH` is column-count only), budgeted for the tightest engine (~7,500 conservative bytes), which changes table shapes in all six ports — an F-47-scale scheduled migration for the owner to sequence. Until then the mysql/mariadb DDL CI jobs are honestly red, citing this row |
+| [F-90](#f-90) | **High** | The full R3/R4/R5 schemas **do not install** on stock MySQL 8.4 / MariaDB 11.4: InnoDB's create-time row-size check (`ERROR 1118`, > 8126 bytes) charges ~41 bytes per `TEXT` column (measured by bisection: 195 fit, 196 fail) and the widest generated tables carry up to 232–257 columns with ~190–211 `TEXT`s — the open-typed `value[x]` splats (`parameters_parameter_value`, `task_input_value`, the `StructureDefinition` element `defaultValue`/`fixed`/`pattern`/`example` tables) and `explanation_of_benefit`'s base | open — found by the first full-schema CI install (`DDL_FULL=1` is CI-only; local suites sample and the 2026-08-03 "green against live MySQL 8.4" predates the widest tables' exercise). Unmasked by F-89's harness fix. The dialect cannot fix it alone (tables are map-shaped and the stores write by table name); the recommended fix is a byte-aware force-split in the shared generator (`SPLIT_WIDTH` is column-count only), budgeted for the tightest engine (~7,500 conservative bytes), which changes table shapes in all six ports — owner-directed 2026-08-11: the byte-aware force-split landed at the shared generator (`G2.6a`), trigger 6,600 / budget 7,900 charged bytes, widest resulting table 6,611; all assets and fixtures regenerated, `row_budget.rs` gates the artifacts. Closes when the mysql/mariadb DDL jobs verify the install live; the upgrade moved-column guard is the sequenced remainder (see the entry) |
 | [F-89](#f-89) | Medium | The mysql/mariadb DDL test harness was unportable and **masked real errors**: it passed MariaDB's `--skip-ssl-verify-server-cert` to whatever client exists (Oracle's mysql 8 client rejects it), assumed a utf8mb4 default charset (the runner's client defaults utf8mb3 → ERROR 1253 on the collation probe), and on any early client exit reported the stdin `Broken pipe` instead of reading the client's stderr — hiding whatever the real failure was | **fixed** 2026-08-10 — client-flavor-gated TLS flag, explicit `--default-character-set=utf8mb4`, and EPIPE falls through to collect stderr, so the next failure names itself |
 
 ## What remains, and why
@@ -5078,6 +5078,62 @@ the full R3, R4, R5 and R4B corpora re-run green — the nine R4B
 known-failure examples now fail **deserialization** (the honest outcome)
 instead of silently losing their `timing[x]`, and remain allowlisted
 under F-86 until the representation gap closes.
+
+## F-90
+
+**The full R3/R4/R5 schemas do not install on stock MySQL 8.4 / MariaDB
+11.4.** Severity: **High**. Family: databases, all six ports (the split
+structure is shared shape). Found 2026-08-10 by the first full-schema CI
+install — `DDL_FULL=1` is CI-only, local suites sample the first 25
+resources alphabetically, and the 2026-08-03 "green against live MySQL
+8.4" predates the widest tables' exercise. Unmasked by F-89's harness
+fix, which let the client's stderr through.
+
+InnoDB refuses a table at CREATE time (`ERROR 1118`) once its charged
+row size passes 8126 bytes, charging ~41 bytes per TEXT-family column —
+measured by bisection against a live server: 195 TEXT columns install,
+196 do not. The generator's only width bound was `G2.6`'s column count
+(`SPLIT_WIDTH = 150`), which two shapes defeat: sibling expansions each
+under the threshold sum without limit (`explanation_of_benefit`'s base,
+232 columns), and a split-out choice table carries every variant's
+columns inline (the open-typed `value[x]` splats —
+`parameters_parameter_value`, `task_input_value`, the
+`StructureDefinition` element `defaultValue`/`fixed`/`pattern`/`example`
+tables — ~190–211 TEXTs each). The dialect cannot fix it alone: the
+tables are map-shaped and the stores write by table name.
+
+**Fix landed 2026-08-11, at the shared generator (`G2.6a`).** The
+builder now carries a per-column byte model of the tightest engine
+(TEXT-family 41, integers/dates at their charge, adjunct-only types 0
+since InnoDB ports never render them) and a running-accumulation
+force-split: once a table's charge would pass the 6,600-byte trigger,
+every further expansion that can own a table is forced into one —
+threaded through backbone, contentReference, choice (whole and
+per-variant), and typed builds. The finished map, after the search
+phase adds its fold columns, is asserted under a 7,900-byte budget:
+generation fails loudly, the install never does. The widest resulting
+table charges 6,611 bytes (r5 `explanation_of_benefit`). All 18 map
+assets and the six fuzz fixtures were regenerated; `gen/tests/
+row_budget.rs` re-checks the bundled artifacts in every port, and the
+shared-core gate covers the new file (110 files identical).
+
+**Sequenced residual, F-47-style:**
+
+1. ~~Generator fix + regenerated artifacts~~ (this entry; hosted
+   verification is the mysql/mariadb DDL jobs turning green).
+2. **Upgrade guard, open**: the shape change moves columns between
+   tables, and the stores' generic upgrade diff expresses a move as
+   ADD + gated DROP — `--allow-destructive` would silently drop moved
+   data. Each store's `upgrade` must refuse a *data-bearing* move by
+   name (a dropped column or table whose `path` reappears in another
+   table, with rows present), independent of `allow_destructive`; an
+   empty source may proceed. Until that lands, the disposition for a
+   database written by a pre-G2.6a artifact is **re-put affected
+   resource types or reload** — recorded here, per the F-07 precedent,
+   because the affected released ports are 0.x with no known installed
+   base. A resource-level re-shred migration (reconstruct under the
+   stored old map, shred under the new) remains the clean long-term
+   mechanism if an installed base ever materializes.
 
 ---
 

@@ -189,7 +189,7 @@ done
 #
 # `<engine>_ddl.rs` and the store suites are NOT here. They live in the map and
 # store crates, which are the two places a dialect is allowed to differ.
-GEN_TESTS=(assets_current corpus proptest_roundtrip roundtrip adjuncts_in_ddl path_bound)
+GEN_TESTS=(assets_current corpus proptest_roundtrip roundtrip adjuncts_in_ddl path_bound row_budget)
 for m in "${GEN_TESTS[@]}"; do
   base="$BASELINE/crates/$BASELINE-gen/tests/$m.rs"
   [ -f "$base" ] || { echo "  baseline missing $base" >&2; exit 2; }

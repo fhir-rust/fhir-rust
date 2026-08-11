@@ -65,18 +65,41 @@
   into its own table (`M3.5`). Like `G2.4` this is one constant, declared per
   port, and MUST be low enough for the tightest engine a port targets.
 
+- **G2.6a** *Extends `G2.6`.* Column count alone does not bound a table:
+  sibling expansions each under the `G2.6` threshold sum without limit, and
+  InnoDB refuses a table at CREATE time once its charged row size passes
+  8126 bytes, charging ~41 bytes per TEXT-family column (measured by
+  bisection on MySQL 8.4: 195 TEXT columns install, 196 do not — **F-90**).
+  The generator MUST therefore also bound each table's **charged row size**,
+  under a per-column byte model of the tightest engine any port targets:
+  while columns accumulate into a table, once the charge would pass a
+  declared trigger, every further expansion that can own a table MUST be
+  forced into one; and the finished map — after the search phase has added
+  its fold and adjunct columns — MUST be asserted under a declared budget,
+  failing generation rather than the install. Both constants live in the
+  shared generator and are the same for all six ports: the split structure
+  is part of the shared shape, and an engine with a looser limit simply
+  splits a little earlier than it strictly needs. Column types that exist
+  only in some ports' maps (the `U9` adjuncts) charge zero, so the budget
+  binds exactly the columns the InnoDB ports render.
+
 ## Engine bindings
 
 Non-normative; the annexes govern.
 
-| Port | Identifier budget | Engine limit | Split width | Column limit |
-| --- | --- | --- | --- | --- |
-| `fhir-postgresql` | 63 | 63 bytes | 150 | 1600 |
-| `fhir-sqlite` | 63 | effectively none | 150 | 2000 |
-| `fhir-mysql` | 63 | 64 | 150 | 4096 |
-| `fhir-mariadb` | 63 | 64 | 150 | 4096 |
-| `fhir-mssql` | 63 | 128 | 150 | 1024 |
-| `fhir-oracle` | 63 | 128 (30 before 12.2) | 150 | 1000 |
+| Port | Identifier budget | Engine limit | Split width | Column limit | Row-size limit |
+| --- | --- | --- | --- | --- | --- |
+| `fhir-postgresql` | 63 | 63 bytes | 150 | 1600 | none that binds |
+| `fhir-sqlite` | 63 | effectively none | 150 | 2000 | none that binds |
+| `fhir-mysql` | 63 | 64 | 150 | 4096 | 8126 charged bytes (`G2.6a`) |
+| `fhir-mariadb` | 63 | 64 | 150 | 4096 | 8126 charged bytes (`G2.6a`) |
+| `fhir-mssql` | 63 | 128 | 150 | 1024 | none that binds (LOBs off-row) |
+| `fhir-oracle` | 63 | 128 (30 before 12.2) | 150 | 1000 | none that binds (CLOBs off-row) |
+
+The `G2.6a` constants are shared, not per-port: trigger 6,600 and budget
+7,900 charged bytes, both under the measured 8,126-byte refusal. The gap
+between them absorbs what cannot split — trailing primitive siblings and
+the search phase's fold columns.
 
 The shared value of 63 is not an accident of copying — it is the tightest
 budget among the targets, so a name generated once is legal everywhere, and a

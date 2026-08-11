@@ -250,6 +250,20 @@ The sibling `fhir-mariadb` project began as a fork of this one. The two are
   blow the limit on wide tables. `VARCHAR` MUST NOT be introduced for data
   columns without re-checking the row budget.
 
+- **M14.18a** *Amends `M14.18`.* The 65,535-byte limit is not the one that
+  binds. InnoDB runs a second, stricter check at CREATE time against the
+  row-format page limit (~8,126 bytes with the default `DYNAMIC` format),
+  and under it a `TEXT` column is *not* just a pointer: it charges ~41
+  bytes (measured by bisection on a live server: 195 `TEXT` columns
+  install, 196 fail with `ERROR 1118` — **F-90**). "A 150-column table of
+  `TEXT` is safe" therefore held only per expansion, not per table: sibling
+  expansions summed past the check. The bound is now enforced where the
+  table shapes are decided — the shared generator's `G2.6a` charged-byte
+  budget — not in this dialect; this annex's obligation is unchanged from
+  `M14.18`'s second half: substituting `VARCHAR(n)` for `TEXT` as a local
+  optimisation still requires re-checking the row budget, which `G2.6a`'s
+  charge model does not cover.
+
 ## Canonical JSON and the hash chain
 
 - **M14.19** This is the port's most consequential departure after M14.12, and

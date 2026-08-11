@@ -18,10 +18,81 @@ use crate::spec::{Def, Spec, SpecElem};
 /// table, bounding every table well below PostgreSQL's 1600-column limit.
 const SPLIT_WIDTH: usize = 150;
 
+/// Force-split trigger for the accumulated row charge of one table (`G2.6a`,
+/// **F-90**). Column count alone does not bound a table: siblings each under
+/// `SPLIT_WIDTH` sum unboundedly, and InnoDB refuses a table at CREATE time
+/// once its charged row size passes 8126 bytes — ~41 bytes per TEXT-family
+/// column (measured by bisection on MySQL 8.4: 195 fit, 196 fail). While
+/// building, once a table's charge would pass this trigger, every further
+/// splittable child is forced into its own table. The gap between trigger
+/// and budget absorbs what cannot split: trailing primitive siblings and the
+/// `_norm` fold columns the search phase adds afterwards.
+const ROW_CHARGE_TRIGGER: usize = 6600;
+
+/// Hard ceiling for one table's charged row size, asserted over the finished
+/// map (after the search phase has added its columns) by
+/// [`assert_row_budget`]. Kept under the measured 8126-byte refusal with the
+/// same margin philosophy as the 1500-column check below: generation fails
+/// loudly, the database install never does.
+const ROW_CHARGE_BUDGET: usize = 7900;
+
+/// One column's contribution to InnoDB's create-time row-size check, in
+/// bytes, as the mysql/mariadb dialects render the type. This is the
+/// tightest engine any port targets, so the shared generator budgets for it
+/// (`G2.6a`); on the other engines the same split is merely a little
+/// earlier than their limits require. `TextIdx` and `Digest` charge nothing:
+/// they exist only in the adjunct ports' maps (`U9`), never on InnoDB.
+const fn row_charge(ty: ColTy) -> usize {
+    match ty {
+        ColTy::Bool => 1,
+        ColTy::Int => 4,
+        ColTy::BigInt => 8,
+        ColTy::Date => 3,
+        ColTy::Timestamptz => 8,
+        ColTy::Numeric | ColTy::Text | ColTy::TextC | ColTy::Jsonb => 41,
+        ColTy::TextIdx | ColTy::Digest => 0,
+    }
+}
+
+/// The charge of the fixed columns each table kind carries before any data
+/// column: `id VARCHAR(64)` utf8mb4 is 64×4+2 = 258, `version_id BIGINT` 8,
+/// `last_updated DATETIME(6)` 8; `rid` mirrors `id` and `ords
+/// VARBINARY(255)` is 255+2 = 257. The other kinds have fixed shapes that
+/// are not map-driven and are known to install.
+const fn fixed_charge(kind: TableKind) -> usize {
+    match kind {
+        TableKind::Base => 274,
+        TableKind::Elem => 515,
+        TableKind::Ext | TableKind::Deep | TableKind::Contained | TableKind::History => 0,
+    }
+}
+
+/// `G2.6a`: no table in the finished map may charge past the row budget.
+/// Runs after the search phase (its `_norm` columns count) so the bound is
+/// a fact of the shipped asset, mirroring the 1500-column check in `build`.
+pub fn assert_row_budget(map: &RelMap) -> Result<(), GenError> {
+    for rm in map.resources.values() {
+        for t in &rm.tables {
+            let charge: usize =
+                fixed_charge(t.kind) + t.cols.iter().map(|c| row_charge(c.ty)).sum::<usize>();
+            if charge > ROW_CHARGE_BUDGET {
+                return Err(GenError::Build(format!(
+                    "table {} charges {charge} bytes against InnoDB's row-size \
+                     check (budget {ROW_CHARGE_BUDGET}); lower ROW_CHARGE_TRIGGER \
+                     (G2.6a, F-90)",
+                    t.name
+                )));
+            }
+        }
+    }
+    Ok(())
+}
+
 pub fn build_map(spec: &Spec, schema: &str) -> Result<RelMap, GenError> {
     let mut table_reg = Registry::default();
     let mut resources = std::collections::BTreeMap::new();
     let mut width_cache: HashMap<String, usize> = HashMap::new();
+    let mut charge_cache: HashMap<String, usize> = HashMap::new();
     for def in spec.resources.values() {
         let cyclic_targets = def
             .elems
@@ -36,6 +107,7 @@ pub fn build_map(spec: &Spec, schema: &str) -> Result<RelMap, GenError> {
             root_def: def,
             table_reg: &mut table_reg,
             width_cache: &mut width_cache,
+            charge_cache: &mut charge_cache,
             tables: Vec::new(),
             col_regs: Vec::new(),
             nodes: Vec::new(),
@@ -64,6 +136,7 @@ struct ResourceBuilder<'s> {
     root_def: &'s Def,
     table_reg: &'s mut Registry,
     width_cache: &'s mut HashMap<String, usize>,
+    charge_cache: &'s mut HashMap<String, usize>,
     tables: Vec<Table>,
     col_regs: Vec<Registry>,
     nodes: Vec<Node>,
@@ -225,16 +298,22 @@ impl<'s> ResourceBuilder<'s> {
         res_path: &str,
         stack: &mut Vec<String>,
     ) -> Result<Elem, GenError> {
+        // `G2.6a`: once this table's accumulated charge plus the element's
+        // would-be inline contribution passes the trigger, anything that can
+        // own a table does. Primitives cannot and land regardless — the
+        // trigger-to-budget gap is their headroom.
+        let force = self.table_charge(table) + self.charge_est_elem(e, def, stack)
+            > ROW_CHARGE_TRIGGER;
         // Backbone: children defined in place take precedence over the
         // BackboneElement/Element type code.
         if !def.kids(&e.path).is_empty() && e.content_ref.is_none() && !e.choice {
-            return self.build_backbone(e, def, table, prefix, res_path, stack);
+            return self.build_backbone(e, def, table, prefix, res_path, stack, force);
         }
         if let Some(target) = &e.content_ref {
-            return self.build_content_ref(e, target, table, prefix, res_path, stack);
+            return self.build_content_ref(e, target, table, prefix, res_path, stack, force);
         }
         if e.choice {
-            return self.build_choice(e, table, prefix, res_path, stack);
+            return self.build_choice(e, table, prefix, res_path, stack, force);
         }
         let [ty] = e.types.as_slice() else {
             return Err(GenError::Build(format!(
@@ -251,9 +330,11 @@ impl<'s> ResourceBuilder<'s> {
             prefix,
             res_path,
             stack,
+            force,
         )
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn build_backbone(
         &mut self,
         e: &'s SpecElem,
@@ -262,9 +343,11 @@ impl<'s> ResourceBuilder<'s> {
         prefix: &str,
         res_path: &str,
         stack: &mut Vec<String>,
+        force: bool,
     ) -> Result<Elem, GenError> {
         let col_base = format!("{prefix}{}", snake(&e.name));
-        let split = e.repeats
+        let split = force
+            || e.repeats
             || self.cyclic_targets.contains(&e.path)
             || self.width_children(def, &e.path, stack) > SPLIT_WIDTH;
         let node = self.alloc_node();
@@ -303,6 +386,7 @@ impl<'s> ResourceBuilder<'s> {
         })
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn build_content_ref(
         &mut self,
         e: &'s SpecElem,
@@ -311,6 +395,7 @@ impl<'s> ResourceBuilder<'s> {
         prefix: &str,
         res_path: &str,
         stack: &mut Vec<String>,
+        force: bool,
     ) -> Result<Elem, GenError> {
         if let Some(bind) = self.ref_ctx.get(target)
             && bind.in_progress
@@ -351,7 +436,8 @@ impl<'s> ResourceBuilder<'s> {
         // with the copy shadowing the target for any nested self-recursion.
         let col_base = format!("{prefix}{}", snake(&e.name));
         let node = self.alloc_node();
-        let split = e.repeats
+        let split = force
+            || e.repeats
             || self.cyclic_targets.contains(target)
             || self.width_children(self.root_def, target, stack) > SPLIT_WIDTH;
         let (t, new_prefix): (Option<u32>, String) = if split {
@@ -392,6 +478,7 @@ impl<'s> ResourceBuilder<'s> {
         })
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn build_choice(
         &mut self,
         e: &'s SpecElem,
@@ -399,6 +486,7 @@ impl<'s> ResourceBuilder<'s> {
         prefix: &str,
         res_path: &str,
         stack: &mut Vec<String>,
+        force: bool,
     ) -> Result<Elem, GenError> {
         if e.repeats {
             return Err(GenError::Build(format!(
@@ -410,7 +498,7 @@ impl<'s> ResourceBuilder<'s> {
             return Err(GenError::Build(format!("{}: choice without types", e.path)));
         }
         let col_base = format!("{prefix}{}", snake(&e.name));
-        let split = self.width_choice(&e.types, stack) > SPLIT_WIDTH;
+        let split = force || self.width_choice(&e.types, stack) > SPLIT_WIDTH;
         let (t, var_table, var_prefix): (Option<u32>, u32, String) = if split {
             let t = self.new_table(table, &col_base, res_path);
             (Some(t), t, format!("{}_", snake(&e.name)))
@@ -422,6 +510,11 @@ impl<'s> ResourceBuilder<'s> {
             let json = format!("{}{}", e.name, ucfirst(ty));
             let var_res_path = format!("{res_path}:{ty}");
             let var_col_base = format!("{}{}", var_prefix, snake(ty));
+            // `G2.6a` again, per variant: an open-typed `value[x]` splat is
+            // wider than any budget on its own, so complex variants spill
+            // into their own tables once the choice table fills.
+            let var_force = self.table_charge(var_table) + self.charge_of_one(ty, stack)
+                > ROW_CHARGE_TRIGGER;
             let var = self.build_typed_named(
                 json,
                 &e.path,
@@ -431,6 +524,7 @@ impl<'s> ResourceBuilder<'s> {
                 &var_col_base,
                 &var_res_path,
                 stack,
+                var_force,
             )?;
             variants.push(var);
         }
@@ -456,10 +550,11 @@ impl<'s> ResourceBuilder<'s> {
         prefix: &str,
         res_path: &str,
         stack: &mut Vec<String>,
+        force: bool,
     ) -> Result<Elem, GenError> {
         let col_base = format!("{prefix}{}", snake(&json));
         self.build_typed_named(
-            json, def_path, repeats, ty, table, &col_base, res_path, stack,
+            json, def_path, repeats, ty, table, &col_base, res_path, stack, force,
         )
     }
 
@@ -475,6 +570,7 @@ impl<'s> ResourceBuilder<'s> {
         col_base: &str,
         res_path: &str,
         stack: &mut Vec<String>,
+        force: bool,
     ) -> Result<Elem, GenError> {
         if let Some(prim) = self.prim_of(ty) {
             if repeats {
@@ -532,7 +628,7 @@ impl<'s> ResourceBuilder<'s> {
         let Some(tdef) = spec.types.get(ty) else {
             return Err(GenError::Build(format!("{def_path}: unknown type {ty:?}")));
         };
-        let split = repeats || self.width_of_type(ty, stack) > SPLIT_WIDTH;
+        let split = force || repeats || self.width_of_type(ty, stack) > SPLIT_WIDTH;
         let node = self.alloc_node();
         let (t, new_prefix): (Option<u32>, String) = if split {
             let t = self.new_table(table, col_base, res_path);
@@ -639,6 +735,119 @@ impl<'s> ResourceBuilder<'s> {
             "time" => Prim::Time,
             _ => Prim::Str,
         })
+    }
+
+    // ----- row-charge estimation (`G2.6a`, mirrors the width functions
+    // ----- in bytes; the stateful force-split uses these, and the final
+    // ----- `assert_row_budget` catches any residual mirror error) -----
+
+    /// What this table already charges: its fixed columns plus every data
+    /// column built so far.
+    fn table_charge(&self, table: u32) -> usize {
+        let t = &self.tables[table as usize];
+        fixed_charge(t.kind) + t.cols.iter().map(|c| row_charge(c.ty)).sum::<usize>()
+    }
+
+    /// The element's would-be inline contribution, in charged bytes,
+    /// dispatching exactly as `build_elem` does.
+    fn charge_est_elem(&mut self, e: &'s SpecElem, def: &'s Def, stack: &[String]) -> usize {
+        if !def.kids(&e.path).is_empty() && e.content_ref.is_none() && !e.choice {
+            if e.repeats || self.cyclic_targets.contains(&e.path) {
+                return 0;
+            }
+            return self.charge_children_of(def, &e.path, stack);
+        }
+        if let Some(target) = &e.content_ref {
+            if e.repeats || self.cyclic_targets.contains(target) {
+                return 0;
+            }
+            let root_def = self.root_def;
+            if self.width_children_of(root_def, target, stack) > SPLIT_WIDTH {
+                return 0;
+            }
+            return self.charge_children_of(root_def, target, stack);
+        }
+        if e.choice {
+            return self.charge_choice(&e.types, stack);
+        }
+        let [ty] = e.types.as_slice() else { return 0 };
+        if e.repeats {
+            return 0;
+        }
+        self.charge_of_one(ty, stack)
+    }
+
+    fn charge_of_type(&mut self, ty: &str, stack: &[String]) -> usize {
+        if let Some(&w) = self.charge_cache.get(ty) {
+            return w;
+        }
+        let spec: &'s Spec = self.spec;
+        let Some(tdef) = spec.types.get(ty) else {
+            return row_charge(ColTy::Text);
+        };
+        let mut st: Vec<String> = stack.to_vec();
+        st.push(ty.to_string());
+        let w = self.charge_children_of(tdef, ty, &st);
+        self.charge_cache.insert(ty.to_string(), w);
+        w
+    }
+
+    fn charge_children_of(&mut self, def: &'s Def, def_path: &str, stack: &[String]) -> usize {
+        let mut w = 0;
+        for &i in def.kids(def_path) {
+            let e = &def.elems[i];
+            if e.omitted
+                || e.name == "id"
+                || e.types.iter().any(|t| t == "Extension")
+                || e.repeats
+                || e.content_ref.is_some()
+            {
+                continue;
+            }
+            if !def.kids(&e.path).is_empty() && !e.choice {
+                let bw = self.width_children_of(def, &e.path, stack);
+                if bw <= SPLIT_WIDTH {
+                    w += self.charge_children_of(def, &e.path, stack);
+                }
+                continue;
+            }
+            if e.choice {
+                let cw = self.width_choice(&e.types, stack);
+                if cw <= SPLIT_WIDTH {
+                    w += self.charge_choice(&e.types, stack);
+                }
+                continue;
+            }
+            let [ty] = e.types.as_slice() else { continue };
+            w += self.charge_of_one(ty, stack);
+        }
+        w
+    }
+
+    fn charge_choice(&mut self, types: &[String], stack: &[String]) -> usize {
+        types.iter().map(|t| self.charge_of_one(t, stack)).sum()
+    }
+
+    fn charge_of_one(&mut self, ty: &str, stack: &[String]) -> usize {
+        if let Some(prim) = self.prim_of(ty) {
+            return row_charge(prim.col_ty())
+                + prim.sort_ty().map_or(0, row_charge);
+        }
+        if ty == "Resource" || ty == "DomainResource" {
+            return row_charge(ColTy::Jsonb);
+        }
+        if ty == "Reference" {
+            // Twelve Text-family columns (the parsed reference triple,
+            // display, type, and the flattened identifier).
+            return 12 * row_charge(ColTy::Text);
+        }
+        if stack.iter().any(|s| s == ty) {
+            return 0; // spills
+        }
+        if self.width_of_type(ty, stack) > SPLIT_WIDTH {
+            return 0;
+        }
+        self.charge_of_type(ty, stack)
     }
 
     // ----- width estimation (mirrors the build decisions) -----
