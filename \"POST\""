@@ -1,2 +1,0 @@
-267:        "resourceType": "CapabilityStatement",
-274:        "software": { "name": "fhir-loco", "version": env!("CARGO_PKG_VERSION") },
