@@ -138,8 +138,9 @@ also provisioned **MySQL** in CI and in `scripts/db.sh` while invoking a
 test target that did not exist, so their database jobs could not pass at
 all (**F-06**, fixed): `fhir-mssql` now provisions SQL Server 2022 and fails
 rather than skips without a database; `fhir-oracle`'s CI gate was removed
-rather than faked — nothing runs it in CI yet, though `scripts/db.sh` now
-works for local live testing.
+rather than faked, and restored 2026-08-12 with a real engine: its live job
+provisions `gvenzl/oracle-free` and ran the store suite green on its first
+hosted execution; `scripts/db.sh` covers local live testing.
 
 **Requirement ids are permanent** (`C0.5`). Never renumber, never reuse. If you
 split a requirement, use letter suffixes and keep the parent.
