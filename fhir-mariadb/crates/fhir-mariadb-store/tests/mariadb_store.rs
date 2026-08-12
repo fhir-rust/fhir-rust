@@ -1,6 +1,6 @@
 //! The MySQL store, exercised against a real server (T64).
 //!
-//! Needs `FHIR_MYSQL_TEST_DSN`; `scripts/db.sh up` prints it. Skips silently
+//! Needs `FHIR_MARIADB_TEST_DSN`; `scripts/db.sh up` prints it. Skips silently
 //! without one, which is the convention the rest of the suite uses — and the
 //! reason `doc/containers.md` warns that a live test finishing in 0.00s did not
 //! run.
@@ -11,7 +11,7 @@ use fhir_mariadb_map::model::RelMap;
 use fhir_mariadb_store::mariadb::MariaDbStore;
 
 fn dsn() -> Option<String> {
-    std::env::var("FHIR_MYSQL_TEST_DSN").ok()
+    std::env::var("FHIR_MARIADB_TEST_DSN").ok()
 }
 
 fn relmap(version: &str) -> Option<Arc<RelMap>> {
@@ -49,7 +49,7 @@ async fn fresh(schema: &str) -> Option<MariaDbStore> {
 #[tokio::test]
 async fn connect_fails_loudly_on_a_bad_dsn() {
     if dsn().is_none() {
-        eprintln!("skipping: set FHIR_MYSQL_TEST_DSN to run");
+        eprintln!("skipping: set FHIR_MARIADB_TEST_DSN to run");
         return;
     }
     let map = relmap("r5").expect("relmap");
@@ -67,7 +67,7 @@ async fn connect_fails_loudly_on_a_bad_dsn() {
 #[tokio::test]
 async fn init_installs_tables_and_triggers() {
     let Some(store) = fresh("fhir_mariadb_store_init").await else {
-        eprintln!("skipping: set FHIR_MYSQL_TEST_DSN to run");
+        eprintln!("skipping: set FHIR_MARIADB_TEST_DSN to run");
         return;
     };
 
@@ -117,7 +117,7 @@ async fn a_failed_install_reports_how_far_it_got() {
     // say so — an operator cleaning up needs to know whether the database is
     // empty or half-built.
     let Some(store) = fresh("fhir_mariadb_store_partial").await else {
-        eprintln!("skipping: set FHIR_MYSQL_TEST_DSN to run");
+        eprintln!("skipping: set FHIR_MARIADB_TEST_DSN to run");
         return;
     };
     store.init("first").await.expect("first install");
@@ -171,7 +171,7 @@ fn observation(id: &str, status: &str) -> serde_json::Value {
 #[tokio::test]
 async fn put_then_get_round_trips_a_resource() {
     let Some(store) = fresh("fhir_mariadb_store_rt").await else {
-        eprintln!("skipping: set FHIR_MYSQL_TEST_DSN to run");
+        eprintln!("skipping: set FHIR_MARIADB_TEST_DSN to run");
         return;
     };
     store.init("rt").await.expect("init");
@@ -216,7 +216,7 @@ async fn put_then_get_round_trips_a_resource() {
 #[tokio::test]
 async fn rewrite_replaces_children_and_bumps_the_version() {
     let Some(store) = fresh("fhir_mariadb_store_rw").await else {
-        eprintln!("skipping: set FHIR_MYSQL_TEST_DSN to run");
+        eprintln!("skipping: set FHIR_MARIADB_TEST_DSN to run");
         return;
     };
     store.init("rw").await.expect("init");
@@ -260,7 +260,7 @@ async fn extensions_get_distinct_surrogate_keys() {
     // like a shredding bug rather than a key collision — so this checks that a
     // resource with several extensions round-trips whole.
     let Some(store) = fresh("fhir_mariadb_store_ext").await else {
-        eprintln!("skipping: set FHIR_MYSQL_TEST_DSN to run");
+        eprintln!("skipping: set FHIR_MARIADB_TEST_DSN to run");
         return;
     };
     store.init("ext").await.expect("init");
@@ -325,7 +325,7 @@ async fn fresh_keyed(
 #[tokio::test]
 async fn history_and_vread_distinguish_a_deletion() {
     let Some(store) = fresh("fhir_mariadb_store_hist").await else {
-        eprintln!("skipping: set FHIR_MYSQL_TEST_DSN to run");
+        eprintln!("skipping: set FHIR_MARIADB_TEST_DSN to run");
         return;
     };
     store.init("hist").await.expect("init");
@@ -406,7 +406,7 @@ async fn history_and_vread_distinguish_a_deletion() {
 #[tokio::test]
 async fn verify_audit_accepts_a_clean_chain_and_catches_tampering() {
     let Some(store) = fresh_keyed("fhir_mariadb_store_verify", test_keys("ci")).await else {
-        eprintln!("skipping: set FHIR_MYSQL_TEST_DSN to run");
+        eprintln!("skipping: set FHIR_MARIADB_TEST_DSN to run");
         return;
     };
     store.init("verify").await.expect("init");
@@ -487,7 +487,7 @@ fn obs(id: &str, status: &str, code: &str, value: &str) -> serde_json::Value {
 #[tokio::test]
 async fn search_by_token_number_and_paging() {
     let Some(store) = fresh("fhir_mariadb_store_search").await else {
-        eprintln!("skipping: set FHIR_MYSQL_TEST_DSN to run");
+        eprintln!("skipping: set FHIR_MARIADB_TEST_DSN to run");
         return;
     };
     store.init("search").await.expect("init");
@@ -614,7 +614,7 @@ async fn search_values_are_bound_never_interpolated() {
 #[tokio::test]
 async fn purge_erases_history_and_leaves_a_verifiable_hole() {
     let Some(store) = fresh_keyed("fhir_mariadb_store_purge", test_keys("ci")).await else {
-        eprintln!("skipping: set FHIR_MYSQL_TEST_DSN to run");
+        eprintln!("skipping: set FHIR_MARIADB_TEST_DSN to run");
         return;
     };
     store.init("purge").await.expect("init");
@@ -696,7 +696,7 @@ async fn history_cannot_be_deleted_without_the_erasure_flag() {
     // connection for the whole operation — a flag set on a pooled connection and
     // a delete issued on another would look like a broken trigger.
     let Some(store) = fresh("fhir_mariadb_store_flag").await else {
-        eprintln!("skipping: set FHIR_MYSQL_TEST_DSN to run");
+        eprintln!("skipping: set FHIR_MARIADB_TEST_DSN to run");
         return;
     };
     store.init("flag").await.expect("init");
@@ -734,7 +734,7 @@ async fn history_cannot_be_deleted_without_the_erasure_flag() {
 #[tokio::test]
 async fn disclosures_are_recorded() {
     let Some(store) = fresh("fhir_mariadb_store_log").await else {
-        eprintln!("skipping: set FHIR_MYSQL_TEST_DSN to run");
+        eprintln!("skipping: set FHIR_MARIADB_TEST_DSN to run");
         return;
     };
     store.init("log").await.expect("init");
