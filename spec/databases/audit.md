@@ -5125,19 +5125,22 @@ shared-core gate covers the new file (110 files identical).
    CREATEs) and MariaDB 11.4, and the mysql/mariadb workflows fully
    green for the first time in the project's history. The first real
    store-suite execution the fix unmasked is **F-91**.
-2. **Upgrade guard, open**: the shape change moves columns between
-   tables, and the stores' generic upgrade diff expresses a move as
-   ADD + gated DROP — `--allow-destructive` would silently drop moved
-   data. Each store's `upgrade` must refuse a *data-bearing* move by
-   name (a dropped column or table whose `path` reappears in another
-   table, with rows present), independent of `allow_destructive`; an
-   empty source may proceed. Until that lands, the disposition for a
-   database written by a pre-G2.6a artifact is **re-put affected
-   resource types or reload** — recorded here, per the F-07 precedent,
-   because the affected released ports are 0.x with no known installed
-   base. A resource-level re-shred migration (reconstruct under the
-   stored old map, shred under the new) remains the clean long-term
-   mechanism if an installed base ever materializes.
+2. ~~Upgrade guard~~ — landed 2026-08-12 as **`O10.4b`** (a moved
+   column is not a drop), in all six stores: `moved_columns` detects a
+   dropped column — or a column of a dropped table — whose element
+   path reappears in a different table, the store checks the source
+   for data in its own dialect, and a data-bearing move refuses by
+   name **independent of `allow_destructive`**, naming the
+   disposition (re-put the affected resource types, or reload); an
+   empty source proceeds through the ordinary destructive gate. The
+   guard runs before that gate, because "rerun with
+   --allow-destructive" is exactly the wrong advice for a relocation.
+   Two live tests per port (refusal despite the flag; empty source
+   proceeds); sqlite's ran green locally, the server ports' run in
+   their CI live jobs. A resource-level re-shred migration
+   (reconstruct under the stored old map, shred under the new)
+   remains the clean long-term mechanism if an installed base ever
+   materializes.
 
 ## F-91
 

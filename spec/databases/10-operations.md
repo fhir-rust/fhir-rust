@@ -30,6 +30,18 @@ lacking them.
   spelling nor the new, so searches that worked before the fix stop working
   after it. Deploying such a change without backfilling is worse than not
   fixing the bug.
+- **O10.4b** *Extends `O10.4`.* A **moved column is not a drop.** When a
+  map change relocates an element between tables (`G2.6a`'s force-split is
+  the live case — **F-90**), the generic diff expresses the move as an ADD
+  in the new table plus a DROP in the old, and `O10.4`'s acknowledgement
+  flag was defined for *abandoning* data, not for relocating it. `upgrade`
+  MUST therefore detect a dropped column — or a column of a dropped table —
+  whose element path reappears in another table, check whether the source
+  holds data, and refuse a data-bearing move by name **independent of the
+  destructive acknowledgement**; the refusal names the disposition
+  (re-put the affected resource types through the new artifact, or
+  reload). A move whose source is empty proceeds: that drop abandons
+  nothing.
 - **O10.5** **[service]** TLS: production deployments terminate TLS at a
   fronting proxy, or in-process behind a `tls` feature (rustls). A service binds
   localhost by default; binding non-loopback requires explicit acknowledgement.

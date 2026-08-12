@@ -324,3 +324,105 @@ async fn upgrading_an_uninstalled_schema_says_it_is_not_installed() {
         .expect_err("nothing to upgrade");
     assert!(err.to_string().contains("not installed"), "got: {err}");
 }
+
+/// `O10.4b` (**F-90**): a relocated column reaches the diff as ADD + DROP,
+/// and the guard must tell it apart from a genuine removal. The map surgery
+/// mirrors what `G2.6a`'s force-split does to a shape: one column leaves the
+/// base table for a child table of its own, same element path. The map is
+/// deliberately not shred-consistent afterwards — `upgrade` only reads
+/// table shapes, and no resource is written through it.
+fn with_multiple_birth_moved(full: &RelMap) -> RelMap {
+    use fhir_sqlite_map::model::{Table, TableKind};
+    let mut m = full.clone();
+    let rm = m.resources.get_mut("Patient").expect("Patient is mapped");
+    let base = &mut rm.tables[0];
+    let idx = base
+        .cols
+        .iter()
+        .position(|c| c.name == "multiple_birth_boolean")
+        .expect("multiple_birth_boolean in the base table");
+    let col = base.cols.remove(idx);
+    rm.tables.push(Table {
+        norm_cols: Vec::new(),
+        adjunct_cols: Vec::new(),
+        name: "patient_multiple_birth_moved".into(),
+        kind: TableKind::Elem,
+        path: "Patient.multipleBirth".into(),
+        cols: vec![col],
+    });
+    m
+}
+
+/// A moved column whose source holds data refuses by name — with the
+/// destructive flag SET, because acknowledging a drop is not acknowledging
+/// a relocation.
+#[tokio::test]
+async fn a_data_bearing_moved_column_refuses_despite_the_flag() {
+    let Some(full) = relmap() else {
+        eprintln!("skipping: no r5 relmap asset");
+        return;
+    };
+    let db = scratch("moved-data").join("fhir.sqlite");
+    let store = SqliteStore::open(&db, Arc::new(full.clone()))
+        .await
+        .expect("open");
+    store.init("full-sum").await.expect("init");
+    store
+        .put(
+            &json!({"resourceType": "Patient", "id": "mb", "multipleBirthBoolean": true}),
+            &Audit::cli(),
+        )
+        .await
+        .expect("seed");
+    drop(store);
+
+    let store = SqliteStore::open(&db, Arc::new(with_multiple_birth_moved(&full)))
+        .await
+        .expect("open moved");
+    let err = store
+        .upgrade("moved-sum", true)
+        .await
+        .expect_err("a data-bearing move must refuse even with allow_destructive");
+    let msg = err.to_string();
+    assert!(
+        msg.contains("moved column") && msg.contains("multiple_birth_boolean"),
+        "the refusal must name the moved column: {msg}"
+    );
+    assert!(
+        msg.contains("re-put") || msg.contains("reload"),
+        "the refusal must name the disposition: {msg}"
+    );
+}
+
+/// The same move over an empty source proceeds: that drop abandons nothing,
+/// so the ordinary destructive gate is the only thing standing.
+#[tokio::test]
+async fn a_moved_column_with_no_data_proceeds() {
+    let Some(full) = relmap() else {
+        eprintln!("skipping: no r5 relmap asset");
+        return;
+    };
+    let db = scratch("moved-empty").join("fhir.sqlite");
+    let store = SqliteStore::open(&db, Arc::new(full.clone()))
+        .await
+        .expect("open");
+    store.init("full-sum").await.expect("init");
+    store
+        .put(
+            &json!({"resourceType": "Patient", "id": "nb",
+                    "name": [{"family": "Quiet"}]}),
+            &Audit::cli(),
+        )
+        .await
+        .expect("seed without multipleBirth");
+    drop(store);
+
+    let store = SqliteStore::open(&db, Arc::new(with_multiple_birth_moved(&full)))
+        .await
+        .expect("open moved");
+    let report = store
+        .upgrade("moved-sum", true)
+        .await
+        .expect("an empty-source move is an ordinary destructive upgrade");
+    assert!(report.additive > 0, "the new table must have been created");
+}

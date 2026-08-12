@@ -340,6 +340,36 @@ impl MariaDbStore {
             .map_err(|e| StoreError::Other(format!("stored map asset unreadable: {e}")))?;
 
         let (adds, destructive) = self.diff_maps(&old_map, raw, &esc)?;
+        // O10.4b: a moved column is not a drop. A map change that relocates
+        // an element between tables (G2.6a's force-split, F-90) reaches the
+        // diff as an ADD plus a DROP, and `allow_destructive` was defined
+        // for abandoning data, not relocating it. Refuse a data-bearing
+        // move by name, independent of the flag; an empty source proceeds.
+        // Checked before the destructive gate: "rerun with
+        // --allow-destructive" is the wrong advice for a relocation.
+        let moved = moved_columns(&old_map, &self.map);
+        let mut data_bearing: Vec<String> = Vec::new();
+        for (t, col, nt) in &moved {
+            let has: Option<i64> = conn
+                .exec_first(
+                    format!("SELECT EXISTS(SELECT 1 FROM {esc}.`{t}` WHERE `{col}` IS NOT NULL)"),
+                    (),
+                )
+                .await
+                .map_err(db_err)?;
+            if has.unwrap_or(0) != 0 {
+                data_bearing.push(format!("{t}.{col} → {nt}"));
+            }
+        }
+        if !data_bearing.is_empty() {
+            return Err(StoreError::Other(format!(
+                "upgrade refuses {} moved column(s) holding data (O10.4b, F-90): {}. \
+                 --allow-destructive does not cover relocation; re-put the affected \
+                 resource types through this artifact, or reload",
+                data_bearing.len(),
+                data_bearing.join(", ")
+            )));
+        }
         if !destructive.is_empty() && !allow_destructive {
             return Err(StoreError::Other(format!(
                 "upgrade requires {} destructive change(s); rerun with --allow-destructive \
@@ -708,6 +738,46 @@ fn db_err(e: mysql_async::Error) -> StoreError {
 /// lifted from one port's meta table into another's.
 fn hex_encode(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{b:02x}")).collect()
+}
+
+/// `O10.4b`: dropped columns — or columns of dropped tables — whose element
+/// path reappears in a *different* table of the new map. That is the shape a
+/// relocation (`G2.6a`'s force-split, **F-90**) takes in the generic diff,
+/// and it must be told apart from a genuine removal before the destructive
+/// gate can be trusted. Returns `(old table, column, new table)`.
+fn moved_columns(old_map: &RelMap, new_map: &RelMap) -> Vec<(String, String, String)> {
+    use std::collections::{HashMap, HashSet};
+    let mut new_paths: HashMap<&str, &str> = HashMap::new();
+    let mut new_cols_by_table: HashMap<&str, HashSet<&str>> = HashMap::new();
+    for rm in new_map.resources.values() {
+        for t in &rm.tables {
+            let set = new_cols_by_table.entry(t.name.as_str()).or_default();
+            for c in &t.cols {
+                set.insert(c.name.as_str());
+                if !c.path.is_empty() {
+                    new_paths.insert(c.path.as_str(), t.name.as_str());
+                }
+            }
+        }
+    }
+    let mut moved = Vec::new();
+    for rm in old_map.resources.values() {
+        for t in &rm.tables {
+            let kept = new_cols_by_table.get(t.name.as_str());
+            for c in &t.cols {
+                let dropped = kept.is_none_or(|set| !set.contains(c.name.as_str()));
+                if !dropped || c.path.is_empty() {
+                    continue;
+                }
+                if let Some(&nt) = new_paths.get(c.path.as_str())
+                    && nt != t.name
+                {
+                    moved.push((t.name.clone(), c.name.clone(), nt.to_string()));
+                }
+            }
+        }
+    }
+    moved
 }
 
 fn hex_decode(s: &str) -> Result<Vec<u8>, StoreError> {

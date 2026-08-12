@@ -328,3 +328,111 @@ async fn upgrading_an_uninstalled_schema_says_it_is_not_installed() {
         .expect_err("nothing to upgrade");
     assert!(err.to_string().contains("not installed"), "got: {err}");
 }
+
+/// `O10.4b` (**F-90**): a relocated column reaches the diff as ADD + DROP,
+/// and the guard must tell it apart from a genuine removal. The surgery
+/// mirrors what `G2.6a`'s force-split does to a shape: one unsearched
+/// column leaves the base table for a child table of its own, same element
+/// path. The map is deliberately not shred-consistent afterwards —
+/// `upgrade` only reads table shapes, and nothing is written through it.
+fn with_multiple_birth_moved(full: &RelMap) -> RelMap {
+    use fhir_mariadb_map::model::{Table, TableKind};
+    let mut m = full.clone();
+    let rm = m.resources.get_mut("Patient").expect("Patient is mapped");
+    let base = &mut rm.tables[0];
+    let idx = base
+        .cols
+        .iter()
+        .position(|c| c.name == "multiple_birth_boolean")
+        .expect("multiple_birth_boolean in the base table");
+    let col = base.cols.remove(idx);
+    rm.tables.push(Table {
+        norm_cols: Vec::new(),
+        adjunct_cols: Vec::new(),
+        name: "patient_multiple_birth_moved".into(),
+        kind: TableKind::Elem,
+        path: "Patient.multipleBirth".into(),
+        cols: vec![col],
+    });
+    m
+}
+
+/// A moved column whose source holds data refuses by name — with the
+/// destructive flag SET, because acknowledging a drop is not acknowledging
+/// a relocation (`O10.4b`).
+#[tokio::test]
+async fn a_data_bearing_moved_column_refuses_despite_the_flag() {
+    let Some(full) = sampled("fhir_mariadb_up_moved", &["Patient"]) else {
+        eprintln!("skipping: no dsn or map");
+        return;
+    };
+    let Some(d) = dsn() else {
+        eprintln!("skipping: no dsn");
+        return;
+    };
+    let store = MariaDbStore::connect(&d, Arc::new(full.clone()))
+        .await
+        .expect("connect");
+    store.drop_schema().await.expect("drop");
+    store.init("full-sum").await.expect("init");
+    store
+        .put(
+            &json!({"resourceType": "Patient", "id": "mb",
+                    "multipleBirthBoolean": true}),
+            &fhir_mariadb_store::Audit::default(),
+        )
+        .await
+        .expect("seed");
+
+    let store = MariaDbStore::connect(&d, Arc::new(with_multiple_birth_moved(&full)))
+        .await
+        .expect("connect moved");
+    let err = store
+        .upgrade("moved-sum", true)
+        .await
+        .expect_err("a data-bearing move must refuse even with allow_destructive");
+    let msg = err.to_string();
+    assert!(
+        msg.contains("moved column") && msg.contains("multiple_birth_boolean"),
+        "the refusal must name the moved column: {msg}"
+    );
+    assert!(
+        msg.contains("re-put") || msg.contains("reload"),
+        "the refusal must name the disposition: {msg}"
+    );
+}
+
+/// The same move over an empty source proceeds: that drop abandons nothing.
+#[tokio::test]
+async fn a_moved_column_with_no_data_proceeds() {
+    let Some(full) = sampled("fhir_mariadb_up_moved2", &["Patient"]) else {
+        eprintln!("skipping: no dsn or map");
+        return;
+    };
+    let Some(d) = dsn() else {
+        eprintln!("skipping: no dsn");
+        return;
+    };
+    let store = MariaDbStore::connect(&d, Arc::new(full.clone()))
+        .await
+        .expect("connect");
+    store.drop_schema().await.expect("drop");
+    store.init("full-sum").await.expect("init");
+    store
+        .put(
+            &json!({"resourceType": "Patient", "id": "nb",
+                    "name": [{"family": "Quiet"}]}),
+            &fhir_mariadb_store::Audit::default(),
+        )
+        .await
+        .expect("seed without multipleBirth");
+
+    let store = MariaDbStore::connect(&d, Arc::new(with_multiple_birth_moved(&full)))
+        .await
+        .expect("connect moved");
+    let report = store
+        .upgrade("moved-sum", true)
+        .await
+        .expect("an empty-source move is an ordinary destructive upgrade");
+    assert!(report.additive > 0, "the new table must have been created");
+}
