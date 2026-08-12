@@ -45,32 +45,82 @@ jobs:
           curl -sSL https://github.com/rust-lang/mdBook/releases/download/v0.4.52/mdbook-v0.4.52-x86_64-unknown-linux-gnu.tar.gz | tar -xz
           ./mdbook build book
 
-  # There is deliberately NO live-database job.
-  #
-  # Until 2026-07-31 this file provisioned `mysql:8.4` and invoked
-  # `--test mysql_ddl` — a target that does not exist in this package — so the
-  # job failed on `no test target named mysql_ddl`, and no Oracle was involved
-  # anywhere in it. Spec O10.12 and C0.10 forbid provisioning a substitute
-  # engine: a pipeline that starts *some* database for a port that cannot talk
-  # to one is theatre. Audit finding F-06.
-  #
-  # It was removed rather than repointed because there is nothing to point it
-  # at. This port is Scaffold level (spec C0.8, M14.28):
-  #
-  #   - `ddl.rs` is still the MySQL emitter and does not produce Oracle DDL
-  #     (audit F-08); its eleven MySQL-asserting tests are `#[ignore]`d.
-  #   - `crates/fhir-oracle-map/tests/` does not exist.
-  #   - There is no store, and no driver in the workspace.
-  #   - Whether an Oracle Database Free image runs on arm64 at all is an open
-  #     question that decides whether live verification can be promised
-  #     (spec M14.23).
-  #
-  # A removed gate is honestly absent; a green gate against the wrong engine is
-  # a false claim about clinical software. The gap is recorded in
-  # ../spec/conformance-matrix.md, which is where it belongs.
-  #
-  # This job comes back when there is Oracle DDL to install and an engine to
-  # install it on.
+  # This job was deliberately absent until 2026-08-12. Until 2026-07-31 the
+  # file provisioned `mysql:8.4` for a port that could not talk to any
+  # database — theatre, removed as audit finding F-06, because a green gate
+  # against the wrong engine is a false claim about clinical software. It
+  # returns now that both of its old preconditions hold: real Oracle DDL
+  # (F-08 fixed) and a real store, live-tested against this same image
+  # (F-68). The arm64 question that once clouded "can live verification be
+  # promised" does not arise here: hosted runners are x86-64.
+  database:
+    name: Live-database tests (Oracle Database Free 23)
+    runs-on: ubuntu-latest
+    services:
+      oracle:
+        image: gvenzl/oracle-free:23-slim-faststart
+        env:
+          ORACLE_PASSWORD: Fhir-Oracle-CI-2026
+          ORACLE_DATABASE: FHIR
+        ports:
+          - 1521:1521
+        # The image ships its own probe; a port check would report ready
+        # while the instance is still opening the pluggable database.
+        options: >-
+          --health-cmd healthcheck.sh
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 60
+          --health-start-period 30s
+    env:
+      FHIR_ORACLE_TEST_USER: r5
+      FHIR_ORACLE_TEST_PASSWORD: Fhir-Oracle-CI-2026
+      FHIR_ORACLE_TEST_CONNECT: 127.0.0.1:1521/FHIR
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: fhir-oracle
+      # The `oracle` crate loads Oracle's client libraries at runtime
+      # (ODPI-C); without them every connect dies with DPI-1047 — found
+      # locally the hard way (scripts/db.sh documents it). Ubuntu 24.04
+      # renamed libaio1 to libaio1t64, and the client still looks for
+      # libaio.so.1, hence the symlink.
+      - name: Oracle Instant Client
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libaio1t64 || sudo apt-get install -y -qq libaio1
+          sudo ln -sf /usr/lib/x86_64-linux-gnu/libaio.so.1t64 \
+            /usr/lib/x86_64-linux-gnu/libaio.so.1 2>/dev/null || true
+          curl -sSLo ic.zip \
+            https://download.oracle.com/otn_software/linux/instantclient/instantclient-basiclite-linuxx64.zip
+          sudo mkdir -p /opt/oracle
+          sudo unzip -q ic.zip -d /opt/oracle
+          echo "LD_LIBRARY_PATH=$(echo /opt/oracle/instantclient_*)" >> "$GITHUB_ENV"
+      # The uppercase users mirror scripts/db.sh's post_ready: unquoted
+      # Oracle identifiers resolve uppercase, and a lowercase-quoted user
+      # whose session identity still resolved uppercase was a live bug —
+      # both the user and `RelMap.schema` are `R5`, never `r5` (M14.5).
+      - name: Create the version users
+        run: |
+          set -euo pipefail
+          for v in R3 R4 R5; do
+            docker exec -i ${{ job.services.oracle.id }} bash -c "sqlplus -s system/Fhir-Oracle-CI-2026@localhost/FHIR" <<SQL
+          WHENEVER SQLERROR EXIT FAILURE
+          BEGIN EXECUTE IMMEDIATE 'DROP USER $v CASCADE'; EXCEPTION WHEN OTHERS THEN IF SQLCODE != -1918 THEN RAISE; END IF; END;
+          /
+          CREATE USER $v IDENTIFIED BY "Fhir-Oracle-CI-2026";
+          GRANT CREATE SESSION, CREATE TABLE, CREATE TRIGGER, CREATE PROCEDURE, CREATE SEQUENCE, UNLIMITED TABLESPACE TO $v;
+          EXIT
+          SQL
+          done
+      # Fails rather than skips without a database (F-06's discipline): the
+      # env above is unconditionally set, so a test that cannot connect
+      # panics loudly instead of printing "skipping".
+      - name: Store live suite
+        run: cargo test --release -p fhir-oracle-store -- --nocapture --test-threads=1
 
   # The TLS-only database job from the PostgreSQL original is likewise not
   # ported. Oracle is a network server, so transport security applies (Oracle
