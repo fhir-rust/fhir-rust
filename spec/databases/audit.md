@@ -5156,8 +5156,8 @@ shared-core gate covers the new file (110 files identical).
       the opt-in, rerun re-shreds nothing. `UpgradeReport.reshredded`
       and `UpgradeOpts` live in `fhir-store` (0.2.0 — the new field is
       semver-breaking; six dependents bumped).
-   2. ~~`fhir-postgresql`~~ — landed 2026-08-21, **not yet
-      live-verified**: `upgrade_with` + `UpgradeOpts.reshred_moved`
+   2. ~~`fhir-postgresql`~~ — landed and **live-verified** 2026-08-21
+      against PostgreSQL 18 in the `scripts/db.sh` podman container: `upgrade_with` + `UpgradeOpts.reshred_moved`
       (plain `upgrade` unchanged); `get_in_map` factored from `get_in`
       so reconstruction can run under the stored old map;
       `insert_shredded` gained an explicit `last_updated` so a carried
@@ -5170,11 +5170,24 @@ shared-core gate covers the new file (110 files identical).
       transaction does not have. Two tests added on the synthetic
       relocation the two `O10.4b` tests already use; PostgreSQL has no
       real pre-G2.6a fixture, because that force-split was driven by
-      InnoDB's row limit and relocated nothing here. **The tests have
-      never run**: they are gated on `FHIR_POSTGRESQL_TEST_DB` and the
-      machine they were written on has no PostgreSQL and no Docker.
-      The live CI job is their first execution, and until it is green
-      this entry is a claim about code, not about behaviour.
+      InnoDB's row limit and relocated nothing here.
+
+      Both new tests **failed on their first real run**, and the cause
+      is worth recording because it invalidated an assumption the two
+      existing `O10.4b` tests had been carrying since they were
+      written. `with_multiple_birth_moved` moved one column between
+      tables in the map — enough for the DDL diff to report a
+      relocation, and so enough for a test that only checks that the
+      upgrade refuses. It was **not** a map anything could be written
+      through: `shred` routes an element by `Elem.table` in the node
+      arena, not by which table lists the column, so it kept sending
+      `multipleBirthBoolean` at the base table and the insert panicked
+      on a column no longer there. `O10.4c` is the first caller that
+      shreds through a moved map, which is why it was the first to
+      notice. The helper now moves every variant of the choice — a
+      force-split choice owns its table for all of them — and repoints
+      the element. The full store suite is green against the container:
+      29 tests, 11 binaries.
    3. The four remaining server ports, in CI-verified steps:
       mysql/mariadb (reported-partial, `M14.35`), mssql (one
       transaction), oracle (resumable). Each follows the sqlite shape:

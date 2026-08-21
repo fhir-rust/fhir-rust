@@ -2731,7 +2731,15 @@ async fn insert_shredded(
                     .iter()
                     .find(|c| c.name == **n)
                     .map(|c| c.ty)
-                    .expect("shredded column exists in table")
+                    .unwrap_or_else(|| {
+                        panic!(
+                            "shredded column {n:?} is not in table {:?} (kind {:?}); \
+                             table has {:?}",
+                            t.name,
+                            t.kind,
+                            t.cols.iter().map(|c| &c.name).collect::<Vec<_>>()
+                        )
+                    })
             })
             .collect();
 
