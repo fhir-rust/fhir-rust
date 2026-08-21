@@ -392,6 +392,29 @@ impl SqliteStore {
         checksum: &str,
         allow_destructive: bool,
     ) -> Result<UpgradeReport, StoreError> {
+        self.upgrade_with(
+            checksum,
+            crate::UpgradeOpts {
+                allow_destructive,
+                ..crate::UpgradeOpts::default()
+            },
+        )
+        .await
+    }
+
+    /// [`upgrade`](Self::upgrade) with the full option set: `reshred_moved`
+    /// additionally carries data across relocated columns (`O10.4c`) — each
+    /// affected resource reconstructed under the *stored* old map, shredded
+    /// under the new one, version and timestamp preserved, no history entry
+    /// (a representation change is not a new version), verified
+    /// byte-identical before anything is dropped. All inside the same single
+    /// transaction as the rest of the upgrade: on SQLite the migration either
+    /// lands whole or not at all (`M14.31`).
+    pub async fn upgrade_with(
+        &self,
+        checksum: &str,
+        opts: crate::UpgradeOpts,
+    ) -> Result<UpgradeReport, StoreError> {
         self.attach().await?;
         let s = self.map.schema.clone();
         let esc = escape_ident(&s);
@@ -448,7 +471,7 @@ impl SqliteStore {
         // Checked before the destructive gate: "rerun with
         // --allow-destructive" is the wrong advice for a relocation.
         let moved = moved_columns(&old_map, &self.map);
-        if !moved.is_empty() {
+        if !moved.is_empty() && !opts.reshred_moved {
             let (conn, esc2, moved2) = (self.conn.clone(), esc.clone(), moved.clone());
             let data_bearing =
                 tokio::task::spawn_blocking(move || -> Result<Vec<String>, StoreError> {
@@ -476,14 +499,15 @@ impl SqliteStore {
             if !data_bearing.is_empty() {
                 return Err(StoreError::Other(format!(
                     "upgrade refuses {} moved column(s) holding data (O10.4b, F-90): {}. \
-                     --allow-destructive does not cover relocation; re-put the affected \
-                     resource types through this artifact, or reload",
+                     --allow-destructive does not cover relocation; rerun with \
+                     reshred_moved (O10.4c), re-put the affected resource types \
+                     through this artifact, or reload",
                     data_bearing.len(),
                     data_bearing.join(", ")
                 )));
             }
         }
-        if !destructive.is_empty() && !allow_destructive {
+        if !destructive.is_empty() && !opts.allow_destructive {
             return Err(StoreError::Other(format!(
                 "upgrade requires {} destructive change(s); rerun with --allow-destructive \
                  (first: {})",
@@ -519,8 +543,10 @@ impl SqliteStore {
         let (n_add, n_drop) = (adds.len(), destructive.len());
         let conn = self.conn.clone();
         let esc2 = esc.clone();
+        let new_map = std::sync::Arc::clone(&self.map);
+        let reshred = opts.reshred_moved;
 
-        tokio::task::spawn_blocking(move || -> Result<(), StoreError> {
+        let reshredded = tokio::task::spawn_blocking(move || -> Result<usize, StoreError> {
             let mut c = conn.blocking_lock();
             let tx = c
                 .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
@@ -546,7 +572,118 @@ impl SqliteStore {
                     })?;
                 }
             }
-            for stmt in reconcile.iter().chain(destructive.iter()) {
+            for stmt in &reconcile {
+                tx.execute_batch(stmt)
+                    .map_err(|e| StoreError::Other(drop_column_hint(stmt, &e.to_string())))?;
+            }
+
+            // O10.4c: carry data across relocated columns by re-shredding
+            // each affected resource — reconstruct under the *stored* old
+            // map, shred under the new, same version_id and last_updated
+            // (a representation change is not a new version, so no history
+            // entry and no chain link), verified byte-identical before the
+            // drops below can run. Placed after `adds` (the new tables must
+            // exist) and before `destructive` (the old columns must still
+            // exist to read).
+            let mut n_reshred = 0usize;
+            if reshred && !moved.is_empty() {
+                let mut rtypes: std::collections::BTreeSet<&str> =
+                    std::collections::BTreeSet::new();
+                for (t, _, _) in &moved {
+                    for (name, orm) in &old_map.resources {
+                        if orm.tables.iter().any(|tt| &tt.name == t) {
+                            rtypes.insert(name.as_str());
+                        }
+                    }
+                }
+                for rtype in rtypes {
+                    let old_rm = &old_map.resources[rtype];
+                    let Some(new_rm) = new_map.resources.get(rtype) else {
+                        return Err(StoreError::Other(format!(
+                            "{rtype} has moved columns but the new map does not \
+                             carry the resource; re-shred cannot target it"
+                        )));
+                    };
+                    let base = &old_rm.base_table().name;
+                    if base != &new_rm.base_table().name {
+                        return Err(StoreError::Other(format!(
+                            "{rtype}: base table renamed {base} → {}; re-shred \
+                             does not support that",
+                            new_rm.base_table().name
+                        )));
+                    }
+                    let ids: Vec<String> = {
+                        let mut st = tx
+                            .prepare(&format!(
+                                "SELECT \"id\" FROM \"{esc2}\".\"{base}\" ORDER BY \"id\""
+                            ))
+                            .map_err(sqlite_err)?;
+                        let rows = st
+                            .query_map([], |r| r.get::<_, String>(0))
+                            .map_err(sqlite_err)?;
+                        rows.collect::<Result<_, _>>().map_err(sqlite_err)?
+                    };
+                    for id in ids {
+                        let input = fetch_recon_input(&tx, &esc2, old_rm, &id)?;
+                        let value =
+                            fhir_sqlite_map::reconstruct::reconstruct(old_rm, &input, Some(&id))?;
+                        let (version_id, ts): (i64, String) = tx
+                            .query_row(
+                                &format!(
+                                    "SELECT \"version_id\", \"last_updated\" FROM \
+                                     \"{esc2}\".\"{base}\" WHERE \"id\" = ?1"
+                                ),
+                                [&id],
+                                |r| Ok((r.get(0)?, r.get(1)?)),
+                            )
+                            .map_err(sqlite_err)?;
+                        tx.execute(
+                            &format!("DELETE FROM \"{esc2}\".\"{base}\" WHERE \"id\" = ?1"),
+                            [&id],
+                        )
+                        .map_err(sqlite_err)?;
+                        let out = fhir_sqlite_map::shred::shred(new_rm, &value)?;
+                        let plan = InsertPlan::build(new_rm, &out, &id)?;
+                        plan.apply(&tx, &esc2, version_id, &ts)?;
+                        let back = fetch_recon_input(&tx, &esc2, new_rm, &id)?;
+                        let v2 =
+                            fhir_sqlite_map::reconstruct::reconstruct(new_rm, &back, Some(&id))?;
+                        if fhir_sqlite_map::canon::canonicalize(&v2)
+                            != fhir_sqlite_map::canon::canonicalize(&value)
+                        {
+                            return Err(StoreError::Other(format!(
+                                "re-shred verification failed for {rtype}/{id}: the \
+                                 new-shape reconstruction is not byte-identical; \
+                                 the transaction is rolled back"
+                            )));
+                        }
+                        n_reshred += 1;
+                    }
+                }
+                // The moved sources must now be empty — checked inside the
+                // same transaction, before the drops run, so a miss rolls
+                // everything back rather than dropping data.
+                for (t, col, nt) in &moved {
+                    let has: i64 = tx
+                        .query_row(
+                            &format!(
+                                "SELECT EXISTS(SELECT 1 FROM \"{esc2}\".\"{t}\" \
+                                 WHERE \"{col}\" IS NOT NULL)"
+                            ),
+                            [],
+                            |r| r.get(0),
+                        )
+                        .map_err(sqlite_err)?;
+                    if has != 0 {
+                        return Err(StoreError::Other(format!(
+                            "re-shred left data behind in {t}.{col} (destined for \
+                             {nt}); the transaction is rolled back"
+                        )));
+                    }
+                }
+            }
+
+            for stmt in &destructive {
                 tx.execute_batch(stmt)
                     .map_err(|e| StoreError::Other(drop_column_hint(stmt, &e.to_string())))?;
             }
@@ -563,16 +700,18 @@ impl SqliteStore {
                     .map_err(sqlite_err)?;
             }
             tx.commit().map_err(sqlite_err)?;
-            Ok(())
+            Ok(n_reshred)
         })
         .await
-        .map_err(join_err)??;
+        .map_err(join_err)?;
+        let reshredded = reshredded?;
 
         let folded = self.backfill_norm().await?;
         Ok(UpgradeReport {
             additive: n_add,
             destructive: n_drop,
             folded,
+            reshredded,
         })
     }
 
@@ -882,6 +1021,165 @@ fn hex_encode(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
 
+/// Everything `reconstruct` needs for one resource, read under `rm` — the
+/// caller's choice of map, not necessarily the store's own. `get` reads
+/// under the bundled map; `O10.4c`'s re-shred migration reads under the
+/// *stored* old map, which is the whole point of the extraction.
+fn fetch_recon_input(
+    c: &rusqlite::Connection,
+    s: &str,
+    rm: &fhir_sqlite_map::model::ResourceMap,
+    id: &str,
+) -> Result<fhir_sqlite_map::reconstruct::ReconIn, StoreError> {
+    use fhir_sqlite_map::model::TableKind;
+    use fhir_sqlite_map::reconstruct::{InRow, ReconIn};
+    let mut input = ReconIn {
+        tables: vec![Vec::new(); rm.tables.len()],
+        ..Default::default()
+    };
+
+    for (ti, t) in rm.tables.iter().enumerate() {
+        match t.kind {
+            TableKind::Base | TableKind::Elem => {
+                // Carry each column's declared type, not just its name:
+                // rendering a cell back to its text image needs it
+                // (see `cell_text`).
+                let cols: Vec<(String, ColTy)> =
+                    t.cols.iter().map(|c| (c.name.clone(), c.ty)).collect();
+                let (key_col, want_ords) = match t.kind {
+                    TableKind::Base => ("id", false),
+                    _ => ("rid", true),
+                };
+                let mut select: Vec<String> = Vec::new();
+                if want_ords {
+                    select.push("\"ords\"".to_string());
+                }
+                select.extend(cols.iter().map(|(c, _)| format!("\"{c}\"")));
+                // A table with no data columns still has rows worth
+                // reading: their existence is what says the element was
+                // present at all.
+                if select.is_empty() {
+                    select.push("NULL".to_string());
+                }
+                let sql = format!(
+                    "SELECT {} FROM \"{s}\".\"{}\" WHERE \"{key_col}\" = ?1",
+                    select.join(", "),
+                    t.name
+                );
+                let mut st = c.prepare(&sql).map_err(sqlite_err)?;
+                let rows = st
+                    .query_map([&id], |r| {
+                        let mut ords = Vec::new();
+                        let mut off = 0usize;
+                        if want_ords {
+                            let img: String = r.get(0)?;
+                            ords = parse_ords(&img).unwrap_or_default();
+                            off = 1;
+                        }
+                        let mut map = std::collections::HashMap::new();
+                        for (i, (name, ty)) in cols.iter().enumerate() {
+                            let idx = i + off;
+                            // `?` rather than a discarded Result: a cell
+                            // the engine cannot render is an integrity
+                            // error, not an absent element (F-20).
+                            if let Some(v) = cell_text(r.get_ref(idx)?, *ty, idx, name)? {
+                                map.insert(name.clone(), v);
+                            }
+                        }
+                        Ok(InRow { ords, cols: map })
+                    })
+                    .map_err(sqlite_err)?;
+                for row in rows {
+                    input.tables[ti].push(row.map_err(sqlite_err)?);
+                }
+            }
+            TableKind::Ext => {
+                let mut st = c
+                    .prepare(&format!(
+                        "SELECT \"path\", \"ords\", \"modifier\", \"ext_ord\", \"url\", \
+                                \"leaf\", \"v_kind\", \"v_text\", \"v_num\", \"v_bool\" \
+                         FROM \"{s}\".\"{}\" WHERE \"rid\" = ?1",
+                        t.name
+                    ))
+                    .map_err(sqlite_err)?;
+                let rows = st
+                    .query_map([&id], |r| {
+                        Ok(fhir_sqlite_map::shred::ExtRow {
+                            path: r.get(0)?,
+                            ords: parse_ords(&r.get::<_, String>(1)?).unwrap_or_default(),
+                            modifier: r.get::<_, i64>(2)? != 0,
+                            ext_ord: r.get(3)?,
+                            url: r.get(4)?,
+                            leaf: r.get(5)?,
+                            val: leaf_from_cols(
+                                &r.get::<_, String>(6)?,
+                                r.get(7)?,
+                                r.get(8)?,
+                                r.get::<_, Option<i64>>(9)?,
+                            ),
+                        })
+                    })
+                    .map_err(sqlite_err)?;
+                for row in rows {
+                    input.ext.push(row.map_err(sqlite_err)?);
+                }
+            }
+            TableKind::Deep => {
+                let mut st = c
+                    .prepare(&format!(
+                        "SELECT \"path\", \"ords\", \"leaf\", \"v_kind\", \"v_text\", \
+                                \"v_num\", \"v_bool\" \
+                         FROM \"{s}\".\"{}\" WHERE \"rid\" = ?1",
+                        t.name
+                    ))
+                    .map_err(sqlite_err)?;
+                let rows = st
+                    .query_map([&id], |r| {
+                        Ok(fhir_sqlite_map::shred::DeepRow {
+                            path: r.get(0)?,
+                            ords: parse_ords(&r.get::<_, String>(1)?).unwrap_or_default(),
+                            leaf: r.get(2)?,
+                            val: leaf_from_cols(
+                                &r.get::<_, String>(3)?,
+                                r.get(4)?,
+                                r.get(5)?,
+                                r.get::<_, Option<i64>>(6)?,
+                            ),
+                        })
+                    })
+                    .map_err(sqlite_err)?;
+                for row in rows {
+                    input.deep.push(row.map_err(sqlite_err)?);
+                }
+            }
+            TableKind::Contained => {
+                let mut st = c
+                    .prepare(&format!(
+                        "SELECT \"ord\", \"resource\" FROM \"{s}\".\"{}\" WHERE \"rid\" = ?1",
+                        t.name
+                    ))
+                    .map_err(sqlite_err)?;
+                let rows = st
+                    .query_map([&id], |r| {
+                        let ord: i16 = r.get(0)?;
+                        let raw: String = r.get(1)?;
+                        Ok((ord, raw))
+                    })
+                    .map_err(sqlite_err)?;
+                for row in rows {
+                    let (ord, raw) = row.map_err(sqlite_err)?;
+                    let v = serde_json::from_str(&raw)
+                        .map_err(|e| StoreError::Other(format!("contained: {e}")))?;
+                    input.contained.push((ord, v));
+                }
+            }
+            TableKind::History => {}
+        }
+    }
+
+    Ok(input)
+}
+
 /// `O10.4b`: dropped columns — or columns of dropped tables — whose element
 /// path reappears in a *different* table of the new map. That is the shape a
 /// relocation (`G2.6a`'s force-split, **F-90**) takes in the generic diff,
@@ -1141,9 +1439,6 @@ impl SqliteStore {
         let conn = self.conn.clone();
 
         tokio::task::spawn_blocking(move || -> Result<Option<serde_json::Value>, StoreError> {
-            use fhir_sqlite_map::model::TableKind;
-            use fhir_sqlite_map::reconstruct::{InRow, ReconIn};
-
             let guard = conn.blocking_lock();
 
             // R4.5: one snapshot for the whole reconstruction.
@@ -1181,154 +1476,7 @@ impl SqliteStore {
                 return Ok(None);
             }
 
-            let mut input = ReconIn {
-                tables: vec![Vec::new(); rm.tables.len()],
-                ..Default::default()
-            };
-
-            for (ti, t) in rm.tables.iter().enumerate() {
-                match t.kind {
-                    TableKind::Base | TableKind::Elem => {
-                        // Carry each column's declared type, not just its name:
-                        // rendering a cell back to its text image needs it
-                        // (see `cell_text`).
-                        let cols: Vec<(String, ColTy)> =
-                            t.cols.iter().map(|c| (c.name.clone(), c.ty)).collect();
-                        let (key_col, want_ords) = match t.kind {
-                            TableKind::Base => ("id", false),
-                            _ => ("rid", true),
-                        };
-                        let mut select: Vec<String> = Vec::new();
-                        if want_ords {
-                            select.push("\"ords\"".to_string());
-                        }
-                        select.extend(cols.iter().map(|(c, _)| format!("\"{c}\"")));
-                        // A table with no data columns still has rows worth
-                        // reading: their existence is what says the element was
-                        // present at all.
-                        if select.is_empty() {
-                            select.push("NULL".to_string());
-                        }
-                        let sql = format!(
-                            "SELECT {} FROM \"{s}\".\"{}\" WHERE \"{key_col}\" = ?1",
-                            select.join(", "),
-                            t.name
-                        );
-                        let mut st = c.prepare(&sql).map_err(sqlite_err)?;
-                        let rows = st
-                            .query_map([&id], |r| {
-                                let mut ords = Vec::new();
-                                let mut off = 0usize;
-                                if want_ords {
-                                    let img: String = r.get(0)?;
-                                    ords = parse_ords(&img).unwrap_or_default();
-                                    off = 1;
-                                }
-                                let mut map = std::collections::HashMap::new();
-                                for (i, (name, ty)) in cols.iter().enumerate() {
-                                    let idx = i + off;
-                                    // `?` rather than a discarded Result: a cell
-                                    // the engine cannot render is an integrity
-                                    // error, not an absent element (F-20).
-                                    if let Some(v) =
-                                        cell_text(r.get_ref(idx)?, *ty, idx, name)?
-                                    {
-                                        map.insert(name.clone(), v);
-                                    }
-                                }
-                                Ok(InRow { ords, cols: map })
-                            })
-                            .map_err(sqlite_err)?;
-                        for row in rows {
-                            input.tables[ti].push(row.map_err(sqlite_err)?);
-                        }
-                    }
-                    TableKind::Ext => {
-                        let mut st = c
-                            .prepare(&format!(
-                                "SELECT \"path\", \"ords\", \"modifier\", \"ext_ord\", \"url\", \
-                                        \"leaf\", \"v_kind\", \"v_text\", \"v_num\", \"v_bool\" \
-                                 FROM \"{s}\".\"{}\" WHERE \"rid\" = ?1",
-                                t.name
-                            ))
-                            .map_err(sqlite_err)?;
-                        let rows = st
-                            .query_map([&id], |r| {
-                                Ok(fhir_sqlite_map::shred::ExtRow {
-                                    path: r.get(0)?,
-                                    ords: parse_ords(&r.get::<_, String>(1)?)
-                                        .unwrap_or_default(),
-                                    modifier: r.get::<_, i64>(2)? != 0,
-                                    ext_ord: r.get(3)?,
-                                    url: r.get(4)?,
-                                    leaf: r.get(5)?,
-                                    val: leaf_from_cols(
-                                        &r.get::<_, String>(6)?,
-                                        r.get(7)?,
-                                        r.get(8)?,
-                                        r.get::<_, Option<i64>>(9)?,
-                                    ),
-                                })
-                            })
-                            .map_err(sqlite_err)?;
-                        for row in rows {
-                            input.ext.push(row.map_err(sqlite_err)?);
-                        }
-                    }
-                    TableKind::Deep => {
-                        let mut st = c
-                            .prepare(&format!(
-                                "SELECT \"path\", \"ords\", \"leaf\", \"v_kind\", \"v_text\", \
-                                        \"v_num\", \"v_bool\" \
-                                 FROM \"{s}\".\"{}\" WHERE \"rid\" = ?1",
-                                t.name
-                            ))
-                            .map_err(sqlite_err)?;
-                        let rows = st
-                            .query_map([&id], |r| {
-                                Ok(fhir_sqlite_map::shred::DeepRow {
-                                    path: r.get(0)?,
-                                    ords: parse_ords(&r.get::<_, String>(1)?)
-                                        .unwrap_or_default(),
-                                    leaf: r.get(2)?,
-                                    val: leaf_from_cols(
-                                        &r.get::<_, String>(3)?,
-                                        r.get(4)?,
-                                        r.get(5)?,
-                                        r.get::<_, Option<i64>>(6)?,
-                                    ),
-                                })
-                            })
-                            .map_err(sqlite_err)?;
-                        for row in rows {
-                            input.deep.push(row.map_err(sqlite_err)?);
-                        }
-                    }
-                    TableKind::Contained => {
-                        let mut st = c
-                            .prepare(&format!(
-                                "SELECT \"ord\", \"resource\" FROM \"{s}\".\"{}\" WHERE \"rid\" = ?1",
-                                t.name
-                            ))
-                            .map_err(sqlite_err)?;
-                        let rows = st
-                            .query_map([&id], |r| {
-                                let ord: i16 = r.get(0)?;
-                                let raw: String = r.get(1)?;
-                                Ok((ord, raw))
-                            })
-                            .map_err(sqlite_err)?;
-                        for row in rows {
-                            let (ord, raw) = row.map_err(sqlite_err)?;
-                            let v = serde_json::from_str(&raw)
-                                .map_err(|e| StoreError::Other(format!("contained: {e}")))?;
-                            input.contained.push((ord, v));
-                        }
-                    }
-                    TableKind::History => {}
-                }
-            }
-
+            let input = fetch_recon_input(c, &s, &rm, &id)?;
             // `?` rather than flattening to `Other`, and here it matters more
             // than on the write side: reconstruction audits row consumption and
             // reports a residue as an integrity error (R4.7). That is the signal

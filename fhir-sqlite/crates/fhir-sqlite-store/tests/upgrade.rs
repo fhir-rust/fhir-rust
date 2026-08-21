@@ -426,3 +426,100 @@ async fn a_moved_column_with_no_data_proceeds() {
         .expect("an empty-source move is an ordinary destructive upgrade");
     assert!(report.additive > 0, "the new table must have been created");
 }
+
+/// `O10.4c` against the real thing: the *actual* pre-G2.6a r5 map (from the
+/// tree as of `fb8f27e`, trimmed to `Parameters`, committed as a fixture)
+/// upgraded to today's bundled map — the genuine F-90 shape change, 331
+/// relocated columns, twelve new split tables. A `valueReference` lands in
+/// a moved column; a `valueString` and `valueBoolean` stay put. The
+/// migration must carry all of it, byte-identically, without minting a new
+/// version.
+fn pre_g26a_parameters() -> Option<RelMap> {
+    let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/fixtures/pre_g26a_r5_parameters.json.gz");
+    let bytes = std::fs::read(path).ok()?;
+    RelMap::from_gz_bytes(&bytes).ok()
+}
+
+fn current_parameters() -> Option<RelMap> {
+    let mut m = relmap()?;
+    m.resources.retain(|k, _| k == "Parameters");
+    (!m.resources.is_empty()).then_some(m)
+}
+
+#[tokio::test]
+async fn reshred_carries_data_across_the_real_g26a_shape_change() {
+    let (Some(old), Some(new)) = (pre_g26a_parameters(), current_parameters()) else {
+        eprintln!("skipping: fixture or bundled map missing");
+        return;
+    };
+    let db = scratch("reshred").join("fhir.sqlite");
+    let store = SqliteStore::open(&db, Arc::new(old))
+        .await
+        .expect("open old");
+    store.init("pre-g26a-sum").await.expect("init old");
+    let doc = json!({
+        "resourceType": "Parameters", "id": "p1",
+        "parameter": [
+            {"name": "moved", "valueReference":
+                {"reference": "Patient/p1", "display": "P One"}},
+            {"name": "kept", "valueString": "plain"},
+            {"name": "also-kept", "valueBoolean": true}
+        ]
+    });
+    let put = store.put(&doc, &Audit::cli()).await.expect("seed");
+    assert_eq!(put.version_id, 1);
+    drop(store);
+
+    let store = SqliteStore::open(&db, Arc::new(new.clone()))
+        .await
+        .expect("open new");
+    // Without the option, O10.4b refuses — the data-bearing move is real.
+    let err = store
+        .upgrade("g26a-sum", true)
+        .await
+        .expect_err("the move holds data; plain upgrade must refuse");
+    assert!(err.to_string().contains("moved column"), "got: {err}");
+
+    let report = store
+        .upgrade_with(
+            "g26a-sum",
+            fhir_sqlite_store::UpgradeOpts {
+                allow_destructive: true,
+                reshred_moved: true,
+            },
+        )
+        .await
+        .expect("re-shred upgrade");
+    assert_eq!(
+        report.reshredded, 1,
+        "one resource crossed the shape change"
+    );
+
+    let got = store
+        .get("Parameters", "p1")
+        .await
+        .expect("get")
+        .expect("still there");
+    // Byte-identical through the relocation, and still version 1: a
+    // representation change is not a new version.
+    assert_eq!(
+        got.get("parameter"),
+        doc.get("parameter"),
+        "the migrated resource must reconstruct identically"
+    );
+    assert_eq!(got.get("id"), doc.get("id"));
+
+    // A second run has nothing left to move.
+    let again = store
+        .upgrade_with(
+            "g26a-sum",
+            fhir_sqlite_store::UpgradeOpts {
+                allow_destructive: true,
+                reshred_moved: true,
+            },
+        )
+        .await
+        .expect("idempotent rerun");
+    assert_eq!(again.reshredded, 0, "nothing moves twice");
+}

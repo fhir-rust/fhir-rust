@@ -5140,8 +5140,29 @@ shared-core gate covers the new file (110 files identical).
    proceeds); sqlite's ran green locally, the server ports' run in
    their CI live jobs. A resource-level re-shred migration
    (reconstruct under the stored old map, shred under the new)
-   remains the clean long-term mechanism if an installed base ever
-   materializes.
+   was owner-directed 2026-08-12 and is being landed F-47-style, one
+   port per verified step, as **`O10.4c`**:
+
+   1. ~~`fhir-sqlite`~~ — landed 2026-08-12: `upgrade_with` +
+      `UpgradeOpts.reshred_moved` (plain `upgrade` unchanged);
+      `fetch_recon_input` factored from `get` so reconstruction can run
+      under the stored old map; the re-shred sits inside the single
+      upgrade transaction between adds and drops, preserves
+      `version_id`/`last_updated`, writes no history entry, verifies
+      each resource byte-identical, and re-runs the moved-data check
+      before the drops. Tested against the *real* pre-G2.6a r5 map
+      (committed as a fixture from `fb8f27e`): 331 relocated columns,
+      a `valueReference` carried across, refusal still fires without
+      the opt-in, rerun re-shreds nothing. `UpgradeReport.reshredded`
+      and `UpgradeOpts` live in `fhir-store` (0.2.0 — the new field is
+      semver-breaking; six dependents bumped).
+   2. The five server ports, in CI-verified steps: pg (chunked
+      transactions — its dialect story must say what a mid-migration
+      failure leaves), mysql/mariadb (reported-partial, `M14.35`),
+      mssql (one transaction), oracle (resumable). Each follows the
+      sqlite shape: factor the port's row-fetch to take a map, add
+      `upgrade_with`, land the same two tests plus the real-fixture
+      one.
 
 ## F-91
 

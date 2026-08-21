@@ -460,6 +460,7 @@ impl MySqlStore {
 
         let folded = self.backfill_norm().await?;
         Ok(UpgradeReport {
+            reshredded: 0,
             additive: n_add,
             destructive: n_drop,
             folded,

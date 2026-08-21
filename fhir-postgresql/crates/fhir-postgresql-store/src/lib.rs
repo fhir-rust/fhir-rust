@@ -845,6 +845,7 @@ impl Store {
             .await?;
         let folded = self.backfill_norm(&mut client).await?;
         Ok(UpgradeReport {
+            reshredded: 0,
             additive: adds.len(),
             destructive: destructive.len(),
             folded,

@@ -204,6 +204,23 @@ pub struct UpgradeReport {
     pub destructive: usize,
     /// Distinct string values folded into new search columns (P6.6).
     pub folded: usize,
+    /// Resources carried across a table-shape change by the `O10.4c`
+    /// re-shred migration: reconstructed under the stored old map, shredded
+    /// under the new, verified byte-identical. Zero on every upgrade that
+    /// relocated nothing.
+    pub reshredded: usize,
+}
+
+/// Options for `upgrade_with`.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct UpgradeOpts {
+    /// Acknowledge genuinely destructive changes (`O10.4`): dropped tables,
+    /// dropped columns whose element left the map.
+    pub allow_destructive: bool,
+    /// Carry data across relocated columns by re-shredding each affected
+    /// resource (`O10.4c`) instead of refusing the move (`O10.4b`). The
+    /// drops that remain still require `allow_destructive`.
+    pub reshred_moved: bool,
 }
 
 #[derive(Debug)]

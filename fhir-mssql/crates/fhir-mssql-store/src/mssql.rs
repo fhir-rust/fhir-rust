@@ -501,6 +501,7 @@ impl MsSqlStore {
 
         let folded = self.backfill_norm().await?;
         Ok(crate::UpgradeReport {
+            reshredded: 0,
             additive: n_add + converted,
             destructive: n_drop,
             folded,

@@ -20,7 +20,7 @@ r5 = ["fhir-mariadb-map/r5"]
 [dependencies]
 # The engine-agnostic half: the audit chain and the value types every port
 # returns. One crate rather than six copies (F-45).
-fhir-store = { path = "../../../fhir-store", version = "0.1.0" }
+fhir-store = { path = "../../../fhir-store", version = "0.2.0" }
 fhir-mariadb-map.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true

@@ -603,6 +603,7 @@ impl OracleStore {
 
         let folded = self.backfill_norm().await?;
         Ok(crate::UpgradeReport {
+            reshredded: 0,
             additive,
             destructive,
             folded,

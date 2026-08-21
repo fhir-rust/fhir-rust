@@ -42,6 +42,24 @@ lacking them.
   (re-put the affected resource types through the new artifact, or
   reload). A move whose source is empty proceeds: that drop abandons
   nothing.
+- **O10.4c** *Extends `O10.4b`.* The migration that carries data across a
+  relocation is **resource-level re-shred**, never hand-written per-column
+  SQL: for each resource of an affected type, reconstruct under the
+  *stored* old map (`G2.5`'s asset is what makes this possible), delete
+  its rows, shred under the new map, and verify the new-shape
+  reconstruction is byte-identical to the old before anything is dropped —
+  a per-resource proof built from the same round-trip machinery the whole
+  conformance suite already exercises, not new code trusted with data.
+  `version_id` and `last_updated` are preserved and **no history entry is
+  written**: a representation change is not a new version, and the hash
+  chain commits to canonical resource bytes, which do not change. The
+  re-shred requires explicit opt-in separate from the destructive
+  acknowledgement; it runs after additive DDL (the new tables must exist)
+  and before destructive DDL (the old columns must still be readable), and
+  the `O10.4b` data check re-runs after it, inside the same failure
+  domain, so a miss aborts rather than drops. Each dialect states its
+  failure story the way `O10.4` already demands: one transaction where
+  the engine allows it, resumable or reported-partial where it does not.
 - **O10.5** **[service]** TLS: production deployments terminate TLS at a
   fronting proxy, or in-process behind a `tls` feature (rustls). A service binds
   localhost by default; binding non-loopback requires explicit acknowledgement.
