@@ -5,7 +5,7 @@ of the HL7 FHIR® data model (releases R5, R4 and R3) plus the spec-driven gener
 that produces it.
 
 This file is the short version. The authoritative, in-depth guidance lives in
-[`AGENTS.md`](AGENTS.md) and the [`AGENTS/`](AGENTS/) folder; the living
+[`AGENTS.md`](AGENTS.md) and the [`agents/`](agents/) folder; the living
 specifications are in [`spec/`](spec/).
 
 ## Prerequisites
@@ -68,7 +68,7 @@ cargo run -- r5 --out tmp/out/r5   # emit R5 elsewhere, to compare
 
 **Prefer changing the generator over hand-editing generated shapes.** When you
 must make a mechanical edit across many datatype/resource modules, use
-Read+Edit-only tooling or regenerate — see [`AGENTS/code-generation.md`](AGENTS/code-generation.md).
+Read+Edit-only tooling or regenerate — see [`agents/code-generation.md`](agents/code-generation.md).
 `tmp/out/` is tracked generator output; regenerate it, do not hand-edit.
 
 ## Conventions
@@ -78,7 +78,7 @@ Read+Edit-only tooling or regenerate — see [`AGENTS/code-generation.md`](AGENT
 - **Struct/serde conventions are uniform:** `rename_all = "camelCase"`,
   `skip_serializing_none`, and the FHIR cardinality → Rust type mapping
   (`0..1`→`Option<T>`, `1..1`→`T`, `0..*`→`Option<Vec<T>>`, `1..*`→`Vec<T>`).
-  See [`AGENTS/conventions.md`](AGENTS/conventions.md).
+  See [`agents/conventions.md`](agents/conventions.md).
 - **Documentation:** every datatype/resource module carries long-form FHIR prose
   doc comments; match the surrounding style. Add a doctest for anything with a
   runtime surface.

@@ -41,7 +41,7 @@ says which one governs which code.
 | | |
 | --- | --- |
 | [AGENTS.md](AGENTS.md) | how to work here — start here |
-| [Topic guides](AGENTS/index.md) | spec workflow, rust, testing, databases, docs, security, release |
+| [Topic guides](agents/index.md) | spec workflow, rust, testing, databases, docs, security, release |
 | [CLAUDE.md](CLAUDE.md) | agent-specific notes and traps |
 | [Audit findings](spec/databases/audit.md) | what is currently broken, with evidence |
 
@@ -119,7 +119,7 @@ depend on it.
 | [Specification](fhir/spec/index.md) | 14 sections, ids `R1.x`–`R14.x` |
 | [Assurance](fhir/spec/13-assurance.md) | what must hold before it is trusted clinically |
 | [Cross-release conversion](fhir/spec/14-cross-release-conversion.md) | moving a resource between releases, and what that costs |
-| [AGENTS](fhir/AGENTS.md) · [topic guides](fhir/AGENTS/architecture.md) | how to work in it |
+| [AGENTS](fhir/AGENTS.md) · [topic guides](fhir/agents/architecture.md) | how to work in it |
 | [CHANGELOG](fhir/CHANGELOG.md) | |
 
 Its `R4.x` ids are **not** the database specification's `R4.x`; see

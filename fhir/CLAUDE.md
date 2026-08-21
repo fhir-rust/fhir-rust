@@ -8,11 +8,11 @@ that guidance — it points at it.
 
 1. [`AGENTS.md`](AGENTS.md) — what the project is, the commands, the green gate,
    and the house rules. **Start here.**
-2. [`AGENTS/`](AGENTS/architecture.md) — operational detail:
-   [architecture](AGENTS/architecture.md),
-   [conventions](AGENTS/conventions.md),
-   [code generation](AGENTS/code-generation.md),
-   [testing](AGENTS/testing.md), and the [glossary](AGENTS/glossary.md).
+2. [`agents/`](agents/architecture.md) — operational detail:
+   [architecture](agents/architecture.md),
+   [conventions](agents/conventions.md),
+   [code generation](agents/code-generation.md),
+   [testing](agents/testing.md), and the [glossary](agents/glossary.md).
 3. [`spec/index.md`](spec/index.md) — the **living specifications**, which are
    the source of truth for behaviour. Code and spec must not drift; when they
    disagree, reconcile them.

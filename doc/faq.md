@@ -214,7 +214,7 @@ remaining substituted documentation.
 
 ## How do I contribute?
 
-[`AGENTS.md`](../AGENTS.md), then the relevant [topic guide](../AGENTS/index.md).
+[`AGENTS.md`](../AGENTS.md), then the relevant [topic guide](../agents/index.md).
 
 The rule that catches everyone: the shared Rust core must be changed in **all
 six ports in one commit** (`W16.7`). Check with `./scripts/check-shared-core.sh`

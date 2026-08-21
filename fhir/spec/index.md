@@ -6,7 +6,7 @@ first, then implemented and verified. When code and spec disagree, reconcile
 them — do not let them drift.
 
 Operational guidance for agents (commands, conventions, how-to) lives in
-[`../AGENTS.md`](../AGENTS.md) and [`../AGENTS/`](../AGENTS/architecture.md);
+[`../AGENTS.md`](../AGENTS.md) and [`../agents/`](../agents/architecture.md);
 this directory defines **what must be true**, not how to work.
 
 ## How to read these specs

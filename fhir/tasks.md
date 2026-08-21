@@ -820,7 +820,7 @@ above.
   `lib.rs` is hand-maintained, so this is twelve one-line edits), and note it
   in spec 13's R13.14 status when done.
 
-### T40. Sweep AGENTS.md + AGENTS/ for release-count and path drift — **P1** — *done*
+### T40. Sweep AGENTS.md + agents/ for release-count and path drift — **P1** — *done*
 - *Status (2026-08-06):* AGENTS.md now says five releases (R2 row added),
   R6 published-by-necessity (R12.14a), reservations -1/-7..-10 at 0.0.1,
   tmp/out/ untracked, and "the other four are generated"; architecture,
@@ -829,9 +829,9 @@ above.
   table omits R2; it calls R6 "unpublished" and annotates it `publish =
   false` (no crate sets `publish`, and R6 *must* be published — R12.14a); its
   reservation list omits `fhir-r1` and `fhir-r10`; it claims
-  `tmp/out/` is tracked (it is not). `AGENTS/code-generation.md`,
+  `tmp/out/` is tracked (it is not). `agents/code-generation.md`,
   `conventions.md` and `glossary.md` still use `src/<release>/` output paths.
-- **Do:** one consistency pass over AGENTS.md and AGENTS/, against the same
+- **Do:** one consistency pass over AGENTS.md and agents/, against the same
   ground truth as this audit (five releases, `fhir-rN/src` paths, all
   five release crates published).
 

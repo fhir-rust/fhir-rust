@@ -12,7 +12,7 @@ keywords = ["fhir", "healthcare", "hl7", "rest", "medical"]
 categories = ["web-programming::http-server", "science", "database"]
 # No `rust-version` yet, deliberately. The six ports promise 1.90 and CI builds
 # on exactly that toolchain; this crate's floor has never been measured, and
-# `AGENTS/release.md` is explicit that an unverified MSRV is a guess. Measure it
+# `agents/release.md` is explicit that an unverified MSRV is a guess. Measure it
 # against loco-rs and axum before promising one.
 default-run = "fhir_loco-cli"
 

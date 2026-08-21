@@ -1,13 +1,16 @@
 # The fhir-rust monorepo specification
 
 This directory is the **root of every normative specification in the
-repository**. It does not itself state requirements. It says which
-specification governs which code, how their requirement numbers relate, and
-where a citation resolves — so that a number written in a commit message, a
-test name, or an auditor's workpaper has exactly one meaning.
+repository**. It says which specification governs which code, how their
+requirement numbers relate, and where a citation resolves — so that a number
+written in a commit message, a test name, or an auditor's workpaper has exactly
+one meaning. It states requirements of its own only where they bind every
+family at once: today that is the [agents directory
+name](agents-directory-name-is-lowercase.md) (`AG1.x`) and the [MSRV
+rule](rust-msrv-n-minus-3.md) (`RV1.x`).
 
 Operational guidance for contributors lives in [`AGENTS.md`](../AGENTS.md) and
-[`AGENTS/`](../AGENTS/index.md). Those say **how to work**; the specifications
+[`agents/`](../agents/index.md). Those say **how to work**; the specifications
 below say **what must be true**. When they conflict, the specification wins.
 
 ## The four families
@@ -67,6 +70,19 @@ specification.
 Every id is `<prefix><section>.<n>`, optionally with a letter suffix for a
 requirement split after the fact. **Ids are permanent** (`C0.5`): never
 renumbered, never reused, including across a file move.
+
+### Cross-family — `spec/`
+
+| Prefix | Document | Subject |
+| --- | --- | --- |
+| `AG1` | [The AI agents directory is named `agents`](agents-directory-name-is-lowercase.md) | the lowercase directory name, and what it does not bind |
+| `RV1` | [Rust MSRV — current minus three](rust-msrv-n-minus-3.md) | the MSRV rule, where it is declared, how it is verified |
+
+The only normative ids that bind **every** family. They live here rather than in
+a family's specification because the toolchain floor is a property of the
+release surface as a whole, as is the layout it is released from; precedence
+rule 4 above is about family-to-family bindings and does not exempt a family
+from `AG1.x` or `RV1.x`.
 
 ### Databases — `spec/databases/`
 

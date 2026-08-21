@@ -28,7 +28,7 @@
 # It surfaces for a third party packaging a dependent, as an error about code
 # they did not write. For a component handling clinical data, "the released
 # artifact is the reviewed source" is what the whole audit trail rests on
-# (AGENTS/release.md), and O10.10's SBOM describes an artifact that is worth
+# (agents/release.md), and O10.10's SBOM describes an artifact that is worth
 # nothing if the artifact is not the source.
 #
 #   scripts/check-published-match.sh          check, print a summary

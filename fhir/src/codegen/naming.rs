@@ -1,7 +1,7 @@
 //! Turning FHIR names into Rust identifiers.
 //!
 //! The rules here are the ones the shipped R5 model already follows (see
-//! `AGENTS/conventions.md`), factored out so every release names things the
+//! `agents/conventions.md`), factored out so every release names things the
 //! same way: `Patient.contact` becomes the struct `PatientContact` in the
 //! module `patient`, its `type` element becomes the field `r#type`, and the
 //! code `entered-in-error` becomes the enum variant `EnteredInError`.

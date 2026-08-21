@@ -2,7 +2,7 @@
 
 Defines the JSON mapping between the Rust model and canonical FHIR JSON. This is
 the normative version of the conventions in
-[`../AGENTS/conventions.md`](../AGENTS/conventions.md).
+[`../agents/conventions.md`](../agents/conventions.md).
 
 Applies to every modelled release, identically: the releases differ in *which*
 elements exist, never in how an element is mapped.
@@ -106,7 +106,7 @@ elements exist, never in how an element is mapped.
 - **R6.13** For any value `v`, `from_value(to_value(v)) == v` MUST hold for the
   supported representations. Tests and doctests assert this via the
   round-trip-of-default pattern (spec 07, and
-  [`../AGENTS/testing.md`](../AGENTS/testing.md)).
+  [`../agents/testing.md`](../agents/testing.md)).
 
 ## Acceptance criteria
 

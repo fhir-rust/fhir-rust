@@ -2,7 +2,7 @@
 
 Defines the spec-JSON → Rust generator: the engine that makes this project
 spec-driven. Operational how-to is in
-[`../AGENTS/code-generation.md`](../AGENTS/code-generation.md).
+[`../agents/code-generation.md`](../agents/code-generation.md).
 
 ## Background
 

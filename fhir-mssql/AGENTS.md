@@ -7,14 +7,14 @@ at the root:
 
 - **[`../AGENTS.md`](../AGENTS.md)** — read this first. The five rules, the
   layout, the commit conventions.
-- **[`../AGENTS/`](../AGENTS/index.md)** — topic guides:
-  [spec workflow](../AGENTS/spec-workflow.md) ·
-  [rust](../AGENTS/rust.md) ·
-  [testing](../AGENTS/testing.md) ·
-  [databases](../AGENTS/databases.md) ·
-  [documentation](../AGENTS/documentation.md) ·
-  [security](../AGENTS/security.md) ·
-  [release](../AGENTS/release.md)
+- **[`../agents/`](../agents/index.md)** — topic guides:
+  [spec workflow](../agents/spec-workflow.md) ·
+  [rust](../agents/rust.md) ·
+  [testing](../agents/testing.md) ·
+  [databases](../agents/databases.md) ·
+  [documentation](../agents/documentation.md) ·
+  [security](../agents/security.md) ·
+  [release](../agents/release.md)
 
 Normative behaviour is the monorepo core plus this port's annex:
 

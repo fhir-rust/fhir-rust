@@ -161,7 +161,7 @@ type-/system-level history, multi-port wiring, is tracked in that crate's
 | [F-60](#f-60) | Medium | No example in `doc/` or `README.md` is compiled by anything; one calls a `fhir-postgresql`-only API from a SQLite tutorial | **fixed** 2026-08-03 — `scripts/check-doc-examples.sh` added; it found six real defects incl. an unparseable block, all 24 now compile |
 | [F-61](#f-61) | Medium | All six `plan.md` describe PostgreSQL, a CLI, and a `-server` crate; three of the five crates they list have never existed | **fixed** 2026-08-03 — all six corrected, banners added |
 | [F-62](#f-62) | **High** | Every port's `CHANGELOG.md` is `fhir-postgresql`'s; the two scaffolds announce a TLS security fix for a connector they do not have | **partly fixed** 2026-08-03 — banners + the security entry annotated in place; per-port history is an owner decision |
-| [F-63](#f-63) | Medium | Status text in `doc/faq.md`, `doc/choosing-an-engine.md` and `AGENTS/release.md` had decayed — incl. "is this a FHIR server? No" and a fixed finding cited as blocking | **fixed** 2026-08-03 |
+| [F-63](#f-63) | Medium | Status text in `doc/faq.md`, `doc/choosing-an-engine.md` and `agents/release.md` had decayed — incl. "is this a FHIR server? No" and a fixed finding cited as blocking | **fixed** 2026-08-03 |
 | [F-64](#f-64) | **High** | Every non-PostgreSQL `doc/benchmarks.md` presented `fhir-postgresql`'s measured numbers as its own, incl. a live round trip and bulk-load benchmark for the two ports with no store at all | **fixed** 2026-08-03 — corrected in all five; real harness for sqlite/mysql/mariadb is a recorded gap |
 | [F-65](#f-65) | **High** | `fhir-mssql` gained a real store, live-verified; running it found five real defects, incl. a torn read (`R4.5`) and `verify_audit` never checking the keyed tag | **fixed** 2026-08-04 — all five; the port is Store level, 33 live tests, 0 ignored |
 | [F-66](#f-66) | — | Scope note: `fhir-oracle`'s store was written with no Instant Client on the host and had never connected to a database | **superseded** by **F-68** — the store has now run live |
@@ -801,7 +801,7 @@ it.
 
 Every port's `spec/index.md` contained "Operational guidance for contributors
 lives in `AGENTS.md`". No `AGENTS.md` existed anywhere in the tree. The
-monorepo now has [`AGENTS.md`](../../AGENTS.md) with [`AGENTS/`](../../AGENTS/) topic
+monorepo now has [`AGENTS.md`](../../AGENTS.md) with [`agents/`](../../agents/) topic
 files, and each port has one pointing at it.
 
 ## F-13
@@ -1903,7 +1903,7 @@ publish readiness.*
 
 All six `Cargo.toml` files declare `version = "0.1.0"`. All six `CHANGELOG.md`
 files open with `## 0.4.0 — tamper evidence that survives the database
-(2026-07-27)`, and [`AGENTS/release.md`](../../AGENTS/release.md) asserted "All
+(2026-07-27)`, and [`agents/release.md`](../../agents/release.md) asserted "All
 six currently sit at `0.4.0`".
 
 **The committed lock files settle which way it went.** All six `Cargo.lock`
@@ -1988,7 +1988,7 @@ it was not hypothetical:
 | | **206 added, 2 removed** — the `qty-3` invariant support |
 
 `Cargo.toml.orig` was byte-identical, so nothing in the metadata hinted at it.
-The reason it survived is the one `AGENTS/release.md` names: every local build
+The reason it survived is the one `agents/release.md` names: every local build
 resolves the **path** dependency and never fetches the registry copy, so the
 workspace stayed green against 758 lines while `fhir-derive-macros = "1.1.0"`
 resolves to 554 for everyone else. It surfaces only when a third party packages
@@ -3787,7 +3787,7 @@ reader to paste it.
 ### The gate was built, and it found six more defects
 
 Deferring it was wrong. `scripts/check-shared-core.sh` already establishes that
-a **local** gate is useful here without CI — `AGENTS/release.md` step 0c invokes
+a **local** gate is useful here without CI — `agents/release.md` step 0c invokes
 one — so "worth little until F-49" was an excuse rather than a reason.
 
 `scripts/check-doc-examples.sh` extracts every ```` ```rust ```` block from
@@ -3934,7 +3934,7 @@ family of question as **F-58**, and it is the owner's.
 
 ## F-63
 
-**Status text across `doc/` and `AGENTS/` had decayed past the point of being
+**Status text across `doc/` and `agents/` had decayed past the point of being
 wrong.** Severity: Medium. *Found sweeping the root-level documentation after
 the per-port files (**F-62**).*
 
@@ -3948,7 +3948,7 @@ that cause is the same as the stale test counts in **F-55**.
 | `doc/faq.md` | "**Is this a FHIR server?** No." | The ports are not; the repository has one — `fhir-loco`. A reader asking the title question about the repo got the wrong answer |
 | `doc/choosing-an-engine.md` | sqlite/mysql/mariadb have "no concurrency, redaction, or audit test" | All three carry `concurrency.rs`, `redaction.rs`, `roundtrip_types.rs` and `upgrade.rs`; 102–105 tests each, green live |
 | `doc/choosing-an-engine.md` (×2) | the hash-chain pre-image "is still derived in SQL" (**F-07**) | **F-07** is fixed; `canon.rs` is shared and identical in all six |
-| `AGENTS/release.md` | "one port blocked on a High finding: `fhir-oracle` has **F-08**" | **F-08** is fixed. No port has an open High finding of its own — but **every** port is blocked by **F-49**, which that paragraph did not mention |
+| `agents/release.md` | "one port blocked on a High finding: `fhir-oracle` has **F-08**" | **F-08** is fixed. No port has an open High finding of its own — but **every** port is blocked by **F-49**, which that paragraph did not mention |
 
 The last is the most misleading, because it understates: it named one blocked
 port when all six are, for a reason discovered later and never folded back in.
@@ -3977,7 +3977,7 @@ since none has the `bench.rs` it would compare against. *Found checking whether
 six ports.*
 
 `W16.10` is worth pausing on: it names this exact failure and was already in
-the specification. `AGENTS/testing.md` even quotes it verbatim. The requirement
+the specification. `agents/testing.md` even quotes it verbatim. The requirement
 being written down did not stop it from happening, because nothing checked
 `doc/benchmarks.md` against it — the same gap **F-60** found in the doc
 examples one document over.

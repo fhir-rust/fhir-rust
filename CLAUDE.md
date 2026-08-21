@@ -39,7 +39,7 @@ on.
 | Anything in `fhir/` | [`fhir/spec/index.md`](fhir/spec/index.md) and [`fhir/AGENTS.md`](fhir/AGENTS.md) |
 | Shared Rust core | [`spec/databases/15-portability-and-dialects.md`](spec/databases/15-portability-and-dialects.md) `X15.1` |
 | A `ddl.rs` or a store | that port's `spec/14-*-dialect.md`, plus `X15.6` |
-| Any documentation | [`AGENTS/documentation.md`](AGENTS/documentation.md) |
+| Any documentation | [`agents/documentation.md`](agents/documentation.md) |
 | Anything at all | [`spec/databases/audit.md`](spec/databases/audit.md) — the change may already be a tracked finding |
 
 ## Traps specific to this repository

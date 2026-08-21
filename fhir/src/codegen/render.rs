@@ -1,7 +1,7 @@
 //! Rendering a [`TypePlan`] as Rust source.
 //!
 //! Everything here is text assembly: the decisions were already made in
-//! [`super::plan`]. The output must match `AGENTS/conventions.md` exactly — the
+//! [`super::plan`]. The output must match `agents/conventions.md` exactly — the
 //! same derives in the same order, `skip_serializing_none`, camelCase renaming,
 //! `Vec` defaults, primitive-extension siblings, and a round-trip doctest — so
 //! that a generated release module is indistinguishable in style from the

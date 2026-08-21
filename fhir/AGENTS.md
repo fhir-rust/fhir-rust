@@ -48,7 +48,7 @@ This distinction governs how you edit each one:
 
 - **`fhir-r5/src/` carries hand-written prose documentation** on top of generated
   shapes. Never blind-regenerate it. Change it with the metadata-driven splicing
-  generators described in [`AGENTS/code-generation.md`](AGENTS/code-generation.md),
+  generators described in [`agents/code-generation.md`](agents/code-generation.md),
   or by hand. `cargo run -- r5` refuses to write there for this reason.
 - **`fhir-r2/src/`, `fhir-r3/src/`, `fhir-r4/src/` and
   `fhir-r6/src/` are entirely generated** by `cargo run -- r2` … `-- r6`.
@@ -101,7 +101,7 @@ doc/fhir-specifications/<release>/fhir-definitions-json/  # the official spec JS
 doc/adding-a-release.md  # the procedure for adding one, written from doing R6
 tmp/out/              # legacy R5 generator scratch output (untracked)
 spec/                 # the living specifications — the source of truth (read these)
-AGENTS/               # operational guidance for agents (this folder)
+agents/               # operational guidance for agents (this folder)
 ```
 
 Each release crate self-aliases (`pub use crate as r5;`) so that generated
@@ -167,10 +167,10 @@ mdBook build, and the proc-macro publish dry-run.
   [`spec/index.md`](spec/index.md).
 - **Follow the conventions exactly.** Every datatype/resource struct uses the
   same serde derives, `rename_all = "camelCase"`, `skip_serializing_none`, and
-  cardinality mapping. See [`AGENTS/conventions.md`](AGENTS/conventions.md).
+  cardinality mapping. See [`agents/conventions.md`](agents/conventions.md).
 - **Prefer the generator over hand-editing generated shapes.** `src/codegen/`
   produces a whole release's Rust from the spec JSON. See
-  [`AGENTS/code-generation.md`](AGENTS/code-generation.md).
+  [`agents/code-generation.md`](agents/code-generation.md).
 - **Put release-independent code in `fhir-core`.** If it does not mention a
   release's types, it belongs in `src/*.rs`, re-exported from `r4` and `r5` —
   not copied into both.
@@ -181,16 +181,16 @@ mdBook build, and the proc-macro publish dry-run.
 
 | Document | Purpose |
 | --- | --- |
-| [`AGENTS/architecture.md`](AGENTS/architecture.md) | Module tree, layering, data flow |
-| [`AGENTS/conventions.md`](AGENTS/conventions.md) | The exact struct/field/serde conventions |
-| [`AGENTS/testing.md`](AGENTS/testing.md) | Test & doctest patterns, the green gate |
-| [`AGENTS/code-generation.md`](AGENTS/code-generation.md) | The spec-JSON → Rust generator |
-| [`AGENTS/glossary.md`](AGENTS/glossary.md) | FHIR and project terminology |
+| [`agents/architecture.md`](agents/architecture.md) | Module tree, layering, data flow |
+| [`agents/conventions.md`](agents/conventions.md) | The exact struct/field/serde conventions |
+| [`agents/testing.md`](agents/testing.md) | Test & doctest patterns, the green gate |
+| [`agents/code-generation.md`](agents/code-generation.md) | The spec-JSON → Rust generator |
+| [`agents/glossary.md`](agents/glossary.md) | FHIR and project terminology |
 | [`spec/index.md`](spec/index.md) | Index of the living specifications |
 
 ## House rules
 
-- Keep every file in `AGENTS/` and `spec/` under **40 KB**; split if it grows.
+- Keep every file in `agents/` and `spec/` under **40 KB**; split if it grows.
 - Do not add dependencies without cause; this crate is deliberately lean
   (`serde`, `serde_json`, `serde_with`, `indoc`, `convert_case`, `vec1` for
   non-empty `1..*` fields, and the local `fhir-derive-macros`). Feature-gated

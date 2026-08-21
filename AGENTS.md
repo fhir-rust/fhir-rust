@@ -4,7 +4,7 @@ Operational guidance for contributors, human and agent. This file says **how to
 work**; [`spec/`](spec/index.md) says **what must be true**. When they seem to
 conflict, the spec wins and this file is wrong.
 
-Read this file first, then the one topic file in [`AGENTS/`](AGENTS/) that
+Read this file first, then the one topic file in [`agents/`](agents/) that
 covers what you are about to touch.
 
 ## What this is
@@ -34,7 +34,7 @@ renumber (`C0.5`).
 
 The rest of this file is about the **database family**, the largest of the
 three. For the model crate work from [`fhir/AGENTS.md`](fhir/AGENTS.md) and
-[`fhir/AGENTS/`](fhir/AGENTS/architecture.md) instead.
+[`fhir/agents/`](fhir/agents/architecture.md) instead.
 
 ## The database ports
 
@@ -129,20 +129,20 @@ were misattributed rather than unfinished.
 
 Read the one that matches your change.
 
-- **[AGENTS/spec-workflow.md](AGENTS/spec-workflow.md)** — specification-driven
+- **[agents/spec-workflow.md](agents/spec-workflow.md)** — specification-driven
   development: how a change moves spec → tasks → code → test, and how to amend
   a requirement.
-- **[AGENTS/rust.md](AGENTS/rust.md)** — code conventions, the shared-core rule,
+- **[agents/rust.md](agents/rust.md)** — code conventions, the shared-core rule,
   error handling, comment style.
-- **[AGENTS/testing.md](AGENTS/testing.md)** — the test taxonomy, live database
+- **[agents/testing.md](agents/testing.md)** — the test taxonomy, live database
   suites, fuzzing, and the rules against decorative tests.
-- **[AGENTS/databases.md](AGENTS/databases.md)** — the six engines, running one
+- **[agents/databases.md](agents/databases.md)** — the six engines, running one
   locally, and what porting to a seventh involves.
-- **[AGENTS/documentation.md](AGENTS/documentation.md)** — README, book, and
+- **[agents/documentation.md](agents/documentation.md)** — README, book, and
   `doc/` conventions, and the substitution trap that produced **F-01**.
-- **[AGENTS/security.md](AGENTS/security.md)** — PHI, the audit chain, keys, the
+- **[agents/security.md](agents/security.md)** — PHI, the audit chain, keys, the
   trust boundary, and what never goes in a log.
-- **[AGENTS/release.md](AGENTS/release.md)** — versioning, supply-chain gates,
+- **[agents/release.md](agents/release.md)** — versioning, supply-chain gates,
   and why a published version must match its source.
 
 ## Before you start

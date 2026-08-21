@@ -5,7 +5,7 @@ state and the stated goal of publishing every crate to crates.io. It is a status
 document like the [conformance matrix](databases/conformance-matrix.md), not a
 requirement: the requirements it measures against are `O10.10`, `O10.11`,
 `W16.11`–`W16.15`, and `C0.11`, and the working procedure is
-[`AGENTS/release.md`](../AGENTS/release.md).
+[`agents/release.md`](../agents/release.md).
 
 It is **cross-family** — the one document in `spec/` that is, because publishing
 is the one activity that treats the whole repository as a single release
@@ -124,7 +124,7 @@ Four sources said `0.4.0` and one said `0.1.0`:
 | all six `Cargo.toml` | `version = "0.1.0"` |
 | all six `Cargo.lock` | `0.4.0`, for all three crates of each port |
 | all six `CHANGELOG.md`, top entry | `## 0.4.0 — tamper evidence that survives the database (2026-07-27)` |
-| [`AGENTS/release.md`](../AGENTS/release.md#versioning) | "All six currently sit at `0.4.0`" |
+| [`agents/release.md`](../agents/release.md#versioning) | "All six currently sit at `0.4.0`" |
 
 **Owner chose `0.4.0`** (2026-08-01). Applied to all six
 `[workspace.package]` blocks and to the eighteen `[workspace.dependencies]`
@@ -186,7 +186,7 @@ clean.
 
 No `rust-version` was added. The six ports promise `1.90` and CI builds on
 exactly that toolchain; this crate's floor against loco-rs and axum has never
-been measured, and [`AGENTS/release.md`](../AGENTS/release.md#msrv) is explicit
+been measured, and [`agents/release.md`](../agents/release.md#msrv) is explicit
 that an unverified MSRV is a guess. Measure it before promising one.
 
 ### P-4 — `fhir-derive-macros` has diverged from its published 1.1.0
@@ -210,7 +210,7 @@ field-matching helpers around it. `Cargo.toml.orig` is byte-identical between
 the two, so nothing signals the divergence in the metadata.
 
 This is precisely the failure
-[`AGENTS/release.md`](../AGENTS/release.md#the-gate-that-matters-most) describes,
+[`agents/release.md`](../agents/release.md#the-gate-that-matters-most) describes,
 already happening: every local build resolves the **path** dependency and never
 fetches the registry copy, so this workspace is green against 758 lines while
 anyone writing `fhir-derive-macros = "1.1.0"` gets 554. The tree and the artifact
