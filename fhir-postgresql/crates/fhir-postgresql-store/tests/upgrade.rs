@@ -8,6 +8,8 @@ use std::sync::Arc;
 use fhir_postgresql_store::Store;
 use serde_json::json;
 
+mod common;
+
 fn spec_defs() -> Option<PathBuf> {
     let root = std::env::var("FHIR_POSTGRESQL_SPEC_DIR")
         .map(PathBuf::from)
@@ -23,16 +25,13 @@ fn spec_defs() -> Option<PathBuf> {
 
 #[tokio::test]
 async fn upgrade_applies_diff() {
-    let Ok(db) = std::env::var("FHIR_POSTGRESQL_TEST_DB") else {
-        eprintln!("skipping: FHIR_POSTGRESQL_TEST_DB not set");
+    let Some(_db) = common::test_db() else {
         return;
     };
     let Some(defs) = spec_defs() else {
         eprintln!("skipping: no spec dir");
         return;
     };
-    // SAFETY: single-threaded at this point.
-    unsafe { std::env::set_var("PGDATABASE", &db) };
 
     let full = fhir_postgresql_gen::generate(&defs, "uptest").expect("generate");
     // The "old" deployment: no Basic resource at all, and Patient's base
@@ -117,16 +116,13 @@ async fn upgrade_applies_diff() {
 /// That failure is invisible: no error, no warning, just fewer results.
 #[tokio::test]
 async fn upgrade_backfills_folded_columns() {
-    let Ok(db) = std::env::var("FHIR_POSTGRESQL_TEST_DB") else {
-        eprintln!("skipping: FHIR_POSTGRESQL_TEST_DB not set");
+    let Some(_db) = common::test_db() else {
         return;
     };
     let Some(defs) = spec_defs() else {
         eprintln!("skipping: no spec dir");
         return;
     };
-    // SAFETY: single-threaded at this point.
-    unsafe { std::env::set_var("PGDATABASE", &db) };
 
     let full = fhir_postgresql_gen::generate(&defs, "foldtest").expect("generate");
     // The "old" deployment: the map as it was before folding existed.
@@ -200,25 +196,60 @@ async fn upgrade_backfills_folded_columns() {
 /// column leaves the base table for a child table of its own, same element
 /// path. The map is deliberately not shred-consistent afterwards —
 /// `upgrade` only reads table shapes, and nothing is written through it.
+/// `Patient.multipleBirth[x]` relocated out of the base table into a table of
+/// its own — the shape a `G2.6a` force-split produces.
+///
+/// It must be a *faithful* relocation, not merely a plausible one. An earlier
+/// version of this helper moved the single column `multiple_birth_boolean` and
+/// stopped there, which is enough to make the DDL diff report a move — and so
+/// enough for the two `O10.4b` tests below, which only ever check that the
+/// upgrade refuses or proceeds. It is not enough to *write* through the
+/// resulting map: `shred` routes an element by `Elem.table` in the node arena,
+/// not by which table happens to list the column, so it kept sending
+/// `multipleBirthBoolean` to the base table and the insert panicked on a
+/// column that was no longer there. `O10.4c` is the first caller that shreds
+/// through the moved map, which is why it was the first to notice.
+///
+/// A force-split choice owns its table for **every** variant, so both
+/// `multiple_birth_boolean` and `multiple_birth_integer` move, and the choice
+/// element is repointed at the new table.
 fn with_multiple_birth_moved(full: &fhir_postgresql_map::RelMap) -> fhir_postgresql_map::RelMap {
     use fhir_postgresql_map::model::{Table, TableKind};
     let mut m = full.clone();
     let rm = m.resources.get_mut("Patient").expect("Patient is mapped");
     let base = &mut rm.tables[0];
-    let idx = base
-        .cols
-        .iter()
-        .position(|c| c.name == "multiple_birth_boolean")
-        .expect("multiple_birth_boolean in the base table");
-    let col = base.cols.remove(idx);
+    let mut cols = Vec::new();
+    let mut i = 0;
+    while i < base.cols.len() {
+        if base.cols[i].name.starts_with("multiple_birth") {
+            cols.push(base.cols.remove(i));
+        } else {
+            i += 1;
+        }
+    }
+    assert!(
+        cols.iter().any(|c| c.name == "multiple_birth_boolean"),
+        "multiple_birth_boolean in the base table"
+    );
+    let moved_to = u32::try_from(rm.tables.len()).expect("table index fits");
     rm.tables.push(Table {
         norm_cols: Vec::new(),
         adjunct_cols: Vec::new(),
         name: "patient_multiple_birth_moved".into(),
         kind: TableKind::Elem,
-        path: "Patient.multipleBirth".into(),
-        cols: vec![col],
+        path: "Patient.multipleBirth[x]".into(),
+        cols,
     });
+    let mut repointed = 0;
+    for node in &mut rm.nodes {
+        for e in &mut node.elems {
+            if e.json == "multipleBirth" {
+                e.table = Some(moved_to);
+                repointed += 1;
+            }
+        }
+    }
+    assert_eq!(repointed, 1, "exactly one multipleBirth choice element");
     m
 }
 
@@ -227,16 +258,13 @@ fn with_multiple_birth_moved(full: &fhir_postgresql_map::RelMap) -> fhir_postgre
 /// a relocation (`O10.4b`).
 #[tokio::test]
 async fn a_data_bearing_moved_column_refuses_despite_the_flag() {
-    let Ok(db) = std::env::var("FHIR_POSTGRESQL_TEST_DB") else {
-        eprintln!("skipping: FHIR_POSTGRESQL_TEST_DB not set");
+    let Some(_db) = common::test_db() else {
         return;
     };
     let Some(defs) = spec_defs() else {
         eprintln!("skipping: no spec dir");
         return;
     };
-    // SAFETY: single-threaded at this point.
-    unsafe { std::env::set_var("PGDATABASE", &db) };
 
     let full = fhir_postgresql_gen::generate(&defs, "movetest").expect("generate");
     let cfg = fhir_postgresql_store::pg_config(None).expect("cfg");
@@ -273,16 +301,13 @@ async fn a_data_bearing_moved_column_refuses_despite_the_flag() {
 /// The same move over an empty source proceeds: that drop abandons nothing.
 #[tokio::test]
 async fn a_moved_column_with_no_data_proceeds() {
-    let Ok(db) = std::env::var("FHIR_POSTGRESQL_TEST_DB") else {
-        eprintln!("skipping: FHIR_POSTGRESQL_TEST_DB not set");
+    let Some(_db) = common::test_db() else {
         return;
     };
     let Some(defs) = spec_defs() else {
         eprintln!("skipping: no spec dir");
         return;
     };
-    // SAFETY: single-threaded at this point.
-    unsafe { std::env::set_var("PGDATABASE", &db) };
 
     let full = fhir_postgresql_gen::generate(&defs, "movetest2").expect("generate");
     let cfg = fhir_postgresql_store::pg_config(None).expect("cfg");
@@ -324,16 +349,13 @@ async fn a_moved_column_with_no_data_proceeds() {
 /// written for it.
 #[tokio::test]
 async fn reshred_carries_data_across_a_moved_column() {
-    let Ok(db) = std::env::var("FHIR_POSTGRESQL_TEST_DB") else {
-        eprintln!("skipping: FHIR_POSTGRESQL_TEST_DB not set");
+    let Some(_db) = common::test_db() else {
         return;
     };
     let Some(defs) = spec_defs() else {
         eprintln!("skipping: no spec dir");
         return;
     };
-    // SAFETY: single-threaded at this point.
-    unsafe { std::env::set_var("PGDATABASE", &db) };
 
     let full = fhir_postgresql_gen::generate(&defs, "reshredtest").expect("generate");
     let cfg = fhir_postgresql_store::pg_config(None).expect("cfg");
@@ -408,16 +430,13 @@ async fn reshred_carries_data_across_a_moved_column() {
 /// no-op every other upgrade path promises to be.
 #[tokio::test]
 async fn a_second_reshred_upgrade_carries_nothing() {
-    let Ok(db) = std::env::var("FHIR_POSTGRESQL_TEST_DB") else {
-        eprintln!("skipping: FHIR_POSTGRESQL_TEST_DB not set");
+    let Some(_db) = common::test_db() else {
         return;
     };
     let Some(defs) = spec_defs() else {
         eprintln!("skipping: no spec dir");
         return;
     };
-    // SAFETY: single-threaded at this point.
-    unsafe { std::env::set_var("PGDATABASE", &db) };
 
     let full = fhir_postgresql_gen::generate(&defs, "reshredtest2").expect("generate");
     let cfg = fhir_postgresql_store::pg_config(None).expect("cfg");

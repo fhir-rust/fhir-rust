@@ -19,6 +19,8 @@ use std::sync::Arc;
 use fhir_postgresql_store::{CondCreate, Store, StoreError};
 use serde_json::{Value, json};
 
+mod common;
+
 fn spec_defs() -> Option<PathBuf> {
     let root = std::env::var("FHIR_POSTGRESQL_SPEC_DIR")
         .map(PathBuf::from)
@@ -37,10 +39,8 @@ fn spec_defs() -> Option<PathBuf> {
 /// schema from three threads collides in `pg_namespace`, which says nothing
 /// about the code under test.
 async fn test_store(schema: &str) -> Option<Arc<Store>> {
-    let db = std::env::var("FHIR_POSTGRESQL_TEST_DB").ok()?;
+    let _db = common::test_db()?;
     let defs = spec_defs()?;
-    // SAFETY: single test binary, set before any threads matter.
-    unsafe { std::env::set_var("PGDATABASE", &db) };
     let map = Arc::new(fhir_postgresql_gen::generate(&defs, schema).expect("generate"));
     let cfg = fhir_postgresql_store::pg_config(None).expect("cfg");
     let store = Store::connect(cfg, map).await.expect("connect");

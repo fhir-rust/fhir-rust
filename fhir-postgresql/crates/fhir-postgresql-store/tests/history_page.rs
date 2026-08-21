@@ -9,6 +9,8 @@ use fhir_postgresql_map::model::RelMap;
 use fhir_postgresql_store::Store;
 use serde_json::json;
 
+mod common;
+
 fn relmap() -> Option<RelMap> {
     let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../fhir-postgresql-map/assets/fhir-postgresql-relmap-r5.json.gz");
@@ -17,9 +19,7 @@ fn relmap() -> Option<RelMap> {
 }
 
 async fn seeded(schema: &str) -> Option<Store> {
-    let db = std::env::var("FHIR_POSTGRESQL_TEST_DB").ok()?;
-    // SAFETY: this test binary is single-threaded at this point.
-    unsafe { std::env::set_var("PGDATABASE", &db) };
+    let _db = common::test_db()?;
     let mut m = relmap()?;
     m.resources
         .retain(|k, _| k == "Patient" || k == "Observation");

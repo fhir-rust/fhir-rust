@@ -9,6 +9,8 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use fhir_postgresql_store::Store;
 use serde_json::json;
 
+mod common;
+
 fn spec_defs() -> Option<PathBuf> {
     let root = std::env::var("FHIR_POSTGRESQL_SPEC_DIR")
         .map(PathBuf::from)
@@ -51,19 +53,17 @@ fn observation(i: usize) -> serde_json::Value {
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 8)]
 async fn bench_bulk_load_and_index_audit() {
-    let (Ok(db), Ok(n)) = (
-        std::env::var("FHIR_POSTGRESQL_TEST_DB"),
+    let (Some(_db), Ok(n)) = (
+        common::test_db(),
         std::env::var("FHIR_POSTGRESQL_BENCH").map(|v| v.parse::<usize>().unwrap_or(0)),
     ) else {
-        eprintln!("skipping: set FHIR_POSTGRESQL_TEST_DB and FHIR_POSTGRESQL_BENCH=<n>");
+        eprintln!("skipping: set FHIR_POSTGRESQL_BENCH=<n>");
         return;
     };
     let Some(defs) = spec_defs() else {
         eprintln!("skipping: no spec dir");
         return;
     };
-    // SAFETY: before worker spawn.
-    unsafe { std::env::set_var("PGDATABASE", &db) };
     let map = Arc::new(fhir_postgresql_gen::generate(&defs, "benchtest").expect("generate"));
     let cfg = fhir_postgresql_store::pg_config(None).expect("cfg");
     let store = Arc::new(Store::connect(cfg, map).await.expect("connect"));

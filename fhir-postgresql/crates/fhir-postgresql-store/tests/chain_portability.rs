@@ -22,6 +22,8 @@ use fhir_postgresql_map::model::RelMap;
 use fhir_postgresql_store::{Store, chain};
 use serde_json::json;
 
+mod common;
+
 fn spec_defs() -> Option<std::path::PathBuf> {
     let root = std::env::var("FHIR_POSTGRESQL_SPEC_DIR")
         .map(std::path::PathBuf::from)
@@ -36,7 +38,7 @@ fn spec_defs() -> Option<std::path::PathBuf> {
 }
 
 async fn store(schema: &str) -> Option<Store> {
-    std::env::var("FHIR_POSTGRESQL_TEST_DB").ok()?;
+    common::test_db()?;
     let defs = spec_defs()?;
     let mut map: RelMap = fhir_postgresql_gen::generate(&defs, schema).ok()?;
     map.resources

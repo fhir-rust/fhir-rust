@@ -12,6 +12,8 @@ use std::sync::{Arc, Mutex};
 use fhir_postgresql_store::{Store, StoreError};
 use serde_json::json;
 
+mod common;
+
 /// A distinctive value planted in the resource. If it appears in a log line
 /// or an error message, something is carrying PHI it should not.
 const MARKER: &str = "Zzyzxbergenstein";
@@ -30,10 +32,8 @@ fn spec_defs() -> Option<PathBuf> {
 }
 
 async fn test_store(schema: &str) -> Option<Arc<Store>> {
-    let db = std::env::var("FHIR_POSTGRESQL_TEST_DB").ok()?;
+    let _db = common::test_db()?;
     let defs = spec_defs()?;
-    // SAFETY: single test binary, set before any threads matter.
-    unsafe { std::env::set_var("PGDATABASE", &db) };
     let map = Arc::new(fhir_postgresql_gen::generate(&defs, schema).expect("generate"));
     let cfg = fhir_postgresql_store::pg_config(None).expect("cfg");
     let store = Store::connect(cfg, map).await.expect("connect");

@@ -8,6 +8,8 @@ use std::sync::Arc;
 use fhir_postgresql_store::Store;
 use serde_json::json;
 
+mod common;
+
 fn spec_defs() -> Option<PathBuf> {
     let root = std::env::var("FHIR_POSTGRESQL_SPEC_DIR")
         .map(PathBuf::from)
@@ -28,10 +30,8 @@ async fn test_store() -> Option<Store> {
 /// Each test installs its own schema: two tests dropping and creating the
 /// same one concurrently deadlock on the catalog locks.
 async fn test_store_in(schema: &str) -> Option<Store> {
-    let db = std::env::var("FHIR_POSTGRESQL_TEST_DB").ok()?;
+    let _db = common::test_db()?;
     let defs = spec_defs()?;
-    // SAFETY: set before concurrent access matters in this test binary.
-    unsafe { std::env::set_var("PGDATABASE", &db) };
     let map = Arc::new(fhir_postgresql_gen::generate(&defs, schema).expect("generate"));
     let cfg = fhir_postgresql_store::pg_config(None).expect("cfg");
     let store = Store::connect(cfg, map).await.expect("connect");

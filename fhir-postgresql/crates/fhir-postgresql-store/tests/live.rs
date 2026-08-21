@@ -1,7 +1,9 @@
 //! Live-database round trip: put every corpus example through PostgreSQL and
 //! require the reconstruction to be semantically identical.
 //!
-//! Gated on FHIR_POSTGRESQL_TEST_DB (a database name); skipped silently otherwise.
+//! Live tests. They find their server automatically — see `common::test_db`:
+//! FHIR_POSTGRESQL_TEST_DB if set, otherwise the `scripts/db.sh` container if
+//! it is listening. A skip is printed, not silent.
 //! FHIR_POSTGRESQL_TEST_CORPUS_LIMIT bounds the number of examples (default 400;
 //! 0 = unlimited).
 
@@ -9,6 +11,8 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use serde_json::Value;
+
+mod common;
 
 fn spec_root() -> Option<PathBuf> {
     let candidates = [
@@ -110,8 +114,7 @@ fn num_eq(a: &str, b: &str) -> bool {
 
 #[tokio::test]
 async fn live_roundtrip_corpus() {
-    let Ok(db) = std::env::var("FHIR_POSTGRESQL_TEST_DB") else {
-        eprintln!("skipping: FHIR_POSTGRESQL_TEST_DB not set");
+    let Some(_db) = common::test_db() else {
         return;
     };
     let (Some(spec), Some(corpus)) = (spec_root(), corpus_root()) else {
@@ -122,9 +125,6 @@ async fn live_roundtrip_corpus() {
         .ok()
         .and_then(|v| v.parse().ok())
         .unwrap_or(400);
-
-    // SAFETY: tests run single-threaded at this point.
-    unsafe { std::env::set_var("PGDATABASE", &db) };
 
     let mut failures: Vec<String> = Vec::new();
     let mut total = 0usize;
