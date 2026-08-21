@@ -282,6 +282,38 @@ were invisible while this port defined the spec.
   MUST state that invariant and MUST name PostgreSQL's mechanism rather than
   another engine's.
 
+## Migration
+
+- **M14.29** The `O10.4c` re-shred MUST run as **one transaction per
+  resource**, and the upgrade as a whole MUST be **resumable rather than
+  atomic**. This port already applies its DDL in chunked transactions to stay
+  inside a lock budget (`fhir-sqlite M14.31` records why SQLite does the opposite; `M14.x` is
+  per-port under `C0.7`, so a bare number here would mean this annex), and a
+  re-shred that held one transaction over every affected resource would hold
+  those locks for the length of the store and bloat WAL in proportion to it.
+
+  What that buys and what it costs MUST both be stated wherever the option is
+  documented:
+
+  - **No data is lost by a mid-migration failure.** The destructive DDL runs
+    only after every moved source has been verified empty, in the same call.
+    A failure part-way leaves each resource atomically in the old shape or the
+    new one, with every old column still present.
+  - **The upgrade resumes.** Rerunning it carries what is left; a resource
+    already carried costs a read and re-shreds to itself.
+  - **Reads of un-carried resources under-return the moved element while it
+    runs.** Between the additive DDL and the last resource carried, a resource
+    not yet re-shredded reconstructs under the new map, which no longer reads
+    the old column. This window does not exist on SQLite
+    (`fhir-sqlite M14.31`), and it is a departure a deployment MUST be told
+    about rather than discover: the
+    documentation MUST say to migrate off peak.
+
+  Silence about the third point would be the defect. The first two are the
+  reassuring half, and a dialect story that states only the reassuring half is
+  how `O10.4`'s "each dialect states its failure story" gets satisfied on paper
+  and not in fact.
+
 ---
 
 Part of the [fhir-postgresql specification](index.md), which is part of the

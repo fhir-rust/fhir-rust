@@ -307,3 +307,152 @@ async fn a_moved_column_with_no_data_proceeds() {
         .expect("an empty-source move is an ordinary destructive upgrade");
     assert!(report.additive > 0, "the new table must have been created");
 }
+
+/// The same relocation, carried rather than refused (`O10.4c`).
+///
+/// The move is the synthetic one the two tests above already use — this port
+/// has no *real* pre-`G2.6a` fixture to point at, because that force-split was
+/// driven by InnoDB's row limit and did not relocate anything in PostgreSQL.
+/// `fhir-sqlite` tests against its real stored map; here the relocation has to
+/// be constructed, and `with_multiple_birth_moved` is the construction both
+/// refusal tests are already gated on.
+///
+/// What it pins is the whole `O10.4c` contract: the plain upgrade still
+/// refuses, the opt-in carries the data, the resource comes back
+/// byte-identical, `version_id` and `last_updated` survive because a
+/// representation change is not a new version, and no history entry is
+/// written for it.
+#[tokio::test]
+async fn reshred_carries_data_across_a_moved_column() {
+    let Ok(db) = std::env::var("FHIR_POSTGRESQL_TEST_DB") else {
+        eprintln!("skipping: FHIR_POSTGRESQL_TEST_DB not set");
+        return;
+    };
+    let Some(defs) = spec_defs() else {
+        eprintln!("skipping: no spec dir");
+        return;
+    };
+    // SAFETY: single-threaded at this point.
+    unsafe { std::env::set_var("PGDATABASE", &db) };
+
+    let full = fhir_postgresql_gen::generate(&defs, "reshredtest").expect("generate");
+    let cfg = fhir_postgresql_store::pg_config(None).expect("cfg");
+    let store = Store::connect(cfg, Arc::new(full.clone()))
+        .await
+        .expect("connect");
+    store.drop_schema().await.expect("drop");
+    store.init("full-sum").await.expect("init");
+    let doc = json!({"resourceType": "Patient", "id": "mb",
+                     "multipleBirthBoolean": true,
+                     "name": [{"family": "Twin"}]});
+    let put = store.put(&doc).await.expect("seed");
+    assert_eq!(put.version_id, 1);
+    let before = store
+        .history("Patient", "mb")
+        .await
+        .expect("history before");
+
+    let cfg = fhir_postgresql_store::pg_config(None).expect("cfg");
+    let store = Store::connect(cfg, Arc::new(with_multiple_birth_moved(&full)))
+        .await
+        .expect("connect moved");
+
+    // Without the opt-in the refusal still fires: O10.4c is a door, not a
+    // change of default.
+    let err = store
+        .upgrade("moved-sum", true)
+        .await
+        .expect_err("the move holds data; the plain upgrade must still refuse");
+    assert!(err.to_string().contains("moved column"), "got: {err}");
+
+    let report = store
+        .upgrade_with(
+            "moved-sum",
+            fhir_postgresql_store::UpgradeOpts {
+                allow_destructive: true,
+                reshred_moved: true,
+            },
+        )
+        .await
+        .expect("re-shred upgrade");
+    assert_eq!(
+        report.reshredded, 1,
+        "one resource crossed the shape change"
+    );
+
+    let got = store
+        .get("Patient", "mb")
+        .await
+        .expect("get")
+        .expect("still there");
+    assert_eq!(
+        got.resource.get("multipleBirthBoolean"),
+        doc.get("multipleBirthBoolean"),
+        "the relocated element must survive the move"
+    );
+    assert_eq!(got.resource.get("name"), doc.get("name"));
+    assert_eq!(
+        got.version_id, 1,
+        "a representation change is not a new version"
+    );
+    let after = store.history("Patient", "mb").await.expect("history after");
+    assert_eq!(
+        after.len(),
+        before.len(),
+        "the re-shred must not write a history entry"
+    );
+}
+
+/// Rerunning a completed re-shred carries nothing: the sources are empty and
+/// the map already matches, so `reshredded` is zero and the upgrade is the
+/// no-op every other upgrade path promises to be.
+#[tokio::test]
+async fn a_second_reshred_upgrade_carries_nothing() {
+    let Ok(db) = std::env::var("FHIR_POSTGRESQL_TEST_DB") else {
+        eprintln!("skipping: FHIR_POSTGRESQL_TEST_DB not set");
+        return;
+    };
+    let Some(defs) = spec_defs() else {
+        eprintln!("skipping: no spec dir");
+        return;
+    };
+    // SAFETY: single-threaded at this point.
+    unsafe { std::env::set_var("PGDATABASE", &db) };
+
+    let full = fhir_postgresql_gen::generate(&defs, "reshredtest2").expect("generate");
+    let cfg = fhir_postgresql_store::pg_config(None).expect("cfg");
+    let store = Store::connect(cfg, Arc::new(full.clone()))
+        .await
+        .expect("connect");
+    store.drop_schema().await.expect("drop");
+    store.init("full-sum").await.expect("init");
+    store
+        .put(&json!({"resourceType": "Patient", "id": "mb",
+                     "multipleBirthBoolean": false}))
+        .await
+        .expect("seed");
+
+    let moved = Arc::new(with_multiple_birth_moved(&full));
+    let cfg = fhir_postgresql_store::pg_config(None).expect("cfg");
+    let store = Store::connect(cfg, Arc::clone(&moved))
+        .await
+        .expect("connect moved");
+    let opts = fhir_postgresql_store::UpgradeOpts {
+        allow_destructive: true,
+        reshred_moved: true,
+    };
+    let first = store
+        .upgrade_with("moved-sum", opts)
+        .await
+        .expect("first upgrade");
+    assert_eq!(first.reshredded, 1);
+
+    let cfg = fhir_postgresql_store::pg_config(None).expect("cfg");
+    let store = Store::connect(cfg, moved).await.expect("reconnect moved");
+    let second = store
+        .upgrade_with("moved-sum", opts)
+        .await
+        .expect("second upgrade");
+    assert_eq!(second.reshredded, 0, "nothing left to carry");
+    assert_eq!(second.additive, 0, "and nothing left to add");
+}

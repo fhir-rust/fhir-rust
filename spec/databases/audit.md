@@ -5156,13 +5156,36 @@ shared-core gate covers the new file (110 files identical).
       the opt-in, rerun re-shreds nothing. `UpgradeReport.reshredded`
       and `UpgradeOpts` live in `fhir-store` (0.2.0 — the new field is
       semver-breaking; six dependents bumped).
-   2. The five server ports, in CI-verified steps: pg (chunked
-      transactions — its dialect story must say what a mid-migration
-      failure leaves), mysql/mariadb (reported-partial, `M14.35`),
-      mssql (one transaction), oracle (resumable). Each follows the
-      sqlite shape: factor the port's row-fetch to take a map, add
-      `upgrade_with`, land the same two tests plus the real-fixture
-      one.
+   2. ~~`fhir-postgresql`~~ — landed 2026-08-21, **not yet
+      live-verified**: `upgrade_with` + `UpgradeOpts.reshred_moved`
+      (plain `upgrade` unchanged); `get_in_map` factored from `get_in`
+      so reconstruction can run under the stored old map;
+      `insert_shredded` gained an explicit `last_updated` so a carried
+      resource keeps its timestamp. The dialect story is **`M14.29`**:
+      one transaction per resource, resumable rather than atomic,
+      because this port chunks its DDL to stay inside a lock budget.
+      Its cost is stated rather than buried — between the additive DDL
+      and the last resource carried, an un-carried resource
+      under-returns the moved element, a window SQLite's single
+      transaction does not have. Two tests added on the synthetic
+      relocation the two `O10.4b` tests already use; PostgreSQL has no
+      real pre-G2.6a fixture, because that force-split was driven by
+      InnoDB's row limit and relocated nothing here. **The tests have
+      never run**: they are gated on `FHIR_POSTGRESQL_TEST_DB` and the
+      machine they were written on has no PostgreSQL and no Docker.
+      The live CI job is their first execution, and until it is green
+      this entry is a claim about code, not about behaviour.
+   3. The four remaining server ports, in CI-verified steps:
+      mysql/mariadb (reported-partial, `M14.35`), mssql (one
+      transaction), oracle (resumable). Each follows the sqlite shape:
+      factor the port's row-fetch to take a map, add `upgrade_with`,
+      land the same two tests plus the real-fixture one.
+
+   A defect in step 1 was found while starting step 2 and is fixed
+   here: the `fhir-store` 0.2.0 bump reached all six ports'
+   manifests but only `fhir-sqlite`'s `Cargo.lock`. The other five
+   still pinned 0.1.1, so `cargo check --locked` — what every port's
+   `msrv` job runs — would have failed on all five. Regenerated.
 
 ## F-91
 

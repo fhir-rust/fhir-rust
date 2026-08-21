@@ -15,7 +15,7 @@ pub use fhir_store::chain;
 /// compiles against another without a conversion.
 pub use fhir_store::{
     AccessRecord, Audit, ChainBreak, CondCreate, CondDelete, Got, HistEntry, PurgeReport,
-    PutOutcome, ResourceStatus, SearchOutcome, TxOp, TxOutcome, UpgradeReport,
+    PutOutcome, ResourceStatus, SearchOutcome, TxOp, TxOutcome, UpgradeOpts, UpgradeReport,
 };
 pub mod search;
 
@@ -669,6 +669,45 @@ impl Store {
         checksum: &str,
         allow_destructive: bool,
     ) -> Result<UpgradeReport, StoreError> {
+        self.upgrade_with(
+            checksum,
+            UpgradeOpts {
+                allow_destructive,
+                ..UpgradeOpts::default()
+            },
+        )
+        .await
+    }
+
+    /// [`upgrade`](Self::upgrade) with the full option set: `reshred_moved`
+    /// additionally carries data across relocated columns (`O10.4c`) — each
+    /// affected resource reconstructed under the *stored* old map, shredded
+    /// under the new one, `version_id` and `last_updated` preserved, no
+    /// history entry (a representation change is not a new version), verified
+    /// byte-identical before anything is dropped.
+    ///
+    /// **PostgreSQL's failure story is resumable, not atomic** (`M14.29`).
+    /// This port already applies DDL in chunked transactions rather than one,
+    /// and the re-shred follows suit: one transaction per resource. A failure
+    /// part-way therefore leaves some resources in the new shape and some in
+    /// the old, and **no data lost** — the drops run only after every moved
+    /// source is verified empty, in the same call. Rerunning the upgrade
+    /// resumes: resources already carried re-shred to themselves and cost a
+    /// read.
+    ///
+    /// The window that costs something is visibility, not durability. Between
+    /// the additive DDL and the last resource carried, a resource not yet
+    /// re-shredded reconstructs under the *new* map, which no longer looks at
+    /// the old column — so the relocated element reads as absent until its
+    /// turn. On SQLite, where the whole upgrade is one transaction
+    /// (`fhir-sqlite M14.31`), that window does not exist. Migrate off peak, or
+    /// that reads of un-carried resources under-return the moved element
+    /// while it runs.
+    pub async fn upgrade_with(
+        &self,
+        checksum: &str,
+        opts: UpgradeOpts,
+    ) -> Result<UpgradeReport, StoreError> {
         let s = &self.map.schema;
         let mut client = self.pool.get().await?;
         let old_hex: String = client
@@ -767,28 +806,31 @@ impl Store {
         // Checked before the destructive gate: "rerun with
         // --allow-destructive" is the wrong advice for a relocation.
         let moved = moved_columns(&old_map, &self.map);
-        let mut data_bearing: Vec<String> = Vec::new();
-        for (t, c, nt) in &moved {
-            let row = client
-                .query_one(
-                    &format!(
-                        "SELECT EXISTS(SELECT 1 FROM \"{s}\".\"{t}\" WHERE \"{c}\" IS NOT NULL)"
-                    ),
-                    &[],
-                )
-                .await?;
-            if row.get::<_, bool>(0) {
-                data_bearing.push(format!("{t}.{c} → {nt}"));
+        if !moved.is_empty() && !opts.reshred_moved {
+            let mut data_bearing: Vec<String> = Vec::new();
+            for (t, c, nt) in &moved {
+                let row = client
+                    .query_one(
+                        &format!(
+                            "SELECT EXISTS(SELECT 1 FROM \"{s}\".\"{t}\" WHERE \"{c}\" IS NOT NULL)"
+                        ),
+                        &[],
+                    )
+                    .await?;
+                if row.get::<_, bool>(0) {
+                    data_bearing.push(format!("{t}.{c} → {nt}"));
+                }
             }
-        }
-        if !data_bearing.is_empty() {
-            return Err(StoreError::Other(format!(
-                "upgrade refuses {} moved column(s) holding data (O10.4b, F-90): {}. \
-                 --allow-destructive does not cover relocation; re-put the affected \
-                 resource types through this artifact, or reload",
-                data_bearing.len(),
-                data_bearing.join(", ")
-            )));
+            if !data_bearing.is_empty() {
+                return Err(StoreError::Other(format!(
+                    "upgrade refuses {} moved column(s) holding data (O10.4b, F-90): {}. \
+                     --allow-destructive does not cover relocation; rerun with \
+                     reshred_moved (O10.4c), re-put the affected resource types \
+                     through this artifact, or reload",
+                    data_bearing.len(),
+                    data_bearing.join(", ")
+                )));
+            }
         }
         // Index diff by full statement text.
         let old_ix: std::collections::HashSet<String> = old_map
@@ -804,7 +846,7 @@ impl Store {
             }
         }
 
-        if !destructive.is_empty() && !allow_destructive {
+        if !destructive.is_empty() && !opts.allow_destructive {
             return Err(StoreError::Other(format!(
                 "upgrade requires {} destructive change(s); rerun with --allow-destructive (first: {})",
                 destructive.len(),
@@ -814,16 +856,135 @@ impl Store {
         // Adds first: reconciliation touches history tables, and a resource
         // type new in this artifact has no tables until `adds` creates them.
         // Reconciling first would `ALTER TABLE` something that does not exist
-        // yet.
-        let all: Vec<&String> = adds
-            .iter()
-            .chain(reconcile.iter())
-            .chain(destructive.iter())
-            .collect();
-        for chunk in all.chunks(100) {
+        // yet. The drops are deliberately *not* in this pass — the O10.4c
+        // re-shred has to read the old columns, so they run after it.
+        let additive: Vec<&String> = adds.iter().chain(reconcile.iter()).collect();
+        for chunk in additive.chunks(100) {
             let tx = client.transaction().await?;
             let joined: Vec<String> = chunk.iter().map(|x| x.to_string()).collect();
             tx.batch_execute(&joined.join(";\n")).await?;
+            tx.commit().await?;
+        }
+
+        // O10.4c: carry data across relocated columns. One transaction per
+        // resource (M14.29) — this port cannot promise SQLite's all-or-nothing
+        // (fhir-sqlite M14.31) without holding locks over the whole store, so it promises
+        // resumability instead: every resource is atomically old-shape or
+        // new-shape, and nothing is dropped until the check below passes.
+        let mut reshredded = 0usize;
+        if opts.reshred_moved && !moved.is_empty() {
+            let mut rtypes: BTreeSet<&str> = BTreeSet::new();
+            for (t, _, _) in &moved {
+                for (name, orm) in &old_map.resources {
+                    if orm.tables.iter().any(|tt| &tt.name == t) {
+                        rtypes.insert(name.as_str());
+                    }
+                }
+            }
+            for rtype in rtypes {
+                let old_rm = &old_map.resources[rtype];
+                let Some(new_rm) = self.map.resources.get(rtype) else {
+                    return Err(StoreError::Other(format!(
+                        "{rtype} has moved columns but the new map does not carry the \
+                         resource; re-shred cannot target it"
+                    )));
+                };
+                let base = &old_rm.base_table().name;
+                if base != &new_rm.base_table().name {
+                    return Err(StoreError::Other(format!(
+                        "{rtype}: base table renamed {base} → {}; re-shred does not \
+                         support that",
+                        new_rm.base_table().name
+                    )));
+                }
+                let ids: Vec<String> = client
+                    .query(
+                        &format!("SELECT \"id\" FROM \"{s}\".\"{base}\" ORDER BY \"id\""),
+                        &[],
+                    )
+                    .await?
+                    .iter()
+                    .map(|r| r.get(0))
+                    .collect();
+                for id in ids {
+                    let tx = client.transaction().await?;
+                    // Lock the row for the duration: a concurrent writer
+                    // would otherwise put a new version through the new map
+                    // between the read and the delete, and the re-shred would
+                    // write the old one back over it.
+                    let Some(row) = tx
+                        .query_opt(
+                            &format!(
+                                "SELECT \"version_id\", \"last_updated\"::text FROM \
+                                 \"{s}\".\"{base}\" WHERE \"id\" = $1 FOR UPDATE"
+                            ),
+                            &[&id],
+                        )
+                        .await?
+                    else {
+                        // Deleted between the id list and here; its history
+                        // is untouched and there is nothing to carry.
+                        tx.commit().await?;
+                        continue;
+                    };
+                    let version_id: i64 = row.get(0);
+                    let ts: String = row.get(1);
+                    let Some(got) = self.get_in_map(&tx, old_rm, &id).await? else {
+                        tx.commit().await?;
+                        continue;
+                    };
+                    let value = got.resource;
+                    tx.execute(
+                        &format!("DELETE FROM \"{s}\".\"{base}\" WHERE \"id\" = $1"),
+                        &[&id],
+                    )
+                    .await?;
+                    let out = shred(new_rm, &value)?;
+                    insert_shredded(&tx, &self.map, new_rm, &id, version_id, &out, Some(&ts))
+                        .await?;
+                    let back = self.get_in_map(&tx, new_rm, &id).await?.ok_or_else(|| {
+                        StoreError::Other(format!(
+                            "re-shred wrote {rtype}/{id} but it did not read back; \
+                                 the transaction is rolled back"
+                        ))
+                    })?;
+                    if fhir_postgresql_map::canon::canonicalize(&back.resource)
+                        != fhir_postgresql_map::canon::canonicalize(&value)
+                    {
+                        return Err(StoreError::Other(format!(
+                            "re-shred verification failed for {rtype}/{id}: the new-shape \
+                             reconstruction is not byte-identical; the transaction is \
+                             rolled back and no column has been dropped"
+                        )));
+                    }
+                    tx.commit().await?;
+                    reshredded += 1;
+                }
+            }
+            // Every moved source must now be empty. Checked before the drops
+            // so a miss aborts with the data still in place, rather than
+            // dropping a column that still held it.
+            for (t, c, nt) in &moved {
+                let row = client
+                    .query_one(
+                        &format!(
+                            "SELECT EXISTS(SELECT 1 FROM \"{s}\".\"{t}\" WHERE \"{c}\" IS NOT NULL)"
+                        ),
+                        &[],
+                    )
+                    .await?;
+                if row.get::<_, bool>(0) {
+                    return Err(StoreError::Other(format!(
+                        "re-shred left data behind in {t}.{c} (destined for {nt}); \
+                         nothing has been dropped — rerun to resume"
+                    )));
+                }
+            }
+        }
+
+        for chunk in destructive.chunks(100) {
+            let tx = client.transaction().await?;
+            tx.batch_execute(&chunk.join(";\n")).await?;
             tx.commit().await?;
         }
         let new_hex = hex_encode(
@@ -845,7 +1006,7 @@ impl Store {
             .await?;
         let folded = self.backfill_norm(&mut client).await?;
         Ok(UpgradeReport {
-            reshredded: 0,
+            reshredded,
             additive: adds.len(),
             destructive: destructive.len(),
             folded,
@@ -1092,7 +1253,7 @@ impl Store {
             .await?
             .get(0);
         let version = old.unwrap_or(0).max(last_any.unwrap_or(0)) + 1;
-        insert_shredded(tx, &self.map, rm, &id, version, &out).await?;
+        insert_shredded(tx, &self.map, rm, &id, version, &out, None).await?;
         let op = if old.is_some() { "U" } else { "C" };
         append_history(
             tx,
@@ -1138,7 +1299,23 @@ impl Store {
         rtype: &str,
         id: &str,
     ) -> Result<Option<Got>, StoreError> {
-        let rm = self.rm(rtype)?;
+        self.get_in_map(tx, self.rm(rtype)?, id).await
+    }
+
+    /// One reconstruction under an **explicitly supplied** resource map.
+    ///
+    /// [`get_in`](Self::get_in) resolves the map from this store's artifact,
+    /// which is what every read wants. The `O10.4c` re-shred cannot: it has to
+    /// read rows laid out by the map that is still installed (`G2.5`'s stored
+    /// asset) while this store already carries the new one. Factored out for
+    /// that caller rather than duplicated, so the migration reads through the
+    /// same code path the conformance suite exercises on every other read.
+    async fn get_in_map(
+        &self,
+        tx: &tokio_postgres::Transaction<'_>,
+        rm: &ResourceMap,
+        id: &str,
+    ) -> Result<Option<Got>, StoreError> {
         let s = &self.map.schema;
         let client = tx;
 
@@ -2509,6 +2686,13 @@ impl Store {
 }
 
 /// Insert every shredded row inside the caller's transaction.
+/// Write one shredded resource's rows.
+///
+/// `last_updated` is `None` for an ordinary write, which stamps `now()`. The
+/// `O10.4c` re-shred passes the stored value instead: carrying a resource
+/// across a table-shape change is a representation change, not an edit, so
+/// its timestamp must survive it (as must `version_id`, which the caller
+/// already supplies).
 async fn insert_shredded(
     tx: &tokio_postgres::Transaction<'_>,
     map: &RelMap,
@@ -2516,6 +2700,7 @@ async fn insert_shredded(
     id: &str,
     version: i64,
     out: &ShredOut,
+    last_updated: Option<&str>,
 ) -> Result<(), StoreError> {
     let s = &map.schema;
 
@@ -2579,7 +2764,17 @@ async fn insert_shredded(
                         params.push(Box::new(id.to_string()));
                         let p1 = params.len();
                         params.push(Box::new(version));
-                        sql.push_str(&format!("(${p1}, ${}, now()", p1 + 1));
+                        match last_updated {
+                            None => sql.push_str(&format!("(${p1}, ${}, now()", p1 + 1)),
+                            Some(ts) => {
+                                params.push(Box::new(ts.to_string()));
+                                sql.push_str(&format!(
+                                    "(${p1}, ${}, (${}::text)::timestamptz",
+                                    p1 + 1,
+                                    p1 + 2
+                                ));
+                            }
+                        }
                     }
                     TableKind::Elem => {
                         params.push(Box::new(id.to_string()));
