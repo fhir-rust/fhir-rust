@@ -23,7 +23,7 @@ fhir-sqlite-map = { path = "crates/fhir-sqlite-map", version = "0.5.0" }
 fhir-sqlite-gen = { path = "crates/fhir-sqlite-gen", version = "0.5.0" }
 fhir-sqlite-store = { path = "crates/fhir-sqlite-store", version = "0.5.0" }
 serde = { version = "1", features = ["derive"] }
-serde_json = { version = "1", features = ["arbitrary_precision", "preserve_order"] }
+serde_json = { version = "1", features = ["arbitrary_precision", "float_roundtrip", "preserve_order"] }
 thiserror = "2"
 anyhow = "1"
 flate2 = "1"

@@ -16,9 +16,12 @@ categories = ["database", "science", "data-structures"]
 serde = { version = "1", features = ["derive"] }
 # `arbitrary_precision` is not a preference: FHIR `decimal` must keep the
 # precision it was written with (M3.6), and without it serde_json turns 9.60
-# into 9.6. `preserve_order` keeps object key order stable, which the canonical
-# form the chain commits to depends on.
-serde_json = { version = "1", features = ["arbitrary_precision", "preserve_order"] }
+# into 9.6. `float_roundtrip` covers the other direction — an `f64` that does
+# reach the parser is parsed exactly, so f64 -> JSON -> f64 is the value it
+# started as rather than the nearest short form. `preserve_order` keeps object
+# key order stable, which the canonical form the chain commits to depends on.
+# See spec/serde-json-float-roundtrip-arbitrary-precision/.
+serde_json = { version = "1", features = ["arbitrary_precision", "float_roundtrip", "preserve_order"] }
 thiserror = "2"
 # The chain is SHA-256 + SHA3-256 with an optional HMAC (M3.16).
 sha2 = "0.10"

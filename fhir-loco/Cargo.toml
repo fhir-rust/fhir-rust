@@ -33,9 +33,12 @@ serde = { version = "1", features = ["derive"] }
 # `decimal` must keep the precision it was written with (spec M3.6): without
 # this feature serde_json parses 9.60 into an f64 and hands back 9.6, so the
 # fidelity the storage layer works hard to preserve would be destroyed on the
-# way out of the HTTP layer. `preserve_order` keeps object key order stable,
-# which matters for readable diffs and for byte-comparable responses.
-serde_json = { version = "1", features = ["arbitrary_precision", "preserve_order"] }
+# way out of the HTTP layer. `float_roundtrip` covers the other direction — an
+# `f64` that does reach the parser is parsed exactly rather than to the nearest
+# short form. `preserve_order` keeps object key order stable, which matters for
+# readable diffs and for byte-comparable responses.
+# See spec/serde-json-float-roundtrip-arbitrary-precision/.
+serde_json = { version = "1", features = ["arbitrary_precision", "float_roundtrip", "preserve_order"] }
 # Timestamps the Bulk Data manifest's transactionTime (SV2.15). In the tree via loco.
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 # Parses the If-None-Exist header's query-string criteria (SV2.14). Already in

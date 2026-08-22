@@ -31,6 +31,14 @@ use ::serde::{Deserialize, Serialize};
 /// additive and cannot be switched off by a dependent, which makes precision
 /// a guarantee rather than a default someone can lose.
 ///
+/// `float_roundtrip` is enabled alongside it, for the values that do become
+/// an `f64` rather than staying a lexeme — [`as_f64`](Decimal::as_f64), and
+/// any dependent deserializing straight into `f64`. It makes
+/// `f64` → JSON → `f64` return the value it started as instead of the
+/// shortest form that displays the same. The two features cover opposite
+/// directions of the same guarantee; see
+/// `spec/serde-json-float-roundtrip-arbitrary-precision/`.
+///
 /// The cost is real and worth stating: `arbitrary_precision` is global to the
 /// compiled binary, so every other crate's `serde_json::Number` in the same
 /// build also becomes lexeme-preserving, and `Number` arithmetic goes through

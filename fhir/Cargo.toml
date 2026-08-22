@@ -189,7 +189,7 @@ serde = { version = "~1.0.229", features = ["derive"] } # A serialization/deseri
 # Cargo features are additive, so making it a hard dependency feature is what
 # turns precision from a default into a guarantee. It is global to the built
 # binary — see `crate::decimal` for the trade.
-serde_json = { version = "~1.0.151", features = ["arbitrary_precision"] } # Serde serialization/deserialization of JSON data.
+serde_json = { version = "~1.0.151", features = ["arbitrary_precision", "float_roundtrip"] } # Serde serialization/deserialization of JSON data.
 serde_with = { version = "3.21" } # Serde annotation helpers for serde "with" and "serde_as"
 indoc = { version = "2.0" } # Indented string literal procedural macro.
 convert_case = { version = "0.11" } # Convert text case, such as from camel case to snake case.
