@@ -27,10 +27,12 @@ use std::sync::Arc;
 use fhir_oracle_map::model::RelMap;
 use fhir_oracle_store::oracle::OracleStore;
 
+mod common;
+
 fn creds() -> Option<(String, String, String)> {
     let user = std::env::var("FHIR_ORACLE_TEST_USER").ok()?;
     let password = std::env::var("FHIR_ORACLE_TEST_PASSWORD").ok()?;
-    let connect = std::env::var("FHIR_ORACLE_TEST_CONNECT").ok()?;
+    let connect = common::dsn()?.to_string();
     Some((user, password, connect))
 }
 

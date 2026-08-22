@@ -21,8 +21,10 @@ use tiberius::{Client, Config};
 use tokio::net::TcpStream;
 use tokio_util::compat::TokioAsyncWriteCompatExt;
 
+mod common;
+
 fn dsn() -> Option<String> {
-    std::env::var("FHIR_MSSQL_TEST_DSN").ok()
+    common::dsn().map(str::to_string)
 }
 
 /// Is a database mandatory in this run?

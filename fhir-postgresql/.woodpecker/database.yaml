@@ -69,6 +69,8 @@ steps:
       PGUSER: fhir-postgresql
       PGPASSWORD: fhir-postgresql
       FHIR_POSTGRESQL_TEST_DB: fhir-postgresql
+      # Red, not green-having-skipped (T11.12, T11.13).
+      FHIR_POSTGRESQL_REQUIRE_DB: "1"
       FHIR_POSTGRESQL_SPEC_DIR: /woodpecker/src/spec-cache
       FHIR_POSTGRESQL_CORPUS_DIR: /woodpecker/src/corpus
       FHIR_POSTGRESQL_TEST_CORPUS_LIMIT: "400"

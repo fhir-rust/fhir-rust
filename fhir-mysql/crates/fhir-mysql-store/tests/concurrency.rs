@@ -29,8 +29,10 @@ use fhir_mysql_map::model::RelMap;
 use fhir_mysql_store::mysql::MySqlStore;
 use serde_json::{Value, json};
 
+mod common;
+
 fn dsn() -> Option<String> {
-    std::env::var("FHIR_MYSQL_TEST_DSN").ok()
+    common::dsn().map(str::to_string)
 }
 
 fn relmap() -> Option<Arc<RelMap>> {

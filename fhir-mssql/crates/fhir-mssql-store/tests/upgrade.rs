@@ -33,8 +33,10 @@ use fhir_mssql_map::model::{RelMap, TargetKind};
 use fhir_mssql_store::mssql::MsSqlStore;
 use serde_json::json;
 
+mod common;
+
 fn dsn() -> Option<String> {
-    std::env::var("FHIR_MSSQL_TEST_DSN").ok()
+    common::dsn().map(str::to_string)
 }
 
 fn relmap() -> Option<RelMap> {

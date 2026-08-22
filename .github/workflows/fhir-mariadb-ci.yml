@@ -67,6 +67,9 @@ jobs:
           --health-retries 30
     env:
       FHIR_MARIADB_TEST_DSN: mysql://root@127.0.0.1:3306
+      # A live job that reaches no server must be red, not a green run
+      # that skipped everything (T11.12, T11.13, F-06).
+      FHIR_MARIADB_REQUIRE_DB: "1"
       # The store verifies TLS by default, and this job's service presents
       # only its auto-generated self-signed certificate, so every env-driven
       # connect would refuse it (UnknownIssuer) — unmasked 2026-08-11 the

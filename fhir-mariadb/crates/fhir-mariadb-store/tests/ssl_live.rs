@@ -22,10 +22,10 @@ use fhir_mariadb_map::model::RelMap;
 use fhir_mariadb_store::mariadb::MariaDbStore;
 use fhir_mariadb_store::ssl::SslMode;
 
+mod common;
+
 fn dsn() -> Option<String> {
-    std::env::var("FHIR_MARIADB_TEST_DSN")
-        .ok()
-        .filter(|s| !s.trim().is_empty())
+    common::dsn().map(str::to_string)
 }
 
 fn require_db() -> bool {

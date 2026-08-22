@@ -16,9 +16,11 @@
 
 use std::process::Command;
 
+mod common;
+
 /// `(host, port, user)` parsed loosely from a DSN, or `None` to skip.
 fn dsn() -> Option<(String, String, String)> {
-    let raw = std::env::var("FHIR_MYSQL_TEST_DSN").ok()?;
+    let raw = common::dsn()?.to_string();
     let rest = raw.strip_prefix("mysql://").unwrap_or(&raw);
     let (user, hostport) = match rest.split_once('@') {
         Some((u, h)) => (u.split(':').next().unwrap_or("root").to_string(), h),

@@ -22,11 +22,26 @@ scripts/db.sh corpus    # lay out the FHIR spec/example corpora
 scripts/db.sh down      # stop and remove (data is not persisted)
 ```
 
-`fhir-mssql` starts SQL Server 2022 and its live test **fails rather than skips**
-under `FHIR_MSSQL_REQUIRE_DB=1`. `fhir-oracle` has no live gate — it has no
-Oracle DDL, no driver, and no store, and its script refuses rather than starting
-a substitute (**F-06**). Both provisioned MySQL until 2026-07-31, while invoking
-a test target that did not exist, so neither database job could pass at all.
+**You do not have to export anything.** As of 2026-08-22 every live test in
+`fhir-postgresql`, `fhir-mysql`, `fhir-mariadb`, `fhir-mssql` and `fhir-oracle`
+resolves its server itself, in `tests/common/mod.rs`: the port's `*_TEST_DSN`
+(or `*_TEST_DB` / `*_TEST_CONNECT`) when set, otherwise the `scripts/db.sh`
+container if it is listening on its documented port. So `./scripts/db.sh up`
+followed by a bare `cargo test` runs the live suite for real. `fhir-sqlite`
+needs none of this — it has no server.
+
+A skip is printed where it can be seen, and **`FHIR_<PORT>_REQUIRE_DB=1` makes
+a skip a failure**. Every live CI job in all five ports now sets it, on GitHub
+Actions and Woodpecker alike, so a job that reaches no server is red rather than
+a green run that checked nothing (`T11.12`, `T11.13`). Before that, the flag
+reached `fhir-mssql`'s `mssql_ddl` and the two `ssl_live` files and nothing
+else, and every other suite in every port would report `test result: ok` having
+connected to nothing — the 0.00s was the only tell.
+
+`fhir-oracle`'s Woodpecker `database.yaml` is still the removed-gate note from
+2026-07-31, and its text is stale: that port has had a store, a driver and a
+live GitHub Actions job since 2026-08-12. Its GitHub live job does set
+`FHIR_ORACLE_REQUIRE_DB`.
 
 ## The four rules that are easy to break
 

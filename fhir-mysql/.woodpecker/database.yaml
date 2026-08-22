@@ -58,6 +58,8 @@ steps:
       CARGO_HOME: /woodpecker/src/.cargo
       CARGO_TARGET_DIR: /woodpecker/src/target
       FHIR_MYSQL_TEST_DSN: mysql://root@db:3306
+      # Red, not green-having-skipped (T11.12, T11.13).
+      FHIR_MYSQL_REQUIRE_DB: "1"
       FHIR_MYSQL_DDL_FULL: "1"
       FHIR_MYSQL_SPEC_DIR: /woodpecker/src/spec-cache
       FHIR_MYSQL_CORPUS_DIR: /woodpecker/src/corpus

@@ -16,12 +16,16 @@ use fhir_oracle_map::model::RelMap;
 use fhir_oracle_store::oracle::OracleStore;
 use serde_json::json;
 
+mod common;
+
 #[tokio::test]
 async fn a_root_level_extension_round_trips_on_a_fresh_install() {
-    let (Ok(user), Ok(password), Ok(connect)) = (
+    // `common::dsn()` resolves the connect string and, when it adopts the
+    // db.sh container, fills in the user and password it publishes.
+    let (Some(connect), Ok(user), Ok(password)) = (
+        common::dsn(),
         std::env::var("FHIR_ORACLE_TEST_USER"),
         std::env::var("FHIR_ORACLE_TEST_PASSWORD"),
-        std::env::var("FHIR_ORACLE_TEST_CONNECT"),
     ) else {
         eprintln!("skipping: set FHIR_ORACLE_TEST_* to run");
         return;
@@ -29,7 +33,7 @@ async fn a_root_level_extension_round_trips_on_a_fresh_install() {
     let mut m = RelMap::bundled("r5").expect("r5 map");
     m.resources.retain(|k, _| k == "Patient");
     m.schema = "R5".into();
-    let store = OracleStore::connect(&user, &password, &connect, Arc::new(m))
+    let store = OracleStore::connect(&user, &password, connect, Arc::new(m))
         .await
         .expect("connect");
     store.drop_schema().await.expect("drop");

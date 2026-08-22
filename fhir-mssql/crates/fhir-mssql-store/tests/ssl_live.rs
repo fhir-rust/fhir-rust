@@ -33,10 +33,10 @@ use std::sync::Arc;
 use fhir_mssql_map::model::RelMap;
 use fhir_mssql_store::mssql::MsSqlStore;
 
+mod common;
+
 fn dsn() -> Option<String> {
-    std::env::var("FHIR_MSSQL_TEST_DSN")
-        .ok()
-        .filter(|s| !s.trim().is_empty())
+    common::dsn().map(str::to_string)
 }
 
 /// Rebuild an ADO connection string with some keys added or replaced.

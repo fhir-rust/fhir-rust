@@ -58,6 +58,8 @@ steps:
       CARGO_HOME: /woodpecker/src/.cargo
       CARGO_TARGET_DIR: /woodpecker/src/target
       FHIR_MARIADB_TEST_DSN: mysql://root@db:3306
+      # Red, not green-having-skipped (T11.12, T11.13).
+      FHIR_MARIADB_REQUIRE_DB: "1"
       FHIR_MARIADB_DDL_FULL: "1"
       FHIR_MARIADB_SPEC_DIR: /woodpecker/src/spec-cache
       FHIR_MARIADB_CORPUS_DIR: /woodpecker/src/corpus

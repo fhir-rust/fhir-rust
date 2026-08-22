@@ -160,10 +160,12 @@ guarantee is a database guarantee — snapshot isolation, row locks, the
 append-only trigger, index-using search plans — and none of it is exercised
 without a server. The live suite is the real gate.
 
-`fhir-mssql` now provisions SQL Server 2022, and its live test **fails rather
-than skips** when `FHIR_MSSQL_REQUIRE_DB=1`. `fhir-oracle` has no live gate at
-all — deliberately, because it has no Oracle DDL, no driver, and no store, and a
-gate against a substitute engine is worse than none (**F-06**).
+Every live test in the five server ports finds its own server: the port's
+`*_TEST_DSN` when set, otherwise the `scripts/db.sh` container if it is
+listening. `./scripts/db.sh up` and then a plain `cargo test` is the whole
+local workflow, and `FHIR_<PORT>_REQUIRE_DB=1` — which every live CI job now
+sets — turns a skip into a failure, so a job that reached no server is red
+rather than green (`T11.12`, `T11.13`). See [`agents/testing.md`](agents/testing.md).
 
 ## Commit conventions
 

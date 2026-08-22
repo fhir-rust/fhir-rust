@@ -76,6 +76,9 @@ jobs:
       FHIR_ORACLE_TEST_USER: r5
       FHIR_ORACLE_TEST_PASSWORD: Fhir-Oracle-CI-2026
       FHIR_ORACLE_TEST_CONNECT: 127.0.0.1:1521/FHIR
+      # A live job that reaches no server must be red, not a green run
+      # that skipped everything (T11.12, T11.13, F-06).
+      FHIR_ORACLE_REQUIRE_DB: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable

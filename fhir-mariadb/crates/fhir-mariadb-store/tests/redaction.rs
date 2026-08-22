@@ -20,6 +20,8 @@ use fhir_mariadb_store::StoreError;
 use fhir_mariadb_store::mariadb::MariaDbStore;
 use serde_json::json;
 
+mod common;
+
 /// A distinctive value planted in the resource. If it appears in a log line or
 /// an error message, something is carrying PHI it should not.
 ///
@@ -29,7 +31,7 @@ use serde_json::json;
 const MARKER: &str = "Zzyzxbergenstein";
 
 fn dsn() -> Option<String> {
-    std::env::var("FHIR_MARIADB_TEST_DSN").ok()
+    common::dsn().map(str::to_string)
 }
 
 fn sampled(schema: &str) -> Option<Arc<RelMap>> {
