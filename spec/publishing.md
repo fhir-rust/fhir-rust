@@ -11,6 +11,33 @@ It is **cross-family** — the one document in `spec/` that is, because publishi
 is the one activity that treats the whole repository as a single release
 surface. Family-specific findings still belong in that family's own register.
 
+**Superseded by events, 2026-08-22: every crate is published.** All 34 packages
+the gate enumerates now exist on crates.io at the version their source claims,
+and `scripts/check-published-match.sh` reports `34 matched, 0 mismatched, 0
+skipped`. The 21 that had never been published at their current numbers went out
+in one pass — the 18 port crates at 0.5.0, `fhir-store` 0.2.0, `fhir-loco`
+0.2.0, `fhir` 4.1.0 — together with the seven that a `serde_json/float_roundtrip`
+change had just made diverge from immutable artifacts (`fhir-core` 3.2.0 and
+`fhir-r2`/`r3`/`r4`/`r4b`/`r5`/`r6` 4.1.0, bumped rather than edited, `O10.11`).
+
+That closes this document's stated goal and changes what it is for. What follows
+was written while the goal was ahead of the repository; it is kept as the record
+of what the obstacles were and how each was resolved, not as a description of
+today. **The live gate, not this file, is the thing to trust** — it runs against
+crates.io and this paragraph does not.
+
+Two things the publication does *not* establish, and which no crates.io upload
+could:
+
+- **The `O10.4c` re-shred shipped in the port crates was verified on one
+  developer machine, not in CI.** Every port's live suite was run against a
+  local container on 2026-08-21/22 and was green; the hosted live jobs had not
+  run at the moment of publication. A green laptop is weaker evidence than a
+  green pipeline (`C0.9`, `T11.13`).
+- **Publication is not a conformance claim.** The [conformance
+  matrix](databases/conformance-matrix.md) remains the document that says what
+  each port has been shown to do, and it is unchanged by any of this.
+
 **Assessed:** 2026-08-01, against the tree as it then stood; **P-1 restated
 2026-08-06** after both former scaffolds reached Store level (**F-65**,
 **F-68** — the four days between assessments invalidated P-1's whole
