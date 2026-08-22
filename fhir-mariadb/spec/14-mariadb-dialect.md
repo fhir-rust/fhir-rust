@@ -485,3 +485,36 @@ This project began as a fork of the sibling `fhir-mysql` port, but the two are
 
   It MUST fold distinct *values* rather than rows, in bounded batches, selecting
   only rows still NULL — which is what makes it resumable.
+
+
+- **M14.38** The `O10.4c` re-shred MUST run as **one transaction per
+  resource**, and the upgrade as a whole is **reported-partial, not atomic**.
+
+  This is `M14.22` reaching migration: MariaDB commits DDL implicitly, so an
+  upgrade cannot be a single transaction and a failure part-way already leaves
+  a schema that is neither the old one nor the new one — which `M14.35`
+  requires be *reported*, with how many statements had been applied. The
+  re-shred inherits exactly that and adds one guarantee of its own, which the
+  storage engine can give even though the DDL cannot: each resource moves
+  inside an InnoDB transaction, so **no resource is ever half-carried**.
+
+  What a deployment MUST be told, in the documentation as well as here:
+
+  - **Nothing is dropped until every moved source is verified empty**, in the
+    same call, so a failure leaves the data in place and the old columns
+    readable.
+  - **Rerunning resumes.** A resource already carried re-shreds to itself and
+    costs a read.
+  - **Reads of un-carried resources under-return the moved element while it
+    runs.** Once the additive DDL has landed, a resource not yet carried
+    reconstructs under the new map, which no longer reads the old column. The
+    window closes when the last resource is carried. SQLite has no such window
+    because its whole upgrade is one transaction (`fhir-sqlite M14.31`);
+    PostgreSQL has the same window for the same reason as here
+    (`fhir-postgresql M14.29`). `M14.x` is per-port under `C0.7`, so those
+    citations are qualified by port and a bare number in this annex means this
+    annex.
+
+  The third point is the one that a dialect story is tempted to omit. `O10.4`
+  requires each dialect to state its failure story; stating only the two
+  reassuring halves would satisfy that on paper and not in fact.

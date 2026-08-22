@@ -300,6 +300,36 @@ impl MariaDbStore {
         checksum: &str,
         allow_destructive: bool,
     ) -> Result<UpgradeReport, StoreError> {
+        self.upgrade_with(
+            checksum,
+            crate::UpgradeOpts {
+                allow_destructive,
+                ..crate::UpgradeOpts::default()
+            },
+        )
+        .await
+    }
+
+    /// [`upgrade`](Self::upgrade) with the full option set: `reshred_moved`
+    /// additionally carries data across relocated columns (`O10.4c`) — each
+    /// affected resource reconstructed under the *stored* old map, shredded
+    /// under the new one, `version_id` and `last_updated` preserved, no history
+    /// entry (a representation change is not a new version), verified
+    /// byte-identical before anything is dropped.
+    ///
+    /// **MariaDB's failure story is reported-partial** (`M14.38`), because
+    /// `M14.22` already is: this engine commits DDL implicitly, so an upgrade
+    /// cannot be one transaction and a failure leaves a schema that is neither
+    /// the old one nor the new one. The re-shred inherits that and adds a
+    /// guarantee of its own — each *resource* moves inside an InnoDB
+    /// transaction, so no resource is ever half-carried, and the drops run only
+    /// after every moved source is verified empty. A failure part-way is
+    /// reported with what had been applied, and rerunning resumes.
+    pub async fn upgrade_with(
+        &self,
+        checksum: &str,
+        opts: crate::UpgradeOpts,
+    ) -> Result<UpgradeReport, StoreError> {
         let s = self.map.schema.clone();
         // Two forms, deliberately. `ddl::` functions add their own backticks, so
         // they take the raw name; hand-written SQL below takes the quoted one.
@@ -348,29 +378,34 @@ impl MariaDbStore {
         // Checked before the destructive gate: "rerun with
         // --allow-destructive" is the wrong advice for a relocation.
         let moved = moved_columns(&old_map, &self.map);
-        let mut data_bearing: Vec<String> = Vec::new();
-        for (t, col, nt) in &moved {
-            let has: Option<i64> = conn
-                .exec_first(
-                    format!("SELECT EXISTS(SELECT 1 FROM {esc}.`{t}` WHERE `{col}` IS NOT NULL)"),
-                    (),
-                )
-                .await
-                .map_err(db_err)?;
-            if has.unwrap_or(0) != 0 {
-                data_bearing.push(format!("{t}.{col} → {nt}"));
+        if !moved.is_empty() && !opts.reshred_moved {
+            let mut data_bearing: Vec<String> = Vec::new();
+            for (t, col, nt) in &moved {
+                let has: Option<i64> = conn
+                    .exec_first(
+                        format!(
+                            "SELECT EXISTS(SELECT 1 FROM {esc}.`{t}` WHERE `{col}` IS NOT NULL)"
+                        ),
+                        (),
+                    )
+                    .await
+                    .map_err(db_err)?;
+                if has.unwrap_or(0) != 0 {
+                    data_bearing.push(format!("{t}.{col} → {nt}"));
+                }
+            }
+            if !data_bearing.is_empty() {
+                return Err(StoreError::Other(format!(
+                    "upgrade refuses {} moved column(s) holding data (O10.4b, F-90): {}. \
+                     --allow-destructive does not cover relocation; rerun with \
+                     reshred_moved (O10.4c), re-put the affected resource types \
+                     through this artifact, or reload",
+                    data_bearing.len(),
+                    data_bearing.join(", ")
+                )));
             }
         }
-        if !data_bearing.is_empty() {
-            return Err(StoreError::Other(format!(
-                "upgrade refuses {} moved column(s) holding data (O10.4b, F-90): {}. \
-                 --allow-destructive does not cover relocation; re-put the affected \
-                 resource types through this artifact, or reload",
-                data_bearing.len(),
-                data_bearing.join(", ")
-            )));
-        }
-        if !destructive.is_empty() && !allow_destructive {
+        if !destructive.is_empty() && !opts.allow_destructive {
             return Err(StoreError::Other(format!(
                 "upgrade requires {} destructive change(s); rerun with --allow-destructive \
                  (first: {})",
@@ -436,6 +471,134 @@ impl MariaDbStore {
             }
         }
         apply(&reconcile, &mut applied, &mut conn).await?;
+
+        // O10.4c: carry data across relocated columns by re-shredding each
+        // affected resource. Placed after the additive DDL (the new tables must
+        // exist) and before the destructive DDL (the old columns must still be
+        // readable).
+        //
+        // One InnoDB transaction per resource. MariaDB cannot put the *schema*
+        // change in a transaction at all (M14.22), so this port cannot offer
+        // SQLite's all-or-nothing (fhir-sqlite M14.31); what it can offer is
+        // that no single resource is ever half-carried, and that nothing is
+        // dropped until every moved source is verified empty. M14.38 states
+        // both halves.
+        let mut reshredded = 0usize;
+        if opts.reshred_moved && !moved.is_empty() {
+            let mut rtypes: std::collections::BTreeSet<&str> = std::collections::BTreeSet::new();
+            for (t, _, _) in &moved {
+                for (name, orm) in &old_map.resources {
+                    if orm.tables.iter().any(|tt| &tt.name == t) {
+                        rtypes.insert(name.as_str());
+                    }
+                }
+            }
+            for rtype in rtypes {
+                let old_rm = &old_map.resources[rtype];
+                let Some(new_rm) = self.map.resources.get(rtype) else {
+                    return Err(StoreError::Other(format!(
+                        "{rtype} has moved columns but the new map does not carry the \
+                         resource; re-shred cannot target it"
+                    )));
+                };
+                let base_raw = old_rm.base_table().name.clone();
+                if base_raw != new_rm.base_table().name {
+                    return Err(StoreError::Other(format!(
+                        "{rtype}: base table renamed {base_raw} → {}; re-shred does not \
+                         support that",
+                        new_rm.base_table().name
+                    )));
+                }
+                let base_q = quote_ident(&base_raw);
+                let ids: Vec<String> = conn
+                    .exec(format!("SELECT `id` FROM {esc}.{base_q} ORDER BY `id`"), ())
+                    .await
+                    .map_err(db_err)?;
+                for id in ids {
+                    let value = match recon_with_map(&mut conn, &esc, old_rm, &id).await? {
+                        Some(v) => v,
+                        // Deleted between the id list and here; nothing to carry.
+                        None => continue,
+                    };
+                    let mut tx = conn
+                        .start_transaction(mysql_async::TxOpts::default())
+                        .await
+                        .map_err(db_err)?;
+                    // Lock the row for the move: a concurrent writer would
+                    // otherwise land a new version through the new map between
+                    // the read above and the delete below, and the re-shred
+                    // would write the old one back over it.
+                    let row: Option<(i64, String)> = tx
+                        .exec_first(
+                            format!(
+                                // DATE_FORMAT, as every other reader of this
+                                // column does: the driver hands back a temporal
+                                // value otherwise, and the re-shred has to write
+                                // the timestamp back in the same text form `put`
+                                // used.
+                                "SELECT `version_id`, \
+                                 DATE_FORMAT(`last_updated`, '%Y-%m-%d %H:%i:%s.%f') \
+                                 FROM {esc}.{base_q} WHERE `id` = ? FOR UPDATE"
+                            ),
+                            (&id,),
+                        )
+                        .await
+                        .map_err(db_err)?;
+                    let Some((version_id, ts)) = row else {
+                        tx.rollback().await.map_err(db_err)?;
+                        continue;
+                    };
+                    tx.exec_drop(format!("DELETE FROM {esc}.{base_q} WHERE `id` = ?"), (&id,))
+                        .await
+                        .map_err(db_err)?;
+                    let out = fhir_mariadb_map::shred::shred(new_rm, &value)?;
+                    write_shredded(&mut tx, &esc, &base_q, new_rm, &id, version_id, &ts, &out)
+                        .await?;
+                    tx.commit().await.map_err(db_err)?;
+
+                    // Verify outside the write transaction: it is committed, so
+                    // this reads what any other client would.
+                    let back = recon_with_map(&mut conn, &esc, new_rm, &id)
+                        .await?
+                        .ok_or_else(|| {
+                            StoreError::Other(format!(
+                                "re-shred wrote {rtype}/{id} but it did not read back"
+                            ))
+                        })?;
+                    if fhir_mariadb_map::canon::canonicalize(&back)
+                        != fhir_mariadb_map::canon::canonicalize(&value)
+                    {
+                        return Err(StoreError::Other(format!(
+                            "re-shred verification failed for {rtype}/{id}: the new-shape \
+                             reconstruction is not byte-identical. {reshredded} resource(s) \
+                             were carried before this one and remain carried; no column has \
+                             been dropped (M14.38)"
+                        )));
+                    }
+                    reshredded += 1;
+                }
+            }
+            // Every moved source must now be empty, checked before the drops so
+            // a miss aborts with the data still in place.
+            for (t, col, nt) in &moved {
+                let has: Option<i64> = conn
+                    .exec_first(
+                        format!(
+                            "SELECT EXISTS(SELECT 1 FROM {esc}.`{t}` WHERE `{col}` IS NOT NULL)"
+                        ),
+                        (),
+                    )
+                    .await
+                    .map_err(db_err)?;
+                if has.unwrap_or(0) != 0 {
+                    return Err(StoreError::Other(format!(
+                        "re-shred left data behind in {t}.{col} (destined for {nt}); \
+                         nothing has been dropped — rerun to resume"
+                    )));
+                }
+            }
+        }
+
         apply(&destructive, &mut applied, &mut conn).await?;
 
         let new_hex = hex_encode(
@@ -460,7 +623,7 @@ impl MariaDbStore {
 
         let folded = self.backfill_norm().await?;
         Ok(UpgradeReport {
-            reshredded: 0,
+            reshredded,
             additive: n_add,
             destructive: n_drop,
             folded,
@@ -1031,154 +1194,7 @@ impl MariaDbStore {
                 .map_err(db_err)?;
         }
 
-        // Base row first: every child has a foreign key to it.
-        let mut cols = vec![
-            "`id`".to_string(),
-            "`version_id`".to_string(),
-            "`last_updated`".to_string(),
-        ];
-        let mut vals: Vec<V> = vec![
-            V::Bytes(id.clone().into()),
-            V::Int(version_id),
-            V::Bytes(ts.clone().into()),
-        ];
-        for r in out.rows.iter().filter(|r| r.table == 0) {
-            for (name, v) in &r.cols {
-                cols.push(format!("`{name}`"));
-                vals.push(sqlval(v));
-            }
-        }
-        insert_rows(&mut tx, &s, &base, &cols, &[vals]).await?;
-
-        // Element tables, grouped so each is one multi-row insert.
-        let mut by_table: std::collections::BTreeMap<u32, Vec<&fhir_mariadb_map::shred::Row>> =
-            std::collections::BTreeMap::new();
-        for r in out.rows.iter().filter(|r| r.table != 0) {
-            by_table.entry(r.table).or_default().push(r);
-        }
-        for (ti, rows) in by_table {
-            let t = &rm.tables[ti as usize];
-            let mut names: Vec<String> = Vec::new();
-            for r in &rows {
-                for (n, _) in &r.cols {
-                    if !names.contains(n) {
-                        names.push(n.clone());
-                    }
-                }
-            }
-            let mut cols = vec!["`rid`".to_string(), "`ords`".to_string()];
-            cols.extend(names.iter().map(|n| format!("`{n}`")));
-            let batch: Vec<Vec<V>> = rows
-                .iter()
-                .map(|r| {
-                    let mut row = vec![
-                        V::Bytes(id.clone().into()),
-                        V::Bytes(fmt_ords(&r.ords).into()),
-                    ];
-                    for n in &names {
-                        row.push(
-                            r.cols
-                                .iter()
-                                .find(|(c, _)| c == n)
-                                .map_or(V::NULL, |(_, v)| sqlval(v)),
-                        );
-                    }
-                    row
-                })
-                .collect();
-            insert_rows(&mut tx, &s, &quote_ident(&t.name), &cols, &batch).await?;
-        }
-
-        // Extensions and spill carry the surrogate primary key (M14.12): their
-        // natural keys hold unbounded text, which MySQL cannot key on.
-        if let Some((_, t)) = rm.find_table(fhir_mariadb_map::model::TableKind::Ext)
-            && !out.ext.is_empty()
-        {
-            let cols: Vec<String> = [
-                "key_hash", "rid", "path", "ords", "modifier", "ext_ord", "url", "leaf", "v_kind",
-                "v_text", "v_num", "v_bool",
-            ]
-            .iter()
-            .map(|c| format!("`{c}`"))
-            .collect();
-            let batch: Vec<Vec<V>> = out
-                .ext
-                .iter()
-                .map(|e| {
-                    let (kind, text, num, b) = e.val.cols();
-                    let ords = fmt_ords(&e.ords);
-                    let ext_ord = e.ext_ord.to_string();
-                    let modifier = u8::from(e.modifier).to_string();
-                    let key = surrogate_key(&[&id, &e.path, &ords, &modifier, &ext_ord, &e.leaf]);
-                    vec![
-                        V::Bytes(key.to_vec()),
-                        V::Bytes(id.clone().into()),
-                        V::Bytes(e.path.clone().into()),
-                        V::Bytes(ords.into()),
-                        V::Int(i64::from(e.modifier)),
-                        V::Int(i64::from(e.ext_ord)),
-                        opt_text(e.url.as_deref()),
-                        V::Bytes(e.leaf.clone().into()),
-                        V::Bytes(kind.to_string().into()),
-                        opt_text(text),
-                        opt_text(num),
-                        b.map_or(V::NULL, |x| V::Int(i64::from(x))),
-                    ]
-                })
-                .collect();
-            insert_rows(&mut tx, &s, &quote_ident(&t.name), &cols, &batch).await?;
-        }
-
-        if let Some((_, t)) = rm.find_table(fhir_mariadb_map::model::TableKind::Deep)
-            && !out.deep.is_empty()
-        {
-            let cols: Vec<String> = [
-                "key_hash", "rid", "path", "ords", "leaf", "v_kind", "v_text", "v_num", "v_bool",
-            ]
-            .iter()
-            .map(|c| format!("`{c}`"))
-            .collect();
-            let batch: Vec<Vec<V>> = out
-                .deep
-                .iter()
-                .map(|d| {
-                    let (kind, text, num, b) = d.val.cols();
-                    let ords = fmt_ords(&d.ords);
-                    let key = surrogate_key(&[&id, &d.path, &ords, &d.leaf]);
-                    vec![
-                        V::Bytes(key.to_vec()),
-                        V::Bytes(id.clone().into()),
-                        V::Bytes(d.path.clone().into()),
-                        V::Bytes(ords.into()),
-                        V::Bytes(d.leaf.clone().into()),
-                        V::Bytes(kind.to_string().into()),
-                        opt_text(text),
-                        opt_text(num),
-                        b.map_or(V::NULL, |x| V::Int(i64::from(x))),
-                    ]
-                })
-                .collect();
-            insert_rows(&mut tx, &s, &quote_ident(&t.name), &cols, &batch).await?;
-        }
-
-        if let Some((_, t)) = rm.find_table(fhir_mariadb_map::model::TableKind::Contained)
-            && !out.contained.is_empty()
-        {
-            let cols = ["`rid`", "`ord`", "`resource`"].map(String::from).to_vec();
-            let batch: Vec<Vec<V>> = out
-                .contained
-                .iter()
-                .map(|(ord, v)| {
-                    vec![
-                        V::Bytes(id.clone().into()),
-                        V::Int(i64::from(*ord)),
-                        V::Bytes(v.to_string().into()),
-                    ]
-                })
-                .collect();
-            insert_rows(&mut tx, &s, &quote_ident(&t.name), &cols, &batch).await?;
-        }
-
+        write_shredded(&mut tx, &s, &base, rm, &id, version_id, &ts, &out).await?;
         // 'C' and 'U' are distinct in the op column, and the op is part of the
         // hashed preimage, so it cannot be corrected later.
         let op = if existed { "U" } else { "C" };
@@ -1240,183 +1256,16 @@ impl MariaDbStore {
         rtype: &str,
         id: &str,
     ) -> Result<Option<serde_json::Value>, StoreError> {
-        use fhir_mariadb_map::model::TableKind;
-        use fhir_mariadb_map::reconstruct::{InRow, ReconIn};
-
         let rm = self
             .map
             .resources
             .get(rtype)
             .ok_or_else(|| StoreError::Unsupported(format!("unknown resource type {rtype}")))?;
         let s = quote_ident(&self.map.schema);
-        let base = quote_ident(&rm.base_table().name);
         let mut conn = self.pool.get_conn().await.map_err(db_err)?;
 
-        // R4.5: one snapshot for the whole reconstruction.
-        //
-        // A read touches the base table and every child table as separate
-        // statements. Outside a transaction each gets its own snapshot, so a
-        // writer committing between them yields a resource that never existed.
-        // REPEATABLE READ is the server default, but that is a property of a
-        // *transaction*, and this code had none — a reader observed `name` from
-        // one version beside `telecom` from the next (audit F-21).
-        //
-        // Read-only, so it is rolled back rather than committed at each exit.
-        let mut tx = conn
-            .start_transaction(mysql_async::TxOpts::default())
-            .await
-            .map_err(db_err)?;
-
-        let present: Option<i64> = tx
-            .exec_first(format!("SELECT 1 FROM {s}.{base} WHERE `id` = ?"), (id,))
-            .await
-            .map_err(db_err)?;
-        if present.is_none() {
-            tx.rollback().await.map_err(db_err)?;
-            return Ok(None);
-        }
-
-        let mut input = ReconIn {
-            tables: vec![Vec::new(); rm.tables.len()],
-            ..Default::default()
-        };
-
-        for (ti, t) in rm.tables.iter().enumerate() {
-            let table = quote_ident(&t.name);
-            match t.kind {
-                TableKind::Base | TableKind::Elem => {
-                    // Carry each column's declared type, not just its name:
-                    // rendering a cell back to its text image needs it (see
-                    // `cell_text`).
-                    let names: Vec<(String, ColTy)> =
-                        t.cols.iter().map(|c| (c.name.clone(), c.ty)).collect();
-                    let key = if t.kind == TableKind::Base {
-                        "id"
-                    } else {
-                        "rid"
-                    };
-                    let mut sel: Vec<String> = Vec::new();
-                    if t.kind == TableKind::Elem {
-                        sel.push("`ords`".to_string());
-                    }
-                    sel.extend(names.iter().map(|(n, _)| format!("`{n}`")));
-                    if sel.is_empty() {
-                        sel.push("NULL".to_string());
-                    }
-                    let rows: Vec<mysql_async::Row> = tx
-                        .exec(
-                            format!(
-                                "SELECT {} FROM {s}.{table} WHERE `{key}` = ?",
-                                sel.join(", ")
-                            ),
-                            (id,),
-                        )
-                        .await
-                        .map_err(db_err)?;
-                    for row in rows {
-                        let mut ords = Vec::new();
-                        let mut off = 0usize;
-                        if t.kind == TableKind::Elem {
-                            let img: String = row.get(0).unwrap_or_default();
-                            ords = parse_ords(&img)?;
-                            off = 1;
-                        }
-                        let mut cols = std::collections::HashMap::new();
-                        for (i, (n, ty)) in names.iter().enumerate() {
-                            // `as_ref` on the raw Value, never `get::<String>`:
-                            // that panics on a typed column (F-20).
-                            let Some(raw) = row.as_ref(i + off) else {
-                                continue;
-                            };
-                            if let Some(v) = cell_text(raw, *ty, n)? {
-                                cols.insert(n.clone(), v);
-                            }
-                        }
-                        input.tables[ti].push(InRow { ords, cols });
-                    }
-                }
-                TableKind::Ext => {
-                    let rows: Vec<mysql_async::Row> = tx
-                        .exec(
-                            format!(
-                                "SELECT `path`,`ords`,`modifier`,`ext_ord`,`url`,`leaf`,\
-                                        `v_kind`,`v_text`,`v_num`,`v_bool` \
-                                 FROM {s}.{table} WHERE `rid` = ?"
-                            ),
-                            (id,),
-                        )
-                        .await
-                        .map_err(db_err)?;
-                    for r in rows {
-                        input.ext.push(fhir_mariadb_map::shred::ExtRow {
-                            path: r.get(0).unwrap_or_default(),
-                            ords: parse_ords(&r.get::<String, _>(1).unwrap_or_default())?,
-                            modifier: r.get::<i64, _>(2).unwrap_or(0) != 0,
-                            ext_ord: r.get(3).unwrap_or(0),
-                            url: r.get(4).unwrap_or(None),
-                            leaf: r.get(5).unwrap_or_default(),
-                            val: leaf_from_cols(
-                                &r.get::<String, _>(6).unwrap_or_default(),
-                                r.get(7).unwrap_or(None),
-                                r.get(8).unwrap_or(None),
-                                r.get(9).unwrap_or(None),
-                            ),
-                        });
-                    }
-                }
-                TableKind::Deep => {
-                    let rows: Vec<mysql_async::Row> = tx
-                        .exec(
-                            format!(
-                                "SELECT `path`,`ords`,`leaf`,`v_kind`,`v_text`,`v_num`,`v_bool` \
-                                 FROM {s}.{table} WHERE `rid` = ?"
-                            ),
-                            (id,),
-                        )
-                        .await
-                        .map_err(db_err)?;
-                    for r in rows {
-                        input.deep.push(fhir_mariadb_map::shred::DeepRow {
-                            path: r.get(0).unwrap_or_default(),
-                            ords: parse_ords(&r.get::<String, _>(1).unwrap_or_default())?,
-                            leaf: r.get(2).unwrap_or_default(),
-                            val: leaf_from_cols(
-                                &r.get::<String, _>(3).unwrap_or_default(),
-                                r.get(4).unwrap_or(None),
-                                r.get(5).unwrap_or(None),
-                                r.get(6).unwrap_or(None),
-                            ),
-                        });
-                    }
-                }
-                TableKind::Contained => {
-                    let rows: Vec<mysql_async::Row> = tx
-                        .exec(
-                            format!("SELECT `ord`,`resource` FROM {s}.{table} WHERE `rid` = ?"),
-                            (id,),
-                        )
-                        .await
-                        .map_err(db_err)?;
-                    for r in rows {
-                        let raw: String = r.get(1).unwrap_or_default();
-                        let v = serde_json::from_str(&raw)
-                            .map_err(|e| StoreError::Other(format!("contained: {e}")))?;
-                        input.contained.push((r.get(0).unwrap_or(0), v));
-                    }
-                }
-                TableKind::History => {}
-            }
-        }
-
-        tx.rollback().await.map_err(db_err)?;
-
-        // `?` rather than flattening to `Other`: reconstruction audits row
-        // consumption and reports a residue as an integrity error (R4.7). That
-        // is the signal saying stored data went unread — exactly what F-20 was
-        // doing — and an untyped string makes it look like an I/O hiccup
-        // (audit F-23).
-        let v = fhir_mariadb_map::reconstruct::reconstruct(rm, &input, Some(id))?;
-        Ok(Some(v))
+        let r = recon_with_map(&mut conn, &s, rm, id).await?;
+        Ok(r)
     }
 }
 
@@ -2147,4 +1996,361 @@ impl MariaDbStore {
             existed: true,
         })
     }
+}
+
+/// Write one shredded resource's rows: the base row, the element tables, and
+/// the ext / deep / contained spill.
+///
+/// Factored out of `put` for the `O10.4c` re-shred, which must write through a
+/// map that is **not** this store's — the resource is reconstructed under the
+/// installed old map and written under the new one. Sharing the code means the
+/// migration writes rows the same way every ordinary write does, rather than
+/// through a second implementation that would have to be trusted separately.
+#[allow(clippy::too_many_arguments)]
+async fn write_shredded(
+    tx: &mut mysql_async::Transaction<'_>,
+    s: &str,
+    base: &str,
+    rm: &fhir_mariadb_map::model::ResourceMap,
+    id: &str,
+    version_id: i64,
+    ts: &str,
+    out: &fhir_mariadb_map::shred::ShredOut,
+) -> Result<(), StoreError> {
+    use mysql_async::Value as V;
+
+    // Base row first: every child has a foreign key to it.
+    let mut cols = vec![
+        "`id`".to_string(),
+        "`version_id`".to_string(),
+        "`last_updated`".to_string(),
+    ];
+    let mut vals: Vec<V> = vec![
+        V::Bytes(id.to_string().into()),
+        V::Int(version_id),
+        V::Bytes(ts.to_string().into()),
+    ];
+    for r in out.rows.iter().filter(|r| r.table == 0) {
+        for (name, v) in &r.cols {
+            cols.push(format!("`{name}`"));
+            vals.push(sqlval(v));
+        }
+    }
+    insert_rows(&mut *tx, s, base, &cols, &[vals]).await?;
+
+    // Element tables, grouped so each is one multi-row insert.
+    let mut by_table: std::collections::BTreeMap<u32, Vec<&fhir_mariadb_map::shred::Row>> =
+        std::collections::BTreeMap::new();
+    for r in out.rows.iter().filter(|r| r.table != 0) {
+        by_table.entry(r.table).or_default().push(r);
+    }
+    for (ti, rows) in by_table {
+        let t = &rm.tables[ti as usize];
+        let mut names: Vec<String> = Vec::new();
+        for r in &rows {
+            for (n, _) in &r.cols {
+                if !names.contains(n) {
+                    names.push(n.clone());
+                }
+            }
+        }
+        let mut cols = vec!["`rid`".to_string(), "`ords`".to_string()];
+        cols.extend(names.iter().map(|n| format!("`{n}`")));
+        let batch: Vec<Vec<V>> = rows
+            .iter()
+            .map(|r| {
+                let mut row = vec![
+                    V::Bytes(id.to_string().into()),
+                    V::Bytes(fmt_ords(&r.ords).into()),
+                ];
+                for n in &names {
+                    row.push(
+                        r.cols
+                            .iter()
+                            .find(|(c, _)| c == n)
+                            .map_or(V::NULL, |(_, v)| sqlval(v)),
+                    );
+                }
+                row
+            })
+            .collect();
+        insert_rows(&mut *tx, s, &quote_ident(&t.name), &cols, &batch).await?;
+    }
+
+    // Extensions and spill carry the surrogate primary key (M14.12): their
+    // natural keys hold unbounded text, which MySQL cannot key on.
+    if let Some((_, t)) = rm.find_table(fhir_mariadb_map::model::TableKind::Ext)
+        && !out.ext.is_empty()
+    {
+        let cols: Vec<String> = [
+            "key_hash", "rid", "path", "ords", "modifier", "ext_ord", "url", "leaf", "v_kind",
+            "v_text", "v_num", "v_bool",
+        ]
+        .iter()
+        .map(|c| format!("`{c}`"))
+        .collect();
+        let batch: Vec<Vec<V>> = out
+            .ext
+            .iter()
+            .map(|e| {
+                let (kind, text, num, b) = e.val.cols();
+                let ords = fmt_ords(&e.ords);
+                let ext_ord = e.ext_ord.to_string();
+                let modifier = u8::from(e.modifier).to_string();
+                let key = surrogate_key(&[id, &e.path, &ords, &modifier, &ext_ord, &e.leaf]);
+                vec![
+                    V::Bytes(key.to_vec()),
+                    V::Bytes(id.to_string().into()),
+                    V::Bytes(e.path.clone().into()),
+                    V::Bytes(ords.into()),
+                    V::Int(i64::from(e.modifier)),
+                    V::Int(i64::from(e.ext_ord)),
+                    opt_text(e.url.as_deref()),
+                    V::Bytes(e.leaf.clone().into()),
+                    V::Bytes(kind.to_string().into()),
+                    opt_text(text),
+                    opt_text(num),
+                    b.map_or(V::NULL, |x| V::Int(i64::from(x))),
+                ]
+            })
+            .collect();
+        insert_rows(&mut *tx, s, &quote_ident(&t.name), &cols, &batch).await?;
+    }
+
+    if let Some((_, t)) = rm.find_table(fhir_mariadb_map::model::TableKind::Deep)
+        && !out.deep.is_empty()
+    {
+        let cols: Vec<String> = [
+            "key_hash", "rid", "path", "ords", "leaf", "v_kind", "v_text", "v_num", "v_bool",
+        ]
+        .iter()
+        .map(|c| format!("`{c}`"))
+        .collect();
+        let batch: Vec<Vec<V>> = out
+            .deep
+            .iter()
+            .map(|d| {
+                let (kind, text, num, b) = d.val.cols();
+                let ords = fmt_ords(&d.ords);
+                let key = surrogate_key(&[id, &d.path, &ords, &d.leaf]);
+                vec![
+                    V::Bytes(key.to_vec()),
+                    V::Bytes(id.to_string().into()),
+                    V::Bytes(d.path.clone().into()),
+                    V::Bytes(ords.into()),
+                    V::Bytes(d.leaf.clone().into()),
+                    V::Bytes(kind.to_string().into()),
+                    opt_text(text),
+                    opt_text(num),
+                    b.map_or(V::NULL, |x| V::Int(i64::from(x))),
+                ]
+            })
+            .collect();
+        insert_rows(&mut *tx, s, &quote_ident(&t.name), &cols, &batch).await?;
+    }
+
+    if let Some((_, t)) = rm.find_table(fhir_mariadb_map::model::TableKind::Contained)
+        && !out.contained.is_empty()
+    {
+        let cols = ["`rid`", "`ord`", "`resource`"].map(String::from).to_vec();
+        let batch: Vec<Vec<V>> = out
+            .contained
+            .iter()
+            .map(|(ord, v)| {
+                vec![
+                    V::Bytes(id.to_string().into()),
+                    V::Int(i64::from(*ord)),
+                    V::Bytes(v.to_string().into()),
+                ]
+            })
+            .collect();
+        insert_rows(&mut *tx, s, &quote_ident(&t.name), &cols, &batch).await?;
+    }
+
+    Ok(())
+}
+
+/// Reconstruct one resource under an **explicitly supplied** map.
+///
+/// `get` resolves the map from this store's artifact, which is what every read
+/// wants. The `O10.4c` re-shred cannot: it has to read rows laid out by the map
+/// that is still installed (`G2.5`'s stored asset) while the store already
+/// carries the new one. Factored out for that caller so the migration reads
+/// through the same path the conformance suite exercises on every other read,
+/// rather than a second implementation trusted on its own.
+async fn recon_with_map(
+    conn: &mut mysql_async::Conn,
+    s: &str,
+    rm: &fhir_mariadb_map::model::ResourceMap,
+    id: &str,
+) -> Result<Option<serde_json::Value>, StoreError> {
+    use fhir_mariadb_map::model::TableKind;
+    use fhir_mariadb_map::reconstruct::{InRow, ReconIn};
+
+    let base = quote_ident(&rm.base_table().name);
+    // R4.5: one snapshot for the whole reconstruction.
+    //
+    // A read touches the base table and every child table as separate
+    // statements. Outside a transaction each gets its own snapshot, so a
+    // writer committing between them yields a resource that never existed.
+    // REPEATABLE READ is the server default, but that is a property of a
+    // *transaction*, and this code had none — a reader observed `name` from
+    // one version beside `telecom` from the next (audit F-21).
+    //
+    // Read-only, so it is rolled back rather than committed at each exit.
+    let mut tx = conn
+        .start_transaction(mysql_async::TxOpts::default())
+        .await
+        .map_err(db_err)?;
+
+    let present: Option<i64> = tx
+        .exec_first(format!("SELECT 1 FROM {s}.{base} WHERE `id` = ?"), (id,))
+        .await
+        .map_err(db_err)?;
+    if present.is_none() {
+        tx.rollback().await.map_err(db_err)?;
+        return Ok(None);
+    }
+
+    let mut input = ReconIn {
+        tables: vec![Vec::new(); rm.tables.len()],
+        ..Default::default()
+    };
+
+    for (ti, t) in rm.tables.iter().enumerate() {
+        let table = quote_ident(&t.name);
+        match t.kind {
+            TableKind::Base | TableKind::Elem => {
+                // Carry each column's declared type, not just its name:
+                // rendering a cell back to its text image needs it (see
+                // `cell_text`).
+                let names: Vec<(String, ColTy)> =
+                    t.cols.iter().map(|c| (c.name.clone(), c.ty)).collect();
+                let key = if t.kind == TableKind::Base {
+                    "id"
+                } else {
+                    "rid"
+                };
+                let mut sel: Vec<String> = Vec::new();
+                if t.kind == TableKind::Elem {
+                    sel.push("`ords`".to_string());
+                }
+                sel.extend(names.iter().map(|(n, _)| format!("`{n}`")));
+                if sel.is_empty() {
+                    sel.push("NULL".to_string());
+                }
+                let rows: Vec<mysql_async::Row> = tx
+                    .exec(
+                        format!(
+                            "SELECT {} FROM {s}.{table} WHERE `{key}` = ?",
+                            sel.join(", ")
+                        ),
+                        (id,),
+                    )
+                    .await
+                    .map_err(db_err)?;
+                for row in rows {
+                    let mut ords = Vec::new();
+                    let mut off = 0usize;
+                    if t.kind == TableKind::Elem {
+                        let img: String = row.get(0).unwrap_or_default();
+                        ords = parse_ords(&img)?;
+                        off = 1;
+                    }
+                    let mut cols = std::collections::HashMap::new();
+                    for (i, (n, ty)) in names.iter().enumerate() {
+                        // `as_ref` on the raw Value, never `get::<String>`:
+                        // that panics on a typed column (F-20).
+                        let Some(raw) = row.as_ref(i + off) else {
+                            continue;
+                        };
+                        if let Some(v) = cell_text(raw, *ty, n)? {
+                            cols.insert(n.clone(), v);
+                        }
+                    }
+                    input.tables[ti].push(InRow { ords, cols });
+                }
+            }
+            TableKind::Ext => {
+                let rows: Vec<mysql_async::Row> = tx
+                    .exec(
+                        format!(
+                            "SELECT `path`,`ords`,`modifier`,`ext_ord`,`url`,`leaf`,\
+                                    `v_kind`,`v_text`,`v_num`,`v_bool` \
+                             FROM {s}.{table} WHERE `rid` = ?"
+                        ),
+                        (id,),
+                    )
+                    .await
+                    .map_err(db_err)?;
+                for r in rows {
+                    input.ext.push(fhir_mariadb_map::shred::ExtRow {
+                        path: r.get(0).unwrap_or_default(),
+                        ords: parse_ords(&r.get::<String, _>(1).unwrap_or_default())?,
+                        modifier: r.get::<i64, _>(2).unwrap_or(0) != 0,
+                        ext_ord: r.get(3).unwrap_or(0),
+                        url: r.get(4).unwrap_or(None),
+                        leaf: r.get(5).unwrap_or_default(),
+                        val: leaf_from_cols(
+                            &r.get::<String, _>(6).unwrap_or_default(),
+                            r.get(7).unwrap_or(None),
+                            r.get(8).unwrap_or(None),
+                            r.get(9).unwrap_or(None),
+                        ),
+                    });
+                }
+            }
+            TableKind::Deep => {
+                let rows: Vec<mysql_async::Row> = tx
+                    .exec(
+                        format!(
+                            "SELECT `path`,`ords`,`leaf`,`v_kind`,`v_text`,`v_num`,`v_bool` \
+                             FROM {s}.{table} WHERE `rid` = ?"
+                        ),
+                        (id,),
+                    )
+                    .await
+                    .map_err(db_err)?;
+                for r in rows {
+                    input.deep.push(fhir_mariadb_map::shred::DeepRow {
+                        path: r.get(0).unwrap_or_default(),
+                        ords: parse_ords(&r.get::<String, _>(1).unwrap_or_default())?,
+                        leaf: r.get(2).unwrap_or_default(),
+                        val: leaf_from_cols(
+                            &r.get::<String, _>(3).unwrap_or_default(),
+                            r.get(4).unwrap_or(None),
+                            r.get(5).unwrap_or(None),
+                            r.get(6).unwrap_or(None),
+                        ),
+                    });
+                }
+            }
+            TableKind::Contained => {
+                let rows: Vec<mysql_async::Row> = tx
+                    .exec(
+                        format!("SELECT `ord`,`resource` FROM {s}.{table} WHERE `rid` = ?"),
+                        (id,),
+                    )
+                    .await
+                    .map_err(db_err)?;
+                for r in rows {
+                    let raw: String = r.get(1).unwrap_or_default();
+                    let v = serde_json::from_str(&raw)
+                        .map_err(|e| StoreError::Other(format!("contained: {e}")))?;
+                    input.contained.push((r.get(0).unwrap_or(0), v));
+                }
+            }
+            TableKind::History => {}
+        }
+    }
+
+    tx.rollback().await.map_err(db_err)?;
+
+    // `?` rather than flattening to `Other`: reconstruction audits row
+    // consumption and reports a residue as an integrity error (R4.7). That
+    // is the signal saying stored data went unread — exactly what F-20 was
+    // doing — and an untyped string makes it look like an I/O hiccup
+    // (audit F-23).
+    let v = fhir_mariadb_map::reconstruct::reconstruct(rm, &input, Some(id))?;
+    Ok(Some(v))
 }

@@ -5188,8 +5188,36 @@ shared-core gate covers the new file (110 files identical).
       force-split choice owns its table for all of them — and repoints
       the element. The full store suite is green against the container:
       29 tests, 11 binaries.
-   3. The four remaining server ports, in CI-verified steps:
-      mysql/mariadb (reported-partial, `M14.35`), mssql (one
+
+      **The same latent defect was in `fhir-mysql` and `fhir-mariadb`,
+      and their copies of the helper said so out loud**: "the map is
+      deliberately not shred-consistent afterwards — `upgrade` only
+      reads table shapes, and nothing is written through it". True when
+      it was written, and false the moment `O10.4c` wrote through it.
+      Both are fixed the same way. No other caller shreds through a
+      hand-modified map, so those three ports' `O10.4b` tests were the
+      whole blast radius.
+   3. ~~`fhir-mysql` and `fhir-mariadb`~~ — landed and
+      **live-verified** 2026-08-21 against MySQL 8.4 and MariaDB in
+      their `scripts/db.sh` podman containers, 44 tests green in each.
+      One logical change across the pair: `write_shredded` and
+      `recon_with_map` factored out of `put` and `get` so the migration
+      writes and reads through the same paths every other operation
+      uses, then `upgrade_with` between the additive and destructive
+      DDL. The dialect story is **`M14.38`** in both — reported-partial,
+      because `M14.22` already is: these engines commit DDL implicitly,
+      so the *schema* change cannot be transactional. What InnoDB can
+      still give is that no single resource is half-carried, and
+      `M14.38` states that alongside the read window it shares with
+      PostgreSQL.
+
+      One live-only defect, found on the first run: the port reads
+      `last_updated` back in order to preserve it, and the driver hands
+      back a temporal value rather than text, so the tuple conversion
+      panicked. Every other reader of that column in the file already
+      wrapped it in `DATE_FORMAT`; this one now does too. Compiling
+      could not have found it.
+   4. The two remaining server ports, in CI-verified steps: mssql (one
       transaction), oracle (resumable). Each follows the sqlite shape:
       factor the port's row-fetch to take a map, add `upgrade_with`,
       land the same two tests plus the real-fixture one.
