@@ -5,6 +5,28 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.1.0 — 2026-08-22
+
+- `serde_json` gains the `float_roundtrip` feature alongside
+  `arbitrary_precision`, which this crate has enabled unconditionally since
+  precision became a guarantee rather than an opt-in (`R2.2`).
+
+  No API changed. The behaviour that changed is float parsing: a value that
+  becomes an `f64` rather than staying a lexeme — `Decimal::as_f64`, and any
+  dependent deserializing straight into `f64` — is now parsed to the value
+  that was written rather than to the shortest form that displays the same.
+  `arbitrary_precision` covers JSON → `Number` → JSON; `float_roundtrip`
+  covers `f64` → JSON → `f64`. The two are opposite halves of one guarantee.
+
+  Released as a minor rather than a patch deliberately. Cargo's semver rules
+  would permit a patch, since only a dependency's feature list moved, but for
+  a library whose numbers are drug doses and lab results a change in how
+  floats are parsed should be visible in a dependency diff.
+
+  Bumped together: `fhir` 4.1.0, `fhir-core` 3.2.0, and `fhir-r2`/`r3`/`r4`/
+  `r4b`/`r5`/`r6` 4.1.0. See
+  `spec/serde-json-float-roundtrip-arbitrary-precision/`.
+
 ## 4.0.1 — 2026-08-11
 
 - Facade only; no API change. The legacy R5 generator's
