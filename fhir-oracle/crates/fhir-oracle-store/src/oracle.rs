@@ -463,11 +463,40 @@ impl OracleStore {
         checksum: &str,
         allow_destructive: bool,
     ) -> Result<crate::UpgradeReport, StoreError> {
+        self.upgrade_with(
+            checksum,
+            crate::UpgradeOpts {
+                allow_destructive,
+                ..crate::UpgradeOpts::default()
+            },
+        )
+        .await
+    }
+
+    /// [`upgrade`](Self::upgrade) with the full option set: `reshred_moved`
+    /// additionally carries data across relocated columns (`O10.4c`) — each
+    /// affected resource reconstructed under the *stored* old map, shredded
+    /// under the new one, `version_id` and `last_updated` preserved, no history
+    /// entry (a representation change is not a new version), verified
+    /// byte-identical before anything is dropped.
+    ///
+    /// **Oracle's failure story is resumable** (`M14.40`), which is what this
+    /// port's whole upgrade already is: every DDL statement here commits
+    /// implicitly and tolerates "already applied", so the migration is a state
+    /// machine that can be re-entered rather than a transaction that can be
+    /// rolled back. The re-shred matches it — one commit per resource, so a
+    /// failure part-way leaves each resource wholly in the old shape or wholly
+    /// in the new, nothing dropped, and a rerun carries what is left.
+    pub async fn upgrade_with(
+        &self,
+        checksum: &str,
+        opts: crate::UpgradeOpts,
+    ) -> Result<crate::UpgradeReport, StoreError> {
         let pool = self.pool.clone();
         let map = self.map.clone();
         let checksum = checksum.to_string();
-        let (additive, destructive) =
-            tokio::task::spawn_blocking(move || -> Result<(usize, usize), StoreError> {
+        let (additive, destructive, reshredded) =
+            tokio::task::spawn_blocking(move || -> Result<(usize, usize, usize), StoreError> {
                 let conn = pool.get().map_err(db_err)?;
                 let meta = qualified(&map.schema, "fhir_oracle_meta");
 
@@ -526,16 +555,17 @@ impl OracleStore {
                         data_bearing.push(format!("{t}.{col} → {nt}"));
                     }
                 }
-                if !data_bearing.is_empty() {
+                if !data_bearing.is_empty() && !opts.reshred_moved {
                     return Err(StoreError::Other(format!(
                         "upgrade refuses {} moved column(s) holding data (O10.4b, F-90): {}. \
                          allow_destructive does not cover relocation; re-put the affected \
-                         resource types through this artifact, or reload",
+                         reshred_moved (O10.4c), re-put the affected resource types \
+                         through this artifact, or reload",
                         data_bearing.len(),
                         data_bearing.join(", ")
                     )));
                 }
-                if !drops.is_empty() && !allow_destructive {
+                if !drops.is_empty() && !opts.allow_destructive {
                     return Err(StoreError::Other(format!(
                         "upgrade requires {} destructive change(s); rerun with allow_destructive \
                          (first: {})",
@@ -573,6 +603,123 @@ impl OracleStore {
                 for stmt in fhir_oracle_map::ddl::ddl(&map) {
                     apply(&stmt, &[-955, -1408, -1430])?;
                 }
+                // 3b. O10.4c: carry data across relocated columns. After the
+                //     additive and reconcile passes (the new tables must
+                //     exist) and before the drops (the old columns must still
+                //     be readable). One commit per resource: this port's DDL
+                //     commits implicitly, so the whole upgrade is resumable
+                //     rather than atomic (M14.40), and the re-shred is built
+                //     the same way.
+                let mut reshredded = 0usize;
+                if opts.reshred_moved && !moved.is_empty() {
+                    let s_q = quote_ident(&map.schema);
+                    let mut rtypes: std::collections::BTreeSet<&str> =
+                        std::collections::BTreeSet::new();
+                    for (t, _, _) in &moved {
+                        for (name, orm) in &old_map.resources {
+                            if orm.tables.iter().any(|tt| &tt.name == t) {
+                                rtypes.insert(name.as_str());
+                            }
+                        }
+                    }
+                    for rtype in rtypes {
+                        let old_rm = &old_map.resources[rtype];
+                        let Some(new_rm) = map.resources.get(rtype) else {
+                            return Err(StoreError::Other(format!(
+                                "{rtype} has moved columns but the new map does not carry \
+                                 the resource; re-shred cannot target it"
+                            )));
+                        };
+                        let base_raw = old_rm.base_table().name.clone();
+                        if base_raw != new_rm.base_table().name {
+                            return Err(StoreError::Other(format!(
+                                "{rtype}: base table renamed {base_raw} → {}; re-shred \
+                                 does not support that",
+                                new_rm.base_table().name
+                            )));
+                        }
+                        let base_q = quote_ident(&base_raw);
+                        let ids: Vec<String> = {
+                            let sql = format!("SELECT \"id\" FROM {s_q}.{base_q} ORDER BY \"id\"");
+                            let rows = conn.query(&sql, &[]).map_err(db_err)?;
+                            let mut out = Vec::new();
+                            for r in rows {
+                                let r = r.map_err(db_err)?;
+                                out.push(r.get::<_, String>(0).map_err(db_err)?);
+                            }
+                            out
+                        };
+                        for id in ids {
+                            let Some(value) = recon_with_map(&conn, &s_q, old_rm, &id)? else {
+                                continue;
+                            };
+                            let row = conn.query_row(
+                                &format!(
+                                    "SELECT \"version_id\", \
+                                     TO_CHAR(\"last_updated\", \
+                                     'YYYY-MM-DD\"T\"HH24:MI:SS.FF6') \
+                                     FROM {s_q}.{base_q} WHERE \"id\" = :1 FOR UPDATE"
+                                ),
+                                &[&id],
+                            );
+                            let Ok(row) = row else { continue };
+                            let version_id: i64 = row.get(0).map_err(db_err)?;
+                            let ts: String = row.get(1).map_err(db_err)?;
+                            conn.execute(
+                                &format!("DELETE FROM {s_q}.{base_q} WHERE \"id\" = :1"),
+                                &[&id],
+                            )
+                            .map_err(db_err)?;
+                            let out = fhir_oracle_map::shred::shred(new_rm, &value)?;
+                            write_shredded(
+                                &conn, &s_q, &base_q, new_rm, &id, version_id, &ts, &out,
+                            )?;
+                            let back =
+                                recon_with_map(&conn, &s_q, new_rm, &id)?.ok_or_else(|| {
+                                    StoreError::Other(format!(
+                                        "re-shred wrote {rtype}/{id} but it did not read back"
+                                    ))
+                                })?;
+                            if fhir_oracle_map::canon::canonicalize(&back)
+                                != fhir_oracle_map::canon::canonicalize(&value)
+                            {
+                                conn.rollback().map_err(db_err)?;
+                                return Err(StoreError::Other(format!(
+                                    "re-shred verification failed for {rtype}/{id}: the \
+                                     new-shape reconstruction is not byte-identical. This \
+                                     resource is rolled back, {reshredded} carried before \
+                                     it remain carried, and no column has been dropped \
+                                     (M14.40)"
+                                )));
+                            }
+                            conn.commit().map_err(db_err)?;
+                            reshredded += 1;
+                        }
+                    }
+                    // Every moved source must now be empty, checked before the
+                    // drops so a miss stops with the data still in place.
+                    for (t, col, nt) in &moved {
+                        let has: i64 = conn
+                            .query_row(
+                                &format!(
+                                    "SELECT COUNT(*) FROM {s_q}.{} WHERE {} IS NOT NULL",
+                                    quote_ident(t),
+                                    quote_ident(col)
+                                ),
+                                &[],
+                            )
+                            .map_err(db_err)?
+                            .get(0)
+                            .map_err(db_err)?;
+                        if has != 0 {
+                            return Err(StoreError::Other(format!(
+                                "re-shred left data behind in {t}.{col} (destined for \
+                                 {nt}); nothing has been dropped — rerun to resume"
+                            )));
+                        }
+                    }
+                }
+
                 // 4. Destructive last, each tolerating "already gone".
                 for stmt in &drops {
                     apply(stmt, &[-942, -904])?;
@@ -596,14 +743,14 @@ impl OracleStore {
                     write_meta_chunked(&conn, &meta, k, v)?;
                 }
                 conn.commit().map_err(db_err)?;
-                Ok((n_add + converted, n_drop))
+                Ok((n_add + converted, n_drop, reshredded))
             })
             .await
             .map_err(join_err)??;
 
         let folded = self.backfill_norm().await?;
         Ok(crate::UpgradeReport {
-            reshredded: 0,
+            reshredded,
             additive,
             destructive,
             folded,
@@ -889,159 +1036,7 @@ fn put_in_tx(
             .map_err(db_err)?;
     }
 
-    // Base row first: every child has a foreign key to it.
-    let mut cols = vec![
-        "\"id\"".to_string(),
-        "\"version_id\"".to_string(),
-        "\"last_updated\"".to_string(),
-    ];
-    let mut vals: Vec<Bound> = vec![
-        Bound::Str(Some(id.to_string())),
-        Bound::I64(Some(version_id)),
-        Bound::Timestamp(parse_ts(ts)),
-    ];
-    for r in out.rows.iter().filter(|r| r.table == 0) {
-        for (name, v) in &r.cols {
-            cols.push(quote_ident(name));
-            vals.push(sqlval(v));
-        }
-    }
-    insert_row(conn, &format!("{s}.{base}"), &cols, &vals)?;
-
-    // Element tables, one insert per row — see `insert_row`'s note.
-    let mut by_table: std::collections::BTreeMap<u32, Vec<&fhir_oracle_map::shred::Row>> =
-        std::collections::BTreeMap::new();
-    for r in out.rows.iter().filter(|r| r.table != 0) {
-        by_table.entry(r.table).or_default().push(r);
-    }
-    for (ti, rows) in by_table {
-        let t = &rm.tables[ti as usize];
-        let mut names: Vec<String> = Vec::new();
-        for r in &rows {
-            for (n, _) in &r.cols {
-                if !names.contains(n) {
-                    names.push(n.clone());
-                }
-            }
-        }
-        let types: Vec<ColTy> = names
-            .iter()
-            .map(|n| {
-                t.cols
-                    .iter()
-                    .find(|c| &c.name == n)
-                    .map_or(ColTy::Text, |c| c.ty)
-            })
-            .collect();
-        let mut cols = vec!["\"rid\"".to_string(), "\"ords\"".to_string()];
-        cols.extend(names.iter().map(|n| quote_ident(n)));
-        for r in &rows {
-            let mut vals: Vec<Bound> = vec![
-                Bound::Str(Some(id.to_string())),
-                Bound::Bytes(Some(fmt_ords(&r.ords).into_bytes())),
-            ];
-            for (n, ty) in names.iter().zip(&types) {
-                vals.push(
-                    r.cols
-                        .iter()
-                        .find(|(c, _)| c == n)
-                        .map_or_else(|| null_for_ty(*ty), |(_, v)| sqlval(v)),
-                );
-            }
-            insert_row(conn, &format!("{s}.{}", quote_ident(&t.name)), &cols, &vals)?;
-        }
-    }
-
-    // Extensions and spill carry the surrogate primary key (M14.9): their
-    // natural keys hold a CLOB, which this engine can neither index nor
-    // `=`-compare at all.
-    if let Some((_, t)) = rm.find_table(fhir_oracle_map::model::TableKind::Ext) {
-        for e in &out.ext {
-            let (kind, text, num, b) = e.val.cols();
-            let ords = fmt_ords(&e.ords);
-            let ext_ord = e.ext_ord.to_string();
-            let modifier = u8::from(e.modifier).to_string();
-            let key = surrogate_key(&[id, &e.path, &ords, &modifier, &ext_ord, &e.leaf]);
-            let cols = [
-                "\"key_hash\"",
-                "\"rid\"",
-                "\"path\"",
-                "\"ords\"",
-                "\"modifier\"",
-                "\"ext_ord\"",
-                "\"url\"",
-                "\"leaf\"",
-                "\"v_kind\"",
-                "\"v_text\"",
-                "\"v_num\"",
-                "\"v_bool\"",
-            ]
-            .map(String::from)
-            .to_vec();
-            let vals = vec![
-                Bound::Bytes(Some(key.to_vec())),
-                Bound::Str(Some(id.to_string())),
-                Bound::Str(Some(e.path.clone())),
-                Bound::Bytes(Some(ords.into_bytes())),
-                Bound::I64(Some(i64::from(e.modifier))),
-                Bound::I64(Some(i64::from(e.ext_ord))),
-                Bound::Str(e.url.clone()),
-                Bound::Str(Some(e.leaf.clone())),
-                Bound::Str(Some(kind.to_string())),
-                Bound::Str(text.map(str::to_string)),
-                Bound::Str(num.map(str::to_string)),
-                Bound::I64(b.map(i64::from)),
-            ];
-            insert_row(conn, &format!("{s}.{}", quote_ident(&t.name)), &cols, &vals)?;
-        }
-    }
-
-    if let Some((_, t)) = rm.find_table(fhir_oracle_map::model::TableKind::Deep) {
-        for d in &out.deep {
-            let (kind, text, num, b) = d.val.cols();
-            let ords = fmt_ords(&d.ords);
-            let key = surrogate_key(&[id, &d.path, &ords, &d.leaf]);
-            let cols = [
-                "\"key_hash\"",
-                "\"rid\"",
-                "\"path\"",
-                "\"ords\"",
-                "\"leaf\"",
-                "\"v_kind\"",
-                "\"v_text\"",
-                "\"v_num\"",
-                "\"v_bool\"",
-            ]
-            .map(String::from)
-            .to_vec();
-            let vals = vec![
-                Bound::Bytes(Some(key.to_vec())),
-                Bound::Str(Some(id.to_string())),
-                Bound::Str(Some(d.path.clone())),
-                Bound::Bytes(Some(ords.into_bytes())),
-                Bound::Str(Some(d.leaf.clone())),
-                Bound::Str(Some(kind.to_string())),
-                Bound::Str(text.map(str::to_string)),
-                Bound::Str(num.map(str::to_string)),
-                Bound::I64(b.map(i64::from)),
-            ];
-            insert_row(conn, &format!("{s}.{}", quote_ident(&t.name)), &cols, &vals)?;
-        }
-    }
-
-    if let Some((_, t)) = rm.find_table(fhir_oracle_map::model::TableKind::Contained) {
-        for (ord, v) in &out.contained {
-            let cols = ["\"rid\"", "\"ord\"", "\"resource\""]
-                .map(String::from)
-                .to_vec();
-            let vals = vec![
-                Bound::Str(Some(id.to_string())),
-                Bound::I64(Some(i64::from(*ord))),
-                Bound::Str(Some(v.to_string())),
-            ];
-            insert_row(conn, &format!("{s}.{}", quote_ident(&t.name)), &cols, &vals)?;
-        }
-    }
+    write_shredded(conn, s, base, rm, id, version_id, ts, out)?;
 
     let op = if existed { "U" } else { "C" };
     let pre = crate::chain::preimage(id, version_id, ts, op, Some(canon), &audit.actor);
@@ -1119,7 +1114,6 @@ impl OracleStore {
                 .ok_or_else(|| StoreError::Unsupported(format!("unknown resource type {rtype}")))?;
             let conn = pool.get().map_err(db_err)?;
             let s = quote_ident(&map.schema);
-            let base = quote_ident(&rm.base_table().name);
 
             // R4.5, NOT met — `SET TRANSACTION READ ONLY` was tried here as
             // the multi-statement snapshot `M14.19` named as the likely
@@ -1141,125 +1135,8 @@ impl OracleStore {
             // fixed" to "known undecided" (matching `fhir-mssql` before its
             // own `R4.5` fix — see that port's `M14.25`), not a regression
             // from a working state.
-            let present = conn
-                .query_row(&format!("SELECT 1 FROM {s}.{base} WHERE \"id\" = :1"), &[&id])
-                .is_ok();
-            if !present {
-                let _ = conn.rollback();
-                return Ok(None);
-            }
-
-            use fhir_oracle_map::model::TableKind;
-            use fhir_oracle_map::reconstruct::{InRow, ReconIn};
-
-            let mut input = ReconIn {
-                tables: vec![Vec::new(); rm.tables.len()],
-                ..Default::default()
-            };
-
-            for (ti, t) in rm.tables.iter().enumerate() {
-                let table = quote_ident(&t.name);
-                match t.kind {
-                    TableKind::Base | TableKind::Elem => {
-                        let names: Vec<(String, ColTy)> = t.cols.iter().map(|c| (c.name.clone(), c.ty)).collect();
-                        let key = if t.kind == TableKind::Base { "id" } else { "rid" };
-                        let mut sel: Vec<String> = Vec::new();
-                        if t.kind == TableKind::Elem {
-                            sel.push("\"ords\"".to_string());
-                        }
-                        sel.extend(names.iter().map(|(n, _)| quote_ident(n)));
-                        if sel.is_empty() {
-                            sel.push("NULL".to_string());
-                        }
-                        let rows = conn
-                            .query(&format!("SELECT {} FROM {s}.{table} WHERE \"{key}\" = :1", sel.join(", ")), &[&id])
-                            .map_err(db_err)?;
-                        for row in rows {
-                            let row = row.map_err(db_err)?;
-                            let mut ords = Vec::new();
-                            let mut off = 0usize;
-                            if t.kind == TableKind::Elem {
-                                ords = parse_ords(&ords_bytes_to_string(&row, 0)?)?;
-                                off = 1;
-                            }
-                            let mut cols = std::collections::HashMap::new();
-                            for (i, (n, ty)) in names.iter().enumerate() {
-                                if let Some(v) = cell_text(&row, i + off, *ty)? {
-                                    cols.insert(n.clone(), v);
-                                }
-                            }
-                            input.tables[ti].push(InRow { ords, cols });
-                        }
-                    }
-                    TableKind::Ext => {
-                        let rows = conn
-                            .query(
-                                &format!(
-                                    "SELECT \"path\",\"ords\",\"modifier\",\"ext_ord\",\"url\",\"leaf\",\
-                                            \"v_kind\",\"v_text\",\"v_num\",\"v_bool\" FROM {s}.{table} WHERE \"rid\" = :1"
-                                ),
-                                &[&id],
-                            )
-                            .map_err(db_err)?;
-                        for row in rows {
-                            let row = row.map_err(db_err)?;
-                            let path: String = row.get::<usize, Option<String>>(0).unwrap_or(None).unwrap_or_default();
-                            let ords = parse_ords(&ords_bytes_to_string(&row, 1)?)?;
-                            let modifier = row.get::<usize, Option<i64>>(2).unwrap_or(None).unwrap_or(0) != 0;
-                            let ext_ord = row.get::<usize, Option<i64>>(3).unwrap_or(None).unwrap_or(0) as i16;
-                            let url: Option<String> = row.get(4).unwrap_or(None);
-                            let leaf: String = row.get::<usize, Option<String>>(5).unwrap_or(None).unwrap_or_default();
-                            let kind: String = row.get::<usize, Option<String>>(6).unwrap_or(None).unwrap_or_default();
-                            let text: Option<String> = row.get(7).unwrap_or(None);
-                            let num: Option<String> = row.get(8).unwrap_or(None);
-                            let b: Option<i64> = row.get(9).unwrap_or(None);
-                            let val = leaf_from_cols(&kind, text, num, b.map(|v| v != 0));
-                            input.ext.push(fhir_oracle_map::shred::ExtRow { path, ords, modifier, ext_ord, url, leaf, val });
-                        }
-                    }
-                    TableKind::Deep => {
-                        let rows = conn
-                            .query(
-                                &format!(
-                                    "SELECT \"path\",\"ords\",\"leaf\",\"v_kind\",\"v_text\",\"v_num\",\"v_bool\" \
-                                     FROM {s}.{table} WHERE \"rid\" = :1"
-                                ),
-                                &[&id],
-                            )
-                            .map_err(db_err)?;
-                        for row in rows {
-                            let row = row.map_err(db_err)?;
-                            let path: String = row.get::<usize, Option<String>>(0).unwrap_or(None).unwrap_or_default();
-                            let ords = parse_ords(&ords_bytes_to_string(&row, 1)?)?;
-                            let leaf: String = row.get::<usize, Option<String>>(2).unwrap_or(None).unwrap_or_default();
-                            let kind: String = row.get::<usize, Option<String>>(3).unwrap_or(None).unwrap_or_default();
-                            let text: Option<String> = row.get(4).unwrap_or(None);
-                            let num: Option<String> = row.get(5).unwrap_or(None);
-                            let b: Option<i64> = row.get(6).unwrap_or(None);
-                            let val = leaf_from_cols(&kind, text, num, b.map(|v| v != 0));
-                            input.deep.push(fhir_oracle_map::shred::DeepRow { path, ords, leaf, val });
-                        }
-                    }
-                    TableKind::Contained => {
-                        let rows = conn
-                            .query(&format!("SELECT \"ord\",\"resource\" FROM {s}.{table} WHERE \"rid\" = :1"), &[&id])
-                            .map_err(db_err)?;
-                        for row in rows {
-                            let row = row.map_err(db_err)?;
-                            let ord: i16 = row.get::<usize, Option<i64>>(0).unwrap_or(None).unwrap_or(0) as i16;
-                            let raw: String = row.get::<usize, Option<String>>(1).unwrap_or(None).unwrap_or_default();
-                            let v: serde_json::Value = serde_json::from_str(&raw)
-                                .map_err(|e| StoreError::Other(format!("contained: {e}")))?;
-                            input.contained.push((ord, v));
-                        }
-                    }
-                    TableKind::History => {}
-                }
-            }
-
-            let _ = conn.rollback();
-            let v = fhir_oracle_map::reconstruct::reconstruct(rm, &input, Some(&id))?;
-            Ok(Some(v))
+            let r = recon_with_map(&conn, &s, rm, &id)?;
+            Ok(r)
         })
         .await
         .map_err(join_err)?
@@ -2513,4 +2390,375 @@ fn diff_maps(map: &RelMap, old_map: &RelMap) -> Result<(Vec<String>, Vec<String>
         }
     }
     Ok((adds, destructive))
+}
+
+/// Reconstruct one resource under an **explicitly supplied** map.
+///
+/// `get` resolves the map from this store's artifact, which is what every read
+/// wants. The `O10.4c` re-shred cannot: it has to read rows laid out by the map
+/// that is still installed (`G2.5`'s stored asset) while the store already
+/// carries the new one. Factored out for that caller so the migration reads
+/// through the same path the conformance suite exercises on every other read.
+fn recon_with_map(
+    conn: &Connection,
+    s: &str,
+    rm: &fhir_oracle_map::model::ResourceMap,
+    id: &str,
+) -> Result<Option<serde_json::Value>, StoreError> {
+    let base = quote_ident(&rm.base_table().name);
+    let present = conn
+        .query_row(
+            &format!("SELECT 1 FROM {s}.{base} WHERE \"id\" = :1"),
+            &[&id],
+        )
+        .is_ok();
+    if !present {
+        let _ = conn.rollback();
+        return Ok(None);
+    }
+
+    use fhir_oracle_map::model::TableKind;
+    use fhir_oracle_map::reconstruct::{InRow, ReconIn};
+
+    let mut input = ReconIn {
+        tables: vec![Vec::new(); rm.tables.len()],
+        ..Default::default()
+    };
+
+    for (ti, t) in rm.tables.iter().enumerate() {
+        let table = quote_ident(&t.name);
+        match t.kind {
+            TableKind::Base | TableKind::Elem => {
+                let names: Vec<(String, ColTy)> =
+                    t.cols.iter().map(|c| (c.name.clone(), c.ty)).collect();
+                let key = if t.kind == TableKind::Base {
+                    "id"
+                } else {
+                    "rid"
+                };
+                let mut sel: Vec<String> = Vec::new();
+                if t.kind == TableKind::Elem {
+                    sel.push("\"ords\"".to_string());
+                }
+                sel.extend(names.iter().map(|(n, _)| quote_ident(n)));
+                if sel.is_empty() {
+                    sel.push("NULL".to_string());
+                }
+                let rows = conn
+                    .query(
+                        &format!(
+                            "SELECT {} FROM {s}.{table} WHERE \"{key}\" = :1",
+                            sel.join(", ")
+                        ),
+                        &[&id],
+                    )
+                    .map_err(db_err)?;
+                for row in rows {
+                    let row = row.map_err(db_err)?;
+                    let mut ords = Vec::new();
+                    let mut off = 0usize;
+                    if t.kind == TableKind::Elem {
+                        ords = parse_ords(&ords_bytes_to_string(&row, 0)?)?;
+                        off = 1;
+                    }
+                    let mut cols = std::collections::HashMap::new();
+                    for (i, (n, ty)) in names.iter().enumerate() {
+                        if let Some(v) = cell_text(&row, i + off, *ty)? {
+                            cols.insert(n.clone(), v);
+                        }
+                    }
+                    input.tables[ti].push(InRow { ords, cols });
+                }
+            }
+            TableKind::Ext => {
+                let rows = conn
+                    .query(
+                        &format!(
+                            "SELECT \"path\",\"ords\",\"modifier\",\"ext_ord\",\"url\",\"leaf\",\
+                                    \"v_kind\",\"v_text\",\"v_num\",\"v_bool\" FROM {s}.{table} WHERE \"rid\" = :1"
+                        ),
+                        &[&id],
+                    )
+                    .map_err(db_err)?;
+                for row in rows {
+                    let row = row.map_err(db_err)?;
+                    let path: String = row
+                        .get::<usize, Option<String>>(0)
+                        .unwrap_or(None)
+                        .unwrap_or_default();
+                    let ords = parse_ords(&ords_bytes_to_string(&row, 1)?)?;
+                    let modifier = row
+                        .get::<usize, Option<i64>>(2)
+                        .unwrap_or(None)
+                        .unwrap_or(0)
+                        != 0;
+                    let ext_ord = row
+                        .get::<usize, Option<i64>>(3)
+                        .unwrap_or(None)
+                        .unwrap_or(0) as i16;
+                    let url: Option<String> = row.get(4).unwrap_or(None);
+                    let leaf: String = row
+                        .get::<usize, Option<String>>(5)
+                        .unwrap_or(None)
+                        .unwrap_or_default();
+                    let kind: String = row
+                        .get::<usize, Option<String>>(6)
+                        .unwrap_or(None)
+                        .unwrap_or_default();
+                    let text: Option<String> = row.get(7).unwrap_or(None);
+                    let num: Option<String> = row.get(8).unwrap_or(None);
+                    let b: Option<i64> = row.get(9).unwrap_or(None);
+                    let val = leaf_from_cols(&kind, text, num, b.map(|v| v != 0));
+                    input.ext.push(fhir_oracle_map::shred::ExtRow {
+                        path,
+                        ords,
+                        modifier,
+                        ext_ord,
+                        url,
+                        leaf,
+                        val,
+                    });
+                }
+            }
+            TableKind::Deep => {
+                let rows = conn
+                    .query(
+                        &format!(
+                            "SELECT \"path\",\"ords\",\"leaf\",\"v_kind\",\"v_text\",\"v_num\",\"v_bool\" \
+                             FROM {s}.{table} WHERE \"rid\" = :1"
+                        ),
+                        &[&id],
+                    )
+                    .map_err(db_err)?;
+                for row in rows {
+                    let row = row.map_err(db_err)?;
+                    let path: String = row
+                        .get::<usize, Option<String>>(0)
+                        .unwrap_or(None)
+                        .unwrap_or_default();
+                    let ords = parse_ords(&ords_bytes_to_string(&row, 1)?)?;
+                    let leaf: String = row
+                        .get::<usize, Option<String>>(2)
+                        .unwrap_or(None)
+                        .unwrap_or_default();
+                    let kind: String = row
+                        .get::<usize, Option<String>>(3)
+                        .unwrap_or(None)
+                        .unwrap_or_default();
+                    let text: Option<String> = row.get(4).unwrap_or(None);
+                    let num: Option<String> = row.get(5).unwrap_or(None);
+                    let b: Option<i64> = row.get(6).unwrap_or(None);
+                    let val = leaf_from_cols(&kind, text, num, b.map(|v| v != 0));
+                    input.deep.push(fhir_oracle_map::shred::DeepRow {
+                        path,
+                        ords,
+                        leaf,
+                        val,
+                    });
+                }
+            }
+            TableKind::Contained => {
+                let rows = conn
+                    .query(
+                        &format!("SELECT \"ord\",\"resource\" FROM {s}.{table} WHERE \"rid\" = :1"),
+                        &[&id],
+                    )
+                    .map_err(db_err)?;
+                for row in rows {
+                    let row = row.map_err(db_err)?;
+                    let ord: i16 = row
+                        .get::<usize, Option<i64>>(0)
+                        .unwrap_or(None)
+                        .unwrap_or(0) as i16;
+                    let raw: String = row
+                        .get::<usize, Option<String>>(1)
+                        .unwrap_or(None)
+                        .unwrap_or_default();
+                    let v: serde_json::Value = serde_json::from_str(&raw)
+                        .map_err(|e| StoreError::Other(format!("contained: {e}")))?;
+                    input.contained.push((ord, v));
+                }
+            }
+            TableKind::History => {}
+        }
+    }
+
+    let _ = conn.rollback();
+    let v = fhir_oracle_map::reconstruct::reconstruct(rm, &input, Some(id))?;
+    Ok(Some(v))
+}
+
+/// Write one shredded resource's rows: the base row, the element tables, and
+/// the ext / deep / contained spill.
+///
+/// Factored out of `put_in_tx` for the `O10.4c` re-shred, which must write
+/// through a map that is **not** this store's — the resource is reconstructed
+/// under the installed old map and written under the new one. Sharing the code
+/// means the migration writes rows the same way every ordinary write does.
+#[allow(clippy::too_many_arguments)]
+fn write_shredded(
+    conn: &Connection,
+    s: &str,
+    base: &str,
+    rm: &fhir_oracle_map::model::ResourceMap,
+    id: &str,
+    version_id: i64,
+    ts: &str,
+    out: &fhir_oracle_map::shred::ShredOut,
+) -> Result<(), StoreError> {
+    // Base row first: every child has a foreign key to it.
+    let mut cols = vec![
+        "\"id\"".to_string(),
+        "\"version_id\"".to_string(),
+        "\"last_updated\"".to_string(),
+    ];
+    let mut vals: Vec<Bound> = vec![
+        Bound::Str(Some(id.to_string())),
+        Bound::I64(Some(version_id)),
+        Bound::Timestamp(parse_ts(ts)),
+    ];
+    for r in out.rows.iter().filter(|r| r.table == 0) {
+        for (name, v) in &r.cols {
+            cols.push(quote_ident(name));
+            vals.push(sqlval(v));
+        }
+    }
+    insert_row(conn, &format!("{s}.{base}"), &cols, &vals)?;
+
+    // Element tables, one insert per row — see `insert_row`'s note.
+    let mut by_table: std::collections::BTreeMap<u32, Vec<&fhir_oracle_map::shred::Row>> =
+        std::collections::BTreeMap::new();
+    for r in out.rows.iter().filter(|r| r.table != 0) {
+        by_table.entry(r.table).or_default().push(r);
+    }
+    for (ti, rows) in by_table {
+        let t = &rm.tables[ti as usize];
+        let mut names: Vec<String> = Vec::new();
+        for r in &rows {
+            for (n, _) in &r.cols {
+                if !names.contains(n) {
+                    names.push(n.clone());
+                }
+            }
+        }
+        let types: Vec<ColTy> = names
+            .iter()
+            .map(|n| {
+                t.cols
+                    .iter()
+                    .find(|c| &c.name == n)
+                    .map_or(ColTy::Text, |c| c.ty)
+            })
+            .collect();
+        let mut cols = vec!["\"rid\"".to_string(), "\"ords\"".to_string()];
+        cols.extend(names.iter().map(|n| quote_ident(n)));
+        for r in &rows {
+            let mut vals: Vec<Bound> = vec![
+                Bound::Str(Some(id.to_string())),
+                Bound::Bytes(Some(fmt_ords(&r.ords).into_bytes())),
+            ];
+            for (n, ty) in names.iter().zip(&types) {
+                vals.push(
+                    r.cols
+                        .iter()
+                        .find(|(c, _)| c == n)
+                        .map_or_else(|| null_for_ty(*ty), |(_, v)| sqlval(v)),
+                );
+            }
+            insert_row(conn, &format!("{s}.{}", quote_ident(&t.name)), &cols, &vals)?;
+        }
+    }
+
+    // Extensions and spill carry the surrogate primary key (M14.9): their
+    // natural keys hold a CLOB, which this engine can neither index nor
+    // `=`-compare at all.
+    if let Some((_, t)) = rm.find_table(fhir_oracle_map::model::TableKind::Ext) {
+        for e in &out.ext {
+            let (kind, text, num, b) = e.val.cols();
+            let ords = fmt_ords(&e.ords);
+            let ext_ord = e.ext_ord.to_string();
+            let modifier = u8::from(e.modifier).to_string();
+            let key = surrogate_key(&[id, &e.path, &ords, &modifier, &ext_ord, &e.leaf]);
+            let cols = [
+                "\"key_hash\"",
+                "\"rid\"",
+                "\"path\"",
+                "\"ords\"",
+                "\"modifier\"",
+                "\"ext_ord\"",
+                "\"url\"",
+                "\"leaf\"",
+                "\"v_kind\"",
+                "\"v_text\"",
+                "\"v_num\"",
+                "\"v_bool\"",
+            ]
+            .map(String::from)
+            .to_vec();
+            let vals = vec![
+                Bound::Bytes(Some(key.to_vec())),
+                Bound::Str(Some(id.to_string())),
+                Bound::Str(Some(e.path.clone())),
+                Bound::Bytes(Some(ords.into_bytes())),
+                Bound::I64(Some(i64::from(e.modifier))),
+                Bound::I64(Some(i64::from(e.ext_ord))),
+                Bound::Str(e.url.clone()),
+                Bound::Str(Some(e.leaf.clone())),
+                Bound::Str(Some(kind.to_string())),
+                Bound::Str(text.map(str::to_string)),
+                Bound::Str(num.map(str::to_string)),
+                Bound::I64(b.map(i64::from)),
+            ];
+            insert_row(conn, &format!("{s}.{}", quote_ident(&t.name)), &cols, &vals)?;
+        }
+    }
+
+    if let Some((_, t)) = rm.find_table(fhir_oracle_map::model::TableKind::Deep) {
+        for d in &out.deep {
+            let (kind, text, num, b) = d.val.cols();
+            let ords = fmt_ords(&d.ords);
+            let key = surrogate_key(&[id, &d.path, &ords, &d.leaf]);
+            let cols = [
+                "\"key_hash\"",
+                "\"rid\"",
+                "\"path\"",
+                "\"ords\"",
+                "\"leaf\"",
+                "\"v_kind\"",
+                "\"v_text\"",
+                "\"v_num\"",
+                "\"v_bool\"",
+            ]
+            .map(String::from)
+            .to_vec();
+            let vals = vec![
+                Bound::Bytes(Some(key.to_vec())),
+                Bound::Str(Some(id.to_string())),
+                Bound::Str(Some(d.path.clone())),
+                Bound::Bytes(Some(ords.into_bytes())),
+                Bound::Str(Some(d.leaf.clone())),
+                Bound::Str(Some(kind.to_string())),
+                Bound::Str(text.map(str::to_string)),
+                Bound::Str(num.map(str::to_string)),
+                Bound::I64(b.map(i64::from)),
+            ];
+            insert_row(conn, &format!("{s}.{}", quote_ident(&t.name)), &cols, &vals)?;
+        }
+    }
+
+    if let Some((_, t)) = rm.find_table(fhir_oracle_map::model::TableKind::Contained) {
+        for (ord, v) in &out.contained {
+            let cols = ["\"rid\"", "\"ord\"", "\"resource\""]
+                .map(String::from)
+                .to_vec();
+            let vals = vec![
+                Bound::Str(Some(id.to_string())),
+                Bound::I64(Some(i64::from(*ord))),
+                Bound::Str(Some(v.to_string())),
+            ];
+            insert_row(conn, &format!("{s}.{}", quote_ident(&t.name)), &cols, &vals)?;
+        }
+    }
+
+    Ok(())
 }

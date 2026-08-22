@@ -5217,10 +5217,30 @@ shared-core gate covers the new file (110 files identical).
       panicked. Every other reader of that column in the file already
       wrapped it in `DATE_FORMAT`; this one now does too. Compiling
       could not have found it.
-   4. The two remaining server ports, in CI-verified steps: mssql (one
-      transaction), oracle (resumable). Each follows the sqlite shape:
-      factor the port's row-fetch to take a map, add `upgrade_with`,
-      land the same two tests plus the real-fixture one.
+   4. ~~`fhir-mssql`~~ — landed and **live-verified** 2026-08-22
+      against SQL Server in its `scripts/db.sh` podman container, 38
+      tests green. It is the one server port whose story is
+      **all-or-nothing** (`M14.39`): T-SQL's DDL is transactional and
+      the upgrade already ran as a single transaction, so the re-shred
+      goes inside it and there is no window in which an un-carried
+      resource under-returns the moved element. Its read path needed no
+      surgery — `read_resource_rows` already took a map explicitly.
+   5. ~~`fhir-oracle`~~ — landed and **live-verified** 2026-08-22
+      against `gvenzl/oracle-free`, 16-test upgrade suite green on the
+      first run. Story is **resumable** (`M14.40`), matching what this
+      port's upgrade already was: every DDL statement commits
+      implicitly and tolerates "already applied", so the re-shred
+      commits per resource to match.
+
+   **F-90's O10.4c migration is complete across all six ports.** The
+   four failure stories are genuinely different and each is written
+   down at the port's own id rather than generalised: sqlite
+   all-or-nothing (`M14.31`), mssql all-or-nothing (`M14.39`),
+   postgresql resumable-with-a-read-window (`M14.29`), mysql/mariadb
+   reported-partial (`M14.38` in each), oracle resumable (`M14.40`).
+   Every one of them states the read window where it exists, because
+   `O10.4` asks for a failure story and a story with only the
+   reassuring half satisfies that on paper and not in fact.
 
    A defect in step 1 was found while starting step 2 and is fixed
    here: the `fhir-store` 0.2.0 bump reached all six ports'

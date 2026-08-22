@@ -803,3 +803,34 @@ Three requirements are this engine's own:
 
 Part of the [fhir-oracle specification](index.md), which is part of the
 [fhir-databases specification](../../spec/databases/index.md).
+
+
+- **M14.40** The `O10.4c` re-shred MUST commit **per resource**, and this
+  port's failure story is **resumable** — which is what its whole upgrade
+  already is.
+
+  Every DDL statement in this port commits implicitly and is written to
+  tolerate "already applied" (`ORA-00955`, `-01430`, `-00942`), so an upgrade
+  here is a state machine that can be re-entered rather than a transaction that
+  can be rolled back. The re-shred is built the same way: one commit per
+  resource carried.
+
+  What that gives, and what it costs:
+
+  - **No resource is ever half-carried.** Oracle's DML is transactional up to
+    the commit, so a failure mid-resource rolls that resource back; the ones
+    already carried stay carried.
+  - **Nothing is dropped until every moved source is verified empty**, so a
+    failure leaves the data in place and the old columns readable.
+  - **Rerunning resumes**, carrying what is left; a resource already carried
+    costs a read.
+  - **Reads of un-carried resources under-return the moved element while it
+    runs**, because they reconstruct under the new map, which no longer reads
+    the old column. `fhir-mssql M14.39` is the only server port without this
+    window, because T-SQL's DDL is transactional; `fhir-postgresql M14.29` and
+    `fhir-mysql M14.38` have it for their own reasons. (`M14.x` is per-port
+    under `C0.7`, so those citations are qualified by port.)
+
+  The documentation MUST state the fourth point alongside the first three.
+  `O10.4` requires each dialect to state its failure story, and a story that
+  gives only the reassuring half satisfies that on paper and not in fact.

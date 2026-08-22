@@ -516,29 +516,59 @@ async fn narrowing_a_bounded_path_refuses() {
 
 /// `O10.4b` (**F-90**): a relocated column reaches the diff as ADD + DROP,
 /// and the guard must tell it apart from a genuine removal. The surgery
-/// mirrors what `G2.6a`'s force-split does to a shape: one unsearched
-/// column leaves the base table for a child table of its own, same element
-/// path. The map is deliberately not shred-consistent afterwards —
-/// `upgrade` only reads table shapes, and nothing is written through it.
+/// mirrors what `G2.6a`'s force-split does to a shape: the element's columns
+/// leave the base table for a child table of their own, same element path.
+///
+/// This used to end with "the map is deliberately not shred-consistent
+/// afterwards — `upgrade` only reads table shapes, and nothing is written
+/// through it". That was true when the only callers were the two refusal
+/// tests below, and it stopped being true the moment `O10.4c` shredded
+/// through the moved map: `shred` routes an element by `Elem.table` in the
+/// node arena, not by which table lists the column, so the old helper kept
+/// aiming `multipleBirthBoolean` at the base table and the insert failed on
+/// a column that was no longer there.
+///
+/// So the relocation is now faithful. A force-split choice owns its table for
+/// **every** variant, so both `multiple_birth_boolean` and
+/// `multiple_birth_integer` move, and the choice element is repointed at the
+/// new table.
 fn with_multiple_birth_moved(full: &RelMap) -> RelMap {
     use fhir_oracle_map::model::{Table, TableKind};
     let mut m = full.clone();
     let rm = m.resources.get_mut("Patient").expect("Patient is mapped");
     let base = &mut rm.tables[0];
-    let idx = base
-        .cols
-        .iter()
-        .position(|c| c.name == "multiple_birth_boolean")
-        .expect("multiple_birth_boolean in the base table");
-    let col = base.cols.remove(idx);
+    let mut cols = Vec::new();
+    let mut i = 0;
+    while i < base.cols.len() {
+        if base.cols[i].name.starts_with("multiple_birth") {
+            cols.push(base.cols.remove(i));
+        } else {
+            i += 1;
+        }
+    }
+    assert!(
+        cols.iter().any(|c| c.name == "multiple_birth_boolean"),
+        "multiple_birth_boolean in the base table"
+    );
+    let moved_to = u32::try_from(rm.tables.len()).expect("table index fits");
     rm.tables.push(Table {
         norm_cols: Vec::new(),
         adjunct_cols: Vec::new(),
         name: "patient_multiple_birth_moved".into(),
         kind: TableKind::Elem,
-        path: "Patient.multipleBirth".into(),
-        cols: vec![col],
+        path: "Patient.multipleBirth[x]".into(),
+        cols,
     });
+    let mut repointed = 0;
+    for node in &mut rm.nodes {
+        for e in &mut node.elems {
+            if e.json == "multipleBirth" {
+                e.table = Some(moved_to);
+                repointed += 1;
+            }
+        }
+    }
+    assert_eq!(repointed, 1, "exactly one multipleBirth choice element");
     m
 }
 
@@ -616,4 +646,133 @@ async fn a_moved_column_with_no_data_proceeds() {
         .await
         .expect("an empty-source move is an ordinary destructive upgrade");
     assert!(report.additive > 0, "the new table must have been created");
+}
+
+/// The same relocation, carried rather than refused (`O10.4c`).
+///
+/// Pins the contract: the plain upgrade still refuses, the opt-in carries the
+/// data, the resource comes back byte-identical, `version_id` survives because
+/// a representation change is not a new version, and no history entry is
+/// written for it.
+///
+/// On this engine every DDL statement commits implicitly, so the upgrade is
+/// resumable rather than atomic (`M14.40`) and the re-shred commits per
+/// resource to match.
+#[tokio::test]
+async fn reshred_carries_data_across_a_moved_column() {
+    let Some(full) = sampled(&["Patient"]) else {
+        eprintln!("skipping: no map");
+        return;
+    };
+    let Some(store) = connect(full.clone()).await else {
+        eprintln!("skipping: no oracle credentials");
+        return;
+    };
+    store.drop_schema().await.expect("drop");
+    store.init("full-sum").await.expect("init");
+    let doc = json!({"resourceType": "Patient", "id": "mb",
+                     "multipleBirthBoolean": true,
+                     "name": [{"family": "Twin"}]});
+    store
+        .put(&doc, &fhir_oracle_store::Audit::default())
+        .await
+        .expect("seed");
+    let before = store
+        .history("Patient", "mb")
+        .await
+        .expect("history before");
+    drop(store);
+
+    let store = connect(with_multiple_birth_moved(&full))
+        .await
+        .expect("credentials vanished mid-test");
+
+    // Without the opt-in the refusal still fires: O10.4c is a door, not a
+    // change of default.
+    let err = store
+        .upgrade("moved-sum", true)
+        .await
+        .expect_err("the move holds data; the plain upgrade must still refuse");
+    assert!(err.to_string().contains("moved column"), "got: {err}");
+
+    let report = store
+        .upgrade_with(
+            "moved-sum",
+            fhir_oracle_store::UpgradeOpts {
+                allow_destructive: true,
+                reshred_moved: true,
+            },
+        )
+        .await
+        .expect("re-shred upgrade");
+    assert_eq!(
+        report.reshredded, 1,
+        "one resource crossed the shape change"
+    );
+
+    let got = store
+        .get("Patient", "mb")
+        .await
+        .expect("get")
+        .expect("still there");
+    assert_eq!(
+        got.get("multipleBirthBoolean"),
+        doc.get("multipleBirthBoolean"),
+        "the relocated element must survive the move"
+    );
+    assert_eq!(got.get("name"), doc.get("name"));
+    let after = store.history("Patient", "mb").await.expect("history after");
+    assert_eq!(
+        after.len(),
+        before.len(),
+        "the re-shred must not write a history entry"
+    );
+}
+
+/// Rerunning a completed re-shred carries nothing: the sources are empty and
+/// the map already matches.
+#[tokio::test]
+async fn a_second_reshred_upgrade_carries_nothing() {
+    let Some(full) = sampled(&["Patient"]) else {
+        eprintln!("skipping: no map");
+        return;
+    };
+    let Some(store) = connect(full.clone()).await else {
+        eprintln!("skipping: no oracle credentials");
+        return;
+    };
+    store.drop_schema().await.expect("drop");
+    store.init("full-sum").await.expect("init");
+    store
+        .put(
+            &json!({"resourceType": "Patient", "id": "mb",
+                    "multipleBirthBoolean": false}),
+            &fhir_oracle_store::Audit::default(),
+        )
+        .await
+        .expect("seed");
+    drop(store);
+
+    let opts = fhir_oracle_store::UpgradeOpts {
+        allow_destructive: true,
+        reshred_moved: true,
+    };
+    let store = connect(with_multiple_birth_moved(&full))
+        .await
+        .expect("credentials vanished mid-test");
+    let first = store
+        .upgrade_with("moved-sum", opts)
+        .await
+        .expect("first upgrade");
+    assert_eq!(first.reshredded, 1);
+    drop(store);
+
+    let store = connect(with_multiple_birth_moved(&full))
+        .await
+        .expect("credentials vanished mid-test");
+    let second = store
+        .upgrade_with("moved-sum", opts)
+        .await
+        .expect("second upgrade");
+    assert_eq!(second.reshredded, 0, "nothing left to carry");
 }

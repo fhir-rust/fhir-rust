@@ -495,3 +495,31 @@ Stated explicitly, because `X15.6` treats silence as a defect rather than as
 
 Part of the [fhir-mssql specification](index.md), which is part of the
 [fhir-databases specification](../../spec/databases/index.md).
+
+
+- **M14.39** The `O10.4c` re-shred MUST run **inside the same transaction as
+  the rest of the upgrade**, and this port's failure story is therefore
+  **all-or-nothing**.
+
+  It is the only server port that can say that. T-SQL's DDL is transactional
+  and `M14.17`'s upgrade already runs as one transaction, so placing the
+  re-shred between the additive and the destructive statements costs nothing
+  extra: a failure anywhere — a query error, a verification mismatch, a moved
+  source still holding data — rolls back the adds, the carried resources and
+  the drops together, and the store is exactly as it was.
+
+  What that buys is the absence of a window the other engines have.
+  PostgreSQL applies DDL in chunked transactions to stay inside a lock budget,
+  so a resource not yet carried under-returns the moved element while the
+  migration runs (`fhir-postgresql M14.29`). MySQL and MariaDB commit DDL
+  implicitly and cannot make the schema change transactional at all
+  (`fhir-mysql M14.38`, `fhir-mariadb M14.38`). Here there is no partially
+  migrated state for a reader to observe, so the documentation MUST NOT
+  copy those ports' "migrate off peak" caution: it would describe a hazard
+  this engine does not have. (`M14.x` is per-port under `C0.7`, so the
+  citations above are qualified by port; a bare number in this annex means
+  this annex.)
+
+  The cost is the one `M14.17` already names — a long transaction holds its
+  locks for the whole migration — and it is the trade this port has already
+  made everywhere else.

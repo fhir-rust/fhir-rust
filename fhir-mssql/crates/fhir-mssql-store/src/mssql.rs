@@ -374,6 +374,37 @@ impl MsSqlStore {
         checksum: &str,
         allow_destructive: bool,
     ) -> Result<crate::UpgradeReport, StoreError> {
+        self.upgrade_with(
+            checksum,
+            crate::UpgradeOpts {
+                allow_destructive,
+                ..crate::UpgradeOpts::default()
+            },
+        )
+        .await
+    }
+
+    /// [`upgrade`](Self::upgrade) with the full option set: `reshred_moved`
+    /// additionally carries data across relocated columns (`O10.4c`) — each
+    /// affected resource reconstructed under the *stored* old map, shredded
+    /// under the new one, `version_id` and `last_updated` preserved, no history
+    /// entry (a representation change is not a new version), verified
+    /// byte-identical before anything is dropped.
+    ///
+    /// **SQL Server's failure story is all-or-nothing** (`M14.39`), and it is
+    /// the only server port that can say so. T-SQL's DDL is transactional and
+    /// this port already wraps the whole upgrade in one transaction, so the
+    /// re-shred goes inside it: the migration either lands whole or not at
+    /// all, with no window in which an un-carried resource under-returns the
+    /// moved element. PostgreSQL cannot promise that without holding locks
+    /// over the store (`fhir-postgresql M14.29`) and MySQL/MariaDB cannot
+    /// promise it at all, because they commit DDL implicitly
+    /// (`fhir-mysql M14.38`).
+    pub async fn upgrade_with(
+        &self,
+        checksum: &str,
+        opts: crate::UpgradeOpts,
+    ) -> Result<crate::UpgradeReport, StoreError> {
         let schema_name = self.map.schema.clone();
         let esc = quote_ident(&schema_name);
         let meta = qualified(&schema_name, "fhir_mssql_meta");
@@ -451,16 +482,17 @@ impl MsSqlStore {
                 data_bearing.push(format!("{t}.{col} → {nt}"));
             }
         }
-        if !data_bearing.is_empty() {
+        if !data_bearing.is_empty() && !opts.reshred_moved {
             return Err(StoreError::Other(format!(
                 "upgrade refuses {} moved column(s) holding data (O10.4b, F-90): {}. \
-                 allow_destructive does not cover relocation; re-put the affected \
-                 resource types through this artifact, or reload",
+                 allow_destructive does not cover relocation; rerun with \
+                 reshred_moved (O10.4c), re-put the affected resource types \
+                 through this artifact, or reload",
                 data_bearing.len(),
                 data_bearing.join(", ")
             )));
         }
-        if !destructive.is_empty() && !allow_destructive {
+        if !destructive.is_empty() && !opts.allow_destructive {
             return Err(StoreError::Other(format!(
                 "upgrade requires {} destructive change(s); rerun with allow_destructive \
                  (first: {})",
@@ -481,9 +513,12 @@ impl MsSqlStore {
                 checksum,
                 &adds,
                 &destructive,
+                &old_map,
+                &moved,
+                opts,
             )
             .await;
-        let converted = match result {
+        let (converted, reshredded) = match result {
             Ok(n) => {
                 conn.simple_query("COMMIT TRANSACTION")
                     .await
@@ -501,7 +536,7 @@ impl MsSqlStore {
 
         let folded = self.backfill_norm().await?;
         Ok(crate::UpgradeReport {
-            reshredded: 0,
+            reshredded,
             additive: n_add + converted,
             destructive: n_drop,
             folded,
@@ -513,6 +548,7 @@ impl MsSqlStore {
     /// audit-envelope columns the per-resource diff cannot see, applies the
     /// destructive diff, and records the new checksum/version/asset.
     #[allow(clippy::too_many_arguments)]
+    #[allow(clippy::too_many_arguments)]
     async fn upgrade_in_tx(
         &self,
         conn: &mut pool::Connection,
@@ -521,7 +557,10 @@ impl MsSqlStore {
         checksum: &str,
         adds: &[String],
         destructive: &[String],
-    ) -> Result<usize, StoreError> {
+        old_map: &RelMap,
+        moved: &[(String, String, String)],
+        opts: crate::UpgradeOpts,
+    ) -> Result<(usize, usize), StoreError> {
         apply_stmts(conn, adds).await?;
 
         // Reconciliation: objects the per-resource diff cannot see. Computed
@@ -571,6 +610,126 @@ impl MsSqlStore {
             }
         }
         apply_stmts(conn, &reconcile).await?;
+
+        // O10.4c: carry data across relocated columns by re-shredding each
+        // affected resource. After the additive DDL (the new tables must
+        // exist) and before the destructive DDL (the old columns must still be
+        // readable) — and inside the caller's single transaction, which is
+        // what lets this port promise all-or-nothing (M14.39) where
+        // PostgreSQL and MySQL cannot.
+        let mut reshredded = 0usize;
+        if opts.reshred_moved && !moved.is_empty() {
+            let s_q = quote_ident(schema_name);
+            let mut rtypes: std::collections::BTreeSet<&str> = std::collections::BTreeSet::new();
+            for (t, _, _) in moved {
+                for (name, orm) in &old_map.resources {
+                    if orm.tables.iter().any(|tt| &tt.name == t) {
+                        rtypes.insert(name.as_str());
+                    }
+                }
+            }
+            for rtype in rtypes {
+                let old_rm = &old_map.resources[rtype];
+                let Some(new_rm) = self.map.resources.get(rtype) else {
+                    return Err(StoreError::Other(format!(
+                        "{rtype} has moved columns but the new map does not carry the \
+                         resource; re-shred cannot target it"
+                    )));
+                };
+                let base_raw = old_rm.base_table().name.clone();
+                if base_raw != new_rm.base_table().name {
+                    return Err(StoreError::Other(format!(
+                        "{rtype}: base table renamed {base_raw} → {}; re-shred does not \
+                         support that",
+                        new_rm.base_table().name
+                    )));
+                }
+                let base_q = quote_ident(&base_raw);
+                let ids: Vec<String> = conn
+                    .query(
+                        format!("SELECT [id] FROM {s_q}.{base_q} ORDER BY [id]"),
+                        &[],
+                    )
+                    .await
+                    .map_err(db_err)?
+                    .into_first_result()
+                    .await
+                    .map_err(db_err)?
+                    .iter()
+                    .filter_map(|r| r.get::<&str, _>(0).map(str::to_string))
+                    .collect();
+                for id in ids {
+                    let input = read_resource_rows(conn, &s_q, old_rm, &id).await?;
+                    let value =
+                        fhir_mssql_map::reconstruct::reconstruct(old_rm, &input, Some(&id))?;
+                    let row = conn
+                        .query(
+                            format!(
+                                "SELECT [version_id], CONVERT(varchar(27), [last_updated], 126) \
+                                 FROM {s_q}.{base_q} WHERE [id] = @P1"
+                            ),
+                            &[&id.as_str()],
+                        )
+                        .await
+                        .map_err(db_err)?
+                        .into_row()
+                        .await
+                        .map_err(db_err)?;
+                    let Some(row) = row else { continue };
+                    let version_id: i64 = row.get(0).unwrap_or(0);
+                    let ts: String = row.get::<&str, _>(1).unwrap_or_default().to_string();
+                    conn.execute(
+                        format!("DELETE FROM {s_q}.{base_q} WHERE [id] = @P1"),
+                        &[&id.as_str()],
+                    )
+                    .await
+                    .map_err(db_err)?;
+                    let out = fhir_mssql_map::shred::shred(new_rm, &value)?;
+                    write_shredded(conn, &s_q, &base_q, new_rm, &id, version_id, &ts, &out).await?;
+                    let back_in = read_resource_rows(conn, &s_q, new_rm, &id).await?;
+                    let back =
+                        fhir_mssql_map::reconstruct::reconstruct(new_rm, &back_in, Some(&id))?;
+                    if fhir_mssql_map::canon::canonicalize(&back)
+                        != fhir_mssql_map::canon::canonicalize(&value)
+                    {
+                        return Err(StoreError::Other(format!(
+                            "re-shred verification failed for {rtype}/{id}: the new-shape \
+                             reconstruction is not byte-identical; the transaction is rolled \
+                             back and no column has been dropped"
+                        )));
+                    }
+                    reshredded += 1;
+                }
+            }
+            // Every moved source must now be empty, checked before the drops
+            // and inside the same transaction, so a miss rolls the whole
+            // upgrade back rather than dropping a column that still held data.
+            for (t, col, nt) in moved {
+                let has = conn
+                    .query(
+                        format!(
+                            "SELECT COUNT(*) FROM {s_q}.{} WHERE {} IS NOT NULL",
+                            quote_ident(t),
+                            quote_ident(col)
+                        ),
+                        &[],
+                    )
+                    .await
+                    .map_err(db_err)?
+                    .into_row()
+                    .await
+                    .map_err(db_err)?
+                    .and_then(|r| r.get::<i32, _>(0))
+                    .unwrap_or(0);
+                if has != 0 {
+                    return Err(StoreError::Other(format!(
+                        "re-shred left data behind in {t}.{col} (destined for {nt}); \
+                         the transaction is rolled back"
+                    )));
+                }
+            }
+        }
+
         apply_stmts(conn, destructive).await?;
 
         // M14.37 (F-47 step 4): inside the transaction, so a refusal undoes
@@ -596,7 +755,7 @@ impl MsSqlStore {
             .await
             .map_err(db_err)?;
         }
-        Ok(converted)
+        Ok((converted, reshredded))
     }
 
     /// `M14.37` (**F-47** step 4): bring every installed `[path]` column to
@@ -1090,162 +1249,7 @@ impl MsSqlStore {
                 .map_err(db_err)?;
         }
 
-        // Base row first: every child has a foreign key to it.
-        let mut cols = vec![
-            "[id]".to_string(),
-            "[version_id]".to_string(),
-            "[last_updated]".to_string(),
-        ];
-        let mut vals: Vec<Bound> = vec![
-            Bound::Str(Some(id.to_string())),
-            Bound::I64(Some(version_id)),
-            Bound::Str(Some(ts.to_string())),
-        ];
-        for r in out.rows.iter().filter(|r| r.table == 0) {
-            for (name, v) in &r.cols {
-                cols.push(quote_ident(name));
-                vals.push(sqlval(v));
-            }
-        }
-        insert_row(conn, s, base, &cols, &vals).await?;
-
-        // Element tables, grouped so each is one insert per row (see the note
-        // on `insert_row` about why this is not batched).
-        let mut by_table: std::collections::BTreeMap<u32, Vec<&fhir_mssql_map::shred::Row>> =
-            std::collections::BTreeMap::new();
-        for r in out.rows.iter().filter(|r| r.table != 0) {
-            by_table.entry(r.table).or_default().push(r);
-        }
-        for (ti, rows) in by_table {
-            let t = &rm.tables[ti as usize];
-            let mut names: Vec<String> = Vec::new();
-            for r in &rows {
-                for (n, _) in &r.cols {
-                    if !names.contains(n) {
-                        names.push(n.clone());
-                    }
-                }
-            }
-            // The type each name binds as, so a column absent from a given
-            // row (a legitimately null leaf) can still get a NULL of the
-            // right SQL type rather than a generic one SQL Server refuses
-            // against a non-NVARCHAR column.
-            let types: Vec<ColTy> = names
-                .iter()
-                .map(|n| {
-                    t.cols
-                        .iter()
-                        .find(|c| &c.name == n)
-                        .map_or(ColTy::Text, |c| c.ty)
-                })
-                .collect();
-            let mut cols = vec!["[rid]".to_string(), "[ords]".to_string()];
-            cols.extend(names.iter().map(|n| quote_ident(n)));
-            for r in &rows {
-                let mut vals: Vec<Bound> = vec![
-                    Bound::Str(Some(id.to_string())),
-                    Bound::Bytes(Some(fmt_ords(&r.ords).into_bytes())),
-                ];
-                for (n, ty) in names.iter().zip(&types) {
-                    vals.push(
-                        r.cols
-                            .iter()
-                            .find(|(c, _)| c == n)
-                            .map_or_else(|| null_for_ty(*ty), |(_, v)| sqlval(v)),
-                    );
-                }
-                insert_row(conn, s, &quote_ident(&t.name), &cols, &vals).await?;
-            }
-        }
-
-        // Extensions and spill carry the surrogate primary key (M14.12): their
-        // natural keys hold unbounded text, which cannot be part of a key on
-        // this engine.
-        if let Some((_, t)) = rm.find_table(fhir_mssql_map::model::TableKind::Ext) {
-            for e in &out.ext {
-                let (kind, text, num, b) = e.val.cols();
-                let ords = fmt_ords(&e.ords);
-                let ext_ord = e.ext_ord.to_string();
-                let modifier = u8::from(e.modifier).to_string();
-                let key = surrogate_key(&[id, &e.path, &ords, &modifier, &ext_ord, &e.leaf]);
-                let cols = [
-                    "[key_hash]",
-                    "[rid]",
-                    "[path]",
-                    "[ords]",
-                    "[modifier]",
-                    "[ext_ord]",
-                    "[url]",
-                    "[leaf]",
-                    "[v_kind]",
-                    "[v_text]",
-                    "[v_num]",
-                    "[v_bool]",
-                ]
-                .map(String::from)
-                .to_vec();
-                let vals = vec![
-                    Bound::Bytes(Some(key.to_vec())),
-                    Bound::Str(Some(id.to_string())),
-                    Bound::Str(Some(e.path.clone())),
-                    Bound::Bytes(Some(ords.into_bytes())),
-                    Bound::Bool(Some(e.modifier)),
-                    Bound::I64(Some(i64::from(e.ext_ord))),
-                    Bound::Str(e.url.clone()),
-                    Bound::Str(Some(e.leaf.clone())),
-                    Bound::Str(Some(kind.to_string())),
-                    Bound::Str(text.map(str::to_string)),
-                    Bound::Str(num.map(str::to_string)),
-                    Bound::Bool(b),
-                ];
-                insert_row(conn, s, &quote_ident(&t.name), &cols, &vals).await?;
-            }
-        }
-
-        if let Some((_, t)) = rm.find_table(fhir_mssql_map::model::TableKind::Deep) {
-            for d in &out.deep {
-                let (kind, text, num, b) = d.val.cols();
-                let ords = fmt_ords(&d.ords);
-                let key = surrogate_key(&[id, &d.path, &ords, &d.leaf]);
-                let cols = [
-                    "[key_hash]",
-                    "[rid]",
-                    "[path]",
-                    "[ords]",
-                    "[leaf]",
-                    "[v_kind]",
-                    "[v_text]",
-                    "[v_num]",
-                    "[v_bool]",
-                ]
-                .map(String::from)
-                .to_vec();
-                let vals = vec![
-                    Bound::Bytes(Some(key.to_vec())),
-                    Bound::Str(Some(id.to_string())),
-                    Bound::Str(Some(d.path.clone())),
-                    Bound::Bytes(Some(ords.into_bytes())),
-                    Bound::Str(Some(d.leaf.clone())),
-                    Bound::Str(Some(kind.to_string())),
-                    Bound::Str(text.map(str::to_string)),
-                    Bound::Str(num.map(str::to_string)),
-                    Bound::Bool(b),
-                ];
-                insert_row(conn, s, &quote_ident(&t.name), &cols, &vals).await?;
-            }
-        }
-
-        if let Some((_, t)) = rm.find_table(fhir_mssql_map::model::TableKind::Contained) {
-            for (ord, v) in &out.contained {
-                let cols = ["[rid]", "[ord]", "[resource]"].map(String::from).to_vec();
-                let vals = vec![
-                    Bound::Str(Some(id.to_string())),
-                    Bound::I64(Some(i64::from(*ord))),
-                    Bound::Str(Some(v.to_string())),
-                ];
-                insert_row(conn, s, &quote_ident(&t.name), &cols, &vals).await?;
-            }
-        }
+        write_shredded(conn, s, base, rm, id, version_id, ts, out).await?;
 
         let op = if existed { "U" } else { "C" };
         let pre = crate::chain::preimage(id, version_id, ts, op, Some(canon), &audit.actor);
@@ -2684,4 +2688,184 @@ fn civil_from_days(z: i64) -> (i64, u32, u32) {
     let d = (doy - (153 * mp + 2) / 5 + 1) as u32;
     let m = if mp < 10 { mp + 3 } else { mp - 9 } as u32;
     (if m <= 2 { y + 1 } else { y }, m, d)
+}
+
+/// Write one shredded resource's rows: the base row, the element tables, and
+/// the ext / deep / contained spill.
+///
+/// Factored out of `put_in_tx` for the `O10.4c` re-shred, which must write
+/// through a map that is **not** this store's — the resource is reconstructed
+/// under the installed old map and written under the new one. Sharing the code
+/// means the migration writes rows the same way every ordinary write does,
+/// rather than through a second implementation that would have to be trusted
+/// separately.
+#[allow(clippy::too_many_arguments)]
+async fn write_shredded(
+    conn: &mut pool::Connection,
+    s: &str,
+    base: &str,
+    rm: &fhir_mssql_map::model::ResourceMap,
+    id: &str,
+    version_id: i64,
+    ts: &str,
+    out: &fhir_mssql_map::shred::ShredOut,
+) -> Result<(), StoreError> {
+    // Base row first: every child has a foreign key to it.
+    let mut cols = vec![
+        "[id]".to_string(),
+        "[version_id]".to_string(),
+        "[last_updated]".to_string(),
+    ];
+    let mut vals: Vec<Bound> = vec![
+        Bound::Str(Some(id.to_string())),
+        Bound::I64(Some(version_id)),
+        Bound::Str(Some(ts.to_string())),
+    ];
+    for r in out.rows.iter().filter(|r| r.table == 0) {
+        for (name, v) in &r.cols {
+            cols.push(quote_ident(name));
+            vals.push(sqlval(v));
+        }
+    }
+    insert_row(conn, s, base, &cols, &vals).await?;
+
+    // Element tables, grouped so each is one insert per row (see the note
+    // on `insert_row` about why this is not batched).
+    let mut by_table: std::collections::BTreeMap<u32, Vec<&fhir_mssql_map::shred::Row>> =
+        std::collections::BTreeMap::new();
+    for r in out.rows.iter().filter(|r| r.table != 0) {
+        by_table.entry(r.table).or_default().push(r);
+    }
+    for (ti, rows) in by_table {
+        let t = &rm.tables[ti as usize];
+        let mut names: Vec<String> = Vec::new();
+        for r in &rows {
+            for (n, _) in &r.cols {
+                if !names.contains(n) {
+                    names.push(n.clone());
+                }
+            }
+        }
+        // The type each name binds as, so a column absent from a given
+        // row (a legitimately null leaf) can still get a NULL of the
+        // right SQL type rather than a generic one SQL Server refuses
+        // against a non-NVARCHAR column.
+        let types: Vec<ColTy> = names
+            .iter()
+            .map(|n| {
+                t.cols
+                    .iter()
+                    .find(|c| &c.name == n)
+                    .map_or(ColTy::Text, |c| c.ty)
+            })
+            .collect();
+        let mut cols = vec!["[rid]".to_string(), "[ords]".to_string()];
+        cols.extend(names.iter().map(|n| quote_ident(n)));
+        for r in &rows {
+            let mut vals: Vec<Bound> = vec![
+                Bound::Str(Some(id.to_string())),
+                Bound::Bytes(Some(fmt_ords(&r.ords).into_bytes())),
+            ];
+            for (n, ty) in names.iter().zip(&types) {
+                vals.push(
+                    r.cols
+                        .iter()
+                        .find(|(c, _)| c == n)
+                        .map_or_else(|| null_for_ty(*ty), |(_, v)| sqlval(v)),
+                );
+            }
+            insert_row(conn, s, &quote_ident(&t.name), &cols, &vals).await?;
+        }
+    }
+
+    // Extensions and spill carry the surrogate primary key (M14.12): their
+    // natural keys hold unbounded text, which cannot be part of a key on
+    // this engine.
+    if let Some((_, t)) = rm.find_table(fhir_mssql_map::model::TableKind::Ext) {
+        for e in &out.ext {
+            let (kind, text, num, b) = e.val.cols();
+            let ords = fmt_ords(&e.ords);
+            let ext_ord = e.ext_ord.to_string();
+            let modifier = u8::from(e.modifier).to_string();
+            let key = surrogate_key(&[id, &e.path, &ords, &modifier, &ext_ord, &e.leaf]);
+            let cols = [
+                "[key_hash]",
+                "[rid]",
+                "[path]",
+                "[ords]",
+                "[modifier]",
+                "[ext_ord]",
+                "[url]",
+                "[leaf]",
+                "[v_kind]",
+                "[v_text]",
+                "[v_num]",
+                "[v_bool]",
+            ]
+            .map(String::from)
+            .to_vec();
+            let vals = vec![
+                Bound::Bytes(Some(key.to_vec())),
+                Bound::Str(Some(id.to_string())),
+                Bound::Str(Some(e.path.clone())),
+                Bound::Bytes(Some(ords.into_bytes())),
+                Bound::Bool(Some(e.modifier)),
+                Bound::I64(Some(i64::from(e.ext_ord))),
+                Bound::Str(e.url.clone()),
+                Bound::Str(Some(e.leaf.clone())),
+                Bound::Str(Some(kind.to_string())),
+                Bound::Str(text.map(str::to_string)),
+                Bound::Str(num.map(str::to_string)),
+                Bound::Bool(b),
+            ];
+            insert_row(conn, s, &quote_ident(&t.name), &cols, &vals).await?;
+        }
+    }
+
+    if let Some((_, t)) = rm.find_table(fhir_mssql_map::model::TableKind::Deep) {
+        for d in &out.deep {
+            let (kind, text, num, b) = d.val.cols();
+            let ords = fmt_ords(&d.ords);
+            let key = surrogate_key(&[id, &d.path, &ords, &d.leaf]);
+            let cols = [
+                "[key_hash]",
+                "[rid]",
+                "[path]",
+                "[ords]",
+                "[leaf]",
+                "[v_kind]",
+                "[v_text]",
+                "[v_num]",
+                "[v_bool]",
+            ]
+            .map(String::from)
+            .to_vec();
+            let vals = vec![
+                Bound::Bytes(Some(key.to_vec())),
+                Bound::Str(Some(id.to_string())),
+                Bound::Str(Some(d.path.clone())),
+                Bound::Bytes(Some(ords.into_bytes())),
+                Bound::Str(Some(d.leaf.clone())),
+                Bound::Str(Some(kind.to_string())),
+                Bound::Str(text.map(str::to_string)),
+                Bound::Str(num.map(str::to_string)),
+                Bound::Bool(b),
+            ];
+            insert_row(conn, s, &quote_ident(&t.name), &cols, &vals).await?;
+        }
+    }
+
+    if let Some((_, t)) = rm.find_table(fhir_mssql_map::model::TableKind::Contained) {
+        for (ord, v) in &out.contained {
+            let cols = ["[rid]", "[ord]", "[resource]"].map(String::from).to_vec();
+            let vals = vec![
+                Bound::Str(Some(id.to_string())),
+                Bound::I64(Some(i64::from(*ord))),
+                Bound::Str(Some(v.to_string())),
+            ];
+            insert_row(conn, s, &quote_ident(&t.name), &cols, &vals).await?;
+        }
+    }
+
+    Ok(())
 }

@@ -67,5 +67,5 @@ pub enum StoreError {
 /// compiles against another without a conversion.
 pub use fhir_store::{
     AccessRecord, Audit, ChainBreak, CondCreate, CondDelete, Got, HistEntry, PurgeReport,
-    PutOutcome, ResourceStatus, SearchOutcome, TxOp, TxOutcome, UpgradeReport,
+    PutOutcome, ResourceStatus, SearchOutcome, TxOp, TxOutcome, UpgradeOpts, UpgradeReport,
 };
