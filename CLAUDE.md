@@ -10,7 +10,7 @@ applies — in particular its five rules, which are the ones that get broken.
 ## The one-paragraph orientation
 
 Three families in one monorepo, plus two supporting crates. [`fhir/`](fhir/)
-is the FHIR **model** — every resource and datatype as Rust types, generated
+is the FHIR® **model** — every resource and datatype as Rust types, generated
 from the specification packages, with its own spec and its own `AGENTS.md`.
 Six `fhir-<engine>/` directories are the **database** ports: they store FHIR
 R3/R4/R5 resources as real relational tables and give them back losslessly,
@@ -208,3 +208,9 @@ mode entries), verified 2026-08-04. Do not carry F-37's caution forward onto
 the crate that now holds this name.
 
 Still ask before pushing.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

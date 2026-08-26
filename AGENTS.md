@@ -9,7 +9,7 @@ covers what you are about to touch.
 
 ## What this is
 
-A FHIR monorepo with **four families**. They share a domain and this file's
+A FHIR® monorepo with **four families**. They share a domain and this file's
 discipline; they do not share requirement numbers, release cadence, or a
 conformance model.
 
@@ -200,3 +200,9 @@ rather than green (`T11.12`, `T11.13`). See [`agents/testing.md`](agents/testing
   `fhir-loco/` (**F-45**) — not the persistence-core crate that holds the
   name today, which has never had a nested `.git` (verified 2026-08-04,
   **F-72**). Ask anyway; it is still someone else's decision when to push.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.
