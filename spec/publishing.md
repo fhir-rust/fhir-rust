@@ -33,6 +33,14 @@ model 4.1.1/3.2.1/1.5.1, reservations 0.0.2), and the gate reports
 at the moment of upload, closing the "green laptop is weaker evidence" note
 below for this release.
 
+**Republished again, 2026-08-26, second pass.** The trademark directive put
+the fair-use disclaimer into every publishable `description`, a manifest is
+packaged source, and `O10.11` does not distinguish small changes — so all 34
+went out once more (ports 0.5.2, store/loco 0.2.2, model 4.1.2/3.2.2/1.5.2,
+reservations 0.0.3) and the gate again reports `34 matched, 0 mismatched`.
+The description rule is enforced by `scripts/check-trademarks.sh` from this
+pass on.
+
 **The publish path is decided, 2026-08-26: a documented laptop step,
 permanently.** The owner ruled out crates.io Trusted Publishing from CI on
 reliability grounds — GitHub is not dependable enough to hold the publish

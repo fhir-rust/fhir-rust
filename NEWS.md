@@ -8,6 +8,21 @@ Press and analyst enquiries: see [Press contacts](#press-contacts) below.
 
 ---
 
+## 2026-08-26 — the description-disclaimer release (second of the day)
+
+All 34 crates republished a second time the same day, byte-verified against
+the registry (`check-published-match.sh`: 34 matched, 0 mismatched). One
+change carried them: every published crate's Cargo.toml `description` — the
+string crates.io renders as the crate's page — now ends with the HL7®
+trademark fair-use disclaimer, verbatim, and the statement that this
+project is an independent work. The trademark gate now walks every
+`[package]` manifest, so a future crate cannot publish a bare description
+unnoticed. Versions: ports 0.5.2, `fhir-store`/`fhir-loco` 0.2.2, `fhir`
+and `fhir-r2`–`r6` 4.1.2, `fhir-core` 3.2.2, `fhir-derive-macros` 1.5.2,
+reservations 0.0.3; each unit tagged and released as before.
+
+---
+
 ## 2026-08-26 — the professionalization release
 
 All 34 crates republished in one pass, byte-verified against the registry
