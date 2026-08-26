@@ -73,9 +73,14 @@ Grouped by `plan.md` workstream. Order within a group is priority order.
 - [ ] Decide the publishing shape: crates.io Trusted Publishing from CI vs
       documented laptop publishing; the per-port `publish.yml` workflows are
       currently inert either way.
-- [ ] Enable GitHub private vulnerability reporting, dependabot, and add
-      `.github/ISSUE_TEMPLATE/`; update SECURITY.md's reporting channel in
-      the same change.
+- [x] Enable GitHub private vulnerability reporting, dependabot, and add
+      `.github/ISSUE_TEMPLATE/` — done 2026-08-26, secret scanning too:
+      PVR flipped via the API and verified enabled; dependabot alerts
+      enabled plus `.github/dependabot.yml` (one cargo entry per workspace,
+      weekly); bug-report and wrong-claim templates with the
+      never-paste-patient-data rule and a stated response expectation;
+      SECURITY.md now names the Security tab as a private channel alongside
+      email, in the same change.
 
 ### Compliance — licensing and trademarks
 

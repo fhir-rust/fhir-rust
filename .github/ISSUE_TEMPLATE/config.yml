@@ -1,0 +1,14 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security vulnerability (private)
+    url: https://github.com/fhir-rust/fhir-rust/security/advisories/new
+    about: >-
+      Do not open a public issue for a vulnerability that is not already
+      public — use private reporting, or the email channel in SECURITY.md.
+      Never include real patient data.
+  - name: What response to expect
+    url: https://github.com/fhir-rust/fhir-rust/blob/main/MAINTAINERS.md
+    about: >-
+      One maintainer, best effort. Issues are read within a week; that is a
+      target, not a contract, and MAINTAINERS.md states the whole posture
+      honestly.

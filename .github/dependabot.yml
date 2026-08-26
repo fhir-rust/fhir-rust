@@ -1,0 +1,62 @@
+# Dependabot version updates. Alerts (the security half) are a repository
+# setting, enabled 2026-08-26 alongside private vulnerability reporting and
+# secret scanning; this file adds scheduled update PRs so the alerts have a
+# delivery mechanism instead of a dashboard nobody watches.
+#
+# One cargo entry per workspace: this monorepo is nine separate Cargo
+# workspaces (see AGENTS.md), and dependabot scopes cargo to a directory's
+# own lockfile. Weekly, Monday, so a batch lands at the start of a work week
+# rather than dribbling in. The security workflow (`fhir-security.yml`)
+# remains the gate that actually fails on a known advisory.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+  - package-ecosystem: cargo
+    directory: /fhir
+    schedule:
+      interval: weekly
+      day: monday
+  - package-ecosystem: cargo
+    directory: /fhir-store
+    schedule:
+      interval: weekly
+      day: monday
+  - package-ecosystem: cargo
+    directory: /fhir-loco
+    schedule:
+      interval: weekly
+      day: monday
+  - package-ecosystem: cargo
+    directory: /fhir-postgresql
+    schedule:
+      interval: weekly
+      day: monday
+  - package-ecosystem: cargo
+    directory: /fhir-sqlite
+    schedule:
+      interval: weekly
+      day: monday
+  - package-ecosystem: cargo
+    directory: /fhir-mysql
+    schedule:
+      interval: weekly
+      day: monday
+  - package-ecosystem: cargo
+    directory: /fhir-mariadb
+    schedule:
+      interval: weekly
+      day: monday
+  - package-ecosystem: cargo
+    directory: /fhir-mssql
+    schedule:
+      interval: weekly
+      day: monday
+  - package-ecosystem: cargo
+    directory: /fhir-oracle
+    schedule:
+      interval: weekly
+      day: monday

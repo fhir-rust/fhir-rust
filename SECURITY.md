@@ -5,10 +5,17 @@ looks like a security defect, including one you are unsure about.
 
 ## Reporting a vulnerability
 
-**Email [joel@joelparkerhenderson.com](mailto:joel@joelparkerhenderson.com)**
-with `SECURITY` in the subject. Include what you found, how to reproduce it,
-which crate and version, and — if you are willing — what you think the impact
-is.
+Two private channels, either is fine:
+
+- **GitHub private vulnerability reporting** — the repository's [Security
+  tab](https://github.com/fhir-rust/fhir-rust/security/advisories/new)
+  (enabled 2026-08-26). It keeps the report, the discussion, and any
+  eventual advisory in one place.
+- **Email [joel@joelparkerhenderson.com](mailto:joel@joelparkerhenderson.com)**
+  with `SECURITY` in the subject.
+
+Either way, include what you found, how to reproduce it, which crate and
+version, and — if you are willing — what you think the impact is.
 
 Do not open a public issue for a vulnerability that is not already public.
 
