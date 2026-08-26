@@ -36,4 +36,11 @@ keywords:
   - Rust
   - relational databases
   - electronic health records
-license: See license file
+# CFF's license field takes SPDX identifiers; the five below are this
+# repository's OR-choice, stated in full in LICENSE.md.
+license:
+  - MIT
+  - Apache-2.0
+  - BSD-3-Clause
+  - GPL-2.0-only
+  - GPL-3.0-only

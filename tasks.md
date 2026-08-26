@@ -45,10 +45,13 @@ Grouped by `plan.md` workstream. Order within a group is priority order.
         says all root files meet the trademark rules, gated by
         `scripts/check-trademarks.sh` in `gates.yml` — verified by that
         script passing on every root `*.md`.
-- [ ] **Resolve the AI_STATEMENT.md duplication**: root (281 lines) vs
-      `spec/special-files-for-public-repos/AI_STATEMENT.md` (257 lines,
-      divergent from line 1). One becomes the source; the other becomes a
-      pointer or is deleted. The spec file itself says so.
+- [x] **Resolve the AI_STATEMENT.md duplication** — done 2026-08-26: the
+      root is the source; the spec-directory copy is now a pointer that
+      records the resolution (the root carries everything the draft had
+      plus the §8 failure register; the draft's one unique section, "Rules
+      for contributors", lives near-verbatim in CONTRIBUTING.md §"Using AI
+      tools" — verified by reading both before deleting anything). The
+      draft's text stays in git history.
 - [ ] **Commit the professionalization pass** (9 modified files, 20+
       untracked documents, the two staged spec renames) — run
       `scripts/check-shared-core.sh`, `check-trademarks.sh`, and
@@ -83,8 +86,10 @@ Grouped by `plan.md` workstream. Order within a group is priority order.
       per `CLAUDE.md` before starting).
 - [ ] Replace the ports' `LICENSE-APACHE` header-boilerplate files with the
       actual license text (named as outstanding work in LICENSE.md).
-- [ ] Set `CITATION.cff`'s `license` field to the SPDX expression instead of
-      "See license file".
+- [x] Set `CITATION.cff`'s `license` field — done 2026-08-26: the five SPDX
+      identifiers as a CFF list (CFF takes identifiers, not OR-expressions;
+      the choice semantics live in LICENSE.md, which the file's comment
+      points at). Matches the `snomed-rust` convention.
 
 ### Governance
 

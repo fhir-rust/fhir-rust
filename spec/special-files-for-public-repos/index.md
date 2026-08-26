@@ -26,9 +26,11 @@ Special files that use top-level markdown:
 
 All of the above exist as of 2026-08-26. Two notes:
 
-- **`AI_STATEMENT.md` exists twice** — at the repository root (canonical, per
-  the sibling file here) and as `AI_STATEMENT.md` in this directory. They were
-  written separately and do not match. One of them has to become the source.
+- **`AI_STATEMENT.md` has one source** — the repository root — as of
+  2026-08-26. A divergent full draft used to sit in this directory too; it is
+  now a pointer at the root document, with the resolution (what the root
+  carries that the draft lacked, and where the draft's one unique section
+  lives) recorded in the pointer itself.
 - **The HL7 trademark rules in
   [`spec/hl7-trademarks-fair-use/`](../hl7-trademarks-fair-use/index.md) are
   met by all of these files as of 2026-08-26.** They require `®` after the
