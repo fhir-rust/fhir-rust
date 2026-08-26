@@ -236,10 +236,9 @@ jobs:
           # Self-signed, so the server certificate is its own trust anchor.
           PGSSLROOTCERT: ${{ github.workspace }}/pgtls/server.crt
           FHIR_POSTGRESQL_TEST_DB: fhir-postgresql
+          # A live job that reaches no server must be red, not a green run
+          # that skipped everything (F-06, F-91).
           FHIR_POSTGRESQL_REQUIRE_DB: "1"
-      # A live job that reaches no server must be red, not a green run that
-      # skipped everything (F-06, F-91).
-      FHIR_POSTGRESQL_REQUIRE_DB: "1"
           FHIR_POSTGRESQL_SPEC_DIR: ${{ github.workspace }}/fhir-postgresql/spec-cache
         run: cargo test -p fhir-postgresql-store --test live -- --nocapture
 
