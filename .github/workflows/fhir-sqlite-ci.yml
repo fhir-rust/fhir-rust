@@ -28,7 +28,7 @@ jobs:
     name: Build, lint, test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, rustfmt
@@ -55,7 +55,7 @@ jobs:
     env:
       FHIR_SQLITE_TEST_DB: ${{ github.workspace }}/target/ci.sqlite
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
@@ -114,7 +114,7 @@ jobs:
     name: Minimum supported Rust version
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       # `rust-version` in Cargo.toml is a promise to downstream users. Without
       # a job that builds on exactly that toolchain it is only a claim, and it
       # breaks silently the first time anyone uses a newer language feature.
@@ -141,7 +141,7 @@ jobs:
       matrix:
         target: [search_sql, shred]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@nightly
       - uses: Swatinem/rust-cache@v2
         with:
@@ -175,7 +175,7 @@ jobs:
     name: No version diverges from crates.io
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       # A crates.io version is immutable. If this tree carries a version that
       # is already published, the two must agree — otherwise the published
@@ -210,7 +210,7 @@ jobs:
     name: Advisories, licenses, SBOM
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:

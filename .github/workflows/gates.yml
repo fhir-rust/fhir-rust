@@ -31,7 +31,7 @@ jobs:
     name: X15.1 — shared core identical across six ports
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # bash, python3, and diff only. Deliberately no Rust toolchain: this
       # compares text and must stay fast enough that nobody is tempted to skip
@@ -45,7 +45,7 @@ jobs:
     steps:
       # Tags are the point of this job, and actions/checkout fetches none by
       # default.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -56,7 +56,7 @@ jobs:
     name: R13.14 — every crate root forbids unsafe code
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Text only, no toolchain: this asserts that the attribute is present,
       # which is a property of the source. That the attribute also *compiles*
@@ -68,7 +68,7 @@ jobs:
     name: HL7® fair use — registration mark and disclaimer
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # spec/hl7-trademarks-fair-use/ ends with "Assurance: create automatic
       # tests to verify this works." A trademark obligation is exactly the kind
@@ -81,7 +81,7 @@ jobs:
     name: F-60 — every documented example compiles
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
 

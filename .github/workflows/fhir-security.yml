@@ -67,7 +67,7 @@ jobs:
           - fhir-mssql
           - fhir-oracle
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       # `cache-bin` (on by default) restores ~/.cargo/bin, so the install
       # below is a no-op after the first run rather than a 2-4 minute build.
