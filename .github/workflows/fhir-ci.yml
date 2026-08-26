@@ -326,7 +326,7 @@ jobs:
         run: |
           cargo install cargo-cyclonedx --locked
           cargo cyclonedx --format json --all
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: sbom
           path: "fhir/**/*.cdx.json"
@@ -410,7 +410,7 @@ jobs:
             --features ${{ matrix.release }} -- -max_total_time=120 -rss_limit_mb=4096
       - name: Upload any crash artifacts
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: fuzz-artifacts-${{ matrix.target }}
           path: fhir/fuzz/artifacts/
@@ -450,7 +450,7 @@ jobs:
             --features ${{ matrix.release }} -- -max_total_time=300 -rss_limit_mb=4096
       - name: Upload any crash artifacts
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: fuzz-artifacts-${{ matrix.kind }}-${{ matrix.release }}
           path: fhir/fuzz/artifacts/
