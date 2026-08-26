@@ -110,11 +110,11 @@ Grouped by `plan.md` workstream. Order within a group is priority order.
 
 ### Audit and harmonization
 
-- [ ] **Restore audit-register hygiene** (`spec/databases/audit.md`): the
-      F-90 summary row reads "open …" yet ends "Closed in full 2026-08-12",
-      and the intro's open list (F-51, F-67, line 79) disagrees with the
-      table — the exact drift F-73 was filed for. Reconcile both in one
-      change.
+- [x] **Restore audit-register hygiene** — done 2026-08-26 in the F-93
+      filing commit: the F-90 summary row now opens "**fixed** — closed in
+      full 2026-08-12", matching its own narrative, and with that the
+      table's open set (F-51, F-67) agrees with the intro's list again. The
+      cell records its own correction, per F-73's rule.
 - [ ] Serve as the family canon: when siblings re-sync
       `spec/special-files-for-public-repos/` and the trademark spec from
       here, keep this repo's copies accurate first (see the in-flight

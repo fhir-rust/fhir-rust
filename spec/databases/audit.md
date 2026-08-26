@@ -187,9 +187,10 @@ type-/system-level history, multi-port wiring, is tracked in that crate's
 | [F-86](#f-86) | Medium | The `fhir/` model family (every release, R2–R6 and R4B) rejects FHIR JSON's null-padded primitive arrays (`"event": [null]` beside `_event`): repeating primitives are `Vec<T>` and cannot hold a placeholder position | **fixed** 2026-08-10 (owner-directed: a dedicated container) — `0..*` primitives are now `fhir_core::PrimVec<T>` (`R6.7a`), a transparent `Vec<Option<T>>` whose `None` is the extension-only placeholder; the nine R4B corpus examples round-trip and left the allowlist at the gate's own demand. Stated residual: `1..*` primitives keep `Vec1` and its type-level non-emptiness, so an ext-only position there stays unrepresentable (loudly refused, F-87; no corpus example uses it) |
 | [F-87](#f-87) | **High** | A choice element (`timing[x]` and kin) whose content fails to parse is **silently dropped** — the resource deserializes "successfully" minus the element, data loss masquerading as success | **fixed** 2026-08-10, same day — every choice-bearing struct now deserializes through a generated shadow whose choice fields are non-`Option` `choice::Slot`s, so a present-but-invalid element errors loudly; all six release crates, five corpora green |
 | [F-88](#f-88) | **High** | The consolidated port workflows (F-49) left three per-job settings unrooted, and the first hosted runs exposed all three: `cargo-deny` ran at the repo root and errored; the spec/corpus env paths pointed at the root while the fetch steps wrote under the port directory, so **every spec-dependent live test silently skipped and the "live gate" was green while testing nothing** (T11.12's nightmare at workflow scale); and the plaintext pg job lacked an explicit `PGSSLMODE`, so the store's secure-by-default `require` (O10.7) correctly refused it — surfaced only by the two new `history_page` tests, the sole live tests that actually connected | **fixed** 2026-08-10 — paths re-rooted and deny given its manifest in all six workflows; the plaintext job says `disable` explicitly with the TLS-only job carrying `require`; and a vacuity guard now fails the pg live step if anything skipped on CI |
-| [F-90](#f-90) | **High** | The full R3/R4/R5 schemas **do not install** on stock MySQL 8.4 / MariaDB 11.4: InnoDB's create-time row-size check (`ERROR 1118`, > 8126 bytes) charges ~41 bytes per `TEXT` column (measured by bisection: 195 fit, 196 fail) and the widest generated tables carry up to 232–257 columns with ~190–211 `TEXT`s — the open-typed `value[x]` splats (`parameters_parameter_value`, `task_input_value`, the `StructureDefinition` element `defaultValue`/`fixed`/`pattern`/`example` tables) and `explanation_of_benefit`'s base | open — found by the first full-schema CI install (`DDL_FULL=1` is CI-only; local suites sample and the 2026-08-03 "green against live MySQL 8.4" predates the widest tables' exercise). Unmasked by F-89's harness fix. The dialect cannot fix it alone (tables are map-shaped and the stores write by table name); the recommended fix is a byte-aware force-split in the shared generator (`SPLIT_WIDTH` is column-count only), budgeted for the tightest engine (~7,500 conservative bytes), which changes table shapes in all six ports — owner-directed 2026-08-11: the byte-aware force-split landed at the shared generator (`G2.6a`), trigger 6,600 / budget 7,900 charged bytes, widest resulting table 6,611; all assets and fixtures regenerated, `row_budget.rs` gates the artifacts. **Live-verified 2026-08-11**: full R3/R4/R5 installs green on MySQL 8.4 and MariaDB 11.4, and both workflows fully green for the first time (unmasking F-91 on the way). **Closed in full 2026-08-12**: the `O10.4b` moved-column guard landed in all six stores and is live-verified on **all six engines** — oracle's included, on its live job's first hosted run (2026-08-12, the F-06 gate restored with a real engine) |
+| [F-90](#f-90) | **High** | The full R3/R4/R5 schemas **do not install** on stock MySQL 8.4 / MariaDB 11.4: InnoDB's create-time row-size check (`ERROR 1118`, > 8126 bytes) charges ~41 bytes per `TEXT` column (measured by bisection: 195 fit, 196 fail) and the widest generated tables carry up to 232–257 columns with ~190–211 `TEXT`s — the open-typed `value[x]` splats (`parameters_parameter_value`, `task_input_value`, the `StructureDefinition` element `defaultValue`/`fixed`/`pattern`/`example` tables) and `explanation_of_benefit`'s base | **fixed** — closed in full 2026-08-12, as this row's own narrative records (an earlier revision of this cell still began "open", contradicting its ending — the F-73 failure mode, corrected 2026-08-26). Found by the first full-schema CI install (`DDL_FULL=1` is CI-only; local suites sample and the 2026-08-03 "green against live MySQL 8.4" predates the widest tables' exercise). Unmasked by F-89's harness fix. The dialect cannot fix it alone (tables are map-shaped and the stores write by table name); the recommended fix is a byte-aware force-split in the shared generator (`SPLIT_WIDTH` is column-count only), budgeted for the tightest engine (~7,500 conservative bytes), which changes table shapes in all six ports — owner-directed 2026-08-11: the byte-aware force-split landed at the shared generator (`G2.6a`), trigger 6,600 / budget 7,900 charged bytes, widest resulting table 6,611; all assets and fixtures regenerated, `row_budget.rs` gates the artifacts. **Live-verified 2026-08-11**: full R3/R4/R5 installs green on MySQL 8.4 and MariaDB 11.4, and both workflows fully green for the first time (unmasking F-91 on the way). **Closed in full 2026-08-12**: the `O10.4b` moved-column guard landed in all six stores and is live-verified on **all six engines** — oracle's included, on its live job's first hosted run (2026-08-12, the F-06 gate restored with a real engine) |
 | [F-91](#f-91) | Medium | The mysql/mariadb **store suites never ran in CI**: the DDL step ahead of them failed (F-90) and cargo stops at the first failing test binary, while the step still called itself "expected to skip until T64" — stale twice over, since the stores have spoken their own engines for weeks. Their first real execution (2026-08-11, the moment F-90's fix let the DDL step pass) refused the service container's self-signed certificate under the verifying default (`UnknownIssuer`) — the store keeping exactly the promise F-54 measures, against a job that had never declared its TLS intent | **fixed** 2026-08-11 — both live jobs declare `FHIR_*_SSL_MODE: DISABLED` (plaintext by design, mirroring the pg job's explicit `PGSSLMODE: disable`, F-88), the step is named honestly, and the stale T64 rationale for the missing TLS-only job is rewritten: what is actually missing is a `require_secure_transport=ON` server for the plaintext-refusal half |
 | [F-92](#f-92) | Medium | F-91's genre, two more members, found by checking that the O10.4b tests actually *ran* in the green jobs: **mariadb's main store suite** (`mariadb_store.rs`, 13 tests) gated on `FHIR_MYSQL_TEST_DSN` — the mysql port's variable — so it skip-passed silently in CI while the header even said "skips silently"; and **mssql's live job had no store-suite step at all** — the workflow predates the store (F-65) and still said "cannot be written honestly until there is a store", so the store suite including F-47's 12 upgrade tests had never run hosted | **fixed** 2026-08-12 — the env var renamed to `FHIR_MARIADB_TEST_DSN` (14 sites, one file), the mssql step added with TLS intent already declared in the DSN (`TrustServerCertificate=true`, the F-91 lesson), and both stale rationales rewritten. **Verified** the same day: mariadb's 13-test suite ran green in its first genuine CI execution, and mssql's store suite ran green including the O10.4b tests |
+| [F-93](#f-93) | Medium | `fhir-oracle`'s `O10.4c` re-shred **never passed a hosted run**, despite landing in a commit whose message said "live-verified" (2026-08-22) — that commit's own CI run was red, and every run since failed the two re-shred tests the same way. Root cause: `recon_with_map` ended with a hygiene `rollback()`, and the re-shred's byte-identical verify calls it *inside* the per-resource write transaction — the verify read the uncommitted new-shape rows, the rollback then silently discarded the delete and both re-inserts, the `commit()` committed nothing, and the leftover guard correctly reported the old data still in place ("re-shred left data behind"). Fixing that unmasked a second defect the rollback had been hiding: `drop_schema` was **map-scoped** — unlike `fhir-mssql`'s catalog-driven `sys.tables` sweep — so a table the connected map did not name (a relocated-column table from an earlier run) survived with its rows but without its FKs, and the next re-shred collided with the residue (ORA-00001 on `(rid, ords)`) | **fixed** 2026-08-26 — both rollbacks removed from `recon_with_map` (callers own their transactions; the function's doc now states why it must never end the caller's transaction), and `drop_schema` sweeps `user_tables` (`M14.5` makes the connecting user exactly this store's world). **Live-verified** on Oracle Database Free 23: the upgrade suite 16/16 **twice consecutively** — the second pass is the point, it exercises the residue class — plus the store suite 7/7 and `root_extension`; the first passing runs these two tests have ever had, hosted or local |
 | [F-89](#f-89) | Medium | The mysql/mariadb DDL test harness was unportable and **masked real errors**: it passed MariaDB's `--skip-ssl-verify-server-cert` to whatever client exists (Oracle's mysql 8 client rejects it), assumed a utf8mb4 default charset (the runner's client defaults utf8mb3 → ERROR 1253 on the collation probe), and on any early client exit reported the stdin `Broken pipe` instead of reading the client's stderr — hiding whatever the real failure was | **fixed** 2026-08-10 — client-flavor-gated TLS flag, explicit `--default-character-set=utf8mb4`, and EPIPE falls through to collect stderr, so the next failure names itself |
 
 ## What remains, and why
@@ -5305,6 +5306,67 @@ relearned); both stale workflow rationales rewritten to name their real
 remaining gaps. Verification is the next push executing both suites in
 CI for the first time — and whatever that first execution unmasks is
 the next finding, not a regression of this one.
+
+---
+
+## F-93
+
+**Medium.** Found 2026-08-26 by the CI-watch loop, working backward from the
+run history: `fhir-oracle CI` had not been green since 2026-08-22 04:22, and
+the first red was the run for the commit that *added* the `O10.4c` re-shred —
+a commit whose message claimed it live-verified. The claim was true of a
+local run and false of every hosted one, which is this register's oldest
+genre (F-27, F-92): verification asserted, never re-checked where it counts.
+
+**The first defect.** `recon_with_map` — the read path the re-shred uses both
+to reconstruct under the old map and to verify the rewrite under the new
+one — ended with `let _ = conn.rollback();` (and carried a second one on its
+not-found early return): hygiene, so a pooled connection went back clean.
+Under `get` that is harmless; the reads lock nothing. But the re-shred's
+verify runs **inside the per-resource write transaction**, so the sequence
+was: `DELETE` the base row, re-insert base and children under the new shape,
+read it all back (visible — same transaction), compare canonically (equal),
+*rollback everything*, then `commit()` a transaction that no longer had
+anything in it. The old row's data was still in place, and the leftover
+guard — checked before any column is dropped, exactly as designed — refused
+with "re-shred left data behind … rerun to resume". Diagnosed by bracketing
+the commit with probes: the moved-table row was visible to the verify and
+already gone one statement later, on the same connection, before the commit.
+
+**The second defect, unmasked by fixing the first.** With commits real, the
+suite failed differently on its second consecutive run: `ORA-00001` on
+`patient_multiple_birth_moved (rid, ords)`. `drop_schema` iterated the
+*connected map's* tables — and a relocated-column table belongs to no
+original map, so it survived the drop with its rows but not its FKs (those
+died with the parent's `CASCADE CONSTRAINTS`), and the next run's re-shred
+collided with the residue. `fhir-mssql`'s `drop_schema` had always been
+catalog-driven (`sys.tables` for the schema); the oracle port now matches,
+sweeping `user_tables` — `M14.5` puts each FHIR version in its own Oracle
+user, so the connecting user's tables are exactly this store's world.
+
+**Verification (2026-08-26, Oracle Database Free 23):** the upgrade suite
+16/16 **twice consecutively** — the second pass is the point; it exercises
+the residue class the first defect had been hiding — plus `oracle_store`
+7/7 and `root_extension`, `fmt` and `clippy -D warnings` clean.
+
+**Identified during analysis, not yet exercised, left open deliberately:**
+resuming a re-shred that died mid-run looks wedged for already-carried
+resources. On a rerun, the stored map is still the old one, so a carried
+resource is reconstructed through the old map — which reads the base column
+the carry emptied — while the verify reads the moved table that holds the
+value; the two cannot match, and the per-resource rollback (correctly)
+refuses forever. No data is lost — that guard is doing its job — but "rerun
+to resume" would then be a promise the carried rows break. Untested; whoever
+next touches the re-shred should write the kill-mid-run test before
+believing either outcome.
+
+**One more thing this diagnosis re-learned, recorded because it will happen
+again:** part of an earlier session's investigation ran the suite without
+the `FHIR_ORACLE_TEST_*` variables set and read six consecutive "ok" results
+as passes. They were skips — the suites self-skip without credentials, and a
+skipping test is indistinguishable from a passing one in the summary line
+(T11.12, F-91's lesson, relearned live during the very finding that cites
+them).
 
 ---
 
