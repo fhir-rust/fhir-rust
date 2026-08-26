@@ -83,12 +83,17 @@ Grouped by `plan.md` workstream. Order within a group is priority order.
       currently inert either way.
 - [x] Enable GitHub private vulnerability reporting, dependabot, and add
       `.github/ISSUE_TEMPLATE/` — done 2026-08-26, secret scanning too:
-      PVR flipped via the API and verified enabled; dependabot alerts
-      enabled plus `.github/dependabot.yml` (one cargo entry per workspace,
-      weekly); bug-report and wrong-claim templates with the
+      PVR flipped via the API and verified enabled; dependabot alerts and
+      automated security fixes enabled, with `.github/dependabot.yml`
+      registering every lockfile but capping cargo version-update PRs at
+      zero — its first hour on default limits opened 47 major-bump PRs,
+      each triggering a port's full live-database CI; all 47 closed with
+      the reasoning, which also lives in the file (security advisories
+      still open PRs; `fhir-security.yml` fails the build on any known
+      advisory). Bug-report and wrong-claim templates carry the
       never-paste-patient-data rule and a stated response expectation;
-      SECURITY.md now names the Security tab as a private channel alongside
-      email, in the same change.
+      SECURITY.md names the Security tab as a private channel alongside
+      email.
 
 ### Compliance — licensing and trademarks
 
