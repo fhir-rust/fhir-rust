@@ -336,7 +336,7 @@ dependencies = [
  "fhir-mariadb-gen",
  "fhir-mariadb-map",
  "fhir-store",
- "getrandom 0.3.4",
+ "getrandom 0.4.3",
  "hmac",
  "mysql_async",
  "serde_json",
