@@ -40,7 +40,7 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal", "syn
 # whatever the host ships: the generated DDL depends on version-specific
 # behaviour, so the engine is pinned the same way doc/containers.md pins the
 # sqlite3 CLI. Sync API, so calls are wrapped in spawn_blocking.
-rusqlite = { version = "0.32", features = ["bundled"] }
+rusqlite = { version = "0.40", features = ["bundled"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
