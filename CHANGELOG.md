@@ -22,6 +22,24 @@ the 2026-08-22 entry.
 History before 2026-08-01 belongs to the separate projects this monorepo was
 assembled from, and lives in the per-family changelogs above.
 
+## 2026-08-26 — the description-disclaimer release (second of the day)
+
+Every publishable crate's Cargo.toml `description` — the string crates.io
+renders as the crate's page — now carries the HL7® trademark fair-use
+disclaimer verbatim, with ® on the first use of each word mark, in the
+canonical three-part shape ending "This project is an independent work."
+`scripts/check-trademarks.sh` gained a section that walks every `[package]`
+manifest and fails unless each publishable description complies (fuzz
+crates are `publish = false` and are skipped by that field);
+`spec/hl7-trademarks-fair-use/` records the coverage.
+
+A manifest change is a source change, so `O10.11` demands the published
+versions move with it: all 34 crates republished — six ports 0.5.2,
+`fhir-store` and `fhir-loco` 0.2.2, `fhir` 4.1.2, `fhir-r2`–`fhir-r6`
+4.1.2, `fhir-core` 3.2.2, `fhir-derive-macros` 1.5.2, the five name
+reservations 0.0.3. No code changed; the descriptions are the whole
+release.
+
 ## 2026-08-26 — the professionalization release: all 34 crates republished
 
 Everything below shipped to crates.io on 2026-08-26 in one pass, as the

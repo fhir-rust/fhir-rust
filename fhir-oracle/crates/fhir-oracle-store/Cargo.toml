@@ -1,6 +1,6 @@
 [package]
 name = "fhir-oracle-store"
-description = "Oracle Database storage layer for fhir-oracle (Store level: live-verified against gvenzl/oracle-free, 7/7 tests — see audit.md F-68; R4.5 is an open gap)"
+description = "Oracle Database storage layer for fhir-oracle (Store level: live-verified against gvenzl/oracle-free, 7/7 tests — see audit.md F-68; R4.5 is an open gap). HL7®, and FHIR® are the registered trademarks of Health Level Seven International and their use of these trademarks does not constitute an endorsement by HL7. This project is an independent work."
 version.workspace = true
 edition.workspace = true
 license.workspace = true

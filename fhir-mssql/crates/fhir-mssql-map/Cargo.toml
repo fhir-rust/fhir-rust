@@ -1,6 +1,6 @@
 [package]
 name = "fhir-mssql-map"
-description = "Relational map and shred/reconstruct engine for fhir-mssql (T-SQL DDL, live-verified against SQL Server - audit.md F-65)"
+description = "Relational map and shred/reconstruct engine for fhir-mssql (T-SQL DDL, live-verified against SQL Server - audit.md F-65). HL7®, and FHIR® are the registered trademarks of Health Level Seven International and their use of these trademarks does not constitute an endorsement by HL7. This project is an independent work."
 version.workspace = true
 edition.workspace = true
 license.workspace = true

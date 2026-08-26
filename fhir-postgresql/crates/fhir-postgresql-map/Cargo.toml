@@ -1,6 +1,6 @@
 [package]
 name = "fhir-postgresql-map"
-description = "Relational map model and generic shred/reconstruct engine for fhir-postgresql"
+description = "Relational map model and generic shred/reconstruct engine for fhir-postgresql. HL7®, and FHIR® are the registered trademarks of Health Level Seven International and their use of these trademarks does not constitute an endorsement by HL7. This project is an independent work."
 version.workspace = true
 edition.workspace = true
 license.workspace = true

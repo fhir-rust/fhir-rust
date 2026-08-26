@@ -343,7 +343,7 @@ checksum = "4443176a9f2c162692bd3d352d745ef9413eec5782a80d8fd6f8a1ac692a07f7"
 
 [[package]]
 name = "fhir-postgresql-gen"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "fhir-postgresql-map",
  "flate2",
@@ -355,7 +355,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-postgresql-map"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "flate2",
  "serde",
@@ -367,7 +367,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-postgresql-store"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "deadpool-postgres",
  "fhir-postgresql-gen",
@@ -393,7 +393,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-store"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "getrandom 0.3.4",
  "hmac 0.12.1",

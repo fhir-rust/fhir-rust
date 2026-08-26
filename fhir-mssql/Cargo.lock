@@ -231,7 +231,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-mssql-gen"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "fhir-mssql-map",
  "flate2",
@@ -243,7 +243,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-mssql-map"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "flate2",
  "serde",
@@ -258,7 +258,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-mssql-store"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "async-trait",
  "bb8",
@@ -283,7 +283,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-store"
-version = "0.2.1"
+version = "0.2.2"
 dependencies = [
  "getrandom 0.3.4",
  "hmac",

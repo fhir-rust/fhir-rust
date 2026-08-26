@@ -1,6 +1,6 @@
 [package]
 name = "fhir-oracle-map"
-description = "Relational map and shred/reconstruct engine for fhir-oracle (Oracle DDL, live-verified on Oracle 26ai Free - audit.md F-08)"
+description = "Relational map and shred/reconstruct engine for fhir-oracle (Oracle DDL, live-verified on Oracle 26ai Free - audit.md F-08). HL7®, and FHIR® are the registered trademarks of Health Level Seven International and their use of these trademarks does not constitute an endorsement by HL7. This project is an independent work."
 version.workspace = true
 edition.workspace = true
 license.workspace = true

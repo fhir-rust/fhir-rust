@@ -43,7 +43,10 @@ MARKS = ("HL7", "FHIR", "CDA")
 
 # Scope: every markdown file in the repository (tree-wide since 2026-08-26,
 # replacing the allowlist that grew in tranches), plus the rustdoc of the
-# nine top-level crate roots (what docs.rs renders). Exemptions are named,
+# nine top-level crate roots (what docs.rs renders), plus — since later on
+# 2026-08-26 — the Cargo.toml `description` of every publishable crate (what
+# crates.io renders): each must carry the disclaimer verbatim and the ® on
+# the first use of each word mark. Exemptions are named,
 # not implied, and each has a structural reason — not "too much to fix":
 #
 #   fhir/fhir.md            a generated 22 MB transcript, regenerated whole;
@@ -142,6 +145,60 @@ for path in FILES + LIB_RS:
         print("ok   %s (%s)" % (path, ", ".join(used)))
     elif LIST:
         print("--   %s (no word marks in prose)" % path)
+
+# --- Cargo.toml descriptions -------------------------------------------------
+# What crates.io renders under each crate name is the `description` string, a
+# page of its own in the fair-use sense. Every publishable crate's description
+# must carry the disclaimer verbatim and the ® on the first use of each word
+# mark (the same check_marks logic as above; a description is plain prose, so
+# no masking is needed — crate names like `fhir-sqlite-store` are lowercase
+# and never match the word-bounded, case-sensitive marks). Fuzz crates are
+# publish = false and have no description; they are skipped by that field,
+# not by name.
+
+def package_manifests():
+    out = []
+    for dirpath, dirnames, filenames in os.walk("."):
+        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
+        if "Cargo.toml" in filenames:
+            out.append(os.path.normpath(os.path.join(dirpath, "Cargo.toml")))
+    return sorted(out)
+
+for path in package_manifests():
+    text = open(path, encoding="utf-8").read()
+    if not re.search(r"(?m)^\[package\]", text):
+        continue  # workspace-only manifest
+    if re.search(r"(?m)^publish\s*=\s*false", text):
+        continue  # not publishable; crates.io never renders it
+    m = re.search(r'(?m)^description\s*=\s*"(.*)"\s*$', text)
+    problems = []
+    if m is None:
+        problems.append("publishable crate has no description")
+        desc = ""
+    else:
+        desc = m.group(1)
+    used = []
+    for mark in MARKS:
+        span = None
+        for mm in re.finditer(r"\b%s\b" % mark, desc):
+            span = mm.span()
+            break
+        if span is None:
+            continue
+        used.append(mark)
+        if desc[span[1]:span[1] + 1] != "®":
+            problems.append("description: first use of %s is not %s®" % (mark, mark))
+    if desc and DISCLAIMER not in desc:
+        problems.append("description omits the required disclaimer")
+
+    if problems:
+        failures += 1
+        print("FAIL %s" % path)
+        for p in problems:
+            print("       %s" % p)
+    elif LIST:
+        print("ok   %s (description%s)" %
+              (path, ": " + ", ".join(used) if used else ", disclaimer only"))
 
 if failures:
     print("\n%d document(s) do not meet spec/hl7-trademarks-fair-use/." % failures)

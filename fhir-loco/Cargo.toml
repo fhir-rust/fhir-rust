@@ -2,10 +2,10 @@
 
 [package]
 name = "fhir-loco"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2021"
 license = "MIT OR Apache-2.0 OR BSD-3-Clause OR GPL-2.0-only OR GPL-3.0-only"
-description = "FHIR RESTful API server: Loco.rs, Axum, Tokio and Hyper over the fhir-* relational stores"
+description = "FHIR® RESTful API server: Loco.rs, Axum, Tokio and Hyper over the fhir-* relational stores. HL7®, and FHIR® are the registered trademarks of Health Level Seven International and their use of these trademarks does not constitute an endorsement by HL7. This project is an independent work."
 readme = "README.md"
 repository = "https://github.com/fhir-rust/fhir-rust/"
 keywords = ["fhir", "healthcare", "hl7", "rest", "medical"]

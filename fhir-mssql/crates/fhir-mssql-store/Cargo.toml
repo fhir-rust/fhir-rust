@@ -1,6 +1,6 @@
 [package]
 name = "fhir-mssql-store"
-description = "SQL Server storage layer for fhir-mssql (Store level: live-verified against azure-sql-edge, 33/33 tests - audit.md F-65; TLS advisory risk F-67)"
+description = "SQL Server storage layer for fhir-mssql (Store level: live-verified against azure-sql-edge, 33/33 tests - audit.md F-65; TLS advisory risk F-67). HL7®, and FHIR® are the registered trademarks of Health Level Seven International and their use of these trademarks does not constitute an endorsement by HL7. This project is an independent work."
 version.workspace = true
 edition.workspace = true
 license.workspace = true

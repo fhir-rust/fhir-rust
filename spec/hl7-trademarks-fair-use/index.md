@@ -39,3 +39,12 @@ exemptions are structural, named in the script with their reasons:
 prose breaks the build), and `.github/` issue templates (a footer there
 would inject itself into every filed issue). All seven mdbooks build with
 the footers in place.
+
+**Also covered since 2026-08-26 (same day, second pass):** the Cargo.toml
+`description` of every publishable crate — the string crates.io renders as
+each crate's page. The script walks every `[package]` manifest in the tree,
+skips only `publish = false` crates (the fuzz harnesses, which have no
+description), and fails unless the description carries the disclaimer
+verbatim and the ® on the first use of each word mark. All 34 publishable
+descriptions end with the disclaimer and "This project is an independent
+work."

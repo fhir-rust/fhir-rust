@@ -10,7 +10,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.5.1"
+version = "0.5.2"
 keywords = ["fhir", "healthcare", "sqlserver", "hl7", "medical"]
 categories = ["database", "science", "data-structures"]
 edition = "2024"
@@ -19,9 +19,9 @@ repository = "https://github.com/fhir-rust/fhir-rust/"
 rust-version = "1.90"
 
 [workspace.dependencies]
-fhir-mssql-map = { path = "crates/fhir-mssql-map", version = "0.5.1" }
-fhir-mssql-gen = { path = "crates/fhir-mssql-gen", version = "0.5.1" }
-fhir-mssql-store = { path = "crates/fhir-mssql-store", version = "0.5.1" }
+fhir-mssql-map = { path = "crates/fhir-mssql-map", version = "0.5.2" }
+fhir-mssql-gen = { path = "crates/fhir-mssql-gen", version = "0.5.2" }
+fhir-mssql-store = { path = "crates/fhir-mssql-store", version = "0.5.2" }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["arbitrary_precision", "float_roundtrip", "preserve_order"] }
 thiserror = "2"
