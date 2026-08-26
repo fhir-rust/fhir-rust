@@ -1,4 +1,4 @@
-//! `fhir-store` — the engine-agnostic half of FHIR persistence.
+//! `fhir-store` — the engine-agnostic half of FHIR® persistence.
 //!
 //! Everything about storing FHIR that is **not** specific to one SQL engine:
 //! the tamper-evident audit chain, the attribution and disclosure records it

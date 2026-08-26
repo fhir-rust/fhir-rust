@@ -39,6 +39,19 @@ jobs:
       - name: Check
         run: ./scripts/check-shared-core.sh --diff
 
+  trademarks:
+    name: HL7® fair use — registration mark and disclaimer
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # spec/hl7-trademarks-fair-use/ ends with "Assurance: create automatic
+      # tests to verify this works." A trademark obligation is exactly the kind
+      # that gets satisfied once by hand and then lost on the next new page, so
+      # it is gated rather than remembered. python3 only; no toolchain.
+      - name: Check
+        run: ./scripts/check-trademarks.sh
+
   doc-examples:
     name: F-60 — every documented example compiles
     runs-on: ubuntu-latest

@@ -1,4 +1,4 @@
-//! # FHIR for Rust
+//! # FHIR® for Rust
 //!
 //! `fhir` is a Rust implementation of the **HL7® FHIR®** data model, together
 //! with a code generator that produces it from the official FHIR specification

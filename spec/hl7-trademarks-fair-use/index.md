@@ -9,3 +9,26 @@ Include the following disclaimer on the webpages, material and other locations w
 Please refer to the Fast Healthcare Interoperability Resources as the "HL7® FHIR® standard". When referencing the HL7® FHIR® standard in a website, document, presentation, or otherwise in a place of prominence, refer to it as the "HL7® FHIR® standard". In subsequent uses, please refer to it as the "HL7® FHIR® standard" or "HL7® FHIR®", using the ® symbol as often as is practical, at least once on each page of printed matter, generally in connection with the first or dominant usage.
 
 Assurance: create automatic tests to verify this works.
+
+**Done 2026-08-26.** `scripts/check-trademarks.sh` verifies the first two rules
+on every markdown document at the repository root and under `help/`: the
+registration mark follows the first prose use of each word mark, and any page
+using a mark carries the disclaimer verbatim. It runs in
+`.github/workflows/gates.yml` alongside the shared-core and doc-example gates.
+
+Code, link targets and URLs are masked before checking, so `fhir-sqlite-store`
+and `FHIR_POSTGRESQL_BENCH` are correctly not treated as uses of the mark.
+
+The third rule — the "HL7® FHIR® standard" full form in a place of prominence —
+is editorial and is applied in `README.md` and `NEWS.md` rather than gated; a
+script cannot tell which usage is dominant.
+
+**Also covered since 2026-08-26:** the rustdoc of the nine top-level crate
+roots (`fhir`, `fhir-store`, `fhir-loco`, and the six ports' `-store`
+crates) — the script extracts doc-comment prose, `er7-rust`'s
+`prose_rust_docs` approach, and applies the same two rules to what docs.rs
+renders.
+
+**Not yet covered:** the four families' own markdown (`fhir/`, the six
+ports' `README.md` and `book/`, `fhir-store/`, `fhir-loco/`). Widening the
+`FILES` list in the script is the way to cover it.

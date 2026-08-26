@@ -77,9 +77,10 @@ verified, and not yet committed at the time of writing.
   gate is wired into `gates.yml` in the working tree; `cargo deny` on push
   is paths-filtered to `fhir/**` (open item, `tasks.md` §Security).
 - **Rule 5 — met at its declared scope.** `scripts/check-trademarks.sh`
-  passes on root `*.md` + `help/**` (run 2026-08-26). The four families'
-  own documentation is not yet covered — recorded in
-  `spec/hl7-trademarks-fair-use/index.md` and `tasks.md` §Compliance.
+  passes on root `*.md` + `help/**` and on the nine top-level crate roots'
+  rustdoc (run 2026-08-26). The four families' own markdown is not yet
+  covered — recorded in `spec/hl7-trademarks-fair-use/index.md` and
+  `tasks.md` §Compliance.
 - **Rule 6 — met.** PHI.md committed 2026-08-26, corrected against the
   conformance matrix before landing.
 - **Rule 7 — met.** CODE_OF_CONDUCT.md committed 2026-08-26, claims
