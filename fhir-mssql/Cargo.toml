@@ -45,7 +45,7 @@ tokio-util = { version = "0.7", features = ["compat"] }
 # tokio-postgres's deadpool). bb8 is driver-agnostic -- the store implements a
 # ~30-line ManageConnection rather than pulling in a tiberius-specific pooling
 # crate, none of which is mature enough to depend on for a PHI-handling store.
-bb8 = "0.8"
+bb8 = "0.9"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
