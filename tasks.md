@@ -61,9 +61,12 @@ Grouped by `plan.md` workstream. Order within a group is priority order.
 
 ### Security and supply chain
 
-- [ ] **Widen `fhir-security.yml`'s `cargo deny` beyond `fhir/**`** so the
-      six ports and `fhir-loco` — where F-67's TLS advisories live — are
-      scanned on push, not only by the weekly cron.
+- [x] **Widen `fhir-security.yml`'s `cargo deny` beyond `fhir/**`** — done
+      2026-08-26: a nine-workspace matrix, each against its own `deny.toml`,
+      path-triggered on any workspace plus the weekly cron. Verified
+      locally first: all nine green, with `fhir-mssql`'s green resting on
+      its deny.toml's dated F-67 ignores (`M14.34`) — the acceptance stays
+      visible and F-67 stays open, pending the owner decision below.
 - [ ] **Get an owner decision on F-67** (High, open since it was filed:
       mssql TLS advisories in published crates). Every outreach prerequisite
       chain passes through it (`PM-4`).

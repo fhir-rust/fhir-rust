@@ -2,9 +2,15 @@ name: fhir Security Audit
 
 # Supply-chain gate (spec 13, R13.13): cargo-deny scans the dependency tree
 # for RUSTSEC advisories, disallowed licenses, banned crates, and untrusted
-# sources, per `deny.toml`. cargo-deny's advisory check uses the same RUSTSEC
-# database as cargo-audit but also honours the `[advisories] ignore` policy in
-# deny.toml, so it is the single gate here.
+# sources, per each workspace's own `deny.toml`. cargo-deny's advisory check
+# uses the same RUSTSEC database as cargo-audit but also honours the
+# `[advisories] ignore` policy in deny.toml, so it is the single gate here.
+#
+# All nine workspaces, not just `fhir/` — this job was paths-filtered to the
+# model family until 2026-08-26, which meant the six ports and `fhir-loco`
+# were scanned only by the weekly cron, and the mssql chain that carries the
+# F-67 advisories (ignored in its deny.toml with dated reasons, pending an
+# owner decision — `M14.34`) was exactly the tree a push never checked.
 #
 # `--all-features` is a global flag, so it precedes the subcommand. Without it
 # the graph is the default features only, which leaves the `client`
@@ -18,23 +24,48 @@ on:
       - main
     paths:
       - 'fhir/**'
+      - 'fhir-store/**'
+      - 'fhir-loco/**'
+      - 'fhir-postgresql/**'
+      - 'fhir-sqlite/**'
+      - 'fhir-mysql/**'
+      - 'fhir-mariadb/**'
+      - 'fhir-mssql/**'
+      - 'fhir-oracle/**'
       - '.github/workflows/fhir-security.yml'
   pull_request:
     paths:
       - 'fhir/**'
+      - 'fhir-store/**'
+      - 'fhir-loco/**'
+      - 'fhir-postgresql/**'
+      - 'fhir-sqlite/**'
+      - 'fhir-mysql/**'
+      - 'fhir-mariadb/**'
+      - 'fhir-mssql/**'
+      - 'fhir-oracle/**'
       - '.github/workflows/fhir-security.yml'
   schedule:
     # Weekly, Monday 02:00 UTC — catches advisories filed after merge.
     - cron: '0 2 * * 1'
 
-defaults:
-  run:
-    working-directory: fhir
-
 jobs:
   cargo-deny:
     name: cargo deny (advisories + licenses + bans + sources)
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        workspace:
+          - fhir
+          - fhir-store
+          - fhir-loco
+          - fhir-postgresql
+          - fhir-sqlite
+          - fhir-mysql
+          - fhir-mariadb
+          - fhir-mssql
+          - fhir-oracle
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -47,4 +78,5 @@ jobs:
       - name: Install cargo-deny
         run: cargo install cargo-deny --locked
       - name: Run cargo deny
+        working-directory: ${{ matrix.workspace }}
         run: cargo deny --all-features check
