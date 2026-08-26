@@ -8,7 +8,7 @@ International — see [Trademarks](#trademarks) below.*
 
 | Family | What it is | Where |
 | --- | --- | --- |
-| **Model** | FHIR R3/R4/R5 (and R2/R6 in spec) as serde-serializable Rust types, generated from the official specification packages | [`fhir/`](fhir/) |
+| **Model** | FHIR® R2/R3/R4/R4B/R5/R6 as serde-serializable Rust types, generated from the official specification packages, one cargo feature per release | [`fhir/`](fhir/) |
 | **Persistence core** | the engine-agnostic half of storage: audit chain, attribution, result types | [`fhir-store/`](fhir-store/) |
 | **Databases** | those resources stored as **real relational tables**, six SQL engines | [`fhir-postgresql/`](fhir-postgresql/) + 5 siblings |
 | **HTTP surface** | a FHIR RESTful API server over one of those stores | [`fhir-loco/`](fhir-loco/) |
@@ -63,8 +63,9 @@ types. The two families share a domain and a discipline, not code.
 
 | | |
 | --- | --- |
-| Releases modelled in code | R5 (5.0.0), R4 (4.0.1), R3 (3.0.2) |
-| Releases modelled in its spec | additionally R2 (1.0.2) and R6 (ballot, `publish = false`) |
+| Releases modelled in code | R5 (5.0.0), R4B (4.3.0), R4 (4.0.1), R3 (3.0.2), R2 (DSTU2, 1.0.2), and R6 (6.0.0-ballot3) |
+| Off by default | `r6` — generated from a **draft** specification that can change between ballots. `r5` is the default; every other release is an opt-in feature |
+| Name reservations, containing no types | `fhir-r1` (DSTU1) and `fhir-r7`–`fhir-r10` |
 | Shape | one crate per release behind a cargo feature, ~135k generated lines each |
 | Specification | [`fhir/spec/index.md`](fhir/spec/index.md) — 14 sections, ids `R1.x`–`R14.x` |
 

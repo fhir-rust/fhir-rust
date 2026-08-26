@@ -36,6 +36,9 @@ Read in order the first time; each builds on the last.
   tutorial 2, for looking things up rather than reading through.
 - **[The trust boundary](trust-boundary.md)** — what these libraries guarantee
   about PHI, and what your deployment must provide. One table, per `PR12.8`.
+  Its plain-language companion, written for a privacy officer or a vendor
+  questionnaire rather than a specification auditor, is
+  [`PHI.md`](../PHI.md) at the repository root.
 - **[Examples](examples.md)** — short recipes: bulk load, conditional create,
   chain verification, cross-version stores, integrity reports.
 - **[FAQ](faq.md)** — why not JSONB, why so many tables, is it FHIR-compliant,

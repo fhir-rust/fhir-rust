@@ -122,8 +122,12 @@ The table above describes what the specification requires. What each port has
   Four ports carry `?` on those rows.
 - `fhir-postgresql` still derives its chain pre-image in SQL, so its chains are
   not portable (**F-07**).
-- `fhir-mssql` and `fhir-oracle` have no store, so none of this applies to them
-  yet.
+- ~~`fhir-mssql` and `fhir-oracle` have no store, so none of this applies to
+  them yet.~~ **Obsolete, corrected 2026-08-26.** Both reached Store level
+  (**F-65**, **F-68**) and this list had not been updated. What is actually
+  narrower for them is in the matrix: `fhir-oracle` has no concurrency or
+  redaction test and `R4.5` snapshot reads remain an open gap, and
+  `fhir-mssql` carries the open **F-67** TLS advisories.
 
 ## Where authentication actually happens
 
