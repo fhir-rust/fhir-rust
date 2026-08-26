@@ -24,7 +24,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["arbitrary_precision", "float_roundtrip", "preserve_order"] }
 thiserror = "2"
 # The chain is SHA-256 + SHA3-256 with an optional HMAC (M3.16).
-sha2 = "0.10"
+sha2 = "0.11"
 sha3 = "0.10"
 hmac = "0.12"
 subtle = "2"
