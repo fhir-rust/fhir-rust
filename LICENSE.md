@@ -67,12 +67,12 @@ shipped the text of none of them at the root — only links. MIT, Apache-2.0 and
 BSD-3-Clause each require the licence text to travel with the software, so a URL
 was not sufficient.
 
-**The six ports' `LICENSE-APACHE` files are not the Apache licence.** Each
-contains the fifteen-line boilerplate notice Apache publishes for *source file
-headers*, ending in a pointer to `apache.org`. It is not a copy of the License,
-and §4 of Apache-2.0 requires recipients be given one. Use
-[`LICENSES/Apache-2.0.txt`](LICENSES/Apache-2.0.txt) as the authoritative text;
-replacing the per-port files is outstanding work.
+**The six ports' `LICENSE-APACHE` files are the Apache licence, as of
+2026-08-26.** Until that date each contained only the fifteen-line boilerplate
+notice Apache publishes for *source file headers* — not a copy of the License,
+which §4 of Apache-2.0 requires recipients be given. All six are now copies of
+[`LICENSES/Apache-2.0.txt`](LICENSES/Apache-2.0.txt), which remains the
+authoritative text.
 
 ## The five-way choice is deliberate
 
@@ -103,9 +103,9 @@ answers a tool should read are, in order:
    `license.workspace = true` inheritance;
 2. the `SPDX-License-Identifier` line at the top of this file;
 3. the full texts in [`LICENSES/`](LICENSES/), one file per SPDX identifier.
-   (The six ports also carry `LICENSE-MIT`, the full MIT text; their
-   `LICENSE-APACHE` siblings are the header boilerplate described above, not
-   the licence — use `LICENSES/Apache-2.0.txt`.)
+   (The six ports also carry `LICENSE-MIT` and `LICENSE-APACHE`, full texts
+   both — the latter copies of `LICENSES/Apache-2.0.txt` since 2026-08-26;
+   see above.)
 
 If your licence policy evaluates SPDX expressions but not `OR` — a common
 limitation in enterprise scanners, which may route anything naming

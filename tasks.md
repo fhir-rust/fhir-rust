@@ -102,8 +102,11 @@ Grouped by `plan.md` workstream. Order within a group is priority order.
       ports' `README.md`/`book/` and `fhir-store/`/`fhir-loco/` — the port
       sweep is a shared-core-adjacent change (six identical edits; scope it
       per `CLAUDE.md` before starting).
-- [ ] Replace the ports' `LICENSE-APACHE` header-boilerplate files with the
-      actual license text (named as outstanding work in LICENSE.md).
+- [x] Replace the ports' `LICENSE-APACHE` header-boilerplate files — done
+      2026-08-26: all six are now copies of `LICENSES/Apache-2.0.txt` (§4 of
+      Apache-2.0 requires recipients be given the License, and a header
+      notice is not it); LICENSE.md's two statements about them updated in
+      the same change.
 - [x] Set `CITATION.cff`'s `license` field — done 2026-08-26: the five SPDX
       identifiers as a CFF list (CFF takes identifiers, not OR-expressions;
       the choice semantics live in LICENSE.md, which the file's comment
