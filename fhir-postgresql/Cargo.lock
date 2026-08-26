@@ -349,7 +349,7 @@ dependencies = [
  "flate2",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "thiserror",
 ]
 
@@ -360,7 +360,7 @@ dependencies = [
  "flate2",
  "serde",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "thiserror",
  "unicode-normalization",
 ]
@@ -379,7 +379,7 @@ dependencies = [
  "rustls",
  "rustls-native-certs",
  "serde_json",
- "sha2 0.10.9",
+ "sha2 0.11.0",
  "sha3",
  "subtle",
  "thiserror",
