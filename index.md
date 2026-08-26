@@ -20,8 +20,9 @@ says which one governs which code.
 | [README](README.md) | what this is, in five minutes |
 | [Choosing an engine](doc/choosing-an-engine.md) | which of the six, and what each costs |
 | [Conformance matrix](spec/databases/conformance-matrix.md) | what each port actually satisfies today |
-| [The storage model](doc/storage-model.md) | how a FHIR resource becomes tables |
+| [The storage model](doc/storage-model.md) | how a FHIR® resource becomes tables |
 | [Trust boundary](doc/trust-boundary.md) | what is guaranteed, what your deployment must add |
+| [PHI.md](PHI.md) | the same question in plain language, for a privacy or security review |
 | [FAQ](doc/faq.md) | the questions that come up first |
 
 ### Building something
@@ -40,10 +41,21 @@ says which one governs which code.
 
 | | |
 | --- | --- |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | ways to help, then the five rules and the green gate |
+| [RFC.md](RFC.md) | open questions, and the kind of feedback that helps |
 | [AGENTS.md](AGENTS.md) | how to work here — start here |
+| [GOVERNANCE.md](GOVERNANCE.md) | who decides what, recorded where, and how to disagree |
+| [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | conduct, including the claim-accuracy clause |
+| [SECURITY.md](SECURITY.md) | reporting a vulnerability |
 | [Topic guides](agents/index.md) | spec workflow, rust, testing, databases, docs, security, release |
 | [CLAUDE.md](CLAUDE.md) | agent-specific notes and traps |
 | [Audit findings](spec/databases/audit.md) | what is currently broken, with evidence |
+
+### Promoting and outreach
+
+| | |
+| --- | --- |
+| [Outreach](help/outreach/index.md) | the channels, the claims register, and the seven assets that gate any of it |
 
 ### Implementing or auditing
 
@@ -160,3 +172,9 @@ the shared-core gate did not watch it (**F-45**).
 3. [Tutorial 1](doc/tutorial-01-getting-started.md) — 15 min, hands on
 4. [Conformance matrix](spec/databases/conformance-matrix.md) — 10 min, what is actually true
 5. [Audit findings](spec/databases/audit.md) — 15 min, what is not
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

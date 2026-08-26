@@ -1,7 +1,10 @@
 # fhir-rust
 
-A Rust monorepo for [FHIR](https://hl7.org/fhir/): the data model, six
-relational database ports, and an HTTP surface over them.
+A Rust monorepo for the [HL7® FHIR® standard](https://hl7.org/fhir/): the data
+model, six relational database ports, and an HTTP surface over them.
+
+*HL7® and FHIR® are registered trademarks of Health Level Seven
+International — see [Trademarks](#trademarks) below.*
 
 | Family | What it is | Where |
 | --- | --- | --- |
@@ -250,6 +253,27 @@ requirement and to the test that evidences it.
 | `fhir-<engine>/book/` | that port's user guide |
 | `fhir-<engine>/plan.md` | that port's design decisions |
 
+## Project documents
+
+| | |
+| --- | --- |
+| [INSTALL.md](INSTALL.md) | requirements, which port to pick, and how to add it to a project |
+| [PHI.md](PHI.md) | what this does and does not do with patient data, in plain language |
+| [SECURITY.md](SECURITY.md) | how to report a vulnerability, what is in scope, what is open |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | ways to help — data, expertise, review, code, money — then the five rules and the green gate |
+| [RFC.md](RFC.md) | the open questions this project most wants answered, and what feedback helps |
+| [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Contributor Covenant 2.1, plus one addition specific to this project |
+| [COMPARISONS.md](COMPARISONS.md) | how this relates to HAPI, Firely, Medplum, Aidbox, SQL on FHIR, and the other Rust FHIR crates |
+| [BENCHMARKS.md](BENCHMARKS.md) | what has been measured, on what, and what has not |
+| [CHANGELOG.md](CHANGELOG.md) | what changed, repository-wide |
+| [NEWS.md](NEWS.md) | project news, how to follow, and press contacts |
+| [MAINTAINERS.md](MAINTAINERS.md) | who maintains this, and what happens if they cannot |
+| [GOVERNANCE.md](GOVERNANCE.md) | how decisions get made, what binds them, and how to disagree |
+| [AI_STATEMENT.md](AI_STATEMENT.md) | how AI tooling is used here, and the failure mode it has already caused |
+| [CITATION.cff](CITATION.cff) | how to cite this work |
+| [LICENSE.md](LICENSE.md) | the five-way licence choice, with SPDX |
+| [help/outreach/index.md](help/outreach/index.md) | who this is for, what may be claimed about it, and what is missing |
+
 ## Specification-driven
 
 Behaviour is decided in [`spec/`](spec/index.md) before it is written in Rust,
@@ -277,3 +301,9 @@ means you choose; no obligation from one option carries into another.
 
 Full statement: [`LICENSE.md`](LICENSE.md). Versions already on crates.io keep
 the terms they were published under, since a published version is immutable.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.
