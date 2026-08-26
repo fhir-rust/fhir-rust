@@ -33,7 +33,7 @@ sha3 = "0.10"
 hmac = "0.12"
 subtle = "2"
 zeroize = { version = "1", features = ["zeroize_derive"] }
-getrandom = "0.3"
+getrandom = "0.4"
 clap = { version = "4", features = ["derive", "env"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal", "sync", "time"] }
 # The SQLite driver. `bundled` compiles a known SQLite rather than linking
