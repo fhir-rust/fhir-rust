@@ -67,8 +67,10 @@ posture. Open items for each are in `tasks.md`.
 
 4. **Privacy and patient data.** PHI.md exists and is the family's model: a
    privacy-officer Q&A that names its own limits (no certification, no known
-   deployment, no Inferno run, audit/redaction/concurrency tests only in
-   `fhir-postgresql`). Keeping it true as ports advance is the work.
+   deployment, no Inferno run; redaction/concurrency tests in five of six
+   ports — `fhir-oracle` has neither — and the dedicated audit-chain suites
+   only in `fhir-postgresql`, corrected 2026-08-26 against the tree).
+   Keeping it true as ports advance is the work.
 
 5. **Outreach.** `help/outreach/index.md` is thorough and self-gating: its
    prerequisites (`PM-70`–`PM-75`: tags/releases, signing, F-67 decision,

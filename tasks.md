@@ -94,9 +94,13 @@ Grouped by `plan.md` workstream. Order within a group is priority order.
 ### Privacy and patient data
 
 - [ ] Keep PHI.md's limits section current as ports advance (it names:
-      audit/redaction/concurrency tests only in `fhir-postgresql`, five of
-      six ports below Reference level, no Inferno run) — each of those is a
-      dated claim that goes stale the day a port closes the gap.
+      redaction/concurrency tests in five of six ports with `fhir-oracle`
+      lacking both, dedicated audit-chain suites only in `fhir-postgresql`,
+      five of six ports below Reference level, no Inferno run) — each of
+      those is a dated claim that goes stale the day a port closes the gap.
+      The first stale version of this very item ("audit/redaction/
+      concurrency tests only in `fhir-postgresql`") was caught and corrected
+      2026-08-26 while verifying PHI.md against the tree.
 
 ### Outreach
 
