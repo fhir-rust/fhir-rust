@@ -64,9 +64,11 @@ in [`help/outreach/index.md`](help/outreach/index.md). Today the options are:
 | Watch a crate | any of the 34 on [crates.io](https://crates.io) — new versions appear there first |
 | Read this page | updated when something happens that is not a code change |
 
-There are no git tags, no GitHub releases, no release feed, and no mailing list.
-When releases exist, `https://github.com/fhir-rust/fhir-rust/releases.atom` will
-be the feed, and this section will say so.
+As of 2026-08-26 there are git tags and GitHub releases — sixteen, naming the
+2026-08-22 publication retroactively, one per independently-versioned unit
+(`spec/git-tags-name-published-versions/`) — so
+`https://github.com/fhir-rust/fhir-rust/releases.atom` is a live,
+subscribable feed. There is still no mailing list.
 
 ## Press contacts
 

@@ -50,10 +50,12 @@ Either promote those workflows to the root or delete them; a workflow that looks
 like a control but is not one is worse than no workflow.
 
 *Nothing is signed.* Commits and tags carry no OpenPGP or SSH signature
-(`git log -1 --format=%G?` returns `N`), there are no tags at all, and there are
-no GitHub releases. A consumer cannot currently verify that a given commit came
-from the maintainer, and there is no signed artefact to check a download
-against.
+(`git log -1 --format=%G?` returns `N`). Tags and GitHub releases exist as of
+2026-08-26 — sixteen, one per independently-versioned unit, under
+[`spec/git-tags-name-published-versions/`](spec/git-tags-name-published-versions/index.md) —
+but they are unsigned like everything else, so a consumer still cannot verify
+that a given commit or tag came from the maintainer, and there is no signed
+artefact to check a download against.
 
 ## If the maintainer is unavailable
 

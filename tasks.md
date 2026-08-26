@@ -67,9 +67,14 @@ Grouped by `plan.md` workstream. Order within a group is priority order.
 - [ ] **Get an owner decision on F-67** (High, open since it was filed:
       mssql TLS advisories in published crates). Every outreach prerequisite
       chain passes through it (`PM-4`).
-- [ ] Create git tags and GitHub releases for the published versions
-      (`PM-70`); sign commits and tags going forward; record the posture
-      change in MAINTAINERS.md.
+- [x] Create git tags and GitHub releases for the published versions
+      (`PM-70`) — done 2026-08-26: sixteen annotated tags at `e28964e`
+      pushed, sixteen releases with `TG1.8`-compliant notes, `fhir 4.1.0`
+      marked latest, `releases.atom` live; NEWS.md, MAINTAINERS.md,
+      CHANGELOG.md, and the outreach register updated in the same change.
+- [ ] Sign commits and tags going forward; record the posture change in
+      MAINTAINERS.md (which now says tags and releases exist but nothing is
+      signed).
 - [ ] Decide the publishing shape: crates.io Trusted Publishing from CI vs
       documented laptop publishing; the per-port `publish.yml` workflows are
       currently inert either way.

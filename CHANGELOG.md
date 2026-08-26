@@ -13,11 +13,11 @@ keeps its own changelog with the detail this one summarises:
 | Databases | [postgresql](fhir-postgresql/CHANGELOG.md) · [sqlite](fhir-sqlite/CHANGELOG.md) · [mysql](fhir-mysql/CHANGELOG.md) · [mariadb](fhir-mariadb/CHANGELOG.md) · [mssql](fhir-mssql/CHANGELOG.md) · [oracle](fhir-oracle/CHANGELOG.md) |
 
 **Tags exist as of 2026-08-26; GitHub releases still do not.** Sixteen
-annotated tags name the 2026-08-22 publication (see the Unreleased entry and
-`spec/git-tags-name-published-versions/`). Dates below are commit dates, and
-the only published artefacts are the crates.io versions named in the
-2026-08-22 entry. The remaining releases half of the gap is tracked as
-`PM-70` in [`help/outreach/index.md`](help/outreach/index.md).
+annotated tags name the 2026-08-22 publication, each with a GitHub Release
+(see the Unreleased entry and `spec/git-tags-name-published-versions/`), so
+`releases.atom` is a live feed — `PM-70` closed. Dates below are commit
+dates, and the only published artefacts are the crates.io versions named in
+the 2026-08-22 entry.
 
 History before 2026-08-01 belongs to the separate projects this monorepo was
 assembled from, and lives in the per-family changelogs above.
@@ -57,13 +57,15 @@ registration mark on first use of an HL7® word mark and the required disclaimer
 per `spec/hl7-trademarks-fair-use/`. `scripts/check-trademarks.sh` gates it in
 `gates.yml` — the assurance that spec asks for.
 
-**The 2026-08-22 publication is tagged.** Sixteen annotated tags at `e28964e`,
-one per independently-versioned unit: six ports (a port's three crates share one
-`version.workspace`, so one tag names all three), `fhir-store`, `fhir-loco`,
-`fhir`, `fhir-core`, and the six release crates published at 4.1.0. The
-convention is now normative and cross-family —
+**The 2026-08-22 publication is tagged and released.** Sixteen annotated tags
+at `e28964e`, one per independently-versioned unit: six ports (a port's three
+crates share one `version.workspace`, so one tag names all three),
+`fhir-store`, `fhir-loco`, `fhir`, `fhir-core`, and the six release crates
+published at 4.1.0. The convention is now normative and cross-family —
 `spec/git-tags-name-published-versions/` (`TG1.x`) — and gated by
-`scripts/check-tags.sh`.
+`scripts/check-tags.sh`. Each tag carries a GitHub Release (2026-08-26) whose
+note states the retroactive-tag caveat and cites the conformance matrix
+rather than claiming beyond it (`TG1.7`, `TG1.8`); `releases.atom` is live.
 
 Corrected while tagging: `README.md` understated the model crate's coverage,
 saying R3/R4/R5 were modelled in code with R2/R6 "in spec" and that R6 was

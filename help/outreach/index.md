@@ -163,14 +163,16 @@ where it lives → what it blocks.*
 
 ### PM-70 — A news route
 
-**Decided and half-delivered 2026-08-26.** The convention is
+**Delivered 2026-08-26.** The convention is
 [`spec/git-tags-name-published-versions/`](../../spec/git-tags-name-published-versions/index.md)
 (`TG1.x`, cross-family): one tag per independently-versioned unit,
-`<unit>-v<version>`. Sixteen annotated tags now exist locally at `e28964e`,
-`scripts/check-tags.sh` gates them, and sixteen release notes are drafted.
-**Outstanding: pushing the tags and creating the releases**, which is what
-actually produces `releases.atom` — the feed this item is about. Until that
-happens the gap analysis below still describes what a stranger experiences.
+`<unit>-v<version>`. Sixteen annotated tags are pushed at `e28964e`,
+`scripts/check-tags.sh` gates them in CI, and all sixteen GitHub Releases
+exist with `TG1.8`-compliant notes (the retroactive-tag caveat stated, the
+conformance matrix cited, no claim beyond it) — so
+`https://github.com/fhir-rust/fhir-rust/releases.atom` is live, which is the
+feed this item was about. The gap analysis below is kept as the record of
+what a stranger experienced before that date.
 
 **Exists.** Seven `CHANGELOG.md` files: one per port, plus
 [`fhir/CHANGELOG.md`](../../fhir/CHANGELOG.md).
@@ -484,7 +486,7 @@ They are not equal, and they do not all gate the same things.
 
 | Asset | Effort | Gates | Do it |
 | --- | --- | --- | --- |
-| **PM-70** news route | convention **decided** (`TG1`), tags created, notes drafted; push + releases outstanding | everything ends with "follow along" | ◐ |
+| **PM-70** news route | ~~convention decided, push + releases outstanding~~ **done 2026-08-26** — tags pushed, 16 releases live, `releases.atom` subscribable | everything ends with "follow along" | ✔ |
 | **PM-74** `CONTRIBUTING.md` + `SECURITY.md` + `CODE_OF_CONDUCT.md` | ~~hours~~ **done 2026-08-26** | PM-21, PM-60, credibility with segment D | ✔ |
 | **PM-75** `LICENSE.md` detection | hours, *plus an owner decision on GPL* | PM-11, PM-60, silent segment-D losses | Phase 0; raise the decision now |
 | **PM-73** PHI statement | ~~a day~~ **done 2026-08-26** | every segment-D evaluation | ✔ |
