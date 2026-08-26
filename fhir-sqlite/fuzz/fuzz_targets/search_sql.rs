@@ -11,6 +11,7 @@
 //! no unbounded recursion. A search endpoint that can be crashed by a query
 //! string is a denial of service on a server holding clinical data.
 #![no_main]
+#![forbid(unsafe_code)]
 
 use libfuzzer_sys::fuzz_target;
 use std::sync::OnceLock;

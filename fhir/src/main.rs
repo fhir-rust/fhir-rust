@@ -6,6 +6,10 @@
 //! ```
 //!
 //! See [`fhir::codegen`] for what the generator emits and how.
+// Nothing here has any business dereferencing a raw pointer: this code
+// parses and reshapes untrusted clinical data, and memory safety is the
+// property that keeps a malformed resource from becoming a vulnerability.
+#![forbid(unsafe_code)]
 
 use std::path::PathBuf;
 use std::process::ExitCode;

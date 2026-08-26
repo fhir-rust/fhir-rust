@@ -1,5 +1,9 @@
 //! fhir-mysql-map: the relational map model plus the generic engine that shreds
 //! FHIR resources into rows and reconstructs them losslessly.
+// Nothing here has any business dereferencing a raw pointer: this code
+// parses and reshapes untrusted clinical data, and memory safety is the
+// property that keeps a malformed resource from becoming a vulnerability.
+#![forbid(unsafe_code)]
 
 pub mod canon;
 pub mod ddl;

@@ -9,6 +9,7 @@
 //! Every input must therefore either shred or return an error. Nothing may
 //! panic, and nothing may abort.
 #![no_main]
+#![forbid(unsafe_code)]
 
 use libfuzzer_sys::fuzz_target;
 use std::sync::OnceLock;

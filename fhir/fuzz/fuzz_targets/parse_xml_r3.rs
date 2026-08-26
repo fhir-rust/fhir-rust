@@ -5,6 +5,7 @@
 //! branch on it, so a document that is harmless for one release can take a
 //! different path here. Fuzzing R5 alone would not see it.
 #![no_main]
+#![forbid(unsafe_code)]
 
 use libfuzzer_sys::fuzz_target;
 

@@ -1,3 +1,8 @@
+// Nothing here has any business dereferencing a raw pointer: this code
+// parses and reshapes untrusted clinical data, and memory safety is the
+// property that keeps a malformed resource from becoming a vulnerability.
+#![forbid(unsafe_code)]
+
 use fhir_loco::app::App;
 use loco_rs::cli;
 

@@ -4,6 +4,7 @@
 //! enums, so serde behaviour is genuinely per-release — a `value[x]` variant
 //! or a rename that round-trips in R5 says nothing about r3.
 #![no_main]
+#![forbid(unsafe_code)]
 
 use libfuzzer_sys::fuzz_target;
 
