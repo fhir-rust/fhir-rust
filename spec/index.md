@@ -6,8 +6,9 @@ requirement numbers relate, and where a citation resolves — so that a number
 written in a commit message, a test name, or an auditor's workpaper has exactly
 one meaning. It states requirements of its own only where they bind every
 family at once: today that is the [agents directory
-name](agents-directory-name-is-lowercase/index.md) (`AG1.x`) and the [MSRV
-rule](rust-msrv-n-minus-3/index.md) (`RV1.x`).
+name](agents-directory-name-is-lowercase/index.md) (`AG1.x`), the [MSRV
+rule](rust-msrv-n-minus-3/index.md) (`RV1.x`), and [what a git tag
+names](git-tags-name-published-versions/index.md) (`TG1.x`).
 
 Operational guidance for contributors lives in [`AGENTS.md`](../AGENTS.md) and
 [`agents/`](../agents/index.md). Those say **how to work**; the specifications
@@ -77,6 +78,7 @@ renumbered, never reused, including across a file move.
 | --- | --- | --- |
 | `AG1` | [The AI agents directory is named `agents`](agents-directory-name-is-lowercase/index.md) | the lowercase directory name, and what it does not bind |
 | `RV1` | [Rust MSRV — current minus three](rust-msrv-n-minus-3/index.md) | the MSRV rule, where it is declared, how it is verified |
+| `TG1` | [Git tags name published versions](git-tags-name-published-versions/index.md) | what a tag names, what it points at, and why six crates have none |
 
 The only normative ids that bind **every** family. They live here rather than in
 a family's specification because the toolchain floor is a property of the
