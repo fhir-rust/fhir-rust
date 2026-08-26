@@ -88,11 +88,15 @@ who reads about this project has no way to hear about it again.
   no longer recoverable. `TG1.4` is met — the versions do agree at `e28964e` —
   but a reader should not read more precision into these sixteen tags than that.
 
-- **TG1.10** Six published crates have **no tag**: `fhir-derive-macros` 1.5.0,
-  and `fhir-r1`, `fhir-r7`, `fhir-r8`, `fhir-r9`, `fhir-r10` at 0.0.1. They were
-  published before this repository existed — its history begins 2026-08-01 —
-  so there is no commit here to point at, and inventing one would be worse than
-  the gap. They acquire tags at their next published version.
+- **TG1.10** Six published crates originally had **no tag**:
+  `fhir-derive-macros` 1.5.0, and `fhir-r1`, `fhir-r7`, `fhir-r8`, `fhir-r9`,
+  `fhir-r10` at 0.0.1. They were published before this repository existed —
+  its history begins 2026-08-01 — so there was no commit to point at, and
+  inventing one would have been worse than the gap. The rule was "they
+  acquire tags at their next published version", and it held: the 2026-08-26
+  republication of all 34 crates gave every unit, these six included, a tag
+  at the release commit. The untagged pre-repository versions remain
+  untagged, permanently and correctly.
 
 ## Assurance
 

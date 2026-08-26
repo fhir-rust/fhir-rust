@@ -121,8 +121,8 @@ Grouped by `plan.md` workstream. Order within a group is priority order.
       every model-family crate, so the remaining 13 published-matched
       crates were bumped (fhir-core 3.2.1, fhir-derive-macros 1.5.1,
       fhir-r2–r6 4.1.1, the five reservations 0.0.2) — all 34 crates now
-      sit one unpublished version ahead, one publish pass covers
-      everything.
+      sat one unpublished version ahead — published in full 2026-08-26,
+      34 matched at the gate.
 - [x] Replace the ports' `LICENSE-APACHE` header-boilerplate files — done
       2026-08-26: all six are now copies of `LICENSES/Apache-2.0.txt` (§4 of
       Apache-2.0 requires recipients be given the License, and a header

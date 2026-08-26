@@ -17,22 +17,20 @@ annexes — never from a checklist. This file holds only what no spec does: the
 repository-level professionalization plan. Execution items live in
 [`tasks.md`](tasks.md), where a `[x]` means verified, not intended.
 
-## Where the repository stands (verified 2026-08-26)
+## Where the repository stands (verified 2026-08-26, end of day)
 
-Pre-release: all 34 publishable crates are on crates.io (2026-08-22), with
-zero git tags, zero GitHub releases, and unsigned commits — tracked, not
-hidden (`PM-70`, MAINTAINERS.md). The full canonical special-files set exists
-(`spec/special-files-for-public-repos/index.md`): all 19 documents, including
-PHI.md, CODE_OF_CONDUCT.md with the claim-accuracy clause, LICENSES/ with all
-five full texts, and a 915-line outreach plan (`help/outreach/index.md`) with
-its own claims register. Trademark fair use is specified
-(`spec/hl7-trademarks-fair-use/`), mechanically checked
-(`scripts/check-trademarks.sh`), and — in the working tree — wired into
-`gates.yml`.
-
-**Almost none of this is committed.** The professionalization pass sits in
-the working tree as ~9 modified files and 20+ untracked documents; a visitor
-to GitHub today sees none of it. Landing it is the first task.
+All 34 publishable crates are on crates.io at their current source versions
+(republished in full 2026-08-26; `check-published-match.sh`: 34 matched,
+0 mismatched), every independently-versioned unit is tagged and carries a
+GitHub Release (`spec/git-tags-name-published-versions/`), and the whole
+professionalization pass is committed, pushed, and hosted-green. The
+canonical special-files set exists in full; trademark fair use is specified,
+mechanically gated in CI **tree-wide** — every markdown page and the nine
+crate roots' rustdoc; the security surfaces (private vulnerability
+reporting, dependabot alerts and security fixes, secret scanning, a
+nine-workspace `cargo deny` matrix) are on; and publishing is, by owner
+decision, permanently a documented laptop step. Commits and tags remain
+unsigned — the largest standing confession (MAINTAINERS.md).
 
 ## Workstreams — professionalization (2026-08 onward)
 

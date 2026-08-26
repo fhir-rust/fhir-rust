@@ -8,6 +8,21 @@ Press and analyst enquiries: see [Press contacts](#press-contacts) below.
 
 ---
 
+## 2026-08-26 — the professionalization release
+
+All 34 crates republished in one pass, byte-verified against the registry
+(`check-published-match.sh`: 34 matched, 0 mismatched). What the new
+versions carry: `#![forbid(unsafe_code)]` at every crate root, the HL7®
+FHIR® standard trademark disclaimer in every crate's rustdoc and packaged
+README, the full Apache-2.0 text where a header stub had been, and one
+real fix per port family recorded in the changelog — including the oracle
+re-shred repair (F-93). Each independently-versioned unit is tagged and has
+a GitHub Release; the feed is
+`https://github.com/fhir-rust/fhir-rust/releases.atom`. Publishing is,
+by owner decision the same day, permanently a documented laptop step.
+
+---
+
 ## 2026-08-22 — every crate is published
 
 All 34 packages are on crates.io at the versions their source claims. The

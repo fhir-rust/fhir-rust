@@ -26,6 +26,13 @@ of what the obstacles were and how each was resolved, not as a description of
 today. **The live gate, not this file, is the thing to trust** — it runs against
 crates.io and this paragraph does not.
 
+**Republished in full, 2026-08-26.** All 34 crates went out again the same
+day in one pass at their bumped versions (ports 0.5.1, store/loco 0.2.1,
+model 4.1.1/3.2.1/1.5.1, reservations 0.0.2), and the gate reports
+`34 matched, 0 mismatched` — the first publication whose hosted CI was green
+at the moment of upload, closing the "green laptop is weaker evidence" note
+below for this release.
+
 **The publish path is decided, 2026-08-26: a documented laptop step,
 permanently.** The owner ruled out crates.io Trusted Publishing from CI on
 reliability grounds — GitHub is not dependable enough to hold the publish

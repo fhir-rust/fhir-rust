@@ -22,7 +22,16 @@ the 2026-08-22 entry.
 History before 2026-08-01 belongs to the separate projects this monorepo was
 assembled from, and lives in the per-family changelogs above.
 
-## Unreleased
+## 2026-08-26 — the professionalization release: all 34 crates republished
+
+Everything below shipped to crates.io on 2026-08-26 in one pass, as the
+documented laptop step the owner decided that day is permanent.
+`scripts/check-published-match.sh` reports **34 matched, 0 mismatched** —
+every published version is byte-identical to its source. Versions: six ports
+0.5.1; `fhir-store` and `fhir-loco` 0.2.1; `fhir`, `fhir-r2`–`fhir-r6` 4.1.1;
+`fhir-core` 3.2.1; `fhir-derive-macros` 1.5.1; the five name reservations
+0.0.2. With this pass, `fhir-derive-macros` and the reservations acquire
+their first tags (`TG1.10`'s promise, kept).
 
 Repository-level documents added: `CITATION.cff`, `CODEOWNERS`,
 `MAINTAINERS.md`, `AI_STATEMENT.md`, `INSTALL.md`, `COMPARISONS.md`,
@@ -31,13 +40,8 @@ Repository-level documents added: `CITATION.cff`, `CODEOWNERS`,
 `LICENSES/` with the full text of all five licence options, `.github/FUNDING.yml`,
 and `help/outreach/index.md`.
 
-Code changes, each version-bumping the crates it touched — by the end of
-2026-08-26, **all 34 publishable crates sit one unpublished version ahead**
-(six ports 0.5.1, `fhir-store`/`fhir-loco` 0.2.1, `fhir` 4.1.1,
-`fhir-core` 3.2.1, `fhir-derive-macros` 1.5.1, `fhir-r2`–`fhir-r6` 4.1.1,
-the five name reservations 0.0.2), so one publish pass covers everything;
-`scripts/check-published-match.sh` reports all 34 as not yet published,
-with its vacuous-OK banner saying exactly that:
+Code changes in this release, each of which version-bumped the crates it
+touched (which is why all 34 moved at once):
 
 - `#![forbid(unsafe_code)]` at every crate root in the repository, gated by
   `scripts/check-forbid-unsafe.sh` in `gates.yml`.
