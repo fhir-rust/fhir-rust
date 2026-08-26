@@ -48,7 +48,7 @@ From `tasks.md`, and reflected in the
 [conformance matrix](../../spec/databases/conformance-matrix.md):
 
 - `transact_audited` returns `Unsupported`. This is the correct answer, not a
-  stub: a FHIR transaction Bundle is atomic by definition and a compensating
+  stub: a FHIR® transaction Bundle is atomic by definition and a compensating
   unwind is not — readers between ops observe a half-applied bundle, and a
   process dying mid-unwind leaves partial state permanently. Doing it properly
   needs `put` and `delete` split so their bodies run inside a caller-supplied
@@ -96,3 +96,9 @@ From `tasks.md`, and reflected in the
 | — | [Locale and accent folding](../../spec/databases/locale-accent-folding.md) | `Lx` |
 
 Sections 7 and 8 are retired (`C0.15`).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

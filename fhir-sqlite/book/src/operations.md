@@ -115,7 +115,7 @@ half-succeed the way a multi-statement drop can.
 
 ## `transact_audited` refuses, on purpose
 
-`transact_audited` (applying a FHIR transaction Bundle) returns
+`transact_audited` (applying a FHIR® transaction Bundle) returns
 `StoreError::Unsupported` unconditionally — it is not a stub someone forgot,
 it is a decision. A FHIR transaction Bundle is atomic by definition: a caller
 submitting one is saying these writes only make sense together. The tempting
@@ -152,3 +152,9 @@ in a small number of plain files; what protects it is filesystem permissions
 and disk encryption, which is the deployment's responsibility and the
 `O10.7` obligation an embedded engine has in place of transport encryption
 (see [The trust boundary](trust-boundary.md)).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

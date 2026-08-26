@@ -52,7 +52,7 @@ cargo test -p fhir-oracle-store --test live -- --nocapture --test-threads=1
 
 ## Spec and example inputs
 
-Live tests need two things besides a server: the FHIR **definitions**, to build
+Live tests need two things besides a server: the FHIR® **definitions**, to build
 a relational map, and the published **examples**, to round-trip. CI downloads
 both from hl7.org. Locally they are usually already in a sibling checkout, so
 `scripts/db.sh corpus` finds them and links them into the layout the tests
@@ -119,3 +119,9 @@ Homebrew-installed server. Stop it, or edit `PORT` at the top of
 
 **A live test passes in 0.00s** — it skipped. Check `scripts/db.sh status` and
 that `scripts/db.sh corpus` has been run.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

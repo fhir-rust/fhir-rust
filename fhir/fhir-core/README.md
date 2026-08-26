@@ -1,7 +1,7 @@
 # fhir-core
 
 Everything in the [`fhir`](https://crates.io/crates/fhir) data model that does
-**not** depend on which FHIR release you are using.
+**not** depend on which FHIR® release you are using.
 
 The releases — `fhir-r2` through `fhir-r6` — are ~135,000
 generated lines each. This crate is what they share, so a fix to `Decimal` or
@@ -52,9 +52,15 @@ aspiration.
 - [`fhir`](https://crates.io/crates/fhir) — the facade you probably want
 - [Specification](https://github.com/fhir-rust/fhir-rust/blob/main/fhir/spec/index.md) — 14 sections, ids `R1.x`–`R14.x`
 
-> FHIR® is a registered trademark of HL7 International. This crate is not
+> FHIR® is a registered trademark of HL7® International. This crate is not
 > affiliated with or endorsed by HL7.
 
 ## License
 
 `MIT OR Apache-2.0 OR BSD-3-Clause OR GPL-2.0-only OR GPL-3.0-only` — you choose.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

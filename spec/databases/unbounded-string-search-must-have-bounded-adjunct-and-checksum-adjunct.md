@@ -21,7 +21,7 @@ upstream of every dialect — and the map is shared verbatim across all six port
 
 ## The problem it exists to solve
 
-A FHIR `string` has no length bound. The specification cannot declare one, and a
+A FHIR® `string` has no length bound. The specification cannot declare one, and a
 generator cannot infer one, so any column holding a FHIR string is unbounded by
 construction. Engines disagree about what may then be done with it:
 
@@ -353,3 +353,9 @@ and adds beside it, which is the same benefit at a fraction of the risk.
 ---
 
 Part of the [fhir-databases specification](index.md).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

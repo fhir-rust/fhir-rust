@@ -2,7 +2,7 @@
 
 ## Routes
 
-- **SV2.1** The following routes MUST be served. `{version}` is a FHIR version
+- **SV2.1** The following routes MUST be served. `{version}` is a FHIR® version
   namespace (`r3`, `r4`, `r5`); `{rtype}` is a resource type name.
 
   | Route | Methods |
@@ -266,3 +266,9 @@
 ---
 
 Part of the [fhir-loco specification](index.md).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

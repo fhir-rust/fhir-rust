@@ -8,7 +8,7 @@ PostgreSQL's.
 ## Base tables and child tables
 
 Every resource type has a base table named after it (`r5.patient`, a database
-in MariaDB's sense — see [FHIR versions](fhir-versions.md)) with
+in MariaDB's sense — see [FHIR® versions](fhir-versions.md)) with
 `` `id` VARCHAR(64) COLLATE utf8mb4_nopad_bin `` as its primary key,
 `version_id`, `last_updated`, and a typed column for every scalar element.
 `id` is bounded rather than `TEXT` because the FHIR `id` type is constrained
@@ -121,3 +121,9 @@ checked. `LONGTEXT` stores exactly the bytes Rust computed, unmodified.
 (`LONGTEXT` rather than `TEXT` for the same reason the map asset needs it in
 `fhir_mariadb_meta`: `TEXT` caps at 65,535 bytes and a real resource's
 canonical form can exceed that.)
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

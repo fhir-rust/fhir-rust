@@ -52,7 +52,7 @@ stated rather than implied.
 ### The client behaves under adversity
 
 - **R13.5** `ReleaseClient` MUST apply a default request timeout, a default
-  connect timeout, and a response body size cap. A FHIR client with no timeout
+  connect timeout, and a response body size cap. A FHIR® client with no timeout
   (`reqwest::Client::new()`) hangs forever against a stalled server, and an
   unbounded body lets a hostile or broken peer exhaust memory.
 - **R13.6** Path and query components MUST be percent-encoded. `resource_type`
@@ -189,7 +189,7 @@ for a v1 client and disqualifying for a mission-critical one.
   carried 11 known failures; by end of day the per-file allowlist was
   **empty** — the nine model-defect entries (audit **F-86**/**F-87**)
   were fixed the same day and the gate itself demanded their removal —
-  leaving only the two classes of HL7's own non-conformant examples
+  leaving only the two classes of HL7®'s own non-conformant examples
   (`SearchParameter.base`, `catalogType` `status`).
 
 ## Acceptance criteria
@@ -207,3 +207,9 @@ for a v1 client and disqualifying for a mission-critical one.
    (R13.13); a release publishes an SBOM.
 7. The published `.crate` for the current version is under 10 MB and contains
    no `llms.txt`.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

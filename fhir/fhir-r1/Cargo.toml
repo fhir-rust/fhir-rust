@@ -1,7 +1,7 @@
 [package]
 name = "fhir-r1"
 description = "Reserved for a FHIR Release 1 (DSTU1, 0.0.82) data model. Not currently modelled; this crate contains no types."
-version = "0.0.1"
+version = "0.0.2"
 edition = "2024"
 rust-version = "1.88"
 license = "MIT OR Apache-2.0 OR BSD-3-Clause OR GPL-2.0-only OR GPL-3.0-only"

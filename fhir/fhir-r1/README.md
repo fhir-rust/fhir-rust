@@ -1,6 +1,6 @@
 # fhir-r1
 
-Reserved for a FHIR Release 1 (DSTU1, 0.0.82) data model.
+Reserved for a FHIR® Release 1 (DSTU1, 0.0.82) data model.
 
 **The specification is real; the model is not.** DSTU1 was published in 2012
 and superseded by DSTU2 in 2015. A DSTU1 model was built in this workspace
@@ -34,4 +34,10 @@ two differ more than any other adjacent pair.
 
 ## License
 
-MIT. FHIR® is a registered trademark of HL7, used with permission.
+MIT. FHIR® is a registered trademark of HL7®, used with permission.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

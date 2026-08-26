@@ -7,7 +7,7 @@
 >
 > What several chapters still call `fhir-mysql serve` is really
 > **`fhir-loco`** — a separate crate (Loco.rs, Axum, Tokio, Hyper) that mounts
-> a FHIR REST API over a store. `fhir-mysql` itself is a **library**: no binary,
+> a FHIR® REST API over a store. `fhir-mysql` itself is a **library**: no binary,
 > no `serve`, no HTTP surface
 > ([`C0.17`](../../../spec/databases/00-conformance.md),
 > [`C0.18`](../../../spec/databases/00-conformance.md); audit **F-56**).
@@ -70,3 +70,9 @@ port does not have. What *is* measured: schema scale (7,355 tables for R5),
 search-parameter compilation (94.8% of R5's SearchParameters, corrected to
 92.4% pending a regenerated asset — see [Search](search.md)), and full-corpus
 round-trip (7,399/7,399 official examples, lossless, at the map layer).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

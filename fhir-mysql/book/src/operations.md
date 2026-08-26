@@ -36,7 +36,7 @@ mode rather than requiring an operator to opt into it.
 
 `store.init(checksum)` installs the generated schema — every `CREATE TABLE`,
 index, and trigger statement, applied one at a time — and records the map
-checksum, the FHIR version, and the **map asset itself** (gzipped, hex-coded,
+checksum, the FHIR® version, and the **map asset itself** (gzipped, hex-coded,
 `LONGTEXT` — a `TEXT` column silently truncates a ~2.4 MB R5 asset, `M14.34`)
 in `fhir_mysql_meta`. Re-running against an already-installed schema is
 refused. Unlike `fhir-postgresql`, there is **no staged install and no atomic
@@ -102,3 +102,9 @@ Point-in-time recovery is binlog replay — not PostgreSQL's WAL-based PITR,
 which this chapter described for every port until 2026-08-03 (audit
 **F-56**). `fhir-mysql` guarantees that a consistent snapshot is a valid
 store; it does not schedule, verify, or retain one.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

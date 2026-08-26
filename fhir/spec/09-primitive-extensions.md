@@ -1,6 +1,6 @@
 # 09 — Primitive extensions (`_field`)
 
-Defines how the crate represents FHIR *primitive extensions* — the `_field`
+Defines how the crate represents FHIR® *primitive extensions* — the `_field`
 siblings that carry `id` and `extension` for a primitive value.
 
 Applies to every modelled release, identically.
@@ -119,3 +119,9 @@ cost — a separate `<field>_ext` field — is small, and is smoothed by the
 3. Official example resources carrying `_birthDate`, `_family`, `_given`,
    `_profile` and similar round-trip without loss.
 4. An element typed `http://hl7.org/fhirpath/System.String` has no sibling.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

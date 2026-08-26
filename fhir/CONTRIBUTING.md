@@ -1,7 +1,7 @@
 # Contributing to `fhir`
 
 Thanks for your interest in improving the `fhir` crate — a Rust implementation
-of the HL7 FHIR® data model (releases R5, R4 and R3) plus the spec-driven generator
+of the HL7® FHIR® data model (releases R5, R4 and R3) plus the spec-driven generator
 that produces it.
 
 This file is the short version. The authoritative, in-depth guidance lives in
@@ -99,3 +99,9 @@ terms as the project (see [`LICENSE.md`](LICENSE.md)).
 
 FHIR® is a registered trademark of Health Level Seven International. This crate
 is not affiliated with or endorsed by HL7.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

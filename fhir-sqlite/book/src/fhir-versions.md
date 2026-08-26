@@ -1,4 +1,4 @@
-# FHIR versions
+# FHIR® versions
 
 fhir-sqlite supports R5 (5.0.0, the default), R4 (4.0.1), and R3 (3.0.2).
 Each version is generated from its own specification package into its own
@@ -40,3 +40,9 @@ datatypes R4/R5 have, and choice-type (`value[x]`) membership differs by
 version — but the storage model, the shred/reconstruct engine, and the search
 compiler are identical across versions (`X15.1`); only the generated maps
 differ. Nothing in this port's own code branches on FHIR version.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

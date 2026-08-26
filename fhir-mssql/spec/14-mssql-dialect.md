@@ -8,7 +8,7 @@ This annex records where the SQL Server port departs from the
 Requirements are numbered `M14.x` and use RFC 2119 keywords.
 
 Target: **Microsoft SQL Server 2016 or later** (see `M14.3`), one database, one
-schema per FHIR version.
+schema per FHIR® version.
 
 > **This file was rewritten.** It previously contained the `fhir-mysql` annex
 > with three lines changed — titled "14. MySQL dialect", declaring the target as
@@ -523,3 +523,9 @@ Part of the [fhir-mssql specification](index.md), which is part of the
   The cost is the one `M14.17` already names — a long transaction holds its
   locks for the whole migration — and it is the trade this port has already
   made everywhere else.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

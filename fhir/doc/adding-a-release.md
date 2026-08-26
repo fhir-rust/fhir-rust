@@ -1,4 +1,4 @@
-# Adding a FHIR release
+# Adding a FHIR® release
 
 Each FHIR release is its own crate: `fhir-r2`, `fhir-r3`, `fhir-r4`, `fhir-r5`,
 `fhir-r6`, all siblings of `fhir-core` and re-exported by the `fhir` facade
@@ -116,7 +116,7 @@ generator, in `src/r5/parse/`, and in `tests/`.
 ## Reserved names
 
 `fhir-r7`, `fhir-r8` and `fhir-r9` exist as name reservations only. There is
-no R7, R8 or R9 specification; R6 is the newest release HL7 has published in
+no R7, R8 or R9 specification; R6 is the newest release HL7® has published in
 any form, and it is still in ballot. Those crates hold their names and this
 procedure, and contain no model — a placeholder type would be a guess about a
 specification nobody has written.
@@ -124,3 +124,9 @@ specification nobody has written.
 They are at `0.0.0`, are not dependencies of `fhir`, and enable no feature.
 When a specification arrives, follow the steps above and give the crate a
 real version; nothing about the reservation needs undoing first.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

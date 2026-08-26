@@ -17,7 +17,7 @@ property of the forge.
 
 ## What actually gates a merge
 
-The unit-test job passes with no database and no FHIR specification packages
+The unit-test job passes with no database and no FHIR® specification packages
 present, because the corpus- and spec-driven tests skip themselves when their
 inputs are absent. That is convenient locally and misleading in CI, so the
 live-database pipeline is a separate required gate rather than an optional
@@ -84,3 +84,9 @@ neither should ever be given one.
 
 To run the live suite locally against the same pinned image CI uses, see
 [containers.md](containers.md).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

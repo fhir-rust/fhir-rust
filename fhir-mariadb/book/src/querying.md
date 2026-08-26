@@ -1,6 +1,6 @@
 # Querying with SQL
 
-Loaded FHIR data is ordinary relational data:
+Loaded FHIR® data is ordinary relational data:
 
 ```sql
 -- Patients and their observation counts
@@ -48,3 +48,9 @@ Tips:
   concept separate from a database, so `r5.patient` is `database.table`, not
   `schema.table` (`M14.21`) — the qualified-name shape reads the same either
   way.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

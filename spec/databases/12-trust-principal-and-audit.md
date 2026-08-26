@@ -92,7 +92,7 @@ the reason this section survives the retirement of §7 intact: identity
 - **PR12.7** **[service]** A service accepts the standard `X-Provenance` header
   on writes and stores the supplied `Provenance` resource, linking it to the
   version it describes. It MAY additionally synthesize `AuditEvent` resources
-  from the access log on demand, so the audit trail is queryable as FHIR rather
+  from the access log on demand, so the audit trail is queryable as FHIR® rather
   than only as SQL. The store-side half — that a `Provenance` resource can be
   stored and linked to a version — is in force.
 - **PR12.8** The trust boundary is stated in one place, in the documentation, as
@@ -107,3 +107,9 @@ the reason this section survives the retirement of §7 intact: identity
 ---
 
 Part of the [fhir-databases specification](index.md).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

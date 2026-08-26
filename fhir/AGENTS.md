@@ -6,10 +6,10 @@ read it too.
 
 ## What this project is
 
-`fhir` is a Rust crate that provides the **FHIR** data model as strongly-typed,
+`fhir` is a Rust crate that provides the **FHIR®** data model as strongly-typed,
 `serde`-serializable Rust, together with a **spec-driven code generator** that
 derives that model from the official FHIR specification JSON files. FHIR (Fast
-Healthcare Interoperability Resources) is the HL7 standard for exchanging
+Healthcare Interoperability Resources) is the HL7® standard for exchanging
 electronic health records.
 
 **Five releases are modelled**, each complete and independent:
@@ -203,3 +203,9 @@ mdBook build, and the proc-macro publish dry-run.
 - When adding a FHIR release, everything release-specific must be reachable from
   `codegen::Version`; if you find yourself adding a `match` on the release
   anywhere else, that is a sign the fact belongs on `Version`.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

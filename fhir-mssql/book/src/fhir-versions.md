@@ -1,4 +1,4 @@
-# FHIR versions
+# FHIR® versions
 
 fhir-mssql supports R5 (5.0.0), R4 (4.0.1), and R3 (3.0.2) — `S1.1`, assets
 committed for all three. Each version is generated from its own
@@ -27,3 +27,9 @@ versions and across all six ports (`X15.1`); only the generated maps
 differ. This port's SQL Server-specific decisions — bracketed identifiers,
 `NVARCHAR` throughout, the `VARBINARY` `ords` encoding, the 900-byte index
 key limit — apply uniformly to whichever version's schema they operate on.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

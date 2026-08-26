@@ -30,7 +30,7 @@ This project began as a fork of the sibling `fhir-mysql` port, but the two are
 - **M14.0c** What the two ports MUST continue to share is *behaviour*, not SQL:
   round-trip fidelity (section 4), search semantics (section 6), and the
   canonical form the hash chain commits to (M14.19/M14.20). Two servers must
-  answer a FHIR request identically; how they spell the DDL is their own
+  answer a FHIR® request identically; how they spell the DDL is their own
   business. This is what makes divergence safe — the conformance suite, not the
   schema text, is the shared contract.
 
@@ -518,3 +518,9 @@ This project began as a fork of the sibling `fhir-mysql` port, but the two are
   The third point is the one that a dialect story is tempted to omit. `O10.4`
   requires each dialect to state its failure story; stating only the two
   reassuring halves would satisfy that on paper and not in fact.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

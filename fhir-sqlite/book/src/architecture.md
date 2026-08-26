@@ -17,7 +17,7 @@ lives here.
   types and never emits SQL. Reconstruction audits row consumption: every
   stored row must be used exactly once, so schema drift or corruption
   surfaces as an integrity error instead of silently dropped data.
-- **`fhir-sqlite-gen`** — reads a FHIR specification package
+- **`fhir-sqlite-gen`** — reads a FHIR® specification package
   (StructureDefinitions + SearchParameters) and *builds* the map:
   identifier fitting under a 63-character budget (`PG_MAX_IDENT`, tighter
   than every supported engine's own limit, so one generated map serves all
@@ -78,3 +78,9 @@ Design decisions and their reasons live in `plan.md`; work-item status is
 `tasks.md` (but see the root [`CLAUDE.md`](../../../CLAUDE.md) on trusting
 that file); normative behaviour is [`spec/index.md`](../../spec/index.md), the
 shared core plus this port's [dialect annex](../../spec/14-sqlite-dialect.md).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

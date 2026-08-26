@@ -1,4 +1,4 @@
-# FHIR releases
+# FHIR® releases
 
 This crate models **five** FHIR releases, each a complete, independent crate
 (`fhir-r2` … `fhir-r6`) exposed as a facade feature:
@@ -12,7 +12,7 @@ This crate models **five** FHIR releases, each a complete, independent crate
 | R6 (6.0.0-ballot3) | `fhir::r6` | `r6` | 161 | 51 | 21 | 459 |
 
 R6 is a **ballot draft**: unpublished as a specification, off by default, and
-outside this crate's semver promise until HL7 finalizes it (it *is* published
+outside this crate's semver promise until HL7® finalizes it (it *is* published
 to crates.io, because the facade's optional dependency needs a registry
 version — see `spec/12-fhir-releases.md`, R12.14a). This chapter, like the rest
 of the guide, otherwise focuses on R5, R4, and R3; everything applies to R2 and
@@ -189,3 +189,9 @@ The REST client is generic over `Release` for the same reason.
 `fhir::r3::client::Client`, `fhir::r4::client::Client` and
 `fhir::r5::client::Client` are three aliases for one implementation, each
 returning its own release's `Resource`, `Bundle`, and `OperationOutcome`.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

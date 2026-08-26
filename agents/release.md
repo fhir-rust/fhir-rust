@@ -71,7 +71,7 @@ retrofit.
   docs.rs — read by exactly the person who has not looked at the code yet. The
   two Scaffold ports now say so in the description itself.
 - `fhir-mssql` and `fhir-oracle` are **Scaffold**. Publishing either under a
-  name that implies a working FHIR store is a claim about clinical software made
+  name that implies a working FHIR® store is a claim about clinical software made
   to people who cannot check it.
 - All six READMEs claimed the reference port's results (**F-01**, fixed). The
   `book/` directories still do — fix those before a release, not after.
@@ -171,3 +171,9 @@ Two things remain, and neither is the original problem:
   parent (**F-37**), so `git add` on it records a gitlink rather than the files
   and a clone would get an empty directory with no error. Settle that before
   pushing anything meant to include it.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

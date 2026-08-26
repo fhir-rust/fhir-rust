@@ -1,6 +1,6 @@
 # Terminology and codes
 
-FHIR `CodeSystem`s are generated as type-safe Rust enums under `fhir::r5::codes`.
+FHIR® `CodeSystem`s are generated as type-safe Rust enums under `fhir::r5::codes`.
 Each enum serializes to its canonical code string:
 
 ```rust
@@ -58,3 +58,9 @@ let binding = gender.binding.unwrap();
 assert_eq!(binding.strength, meta::BindingStrength::Required);
 assert!(binding.value_set.unwrap().contains("administrative-gender"));
 ```
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

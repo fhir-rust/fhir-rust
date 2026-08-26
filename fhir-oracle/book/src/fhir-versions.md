@@ -1,4 +1,4 @@
-# FHIR versions
+# FHIR® versions
 
 fhir-oracle supports R5 (5.0.0, the default), R4 (4.0.1), and R3 (3.0.2).
 Each version is generated from its own specification package into its own
@@ -29,3 +29,9 @@ Querying across two versions in the same statement is not possible the way
 it might be with schema-qualified tables in a single database — `R4` and
 `R5` are separate Oracle **users**, and a cross-user join is no more
 convenient here than a cross-database one would be elsewhere.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

@@ -20,7 +20,7 @@ serde_json = "1"
 ```
 
 The `r5`/`r4`/`r3` features on `fhir-sqlite-map` gate **compilation** of the
-bundled relational map for that FHIR version, not which one you use at
+bundled relational map for that FHIR® version, not which one you use at
 runtime — `r5` is on by default. All three maps travel inside the published
 crate regardless of which features are enabled (~2.5 MB total); the features
 only decide which `RelMap::bundled(...)` calls succeed in your binary.
@@ -122,3 +122,9 @@ both resolve without a separate dependency.
 The chapters that follow cover the storage model, querying with SQL, search,
 FHIR-version handling, operations, the trust boundary, and the crate
 architecture — read in that order if you are new to the port.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

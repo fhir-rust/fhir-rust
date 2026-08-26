@@ -2,7 +2,7 @@
 
 The storage layer for `fhir-oracle` — live-verified, with one confirmed gap.
 
-Part of **`fhir-oracle`**, which stores FHIR R3, R4 and R5 resources in Oracle Database as real relational tables — typed columns, child tables, foreign keys, check constraints — and gives them back losslessly.
+Part of **`fhir-oracle`**, which stores FHIR® R3, R4 and R5 resources in Oracle Database as real relational tables — typed columns, child tables, foreign keys, check constraints — and gives them back losslessly.
 
 > **This port has a store, and it connects.** `connect`/`init`/`put`/`get`/
 > `delete`/`history`/`vread`/`verify_audit`/`purge`/`log_access`/`search` —
@@ -94,3 +94,9 @@ a `tasks.md` checkbox have all been wrong in this repository before.
 ## License
 
 `MIT OR Apache-2.0 OR BSD-3-Clause OR GPL-2.0-only OR GPL-3.0-only` — you choose.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

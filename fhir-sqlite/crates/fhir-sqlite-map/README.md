@@ -1,6 +1,6 @@
 # fhir-sqlite-map
 
-The relational map, and the engine that shreds FHIR resources into rows and reconstructs them back.
+The relational map, and the engine that shreds FHIR® resources into rows and reconstructs them back.
 
 Part of **`fhir-sqlite`**, which stores FHIR R3, R4 and R5 resources in SQLite 3 as real relational tables — typed columns, child tables, foreign keys, check constraints — and gives them back losslessly.
 
@@ -104,3 +104,9 @@ a `tasks.md` checkbox have all been wrong in this repository before.
 ## License
 
 `MIT OR Apache-2.0 OR BSD-3-Clause OR GPL-2.0-only OR GPL-3.0-only` — you choose.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

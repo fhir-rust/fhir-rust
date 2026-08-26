@@ -57,7 +57,7 @@ Three crates, no binary:
 
 | Crate | What it does |
 | --- | --- |
-| `fhir-mssql-gen` | compiles the FHIR specification packages into a relational map and the DDL |
+| `fhir-mssql-gen` | compiles the FHIR® specification packages into a relational map and the DDL |
 | `fhir-mssql-map` | the map types, shred, reconstruct, fold, canon, and this engine's `ddl.rs` |
 | `fhir-mssql-store` | `mssql.rs` (the driver and operations), `mssql_search.rs` (the search-SQL builder), `pool.rs` (a `bb8` pool over `tiberius`, which has no built-in one) |
 
@@ -91,3 +91,9 @@ The chapters that follow describe the storage model, the search compiler,
 and the trust boundary in terms of this store's actual `mssql.rs` and
 `mssql_search.rs` behaviour, live-verified against `azure-sql-edge`
 (**F-65**) rather than carried over from `fhir-postgresql`.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

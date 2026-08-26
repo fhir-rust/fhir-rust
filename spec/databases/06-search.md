@@ -7,7 +7,7 @@
   generated docs).
 - **P6.2** String search default is case-insensitive prefix match (`:exact` and
   `:contains` modifiers supported). Token search matches `system|code`
-  semantics. Date search implements FHIR range/prefix semantics (eq, ne, lt, gt,
+  semantics. Date search implements FHIR® range/prefix semantics (eq, ne, lt, gt,
   ge, le, sa, eb) against the `_sort` columns with precision-aware ranges.
 - **P6.3** Result parameters: `_count` (default 50, max 1000), paging via opaque
   cursor, `_sort` on searchable params, `_id`, `_lastUpdated`,
@@ -87,3 +87,9 @@
 ---
 
 Part of the [fhir-databases specification](index.md).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

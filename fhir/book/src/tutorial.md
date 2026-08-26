@@ -5,7 +5,7 @@ record and carries it through every stage a real integration goes through:
 construct, validate, serialize, bundle, summarize, and read back.
 
 Everything here is R5. It works for R4 or R3 by replacing `r5` in the imports,
-with the caveats in [FHIR releases](fhir-releases.md) — R3, for instance, types
+with the caveats in [FHIR® releases](fhir-releases.md) — R3, for instance, types
 a resource's `id` as an `Id` rather than a `String`.
 
 Every step below is also a runnable program, so it is compiled and executed by
@@ -258,3 +258,9 @@ example resource, and it is why nothing in the model silently drops a field.
 - The runnable programs in
   [`examples/`](https://github.com/fhir-rust/fhir-rust/tree/main/examples),
   each of which expands on one step above.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

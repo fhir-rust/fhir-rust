@@ -60,7 +60,7 @@ see [Querying](querying.md#addressing-a-repeating-element) (`M14.13`).
 
 `ColTy` maps to MySQL as follows (`M14.14`):
 
-| FHIR primitive | `ColTy` | MySQL column |
+| FHIR® primitive | `ColTy` | MySQL column |
 | --- | --- | --- |
 | `boolean` | `Bool` | `TINYINT(1)` |
 | `integer`/`positiveInt`/`unsignedInt` | `Int` | `INT` |
@@ -138,3 +138,9 @@ bytes read back would not be the bytes the chain signed. `contained`
 resources and inline resources (`Bundle.entry.resource`) are likewise stored
 whole, also as `LONGTEXT` — they are anonymous resources of unknowable type,
 so normalizing them buys nothing.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

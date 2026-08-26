@@ -10,7 +10,7 @@ Three crates — no server crate, no CLI binary (`C0.17`, `C0.18`):
   ports, `X15.1`). Reconstruction audits row consumption — every stored row
   must be used exactly once, so schema drift or corruption surfaces as an
   integrity error instead of silent data loss.
-- **fhir-oracle-gen** — reads a FHIR specification package
+- **fhir-oracle-gen** — reads a FHIR® specification package
   (StructureDefinitions + SearchParameters) and builds the map: identifier
   fitting under a 63-byte budget (safe on the 12.2+ floor's 128-byte limit,
   but not derived from it — the same 63 is used on every port, so one map
@@ -62,3 +62,9 @@ FHIR path of every column.
 
 Design decisions, risks, and milestones live in `plan.md`; the normative
 behaviour is [`spec/index.md`](../../spec/index.md).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

@@ -38,7 +38,7 @@ frequent.
 
 ## Types
 
-| FHIR type | Oracle column | Note |
+| FHIR® type | Oracle column | Note |
 | --- | --- | --- |
 | `boolean` | `NUMBER(1)` + `CHECK (col IN (0,1))` | No native boolean before 23ai; this port targets the 12.2 floor (`M14.4`, `M14.8`) |
 | `integer` | `NUMBER(10)` | |
@@ -103,3 +103,9 @@ resources of unknowable type, so normalizing them buys nothing. This engine
 never uses Oracle's native `JSON` type for any of it: `JSON` re-normalizes on
 write, which would make the stored bytes differ from the bytes the audit
 hash chain signed (`M3.6c`, `M14.12`).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

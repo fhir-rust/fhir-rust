@@ -152,7 +152,7 @@ a `CLOB` source column can be neither `DISTINCT`ed nor `=`-compared
 ports share is illegal here.
 
 `fhir-sqlite`'s `transact_audited` returns `Unsupported` rather than emulating
-atomicity by compensation, which is the right answer: a FHIR transaction Bundle
+atomicity by compensation, which is the right answer: a FHIR® transaction Bundle
 is atomic by definition, and a compensating unwind is not — readers between ops
 observe a half-applied bundle, and a process dying mid-unwind leaves partial
 state permanently.
@@ -333,3 +333,9 @@ way mssql did, by connecting a store and running it (**F-68**).
 ---
 
 Part of the [fhir-databases specification](index.md).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

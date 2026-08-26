@@ -47,7 +47,7 @@ Supported semantics, checked against `target_pred` in `mssql_search.rs`:
   but not the same fold, and the fix is regenerating the map, not patching
   the query.
 - **date** — `eq ne lt gt ge le sa eb` prefixes against a derived sort
-  column (`Date`/`Timestamptz`, never the lexical text column), with FHIR
+  column (`Date`/`Timestamptz`, never the lexical text column), with FHIR®
   precision ranges (`birthdate=1980` matches `"1980-11"`); Period elements
   compare a second, end column with overlap semantics.
 - **number / quantity** — `value-quantity=gt100`,
@@ -84,3 +84,9 @@ twice ("A column has been specified more than once in the order by list")
 rather than tolerating it, so the builder's own `_id` tiebreaker is only
 appended when the caller's sort keys do not already include one — found by
 running an `_id`-sorted search live, not by reading a manual.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

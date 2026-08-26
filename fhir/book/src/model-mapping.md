@@ -1,6 +1,6 @@
 # Model mapping
 
-The model is generated from the FHIR specification, and the mapping from FHIR to
+The model is generated from the FHIR® specification, and the mapping from FHIR to
 Rust is uniform and predictable.
 
 ## Cardinality
@@ -72,3 +72,9 @@ so out-of-value-set codes still round-trip. See
 `Reference` is `Reference<T = Any>`, a phantom-typed newtype over the same wire
 form. `Reference<Any>` (the default) is the untyped reference; `.resolve(&bundle)`
 looks a reference up within a `Bundle`.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

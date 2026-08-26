@@ -19,7 +19,7 @@ no data is persisted — `down` then `up` gives a clean database every time.
 
 The container sets `max_locks_per_transaction=512` and
 `max_parallel_maintenance_workers=0`, matching `.woodpecker/database.yaml`.
-Both are required, not tuning: installing a full FHIR schema is thousands of
+Both are required, not tuning: installing a full FHIR® schema is thousands of
 tables in one transaction, and without the raised lock budget it fails in a way
 that reads like a code bug.
 
@@ -111,3 +111,9 @@ Homebrew-installed server. Stop it, or edit `PORT` at the top of
 
 **A live test passes in 0.00s** — it skipped. Check `scripts/db.sh status` and
 that `scripts/db.sh corpus` has been run.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

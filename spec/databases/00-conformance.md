@@ -50,7 +50,7 @@ conform, and how the text is changed.
   | --- | --- |
   | **Scaffold** | The workspace builds. DDL and store are inherited or absent; nothing is verified against the target engine. |
   | **Schema** | Generated DDL executes on the target engine, verified by a live test. No store. |
-  | **Store** | Shred, reconstruct, history, and search work against the target engine, verified by a live round-trip over the FHIR example corpora. |
+  | **Store** | Shred, reconstruct, history, and search work against the target engine, verified by a live round-trip over the FHIR® example corpora. |
   | **Reference** | Store, plus the full `T11.x` suite green — concurrency, audit, redaction, tamper evidence, upgrade, and benchmarks. |
 
 - **C0.9** A port MUST state its level in its own `spec/index.md`, and the level
@@ -180,3 +180,9 @@ conform, and how the text is changed.
 ---
 
 Part of the [fhir-databases specification](index.md).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

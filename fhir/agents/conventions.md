@@ -1,7 +1,7 @@
 # Conventions
 
 These conventions are **mandatory** and uniform across the whole model, and
-across every FHIR release. The generator emits them and hand-authored code must
+across every FHIR® release. The generator emits them and hand-authored code must
 match them exactly, so that every datatype and resource looks and behaves the
 same. The normative details live in
 [`../spec/06-serialization.md`](../spec/06-serialization.md).
@@ -148,3 +148,9 @@ A tuple newtype serializes transparently as its inner value. Details in
   value through `serde_json` (see [`testing.md`](testing.md)). Structs without
   `Default` (those with a `1..*`/`Vec1` field) mark that doctest `ignore`.
 - Every public field: a one-line `///` from its FHIR `short` text.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

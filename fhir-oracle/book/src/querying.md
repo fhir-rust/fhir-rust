@@ -1,6 +1,6 @@
 # Querying with SQL
 
-Loaded FHIR data is ordinary relational data — connect as one of the version
+Loaded FHIR® data is ordinary relational data — connect as one of the version
 users (`R5`, say) and query its own schema directly:
 
 ```sql
@@ -82,3 +82,9 @@ compiler (see [Search](search.md)) exists precisely so nobody has to.
 - The generated map assets carry a FHIR-path annotation for every table and
   column — reading `fhir_oracle_map::model::RelMap` in a Rust REPL or test is
   the fastest way to learn a table's layout without guessing from SQL alone.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

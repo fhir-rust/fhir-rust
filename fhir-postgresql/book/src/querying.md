@@ -1,6 +1,6 @@
 # Querying with SQL
 
-Loaded FHIR data is ordinary relational data:
+Loaded FHIR® data is ordinary relational data:
 
 ```sql
 -- Patients and their observation counts
@@ -67,3 +67,9 @@ Tips:
   produces, call `fhir_postgresql_map::shred::shred` directly, or read the
   DDL for that resource type out of the map with `ddl::create_table`, the way
   the example above was generated.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

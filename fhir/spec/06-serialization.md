@@ -1,6 +1,6 @@
 # 06 — Serialization
 
-Defines the JSON mapping between the Rust model and canonical FHIR JSON. This is
+Defines the JSON mapping between the Rust model and canonical FHIR® JSON. This is
 the normative version of the conventions in
 [`../agents/conventions.md`](../agents/conventions.md).
 
@@ -119,3 +119,9 @@ elements exist, never in how an element is mapped.
 4. The official example resources round-trip exactly, except where the example
    itself violates the specification (spec 12, acceptance 7).
 5. `cargo clippy --all-targets` reports zero warnings for every release.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

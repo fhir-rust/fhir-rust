@@ -30,7 +30,7 @@ Three crates, no binary:
 
 | Crate | What it does |
 | --- | --- |
-| `fhir-mariadb-gen` | compiles the FHIR specification packages into a relational map and the DDL |
+| `fhir-mariadb-gen` | compiles the FHIR® specification packages into a relational map and the DDL |
 | `fhir-mariadb-map` | the map types, shred, reconstruct, fold, and this engine's `ddl.rs` |
 | `fhir-mariadb-store` | the driver and the operations — see the port README for its level |
 
@@ -45,3 +45,9 @@ command, or an HTTP status code as this crate's own behaviour, that is a
 regression from this pass, not an acknowledged gap — the
 [conformance matrix](../../../spec/databases/conformance-matrix.md) is the
 document to check against.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

@@ -1,6 +1,6 @@
 # Querying with SQL
 
-Loaded FHIR data is ordinary relational data. Every FHIR version installs into
+Loaded FHIR® data is ordinary relational data. Every FHIR version installs into
 its own MySQL *database* (`r5`, `r4`, `r3` — MySQL has no separate schema
 concept, so a database is the namespace, `M14.21`); the examples below assume
 `USE r5;` or a `r5.`-qualified name.
@@ -71,3 +71,9 @@ need.
   and inspect the rows it returns.
 - Write queries against one version database at a time; `r4` and `r5` name
   tables identically where the specs agree, but nothing joins across them.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

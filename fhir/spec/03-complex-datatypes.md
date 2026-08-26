@@ -1,6 +1,6 @@
 # 03 — Complex datatypes
 
-Defines how the FHIR complex datatypes are represented in Rust.
+Defines how the FHIR® complex datatypes are represented in Rust.
 
 Applies to every modelled release.
 
@@ -95,3 +95,9 @@ may differ: `Extension.url` is a `uri` in R3 and a `string` afterwards.
 4. Every datatype derives `Validate` and participates in recursive validation
    (spec 07).
 5. Build, tests, doctests, and pedantic clippy are clean for every release.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

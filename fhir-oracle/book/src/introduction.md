@@ -7,7 +7,7 @@
 >
 > What several chapters still call `fhir-oracle serve` is really
 > **`fhir-loco`** — a separate crate (Loco.rs, Axum, Tokio, Hyper) that mounts
-> a FHIR REST API over a store. `fhir-oracle` itself is a **library**: no
+> a FHIR® REST API over a store. `fhir-oracle` itself is a **library**: no
 > binary, no `serve`, no HTTP surface
 > ([`C0.17`](../../../spec/databases/00-conformance.md),
 > [`C0.18`](../../../spec/databases/00-conformance.md); audit **F-56**, banner
@@ -76,3 +76,9 @@ There is no concurrency test, no redaction test, and no `upgrade`/
 matrix](https://github.com/fhir-rust/fhir-rust/blob/main/spec/databases/conformance-matrix.md)
 is the document to trust for the exact, current state — this book is a tour,
 not the source of truth.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

@@ -1,6 +1,6 @@
 # fhir-r4
 
-The FHIR **Release 4 (4.0.1)** data model: every resource and datatype as typed
+The FHIR® **Release 4 (4.0.1)** data model: every resource and datatype as typed
 Rust, with validation, builders, and serde.
 
 146 resources, 43 datatypes, 20 primitives, 486 code enums.
@@ -124,4 +124,10 @@ module.
 
 ## License
 
-MIT. FHIR® is a registered trademark of HL7, used with permission.
+MIT. FHIR® is a registered trademark of HL7®, used with permission.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

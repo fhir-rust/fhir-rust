@@ -6,7 +6,7 @@ spec-driven. Operational how-to is in
 
 ## Background
 
-Every FHIR release is published as StructureDefinition JSON bundles. The
+Every FHIR® release is published as StructureDefinition JSON bundles. The
 generator reads those bundles and emits Rust source, so a model can be
 (re)derived from the upstream truth rather than hand-maintained.
 
@@ -118,3 +118,9 @@ generators are still how R5 is edited in bulk. New work goes in `codegen`.
 4. Generated backbone elements are named nested structs, never flattened.
 5. The generated model passes the green gate, and the official examples
    round-trip (spec 12, acceptance 7).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

@@ -320,7 +320,7 @@ undercuts precisely that. It was also already live: the published `fhir` 2.1.0,
 exist, and will keep doing so until each is republished.
 
 **The same fossil in the documentation, also fixed.** All six
-`doc/containers.md` files told a reader to find the FHIR packages at
+`doc/containers.md` files told a reader to find the FHIR® packages at
 `../fhir-rust-crate/…` or under a specific developer's home directory. Both are
 the paths that made every spec-dependent test skip while reporting success
 (**F-39**, **F-42**). They now name `../fhir/doc/fhir-specifications`, which is
@@ -569,3 +569,9 @@ absence of one class of packaging defect, not as readiness.
 (advisories, licenses, bans, sources) across all eight workspaces, `cargo
 audit`, and a CycloneDX SBOM for every crate. All workspaces are green on all
 four categories, `fhir-loco` included since the loco-rs 1.0.1 upgrade (**P-3a**).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

@@ -8,7 +8,7 @@ fhir = "3"
 serde_json = "1" # or any other serde data format
 ```
 
-That gives you FHIR R5. For R4, R3, or the other modelled releases (R2, R6),
+That gives you FHIR® R5. For R4, R3, or the other modelled releases (R2, R6),
 or several releases at once, see [FHIR releases](fhir-releases.md).
 
 The crate is imported as `fhir`. A `fhir::prelude` re-exports the most-used
@@ -83,3 +83,9 @@ match serde_json::from_value(json).unwrap() {
 - [Validation](validation.md) — check resources against the spec.
 - The runnable [`examples/`](https://github.com/fhir-rust/fhir-rust/tree/main/examples)
   directory.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

@@ -31,15 +31,25 @@ Repository-level documents added: `CITATION.cff`, `CODEOWNERS`,
 `LICENSES/` with the full text of all five licence options, `.github/FUNDING.yml`,
 and `help/outreach/index.md`.
 
-Code changes, each version-bumping the crates it touched (six ports to
-0.5.1, `fhir-store` and `fhir-loco` to 0.2.1, `fhir` to 4.1.1 — bumped, not
-yet published; `scripts/check-published-match.sh` reports the 13 untouched
-published crates matching and the 21 bumped ones as not yet published):
+Code changes, each version-bumping the crates it touched — by the end of
+2026-08-26, **all 34 publishable crates sit one unpublished version ahead**
+(six ports 0.5.1, `fhir-store`/`fhir-loco` 0.2.1, `fhir` 4.1.1,
+`fhir-core` 3.2.1, `fhir-derive-macros` 1.5.1, `fhir-r2`–`fhir-r6` 4.1.1,
+the five name reservations 0.0.2), so one publish pass covers everything;
+`scripts/check-published-match.sh` reports all 34 as not yet published,
+with its vacuous-OK banner saying exactly that:
 
 - `#![forbid(unsafe_code)]` at every crate root in the repository, gated by
   `scripts/check-forbid-unsafe.sh` in `gates.yml`.
 - A Trademarks section in every top-level crate's rustdoc, so the disclaimer
   reaches docs.rs readers, gated with the same trademark check.
+- The trademark gate went tree-wide: every markdown file in the repository
+  (216 fixed in the final sweep — books, specs, the audit register, the
+  families' own pages), with three named structural exemptions reasoned in
+  the script. The model-family bump above exists because the sweep touched
+  `fhir/README.md` and `fhir/LICENSE.md`, which cargo packages into every
+  model crate — the published artifacts get the disclaimer at the next
+  publish.
 - `fhir-loco`: `clippy::result_large_err` allowed on the one loco-convention
   handler, with the reason stated (`loco_rs::Error` is the framework's type).
 - `fhir-sqlite`: the torn-read concurrency test's reader/writer overlap is

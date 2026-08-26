@@ -6,7 +6,7 @@ whatever service is eventually built, and a port is not non-conformant for
 lacking them.
 
 - **O10.1** **[service]** A service exposes liveness and readiness endpoints off
-  the FHIR base paths, and Prometheus metrics on a separate configurable port
+  the FHIR® base paths, and Prometheus metrics on a separate configurable port
   (request counts/latencies by route, pool stats, per-resource-type row counts).
 - **O10.2** Structured logging via `tracing` (JSON in production); every
   operation gets a correlation id. **Logs MUST NOT contain resource content
@@ -123,3 +123,9 @@ lacking them.
 ---
 
 Part of the [fhir-databases specification](index.md).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

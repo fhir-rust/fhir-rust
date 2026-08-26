@@ -1,4 +1,4 @@
-# 12 — FHIR releases
+# 12 — FHIR® releases
 
 Defines how this crate models more than one FHIR release at once: where each
 release lives, what it may and may not share, and what a caller is guaranteed
@@ -206,3 +206,9 @@ the two trees must be edited differently.
   extension maps. The structural conversion of spec 14 is table-driven rather
   than hand-written, but it reports a *renamed* element as removed because
   nothing in the definitions tells it otherwise; the maps do.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

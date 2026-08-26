@@ -1,6 +1,6 @@
 # 04 — Resources
 
-Defines how the FHIR resources are represented, and the polymorphic `Resource`
+Defines how the FHIR® resources are represented, and the polymorphic `Resource`
 enum.
 
 Applies to every modelled release.
@@ -113,3 +113,9 @@ than normalizing. See spec 12.
 4. Every resource round-trips its default value through JSON and derives
    `Validate`.
 5. Build, tests, doctests, and pedantic clippy are clean for every release.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

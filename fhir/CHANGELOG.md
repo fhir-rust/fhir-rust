@@ -63,7 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 3.1.0 — 2026-08-10
 
-- **R4B modelled**: new crate `fhir-r4b` (FHIR 4.3.0), feature `r4b`,
+- **R4B modelled**: new crate `fhir-r4b` (FHIR® 4.3.0), feature `r4b`,
   module `fhir::r4b` — 141 resources, 44 datatypes, 20 primitives, 531
   code enums, generated from the official definitions and gated against
   the full 3,022-example corpus (11 known failures, each with a stated
@@ -669,7 +669,7 @@ now gate on every published example — 7,400 of them — in CI.
 
 - R5 2823/2824, R4 2713/2912, R3 1490/1664 on first measurement.
 - The R4 and R3 shortfalls are **three** understood classes, not 372 bugs:
-  HL7's generated examples omit `Questionnaire.item.linkId` (1..1),
+  HL7®'s generated examples omit `Questionnaire.item.linkId` (1..1),
   `SearchParameter.base` (1..*), and `SearchParameter.code` (1..1). The
   specification is explicit that all three are required, so the model is
   right and the examples are not. They are recorded as counted
@@ -960,3 +960,9 @@ Initial release: the complete FHIR R5 (5.0.0) data model in idiomatic,
 [0.3.0]: https://github.com/fhir-rust/fhir-rust/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/fhir-rust/fhir-rust/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/fhir-rust/fhir-rust/releases/tag/v0.1.0
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

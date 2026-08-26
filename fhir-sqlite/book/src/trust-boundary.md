@@ -114,7 +114,7 @@ does not.
   value-set expansion, no SNOMED/LOINC/ICD membership checks.
 - **Profile conformance.** Base-specification structure only, not US Core,
   IPS, or any implementation guide.
-- **Referential integrity across resources.** FHIR permits a dangling
+- **Referential integrity across resources.** FHIR® permits a dangling
   reference and so does this store (`M3.10`) — `subject_ref_id` is not a
   foreign key to another resource type's table.
 
@@ -132,3 +132,9 @@ does not.
   trigger — it is that `purge` always leaves the tombstone and always runs
   under an `Audit`, so a deliberate bypass leaves no matching tombstone and
   is the anomaly `verify_audit` and a routine review would surface.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

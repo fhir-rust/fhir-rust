@@ -71,7 +71,7 @@ Stated rather than implied, so nobody discovers it during an audit:
 - **Profile conformance.** Base-specification structure only — not US Core,
   IPS, or any implementation guide.
 - **FHIRPath invariants.** The `fhir` crate enforces three of 314.
-- **Referential integrity across resources.** FHIR permits dangling
+- **Referential integrity across resources.** FHIR® permits dangling
   references and so does fhir-mariadb (`M3.10`).
 
 ## Configuring TLS to the database
@@ -162,3 +162,9 @@ Two limits to state before anyone relies on this:
   With both in place, rewriting history requires a superuser deliberately
   disabling a trigger — an act that is itself visible in the server's own
   log, independent of anything this crate records.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

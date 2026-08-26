@@ -29,9 +29,15 @@ a published version is immutable, including its metadata. `fhir`, `fhir-core`,
 `fhir-derive-macros`, and `fhir-r1` through `-10` have releases that
 predate this harmonization; the terms above apply from the next version of each.
 
-## FHIR itself
+## FHIR® itself
 
 FHIR® is a registered trademark of Health Level Seven International. The
-specification material these crates are generated from is HL7's, under HL7's
+specification material these crates are generated from is HL7®'s, under HL7's
 terms; this licence covers the Rust source in this repository, not the standard.
 See [`fhir/spec/trademarks.md`](https://github.com/fhir-rust/fhir-rust/blob/main/fhir/spec/trademarks.md).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

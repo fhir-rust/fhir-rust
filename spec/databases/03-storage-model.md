@@ -73,7 +73,7 @@ is engine-independent by construction.
 
 ### Type mapping
 
-- **M3.6** FHIR primitive → abstract column type:
+- **M3.6** FHIR® primitive → abstract column type:
 
   | FHIR | `ColTy` |
   | --- | --- |
@@ -400,3 +400,9 @@ change**: a database written before it must be reloaded. Tracked as
 ---
 
 Part of the [fhir-databases specification](index.md).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

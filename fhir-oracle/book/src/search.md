@@ -35,7 +35,7 @@ Supported semantics:
   both the precomposed and decomposed spellings of `é` find each other.
   `:exact` is the exception, and deliberately so — it compares against the
   SHA-256 digest of the literal stored string, accents included.
-- **date** — `eq ne lt gt ge le sa eb` prefixes with FHIR precision ranges
+- **date** — `eq ne lt gt ge le sa eb` prefixes with FHIR® precision ranges
   (`birthdate=1980` matches `"1980-11"`); Period elements use overlap
   semantics.
 - **number / quantity** — `value-quantity=gt100`,
@@ -61,3 +61,9 @@ Equality against those goes through the SHA-256 digest adjunct column
 (`fold::digest`, `U4a`). This is stronger than a workaround: without it,
 those searches would not merely be slow, they would be **impossible** to
 express as SQL at all against a raw `CLOB` column.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

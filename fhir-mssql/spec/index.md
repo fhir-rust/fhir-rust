@@ -36,7 +36,7 @@ Summarized from the annex; the annex governs.
 | `ColTy` binding (`M3.6`) | `BIT`, `INT`, `BIGINT`, `NVARCHAR(MAX)`, `NVARCHAR(450) COLLATE Latin1_General_100_BIN2`, `DATE`, `DATETIME2(6)` (`M14.6`) |
 | Character type | `NVARCHAR` never `VARCHAR` — `VARCHAR` is a code page unless collated UTF-8 (`M14.7`) |
 | `ords` binding (`M3.4a`) | `VARBINARY(255)` holding the shared text image — the only port that uses bytes (`M14.13`) |
-| Resource ids | `NVARCHAR(64)`, an exact bound from the FHIR `id` production (`M14.12`) |
+| Resource ids | `NVARCHAR(64)`, an exact bound from the FHIR® `id` production (`M14.12`) |
 | Index limits (`P6.4a`) | **departure** — 900-byte key cap; `NVARCHAR(MAX)` columns dropped from indexes, so token searches scan (`M14.16`) |
 | Idempotence (`G2.5`) | `IF NOT EXISTS (SELECT … FROM sys.objects)` guards; no `IF NOT EXISTS` clause exists (`M14.17`) |
 | Append-only (`M3.17`) | `CREATE OR ALTER TRIGGER … INSTEAD OF`, `THROW 50000`; no `DROP` window (`M14.19`) |
@@ -100,3 +100,9 @@ Summarized from the annex; the annex governs.
 | — | [Locale and accent folding](../../spec/databases/locale-accent-folding.md) | `Lx` |
 
 Sections 7 and 8 are retired (`C0.15`).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

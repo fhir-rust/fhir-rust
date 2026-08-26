@@ -17,7 +17,7 @@ mounted over a store.
   `model.rs`, `shred.rs`, `reconstruct.rs`, `value.rs`, `fold.rs`, and
   `canon.rs` are byte-identical (modulo whitespace) across all six ports
   (`X15.1`); only `ddl.rs` is this engine's own.
-- **fhir-mariadb-gen** — reads a FHIR specification package
+- **fhir-mariadb-gen** — reads a FHIR® specification package
   (StructureDefinitions + SearchParameters) and builds the map: identifier
   fitting under a 63-byte budget (`PG_MAX_IDENT`, tighter than MariaDB's own
   64-character limit, so one map serves all six), width-based force-splitting
@@ -68,3 +68,9 @@ not SQL text.
 Design decisions D1–D14, risks, and milestones live in `plan.md`; the
 normative behaviour is `spec/index.md` plus this port's annex,
 `spec/14-mariadb-dialect.md`.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

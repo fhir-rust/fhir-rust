@@ -4,7 +4,7 @@
 >
 > Where this book describes a `fhir-postgresql serve` command, endpoints or HTTP
 > status codes, it means **`fhir-loco`** — a separate crate (Loco.rs, Axum,
-> Tokio, Hyper) that mounts a FHIR REST API over a store.
+> Tokio, Hyper) that mounts a FHIR® REST API over a store.
 >
 > `fhir-postgresql` itself is a **library**: no binary, no `serve`, no HTTP
 > surface ([`C0.17`](../../../spec/databases/00-conformance.md),
@@ -55,3 +55,9 @@ Functional end to end and pre-release. See `tasks.md` in the repository
 for the milestone ledger and `doc/benchmarks.md` for measured numbers
 (6,146 resources/s bulk load; 1.18 ms average reconstruction reads;
 index-verified searches at 100k resources).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

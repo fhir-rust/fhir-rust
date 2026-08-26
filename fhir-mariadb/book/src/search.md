@@ -23,7 +23,7 @@ Supported semantics:
   `Müller`, and both the precomposed and decomposed spellings of `é` find
   each other. `:exact` is the exception, and deliberately so — it compares
   the literal stored string, accents included.
-- **date** — `eq ne lt gt ge le sa eb` prefixes with FHIR precision
+- **date** — `eq ne lt gt ge le sa eb` prefixes with FHIR® precision
   ranges (`birthdate=1980` matches `"1980-11"`); Period elements use
   overlap semantics.
 - **number / quantity** — `value-quantity=gt100`,
@@ -60,3 +60,9 @@ work this library does not do — `fhir-loco`'s job, not this crate's
 
 Everything a query sends is bound as a SQL parameter — user input is
 never interpolated into SQL text.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

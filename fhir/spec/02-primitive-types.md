@@ -1,6 +1,6 @@
 # 02 — Primitive types
 
-Defines how the FHIR primitive datatypes are represented in Rust.
+Defines how the FHIR® primitive datatypes are represented in Rust.
 
 Applies to every modelled release. Where a release differs, the difference is
 stated here rather than in the code.
@@ -142,3 +142,9 @@ the wire form is identical to the bare scalar.
    `"9007199254740993"`.
 4. `Code("bad  code")` and `Id("bad id!")` are reported invalid by `Validate`.
 5. Every primitive module passes its generated round-trip test.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

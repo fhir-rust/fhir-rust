@@ -201,7 +201,7 @@ work, it is in `fhir-loco`.
 - [x] **T29 Book + generated schema docs.** mdBook (9 chapters:
   introduction, getting started, storage model, SQL querying, search,
   versions, operations, architecture, trust boundary — the REST-API chapter
-  went with T73); builds locally. Column/table→FHIR-path mapping ships
+  went with T73); builds locally. Column/table→FHIR®-path mapping ships
   inside the map assets themselves. *Remaining nicety:* a rendered
   path→table index page.
 - [~] **T30 Security review + release.** Done: LICENSE-MIT/APACHE,
@@ -637,3 +637,9 @@ transfers cheaply.
   reloads. The principle stands — deploying a new fold without backfilling is
   worse than not fixing it, which is why the backfill runs *inside* `upgrade`
   (M14.37).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

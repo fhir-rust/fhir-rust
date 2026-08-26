@@ -184,7 +184,7 @@ RFC 2119 keywords.
   correct and merely scan. An Oracle `CLOB` does not, so the same design would
   make some searches *not work at all* rather than work slowly.
 
-  A FHIR `string` has no length bound in the specification, so this cannot be
+  A FHIR® `string` has no length bound in the specification, so this cannot be
   resolved by declaring one.
 
   **Settled.** [Unbounded string search](../../spec/databases/unbounded-string-search-must-have-bounded-adjunct-and-checksum-adjunct.md) (`U1`–`U10`, `P6.9`) is now
@@ -834,3 +834,9 @@ Part of the [fhir-oracle specification](index.md), which is part of the
   The documentation MUST state the fourth point alongside the first three.
   `O10.4` requires each dialect to state its failure story, and a story that
   gives only the reassuring half satisfies that on paper and not in fact.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

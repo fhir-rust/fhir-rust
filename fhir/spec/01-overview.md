@@ -2,7 +2,7 @@
 
 ## Purpose
 
-`fhir` is a Rust crate that provides the **FHIR** data model as strongly-typed,
+`fhir` is a Rust crate that provides the **FHIR®** data model as strongly-typed,
 `serde`-serializable Rust, together with a spec-driven code generator that
 derives that model from the official FHIR specification JSON.
 
@@ -14,7 +14,7 @@ why they are separate types rather than one — is defined in
 [spec 12](12-fhir-releases.md). Every other spec in this directory applies to
 each release in turn; where they say "R5" for concreteness, read "the release".
 
-FHIR (Fast Healthcare Interoperability Resources) is the HL7 standard for
+FHIR (Fast Healthcare Interoperability Resources) is the HL7® standard for
 representing and exchanging electronic health records.
 
 ## Scope
@@ -98,3 +98,9 @@ The crate meets this overview when:
 3. `cargo test` and `cargo clippy --all-targets` are clean, for the default
    features and with every release enabled.
 4. Each downstream spec (02–12) has its own acceptance criteria met.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

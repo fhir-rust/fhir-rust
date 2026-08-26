@@ -3,7 +3,7 @@
 **Three crates**, all in this workspace (`Cargo.toml`'s `members`). There is
 no server crate and no CLI binary — an earlier version of this chapter listed
 `fhir-postgresql-server` (axum) and a `fhir-postgresql` CLI as though they
-existed here; they do not (`C0.17`, `C0.18`, audit **F-56**). A FHIR RESTful
+existed here; they do not (`C0.17`, `C0.18`, audit **F-56**). A FHIR® RESTful
 API over this store is [`fhir-loco`](../../../fhir-loco/), a separate crate
 outside this workspace.
 
@@ -90,3 +90,9 @@ three FHIR versions as the specification moves.
   is the current status to trust, not `plan.md`).
 - [`spec/index.md`](../../spec/index.md) — this port's normative index; the
   shared core is [`spec/databases/index.md`](../../../spec/databases/index.md).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

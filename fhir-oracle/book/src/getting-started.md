@@ -73,7 +73,7 @@ Three crates, no binary:
 
 | Crate | What it does |
 | --- | --- |
-| `fhir-oracle-gen` | compiles the FHIR specification packages into a relational map and the DDL |
+| `fhir-oracle-gen` | compiles the FHIR® specification packages into a relational map and the DDL |
 | `fhir-oracle-map` | the map types, shred, reconstruct, fold, and this engine's `ddl.rs` |
 | `fhir-oracle-store` | the driver and the operations — `connect`, `init`, `put`, `get`, `delete`, `history`, `vread`, `search`, `verify_audit`, `purge`, `log_access` |
 
@@ -86,3 +86,9 @@ The chapters that follow describe the storage model, the search compiler and
 the trust boundary, rewritten to describe this engine specifically rather
 than a copied template — see [`audit.md`](https://github.com/fhir-rust/fhir-rust/blob/main/spec/databases/audit.md)
 **F-56** and **F-68** for that history.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

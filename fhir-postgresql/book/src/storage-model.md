@@ -83,7 +83,7 @@ compares (`M14.20`) — every non-`:exact` string search reads these, never
 ## Types
 
 Booleans, integers, and decimals map to `boolean`, `integer`/`bigint`,
-and `numeric` (decimal scale survives round trip). FHIR temporals are
+and `numeric` (decimal scale survives round trip). FHIR® temporals are
 stored **verbatim as text** — `"2026-07"` is a legal FHIR date no native
 type can hold — with a derived `*_sort` column (`date`/`timestamptz`) for
 ordering and search. References split into `…_ref_type` / `…_ref_id`
@@ -116,3 +116,9 @@ into a `<resource>_deep` leaf table with the same encoding.
 data serving vread/history), and `contained` resources plus inline
 resources (`Bundle.entry.resource`) are stored whole — they are anonymous
 resources of unknowable type, so normalizing them buys nothing.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

@@ -16,7 +16,7 @@ let applied = store.init("r5-baseline").await?; // number of DDL statements appl
 ```
 
 `init` applies the generated DDL directly against the target database and
-then records the map checksum, the FHIR version, and the map asset itself
+then records the map checksum, the FHIR® version, and the map asset itself
 (gzipped, hex-coded) in `fhir_mariadb_meta`. **This is not atomic.** MariaDB's
 DDL commits implicitly, so the staged-schema-then-rename dance the
 PostgreSQL original uses has no MariaDB equivalent (`M14.22`) — this chapter
@@ -92,3 +92,9 @@ is binlog replay — not PostgreSQL's WAL-based PITR, which this chapter
 described for every port until 2026-08-03 (audit **F-56**). Nothing in this
 crate schedules a backup; that is the deployment's job (see the
 [trust boundary](trust-boundary.md)).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

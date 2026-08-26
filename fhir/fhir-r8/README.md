@@ -1,8 +1,8 @@
 # fhir-r8
 
-Reserved for a future FHIR Release 8 data model.
+Reserved for a future FHIR® Release 8 data model.
 
-**There is no FHIR R8 specification.** R6 is the newest release HL7 has
+**There is no FHIR R8 specification.** R6 is the newest release HL7® has
 published in any form, and it is still in ballot. R8 is simply the number
 that would come next; HL7 has not announced it, and nothing here should be
 read as implying otherwise.
@@ -34,3 +34,9 @@ one hand-written change (`Bundle.link.relation` became a coded value).
 ## License
 
 MIT. FHIR® is a registered trademark of HL7, used with permission.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

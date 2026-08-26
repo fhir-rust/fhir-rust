@@ -9,7 +9,7 @@ release supplies the rest.
 
 ## Background
 
-Beyond Rust's type system, FHIR imposes constraints (primitive regexes,
+Beyond Rust's type system, FHIR® imposes constraints (primitive regexes,
 cardinality, invariants). This crate provides a lightweight, dependency-free
 validation layer that walks a value and reports issues.
 
@@ -119,3 +119,9 @@ cannot express on their own, using the release's `meta` table (spec 08):
    release.
 7. `fhir-derive-macros` builds and the whole model derives `Validate` without
    clippy warnings.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

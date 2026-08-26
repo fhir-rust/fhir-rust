@@ -217,7 +217,7 @@ work, it is in `fhir-loco`.
   regression gate would follow it.
 - [x] **T29 Book + generated schema docs.** mdBook (9 chapters:
   introduction, getting started, storage model, querying, search,
-  FHIR versions, operations, architecture, trust boundary — the REST
+  FHIR® versions, operations, architecture, trust boundary — the REST
   chapter went with the server, T71); builds locally and in
   CI. Column/table→FHIR-path mapping ships inside the map assets
   themselves. *Remaining nicety:* a rendered path→table index page.
@@ -775,3 +775,9 @@ Native SQLite store, complete enough to embed. No PostgreSQL dependencies.
   `bool_token_as_bind` (`sqlite_search.rs:281-293`, `:372-375`), which bind
   `"1"`/`"0"` for `ColTy::Bool` columns. *Accept:*
   `boolean_token_search_finds_a_true_value` (`tests/sqlite_store.rs:836`).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

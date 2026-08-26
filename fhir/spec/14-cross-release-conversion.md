@@ -1,6 +1,6 @@
 # 14 — Cross-release conversion
 
-Defines how a resource is moved from one FHIR release to another, and what the
+Defines how a resource is moved from one FHIR® release to another, and what the
 caller is told about what that cost.
 
 ## Background
@@ -140,8 +140,14 @@ releases and account for every difference**.
 
 ## Future work
 
-- Driving the semantic remappings of R14.13 from HL7's official cross-version
+- Driving the semantic remappings of R14.13 from HL7®'s official cross-version
   extension maps, which state them explicitly. That would let a renamed element
   be carried across *and* reported as a rename, rather than reported as a
   removal. It is the natural next step and needs the map packages vendored
   alongside the definitions.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

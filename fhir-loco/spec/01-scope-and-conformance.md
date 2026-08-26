@@ -2,7 +2,7 @@
 
 ## What this crate is
 
-- **SV1.1** `fhir-loco` is a **FHIR RESTful API server** over one of the
+- **SV1.1** `fhir-loco` is a **FHIR® RESTful API server** over one of the
   database ports. It translates HTTP to store calls and store outcomes to HTTP.
   It MUST NOT implement storage semantics of its own.
 
@@ -86,3 +86,9 @@
 ---
 
 Part of the [fhir-loco specification](index.md).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

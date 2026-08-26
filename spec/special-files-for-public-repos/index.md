@@ -31,7 +31,7 @@ All of the above exist as of 2026-08-26. Two notes:
   now a pointer at the root document, with the resolution (what the root
   carries that the draft lacked, and where the draft's one unique section
   lives) recorded in the pointer itself.
-- **The HL7 trademark rules in
+- **The HL7® trademark rules in
   [`spec/hl7-trademarks-fair-use/`](../hl7-trademarks-fair-use/index.md) are
   met by all of these files as of 2026-08-26.** They require `®` after the
   first use of `HL7` and `FHIR` on each page, plus the endorsement disclaimer
@@ -39,3 +39,9 @@ All of the above exist as of 2026-08-26. Two notes:
   root `*.md` and runs in `gates.yml`. (An earlier revision of this note said
   only `GOVERNANCE.md` complied, which was true before the 2026-08-26
   sweep.)
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

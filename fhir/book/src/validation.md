@@ -22,7 +22,7 @@ assert_eq!(issues[0].path, "implicit_rules.uri");
 ## What is checked
 
 - **Primitive formats.** `Code`, `Id`, `Uri`, `Oid`, `Uuid`, `Canonical`, and
-  `Url` check their FHIR constraints (e.g. an `Id` matches `[A-Za-z0-9-.]{1,64}`).
+  `Url` check their FHIR® constraints (e.g. an `Id` matches `[A-Za-z0-9-.]{1,64}`).
 - **Cardinality.** An empty `1..*` element is reported. Because bare `Vec` is
   also used for some `0..*` fields, the real cardinality is read from the
   metadata table at validation time.
@@ -49,3 +49,9 @@ patient.implicit_rules = Some(Uri(" bad ".to_string()));
 let outcome: OperationOutcome = patient.validate().into();
 assert_eq!(outcome.issue.len(), 1);
 ```
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

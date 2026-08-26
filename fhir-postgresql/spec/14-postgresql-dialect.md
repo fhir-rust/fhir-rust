@@ -40,7 +40,7 @@ were invisible while this port defined the spec.
 
 - **M14.3** The engine floor is **PostgreSQL 18** (`S1.4`). Older servers are
   unsupported.
-- **M14.4** Each FHIR version installs into its own **schema** — `r5`, `r4`,
+- **M14.4** Each FHIR® version installs into its own **schema** — `r5`, `r4`,
   `r3` (`S1.2`) — created by `CREATE SCHEMA`. A database MAY host any subset.
 
 ## Type mapping
@@ -318,3 +318,9 @@ were invisible while this port defined the spec.
 
 Part of the [fhir-postgresql specification](index.md), which is part of the
 [fhir-databases specification](../../spec/databases/index.md).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

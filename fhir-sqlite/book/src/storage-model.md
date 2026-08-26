@@ -50,7 +50,7 @@ SQLite is dynamically typed — every `ColTy` below maps to a storage
 *affinity*, not a constraint the engine enforces (`M14.10`). The store, not
 the database, is what rejects a value of the wrong shape.
 
-| FHIR-level type | `ColTy` | SQLite column | Note |
+| FHIR®-level type | `ColTy` | SQLite column | Note |
 | --- | --- | --- | --- |
 | `boolean` | `Bool` | `INTEGER` (0/1) | not `BOOLEAN` — SQLite has no boolean affinity |
 | `integer`, `positiveInt`, … | `Int` | `INTEGER` | |
@@ -134,3 +134,9 @@ The same function signs and verifies, so a chain computed this way is
 six engines stores it, which is not true of the PostgreSQL original's
 SQL-side canonicalization. It is also a breaking change to any chain computed
 before this port existed.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

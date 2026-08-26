@@ -18,7 +18,7 @@ pinned the same way the container images are.
 ## Regenerating the map assets
 
 The maps in `assets/*.json.gz` are committed (`G2.1`) so a build never needs the
-FHIR packages. They are produced by, and only by:
+FHIR® packages. They are produced by, and only by:
 
 ```sh
 cargo run -p fhir-<engine>-gen --bin regen-assets            # rewrite them
@@ -171,3 +171,9 @@ and is a prefix match on the text image, not a typed subscript.
 
 Steps 4 and 8 are the ones that get skipped, and they are the two that produce
 documents making confident false claims about clinical software.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

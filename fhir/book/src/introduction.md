@@ -1,6 +1,6 @@
 # Introduction
 
-`fhir` is a Rust implementation of the **HL7 FHIR®** data model, together with a
+`fhir` is a Rust implementation of the **HL7® FHIR®** data model, together with a
 spec-driven code generator that produces it from the official FHIR
 specification JSON. Five releases are modelled, each a complete, independent
 crate: **R2 (1.0.2, DSTU2)**, **R3 (3.0.2, STU3)**, **R4 (4.0.1)**, **R5
@@ -51,3 +51,9 @@ directory in the repository.
 
 > FHIR® is a registered trademark of Health Level Seven International. This crate
 > is not affiliated with or endorsed by HL7.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

@@ -29,7 +29,7 @@ Supported semantics, verified live in `tests/search_semantics.rs`:
   the literal stored string, accents included. See
   [Querying](querying.md#search-compares-the-folded-column-not-the-one-you-see)
   for the generated SQL this compiles to.
-- **date** — `eq ne lt gt ge le sa eb` prefixes with FHIR precision ranges
+- **date** — `eq ne lt gt ge le sa eb` prefixes with FHIR® precision ranges
   (`birthdate=1980` matches `"1980-11"`); Period elements use overlap
   semantics.
 - **number / quantity** — `value-quantity=gt100`,
@@ -87,3 +87,9 @@ This is a correction from an earlier version of this chapter, which listed
 `_include=Type:param` and `_revinclude=Type:param` as ordinary search result
 parameters. They are not — verified against `crates/fhir-postgresql-store/src/search.rs`
 and `lib.rs`, which contain exactly one function (`refs_of`) in this family.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

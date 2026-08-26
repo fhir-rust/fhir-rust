@@ -1,8 +1,8 @@
-# FHIR for Rust
+# FHIR® for Rust
 
 [![CI](https://github.com/fhir-rust/fhir-rust/actions/workflows/ci.yml/badge.svg)](https://github.com/fhir-rust/fhir-rust/actions/workflows/ci.yml)
 
-A Rust implementation of the **HL7 FHIR®** data model, plus a code generator
+A Rust implementation of the **HL7® FHIR®** data model, plus a code generator
 that produces it from the official FHIR specification JSON files. Five
 releases are modelled: **R5 (5.0.0)**, **R4 (4.0.1)**, **R3 (3.0.2, STU3)**,
 **R2 (1.0.2, DSTU2)**, and **R6 (6.0.0-ballot3, unpublished-final, see
@@ -440,3 +440,9 @@ Licensed under any of:
 - GPL 3.0 only
 
 at your option.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

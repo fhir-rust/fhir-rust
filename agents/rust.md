@@ -122,6 +122,12 @@ on exactly that toolchain, because an unverified MSRV is a guess.
 ## Generated artifacts
 
 `assets/fhir-<engine>-relmap-{r3,r4,r5}.json.gz` and `CHECKSUMS.txt` are
-committed on purpose (`G2.1`), so a build never needs the FHIR spec packages or
+committed on purpose (`G2.1`), so a build never needs the FHIR® spec packages or
 a network. Regeneration is deterministic (`G2.2`) — if the checksum moves and
 the FHIR input did not, that is a generator bug and the diff is the evidence.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

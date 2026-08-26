@@ -17,7 +17,7 @@ fhir-derive-macros = "1.2"
 
 | Derive | Generates |
 | --- | --- |
-| `Validate` | a validator that walks every field recursively, including FHIR invariants such as `qty-3` |
+| `Validate` | a validator that walks every field recursively, including FHIR® invariants such as `qty-3` |
 | `Builder` | a builder for the generated resource and datatype structs |
 | `FhirChoice` | the `value[x]` choice-element representation, as an enum |
 
@@ -45,9 +45,15 @@ deliberately **out of scope**; it needs a server this crate does not talk to.
 - [Validation spec](https://github.com/fhir-rust/fhir-rust/blob/main/fhir/spec/07-validation.md) — `R7.x`
 - [Invariant coverage](https://github.com/fhir-rust/fhir-rust/blob/main/fhir/spec/10-invariants-coverage.md) — `R10.x`, and why occurrence counts are the wrong column to read as coverage
 
-> FHIR® is a registered trademark of HL7 International. This crate is not
+> FHIR® is a registered trademark of HL7® International. This crate is not
 > affiliated with or endorsed by HL7.
 
 ## License
 
 `MIT OR Apache-2.0 OR BSD-3-Clause OR GPL-2.0-only OR GPL-3.0-only` — you choose.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

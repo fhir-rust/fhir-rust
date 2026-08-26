@@ -12,7 +12,7 @@ of the three is a real store rather than a stub:
   or corruption surfaces as an integrity error instead of silent data loss
   (`R4.7`). Everything here except `ddl.rs` is byte-identical (modulo
   whitespace) to the other five ports' `map` crates (`X15.1`).
-- **fhir-mssql-gen** — reads a FHIR specification package
+- **fhir-mssql-gen** — reads a FHIR® specification package
   (StructureDefinitions + SearchParameters) and builds the map: identifier
   fitting under a 63-byte budget (below every supported engine's own limit,
   so one map serves all six), width-based force-splitting at 150 columns
@@ -57,3 +57,9 @@ the TLS advisories described in
 numbered in [`spec/14-mssql-dialect.md`](../../spec/14-mssql-dialect.md)
 (`M14.x`). Design decisions D1–D14, risks, and milestones live in
 `plan.md`; the normative behaviour is [`spec/index.md`](../../spec/index.md).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

@@ -170,7 +170,7 @@ from `Other` (internal: logged behind an incident id, never returned)
 unchanged.
 
 **Fixed — string search missed accented names, and scanned the table
-looking for them.** FHIR requires `string` search to ignore case *and*
+looking for them.** FHIR® requires `string` search to ignore case *and*
 accents; fhir-mysql shipped `ILIKE`, which ignores only case, so `family=muller`
 did not find `Müller` and neither spelling of a decomposed `é` found the
 other. Each string search target now has a folded companion column computed
@@ -364,3 +364,9 @@ fhirbase-style implementation remains in git history.
 - CLI: gen, init (staged-schema, idempotent, checksum-guarded), load
   (optional `--validate` through the typed fhir crate model, R5),
   get/delete/export/search/transform/drop/serve.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

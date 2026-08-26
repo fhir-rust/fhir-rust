@@ -1,4 +1,4 @@
-# FHIR versions
+# FHIR® versions
 
 fhir-mysql supports R5 (5.0.0, the default Cargo feature), R4 (4.0.1), and R3
 (3.0.2). Each version is generated from its own specification package into its
@@ -33,3 +33,9 @@ release. The storage model, the shred/reconstruct engine, and the search
 machinery (`fhir-mysql-map`, `fhir-mysql-gen`) are identical across versions —
 only the generated maps differ, and `fhir-mysql-store`'s SQL does not know or
 care which version it is talking to.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

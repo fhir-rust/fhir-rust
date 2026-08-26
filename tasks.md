@@ -104,10 +104,18 @@ Grouped by `plan.md` workstream. Order within a group is priority order.
       edits identical modulo engine name). Corrected while sweeping: the
       six port READMEs claimed "MIT OR Apache-2.0" where the manifests
       carry the five-way expression.
-- [ ] Widen the trademark gate's remaining tranche: the `fhir/` family's
-      own markdown (needs a decision on which files are prose vs generated
-      transcript), the ports' `book/` chapters and internal docs, and
-      `fhir-loco`'s interior pages — recorded in the spec's coverage note.
+- [x] Widen the trademark gate's remaining tranche — done 2026-08-26, and
+      further than planned: the scope is now **tree-wide** (every markdown
+      file, 216 more fixed mechanically) with three named structural
+      exemptions (`fhir/fhir.md` generated transcript, mdbook `SUMMARY.md`
+      manifests, `.github/` issue templates), each reasoned in the script.
+      All seven mdbooks build with the footers; all 24 doc examples still
+      compile. The sweep touched the README/LICENSE cargo packages into
+      every model-family crate, so the remaining 13 published-matched
+      crates were bumped (fhir-core 3.2.1, fhir-derive-macros 1.5.1,
+      fhir-r2–r6 4.1.1, the five reservations 0.0.2) — all 34 crates now
+      sit one unpublished version ahead, one publish pass covers
+      everything.
 - [x] Replace the ports' `LICENSE-APACHE` header-boilerplate files — done
       2026-08-26: all six are now copies of `LICENSES/Apache-2.0.txt` (§4 of
       Apache-2.0 requires recipients be given the License, and a header

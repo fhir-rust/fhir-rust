@@ -1,6 +1,6 @@
 # JSON serialization
 
-The model round-trips to and from canonical FHIR JSON. This crate is checked
+The model round-trips to and from canonical FHIR® JSON. This crate is checked
 against the **official FHIR R5 example set** (2824 files, the T28 corpus gate):
 **2823/2824 (99.96%)** round-trip exactly. The one exception —
 `questionnaireresponse-example-f201-lifelines.json`, which omits
@@ -78,3 +78,9 @@ let p = Patient::default();
 let summary = to_summary_value(&p, "Patient");
 assert_eq!(summary["resourceType"], "Patient");
 ```
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

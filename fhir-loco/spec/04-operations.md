@@ -31,7 +31,7 @@
   recorded here rather than assumed covered.
 
 - **SV4.3** Metrics and health endpoints MUST be servable on a **separate bind
-  address** from the FHIR API, so operational endpoints are not exposed to the
+  address** from the FHIR® API, so operational endpoints are not exposed to the
   same network as clinical data. Latency MUST be reported as a histogram, not a
   running total, so p99 is answerable. Restates `O10.9`.
 
@@ -90,3 +90,9 @@
 ---
 
 Part of the [fhir-loco specification](index.md).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

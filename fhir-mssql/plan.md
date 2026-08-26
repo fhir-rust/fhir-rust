@@ -10,7 +10,7 @@
 > Two things it says that are true of no port: there is no CLI, and the REST
 > server is a separate crate, [`fhir-loco`](../fhir-loco/) (`C0.17`, `C0.18`).
 
-Ground-up rewrite of fhir-mssql: fully normalized relational storage of FHIR
+Ground-up rewrite of fhir-mssql: fully normalized relational storage of FHIR®
 R3/R4/R5 in SQL Server. The REST server is a separate crate — `fhir-loco` — and
 there is no CLI (`C0.17`, `C0.18`). The prior
 fhirbase-style implementation (jsonb bodies) remains in git history and is a
@@ -216,3 +216,9 @@ Work breakdown: [`tasks.md`](tasks.md).
   *export* serving (import via `load` is in; `bulkget` client can return
   later), profile/IG validation beyond base spec (the ePL IG informed R5
   requirements but IG-specific profile enforcement is future work).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

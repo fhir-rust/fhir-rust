@@ -101,7 +101,7 @@ word-mark terms and the check that enforces them), and
 | Prefix | Section | Subject |
 | --- | --- | --- |
 | `C0` | [0](databases/00-conformance.md) | normative language, id grammar, conformance levels |
-| `S1` | [1](databases/01-scope.md) | FHIR versions, resource coverage, engine floors |
+| `S1` | [1](databases/01-scope.md) | FHIR® versions, resource coverage, engine floors |
 | `G2` | [2](databases/02-schema-generation.md) | determinism, identifiers, install |
 | `M3` | [3](databases/03-storage-model.md) | tables, types, extensions, audit, hash chain |
 | `R4` | [4](databases/04-shredding-and-reconstruction.md) | lossless round-trip, snapshot reads |
@@ -226,3 +226,9 @@ oversight a reader has to infer:
 | auditing compliance | [§13 compliance mapping](databases/13-compliance-mapping.md) |
 | releasing to crates.io | [publishing readiness](publishing.md) first, then [§16](databases/16-repository-and-release.md) `W16.x` |
 | contributing at all | [`AGENTS.md`](../AGENTS.md) |
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

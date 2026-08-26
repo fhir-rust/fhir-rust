@@ -2,7 +2,7 @@
 
 Each release lives in its own crate, `fhir-r2` … `fhir-r6`. The
 model under `fhir-r<n>/src/{types,resources,codes.rs}` is **generated**
-from that release's official FHIR specification JSON in
+from that release's official FHIR® specification JSON in
 `doc/fhir-specifications/<release>/`. This chapter sketches how, for
 contributors.
 
@@ -99,3 +99,9 @@ The living specifications in
 are the source of truth; behaviour is defined there first, then implemented. See
 [`AGENTS.md`](https://github.com/fhir-rust/fhir-rust/blob/main/AGENTS.md)
 for the full contributor workflow.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

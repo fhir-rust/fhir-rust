@@ -14,7 +14,7 @@ Three crates. There is no server crate and no CLI binary in this workspace
   error instead of silent data loss. `shred.rs`, `reconstruct.rs`, `value.rs`,
   `fold.rs`, `canon.rs`, and `model.rs` are identical (modulo whitespace)
   across all six ports (`X15.1`, `M14.2`); only `ddl.rs` is MySQL-specific.
-- **`fhir-mysql-gen`** — reads a FHIR specification package
+- **`fhir-mysql-gen`** — reads a FHIR® specification package
   (StructureDefinitions + SearchParameters) and builds the map: identifier
   fitting under a 63-byte budget (`G2.4`, tighter than MySQL's own 64-character
   limit, so one generated map serves all six engines — `M14.1`), width-based
@@ -55,3 +55,9 @@ per finding **F-27**. Normative behaviour is
 [`spec/index.md`](../../spec/index.md) plus the
 [dialect annex](../../spec/14-mysql-dialect.md), which is itself still marked
 *proposed* (`X15.9`).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

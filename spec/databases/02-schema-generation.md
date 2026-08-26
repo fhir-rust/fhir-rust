@@ -1,6 +1,6 @@
 # 2. Schema generation
 
-- **G2.1** DDL and relational maps MUST be generated from the official FHIR
+- **G2.1** DDL and relational maps MUST be generated from the official FHIR®
   specification packages (StructureDefinitions, SearchParameters) by the port's
   `gen` operation, and the generated artifacts MUST be committed under `assets/`
   so that builds and installs never require the spec packages.
@@ -109,3 +109,9 @@ keeping deliberately; `X15.3` requires it.
 ---
 
 Part of the [fhir-databases specification](index.md).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

@@ -57,7 +57,7 @@ Stated rather than implied, so nobody discovers it during an audit:
   IPS, or any implementation guide.
 - **FHIRPath invariants.** The `fhir` crate enforces a handful of the several
   hundred FHIRPath invariants in the specification, not all of them.
-- **Referential integrity across resources.** FHIR permits dangling
+- **Referential integrity across resources.** FHIR® permits dangling
   references and so does fhir-mysql (`M3.10`).
 
 ## Verifying the audit trail
@@ -172,3 +172,9 @@ With both in place, rewriting history requires an account with `SUPER` or
 itself visible in the server's own log
 (`verify_audit_accepts_a_clean_chain_and_catches_tampering` exercises exactly
 this path: drop the trigger, tamper, then show `verify_audit` catches it).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

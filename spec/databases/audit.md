@@ -153,7 +153,7 @@ type-/system-level history, multi-port wiring, is tracked in that crate's
 | [F-52](#f-52) | **High** | The repository's only live database test was flaky — its cleanup dropped tables before foreign keys and discarded the error, so failures were misattributed to a correct `CREATE TABLE` | **fixed** 2026-08-03 — 5/5 runs green |
 | [F-53](#f-53) | Medium | Every store crate's module doc called itself "the PostgreSQL layer" and described operations the two scaffolds do not have — F-01 in `src/` | **fixed** 2026-08-03 — all six |
 | [F-54](#f-54) | **High** | `fhir-mysql` and `fhir-mariadb` carried PHI over an unencrypted database link with no way to encrypt it — the `minimal` Cargo feature excluded TLS entirely | **fixed** 2026-08-03 — `SslMode`, verifying default, live-verified on both engines |
-| [F-55](#f-55) | **High** | `scripts/db.sh` resolved the FHIR packages through the ancestor project's path and one developer's home directory in all six ports, so the live corpus suite could never find its inputs | **fixed** 2026-08-03 — 1,200 live round-trips now green on PostgreSQL 18 |
+| [F-55](#f-55) | **High** | `scripts/db.sh` resolved the FHIR® packages through the ancestor project's path and one developer's home directory in all six ports, so the live corpus suite could never find its inputs | **fixed** 2026-08-03 — 1,200 live round-trips now green on PostgreSQL 18 |
 | [F-56](#f-56) | **High** | Every port's `book/` describes PostgreSQL and a REST server — F-01 in the long-form documentation, incl. telling a SQLite operator to back up with `pg_dump` | **fixed** 2026-08-03 — engine substitution corrected throughout; REST text now attributed to `fhir-loco` in all six banners |
 | [F-57](#f-57) | Medium | `fhir-loco`'s CapabilityStatement declared a read-only server while the router served `POST`/`PUT`/`DELETE`, and named its software `fhir-store` | **fixed** 2026-08-03 — mutation-verified agreement test added |
 | [F-58](#f-58) | Medium | `fhir-loco` is the service §10/§12 specify; five obligations remained unmet, incl. no stated requirement for the listener's own TLS | **closed** 2026-08-09 — every named gap served or resolved: `SV2.14` conditional create and `SV4.3` admin plane (2026-08-07), `SV3.11` posture stated and enforced (2026-08-07), `SV2.15` system-level async Bulk Data `$export` (2026-08-09, owner-directed). `SV4.2`'s two missing halves remain a recorded Loco 1.0.1 framework limit, tracked in that crate's spec rather than here |
@@ -4993,7 +4993,7 @@ first corpus to exercise the form.
 FHIR JSON represents a repeating primitive with extensions as two parallel
 arrays, and a position that carries only an extension is a **null** in the
 value array: `"event": [null]` beside `"_event": [{…}]`. That is valid —
-HL7's own R4B examples use it (nine of them). The model's repeating
+HL7®'s own R4B examples use it (nine of them). The model's repeating
 primitives are `Vec<T>`, so the null cannot deserialize (`invalid type:
 null, expected a string`) and, worse, cannot be *represented*: there is no
 way to hold "no value at index 0" in a `Vec<types::DateTime>`. The R3/R4/R5
@@ -5371,3 +5371,9 @@ them).
 ---
 
 Part of the [fhir-databases specification](index.md).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

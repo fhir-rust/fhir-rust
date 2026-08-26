@@ -201,7 +201,7 @@ work, it is in `fhir-loco`.
   against the historical jsonb implementation.
 - [x] **T29 Book + generated schema docs.** mdBook (9 chapters:
   introduction, getting started, storage model, querying, search,
-  FHIR versions, operations, architecture, trust boundary — the REST
+  FHIR® versions, operations, architecture, trust boundary — the REST
   chapter went with the server, T61); builds locally and in
   CI. Column/table→FHIR-path mapping ships inside the map assets
   themselves. *Remaining nicety:* a rendered path→table index page.
@@ -576,3 +576,9 @@ library-only — no HTTP server, no CLI.
   tests in that port's `tests/upgrade.rs`). **Deploying the new fold against
   an existing database without backfilling is worse than not fixing it**,
   because searches would then match neither spelling.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

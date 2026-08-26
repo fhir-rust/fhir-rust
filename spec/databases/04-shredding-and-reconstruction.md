@@ -34,7 +34,7 @@
   `READ COMMITTED` re-reads on every statement and is exactly the failure this
   requirement describes.
 
-- **R4.6** Resource ids MUST satisfy the FHIR `id` production
+- **R4.6** Resource ids MUST satisfy the FHIR® `id` production
   (`[A-Za-z0-9\-\.]{1,64}`) wherever they enter the system. An id that does not
   is an error, never a stored row.
 - **R4.7** Reconstruction MUST **audit row consumption**: every row fetched for
@@ -49,3 +49,9 @@
 ---
 
 Part of the [fhir-databases specification](index.md).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

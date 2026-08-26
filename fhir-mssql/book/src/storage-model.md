@@ -10,7 +10,7 @@ this chapter is the tour, and its column types are checked against
 Every resource type has a base table named after it (`r5.patient`) with
 `[id] NVARCHAR(64) COLLATE Latin1_General_100_BIN2 NOT NULL PRIMARY KEY`,
 `[version_id] BIGINT`, `[last_updated] DATETIME2(6)`, and a typed column for
-every scalar element. 64 is not a guess: the FHIR `id` production is
+every scalar element. 64 is not a guess: the FHIR® `id` production is
 `[A-Za-z0-9\-\.]{1,64}` (`R4.6`, `M14.12`), and `BIN2` rather than the
 server's default collation because the default is case- and
 accent-insensitive — fine for a folded search column, wrong for a primary
@@ -127,3 +127,9 @@ them buys nothing. None of it uses SQL Server's `JSON` functions or type:
 the hash chain's pre-image is canonicalized in Rust (`canon.rs`, `X15.2`),
 and a column that re-normalized what it was given would make the bytes
 read back differ from the bytes the chain signed (`M14.11`).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

@@ -115,7 +115,7 @@ preserve the invariants that are not about SQL at all: round-trip fidelity
   | `Timestamptz` | `timestamptz` | `TEXT` — fixed-width ISO-8601 UTC, see M14.12 |
   | `Jsonb` | `jsonb` | `TEXT` — see M14.17 |
 
-- **M14.11** FHIR `decimal` cannot be stored as `REAL`: M3.6 requires that a
+- **M14.11** FHIR® `decimal` cannot be stored as `REAL`: M3.6 requires that a
   decimal's "original textual precision MUST survive round-trip", and binary
   floating point represents neither `1.50` distinctly from `1.5` nor `0.1` at
   all. PostgreSQL satisfies M3.6 with `numeric` alone because `numeric`
@@ -326,3 +326,9 @@ preserve the invariants that are not about SQL at all: round-trip fidelity
   transaction per batch, selecting only rows still NULL — which is what makes it
   resumable. Batching matters more here than on PostgreSQL: a SQLite writer
   holds the single write lock for the length of its transaction.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

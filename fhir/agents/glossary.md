@@ -1,11 +1,11 @@
 # Glossary
 
-Shared vocabulary for FHIR and this project, so the specs, the code, and agents
+Shared vocabulary for FHIR® and this project, so the specs, the code, and agents
 all use terms the same way.
 
 ## FHIR concepts
 
-- **FHIR** — Fast Healthcare Interoperability Resources; the HL7 standard for
+- **FHIR** — Fast Healthcare Interoperability Resources; the HL7® standard for
   exchanging electronic health records.
 - **Release** — a published version of FHIR. This crate models three, as
   separate module trees and separate cargo features:
@@ -106,3 +106,9 @@ all use terms the same way.
 
 - Package/crate name: **`fhir`** (import as `use fhir::…`).
 - Workspace member: **`fhir-derive-macros`** (proc-macro crate).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

@@ -32,7 +32,7 @@ they belong to whatever process embeds this store.
 | Transport encryption to the database | Undecided on this engine (`O10.7`, `M14.22`) — the live test suite connects over a plain local port with no encryption configured either way. |
 | Terminology validation | Required-binding `CHECK` constraints only. No value-set expansion, no SNOMED/LOINC/ICD membership checks. |
 | Profile conformance | Base-specification structure only — not US Core, IPS, or any implementation guide. |
-| Referential integrity across resources | FHIR permits dangling references and so does this store (`M3.10`). |
+| Referential integrity across resources | FHIR® permits dangling references and so does this store (`M3.10`). |
 
 ## Attributing a write
 
@@ -153,3 +153,9 @@ REVOKE UPDATE, DELETE ON "R5"."patient_history" FROM some_readonly_role;
 
 With both in place, rewriting history requires a DBA deliberately disabling
 a trigger — an act that is itself visible in the server's own audit trail.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

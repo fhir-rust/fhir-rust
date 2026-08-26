@@ -8,7 +8,7 @@
 > [conformance matrix](../spec/databases/conformance-matrix.md) is the status
 > document (audit **F-61**).
 
-Ground-up rewrite of fhir-postgresql: fully normalized relational storage of FHIR
+Ground-up rewrite of fhir-postgresql: fully normalized relational storage of FHIR®
 R3/R4/R5 in PostgreSQL 18, as an embeddable library — the REST server is a
 separate crate, `fhir-loco`, and there is no CLI. The prior
 fhirbase-style implementation (jsonb bodies) remains in git history and is a
@@ -210,3 +210,9 @@ Work breakdown: [`tasks.md`](tasks.md).
   *export* serving (import via `load` is in; `bulkget` client can return
   later), profile/IG validation beyond base spec (the ePL IG informed R5
   requirements but IG-specific profile enforcement is future work).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

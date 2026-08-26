@@ -9,7 +9,7 @@ where this describes *code layout*, the specs describe *required behaviour*.
 `fhir` is simultaneously:
 
 1. **A data model** — Rust types under `<release>::types`, `<release>::resources`,
-   `<release>::codes` that serialize to and from canonical FHIR JSON via `serde`.
+   `<release>::codes` that serialize to and from canonical FHIR® JSON via `serde`.
 2. **A code generator** — under `codegen` — that reads the official FHIR
    specification JSON for a release and emits that release's Rust source. This
    is the spec-driven engine.
@@ -189,9 +189,15 @@ committed so that generation is reproducible from a clean clone.
 
 R3 and R4 additionally ship `extension-definitions.json`, `v2-tables.json`, and
 `v3-codesystems.json`. The generator deliberately ignores the last two: they are
-external HL7 v2/v3 terminologies rather than FHIR-defined ones, and no FHIR
+external HL7® v2/v3 terminologies rather than FHIR-defined ones, and no FHIR
 element has a `required` binding into them.
 
 The bundles are not identically *shaped* across releases. R3 predates several
 conventions R4 and R5 rely on, so `codegen::spec` normalizes them at the input
 boundary — see [`code-generation.md`](code-generation.md).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

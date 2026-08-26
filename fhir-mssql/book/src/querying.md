@@ -1,6 +1,6 @@
 # Querying with T-SQL
 
-Loaded FHIR data is ordinary relational data. Identifiers below are
+Loaded FHIR® data is ordinary relational data. Identifiers below are
 **bracket-quoted**, never double-quoted (`M14.5`): a double quote is a
 string delimiter here unless the session has `QUOTED_IDENTIFIER ON`, which
 is the default but is session state, and a schema must not depend on
@@ -68,3 +68,9 @@ Tips:
   query only touches one — a cross-schema join compiles and returns
   meaningless results if the two versions modeled the same path
   differently.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

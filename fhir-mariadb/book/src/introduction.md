@@ -7,7 +7,7 @@
 >
 > What several chapters still call `fhir-mariadb serve` is really
 > **`fhir-loco`** — a separate crate (Loco.rs, Axum, Tokio, Hyper) that mounts
-> a FHIR REST API over a store. `fhir-mariadb` itself is a **library**: no binary,
+> a FHIR® REST API over a store. `fhir-mariadb` itself is a **library**: no binary,
 > no `serve`, no HTTP surface
 > ([`C0.17`](../../../spec/databases/00-conformance.md),
 > [`C0.18`](../../../spec/databases/00-conformance.md); audit **F-56**).
@@ -71,3 +71,9 @@ timing, bulk-load throughput, and per-read latency numbers do **not** exist
 for `fhir-mariadb` — this book used to state PostgreSQL's own measurements as
 this port's (audit **F-64**), and that page now says so explicitly rather than
 repeating the substitution here.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

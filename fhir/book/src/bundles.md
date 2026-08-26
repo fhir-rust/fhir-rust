@@ -62,7 +62,13 @@ assert_eq!(bundle.entry.len(), 3);
 ## Talking to a server
 
 With the `client` feature, `fhir::r5::client::Client` sends these interactions to
-a FHIR server; a transaction bundle can be `POST`ed to the base URL. See the
+a FHIR® server; a transaction bundle can be `POST`ed to the base URL. See the
 `client_crud` example. `fhir::r4::client::Client` is the R4 counterpart — one
 implementation, generic over the release, so both return their own release's
 `Resource` and `Bundle`.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

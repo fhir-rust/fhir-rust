@@ -34,7 +34,7 @@ implements it.
   and case included. All three confirmed by running the store directly
   (`family:exact=Smith` matches, `family:exact=smith` does not,
   `family:contains=mit` matches).
-- **date** — `eq ne lt gt ge le sa eb` prefixes with FHIR precision ranges
+- **date** — `eq ne lt gt ge le sa eb` prefixes with FHIR® precision ranges
   (`birthdate=1980` matches a stored `"1980-11"`); `Period`-valued elements
   use overlap semantics against both bounds, with an open-ended period
   treated as extending to `9999-12-31T23:59:59.999999Z` (the sentinel
@@ -90,3 +90,9 @@ listed as a fix in the [dialect annex](../../spec/14-sqlite-dialect.md) or the
 [conformance matrix](../../../spec/databases/conformance-matrix.md) as of
 this writing, so treat it as an open, unfiled gap rather than a documented
 limitation.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

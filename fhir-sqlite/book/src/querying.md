@@ -1,6 +1,6 @@
 # Querying with SQL
 
-Loaded FHIR data is ordinary relational data. Every table and column name
+Loaded FHIR® data is ordinary relational data. Every table and column name
 below is real — checked against the generated R5 map, not written from memory:
 
 ```sql
@@ -84,3 +84,9 @@ subscripting mattered.
   enforces that identity across a query — a join across `r4.patient` and
   `r5.observation` would silently mix two unrelated numbering spaces for
   `id`.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

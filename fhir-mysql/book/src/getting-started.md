@@ -30,7 +30,7 @@ Three crates, no binary:
 
 | Crate | What it does |
 | --- | --- |
-| `fhir-mysql-gen` | compiles the FHIR specification packages into a relational map and the DDL |
+| `fhir-mysql-gen` | compiles the FHIR® specification packages into a relational map and the DDL |
 | `fhir-mysql-map` | the map types, shred, reconstruct, fold, and this engine's `ddl.rs` |
 | `fhir-mysql-store` | the driver and the operations — see the port README for its level |
 
@@ -42,3 +42,9 @@ the trust boundary. Those are accurate in substance; where they name
 PostgreSQL, or a `serve` command, or an HTTP status code, read the banner in
 the [Introduction](introduction.md) — that text has not been corrected yet
 (audit **F-56**).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

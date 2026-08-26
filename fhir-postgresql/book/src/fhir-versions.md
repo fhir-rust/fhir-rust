@@ -1,4 +1,4 @@
-# FHIR versions
+# FHIR® versions
 
 fhir-postgresql supports R5 (5.0.0, the default), R4 (4.0.1), and R3 (3.0.2). Each
 version is generated from its own specification package into its own map
@@ -20,3 +20,9 @@ R5's `integer64` maps to `bigint` (JSON string per R5 rules), R3 lacks
 several datatypes, choice-type membership differs — but the storage
 model, engine, and search machinery are identical across versions; only
 the generated maps differ.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

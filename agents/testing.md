@@ -5,7 +5,7 @@ This file is how to work with it.
 
 ## `cargo test` passing means little
 
-Unit tests run with no database and no FHIR specification packages, because the
+Unit tests run with no database and no FHIR® specification packages, because the
 corpus- and spec-driven tests skip themselves when their inputs are absent. That
 is convenient locally and **misleading in CI**.
 
@@ -162,3 +162,9 @@ port.
 baseline (`T11.5`). A number in that file must name what measured it and when
 (`W16.10`) — a throughput figure inherited by text substitution is not a
 measurement of the port carrying it.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

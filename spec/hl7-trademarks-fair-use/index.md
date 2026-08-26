@@ -1,6 +1,6 @@
-# HL7 trademarks fair use
+# HL7® trademarks fair use
 
-Fair Use of HL7 Word Marks: Anyone may use HL7 word marks in fair use ways. Examples of acceptable fair uses of HL7 word mark are provided at http://www.hl7.org/legal/fairuse.cfm. When using HL7 word marks (e.g., "HL7", "FHIR", "CDA", etc.) for fair use:
+Fair Use of HL7 Word Marks: Anyone may use HL7 word marks in fair use ways. Examples of acceptable fair uses of HL7 word mark are provided at http://www.hl7.org/legal/fairuse.cfm. When using HL7 word marks (e.g., "HL7", "FHIR®", "CDA®", etc.) for fair use:
 
 Always include the trademark registration mark® after the first use of word marks each page
 
@@ -29,10 +29,13 @@ crates) — the script extracts doc-comment prose, `er7-rust`'s
 `prose_rust_docs` approach, and applies the same two rules to what docs.rs
 renders.
 
-**Covered since 2026-08-26, beyond the root:** `doc/`, `fhir-store/` and
-`fhir-loco/` top-level pages, and the six ports' `README.md` — all gated by
-the script and compliant. **Not yet covered:** the `fhir/` family's own
-markdown (its `fhir.md` is a generated transcript that would drown the
-check — covering the family means choosing which of its files are prose),
-the ports' `book/` chapters and internal docs, and `fhir-loco`'s interior
-pages. Widening the `FILES` list in the script is the way to cover them.
+**Covered tree-wide since 2026-08-26:** every markdown file in the
+repository is in the script's scope and compliant — root, `help/`, `doc/`,
+the specs, the four families' own markdown including every port's `book/`
+chapters — plus the nine top-level crate roots' rustdoc. The only
+exemptions are structural, named in the script with their reasons:
+`fhir/fhir.md` (a generated transcript — its ® is the generator's job),
+`book/src/SUMMARY.md` files (mdbook navigation manifests, where appended
+prose breaks the build), and `.github/` issue templates (a footer there
+would inject itself into every filed issue). All seven mdbooks build with
+the footers in place.

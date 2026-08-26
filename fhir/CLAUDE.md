@@ -28,7 +28,7 @@ cargo clippy --all-targets -- -D warnings     # zero warnings (pedantic is on)
 RUSTDOCFLAGS="-D warnings" cargo doc --no-deps
 ```
 
-## One crate per FHIR release
+## One crate per FHIR® release
 
 This is a workspace, not a single crate:
 
@@ -73,3 +73,9 @@ Adding a release is a documented procedure:
 
 Everything else — the conventions, the cardinality mapping, the generator, the
 release checklist — lives in the documents linked above.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

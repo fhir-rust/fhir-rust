@@ -27,7 +27,7 @@ findings in the register.
 What it looks like when it goes wrong. Every port's README carried this until
 2026-07-31, with the engine name swapped:
 
-> all **7,399 official FHIR example resources** (R3 + R4 + R5) round-trip
+> all **7,399 official FHIR® example resources** (R3 + R4 + R5) round-trip
 > **losslessly** through the fully normalized schema — in memory, through live
 > \<engine\>, and 10,000 generated property-test cases besides. 94.8% of R5
 > search parameters compile to indexed SQL, and `fhir-<engine> serve` mounts
@@ -113,3 +113,9 @@ only in `fhir-mysql`, for as long as the forks have existed.
 Step 4 is the one that catches the CLI problem: the moment anyone runs a README
 command, `cargo install --path crates/fhir-postgresql` fails and the gap
 becomes visible.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

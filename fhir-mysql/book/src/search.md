@@ -21,7 +21,7 @@ This is a library API, not a query-string parser: there is no `_count=` or
 (such as `fhir-loco`) is what would translate `_count`, `_sort`, and a cursor
 token into them.
 
-**Content** parameters — the filters a FHIR search actually searches on — are
+**Content** parameters — the filters a FHIR® search actually searches on — are
 a `&[(String, String)]` of parameter-code/value pairs, and this part is close
 to the wire syntax:
 
@@ -68,3 +68,9 @@ Everything a value contributes to the query is bound as a parameter
 (`?`), never interpolated into SQL text — `search_values_are_bound_never_interpolated`
 in `mysql_store.rs` is the test that would fail if this regressed, and a fuzz
 target (`fuzz/fuzz_targets/search_sql.rs`) exists for the same invariant.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

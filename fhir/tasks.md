@@ -39,7 +39,7 @@ Conventions for the executing session:
 - *Status:* superseded by T28's full-corpus gate. A file named
   `tests/roundtrip_official_examples.rs` never existed; the real suites are
   `tests/roundtrip_r{3,4,5}_examples.rs` (plus `roundtrip_r2_spec.rs`).
-- **Do:** Fetch FHIR R5 `examples-json.zip`
+- **Do:** Fetch FHIR® R5 `examples-json.zip`
   (https://hl7.org/fhir/R5/examples-json.zip) into
   `doc/fhir-specifications/r5/fhir-examples-json/` (git-LFS or a
   `cargo xtask fetch-examples` script + .gitignore, decide by repo-size
@@ -419,7 +419,7 @@ items are defects in shipped behaviour; P1 items are missing guarantees.
     `ConceptMap...target.product.attribute`/`value[x]` — see T35.
   - **A stale exemption:** the gate refused an allowlist entry that had
     started passing, which is the property that keeps the list shrinking.
-  - **372 R4/R3 failures reduced to three causes**, all of them HL7 examples
+  - **372 R4/R3 failures reduced to three causes**, all of them HL7® examples
     that violate their own specification (omitted `linkId`, `base`, `code`,
     each `min=1`). Recorded as counted `KnownFailureClass` entries rather
     than 372 lines — and explicitly *not* fixed by relaxing the model, which
@@ -962,3 +962,9 @@ workspace is now published at 3.0.0. Kept for the record:
 3. **T8** (generator metadata) — unlocks most of Phases 2–5.
 4. **T6** (prototype `_field`, make the representation decision).
 5. **T7** (EPIC `_field` rollout) → ship 0.2.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

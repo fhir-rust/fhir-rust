@@ -14,7 +14,7 @@ a regulation to a numbered requirement to a test.
 | GDPR Art. 17 erasure | `M3.18` | purge test |
 | GDPR Art. 30 records of processing | `PR12.5`, `PR12.7` | `T11.8` |
 | GDPR Art. 32 security of processing | `O10.7`, `O10.8`, `O10.10` | CI gates |
-| ONC/HTI FHIR conformance | ~~`A7.12`~~, `T11.4`, §9 validation | Inferno run |
+| ONC/HTI FHIR® conformance | ~~`A7.12`~~, `T11.4`, §9 validation | Inferno run |
 | ONC/HTI Bulk Data | ~~`M8`~~ (`$export`) | Inferno run |
 | IEC 62304 §5–8 lifecycle | spec ↔ tasks ↔ test traceability | this document, [conformance matrix](conformance-matrix.md) |
 | IEC 62304 / FDA cybersecurity | `O10.10`, `O10.11` | release artifacts |
@@ -80,3 +80,9 @@ six ports currently sit below Reference level (`C0.8`).
 ---
 
 Part of the [fhir-databases specification](index.md).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

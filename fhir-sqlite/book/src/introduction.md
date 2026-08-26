@@ -18,7 +18,7 @@
 > `fhir-loco`'s behaviour; if you are looking for endpoints, status codes, or
 > a `serve` command, they are not here.
 
-fhir-sqlite stores [FHIR](https://hl7.org/fhir/) resources in SQLite 3 as
+fhir-sqlite stores [FHIR®](https://hl7.org/fhir/) resources in SQLite 3 as
 **real relational tables** — typed columns, child tables, primary and foreign
 keys — not JSON blobs.
 
@@ -92,3 +92,9 @@ identical across all six ports (`X15.1`); throughput numbers specific to this
 port's own engine have not been measured — a `bench.rs` harness does not
 exist here yet (audit **F-64**). Do not trust a number in this book that is
 not attributed to a source you can check.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

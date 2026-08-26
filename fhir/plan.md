@@ -1,4 +1,4 @@
-# Improvement plan — `fhir` (FHIR in Rust)
+# Improvement plan — `fhir` (FHIR® in Rust)
 
 Status: **rewritten 2026-08-06**. The previous revision was the original
 2026-07-11 plan, kept unchanged while the work it planned shipped; by the time
@@ -50,7 +50,7 @@ Tracked as discrete tasks in [`tasks.md`](tasks.md); the plan-level view:
    1,035 crate tests, the 59-file curated subset, and the full-corpus gate
    green; the corpus surfaced audit **F-86**/**F-87**. The original
    decision draft, kept for the record: the only FHIR release published by
-   HL7 and not modelled here. The generator and the adding-a-release procedure
+   HL7® and not modelled here. The generator and the adding-a-release procedure
    (`doc/adding-a-release.md`, budgeted at roughly an hour) are proven by
    five releases; the definitions bundle is one documented download
    (`hl7.org/fhir/R4B/definitions.json.zip` — not vendored yet). What blocks
@@ -110,3 +110,9 @@ cargo doc --no-deps` — and, when the generator, derive macros, `fhir-core`,
 or any release crate is touched, the same with
 `--features "r2 r3 r4 r6 xml client"`. The corpus gate must stay green.
 Nontrivial features get a runnable example exercised end-to-end.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

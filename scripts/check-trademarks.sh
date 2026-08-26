@@ -32,7 +32,7 @@ cd "$(dirname "$0")/.."
 LIST="${1:-}"
 
 python3 - "$LIST" <<'PY'
-import glob, re, sys
+import glob, os, re, sys
 
 LIST = sys.argv[1] == "--list" if len(sys.argv) > 1 else False
 
@@ -41,22 +41,40 @@ DISCLAIMER = ("HL7®, and FHIR® are the registered trademarks of Health Level S
               "endorsement by HL7.")
 MARKS = ("HL7", "FHIR", "CDA")
 
-# Scope: the public-facing documents at the repository root, plus help/,
-# doc/, the two support crates' top-level pages, the six ports' READMEs
-# (markdown widened 2026-08-26), plus the rustdoc of the nine top-level
-# crate roots (what docs.rs renders). Still not covered: the fhir/ family's
-# own markdown (its fhir.md is a generated transcript that would drown the
-# check), the ports' book/ chapters and internal docs, and fhir-loco's
-# interior pages — widening these lists further is the way to cover them,
-# and is deliberately a visible edit.
-FILES = sorted(
-    set(glob.glob("*.md"))
-    | set(glob.glob("help/**/*.md", recursive=True))
-    | set(glob.glob("doc/*.md"))
-    | set(glob.glob("fhir-store/*.md"))
-    | set(glob.glob("fhir-loco/*.md"))
-    | set(glob.glob("fhir-*/README.md"))
-)
+# Scope: every markdown file in the repository (tree-wide since 2026-08-26,
+# replacing the allowlist that grew in tranches), plus the rustdoc of the
+# nine top-level crate roots (what docs.rs renders). Exemptions are named,
+# not implied, and each has a structural reason — not "too much to fix":
+#
+#   fhir/fhir.md            a generated 22 MB transcript, regenerated whole;
+#                           its ® would be the generator's job, not an edit
+#   book/src/SUMMARY.md     mdbook navigation manifests — appending prose
+#                           breaks the book build, and their link titles are
+#                           navigation, not prose
+#   .github/                issue templates become the body of every filed
+#                           issue; a footer there would inject itself into
+#                           user content
+#
+# Directories skipped are build products and caches, not documents.
+SKIP_DIRS = {"target", "node_modules", ".git", "spec-cache", "corpus"}
+EXEMPT = {"fhir/fhir.md"}
+
+def all_markdown():
+    out = []
+    for dirpath, dirnames, filenames in os.walk("."):
+        dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
+        for name in sorted(filenames):
+            if not name.endswith(".md"):
+                continue
+            path = os.path.normpath(os.path.join(dirpath, name))
+            if path in EXEMPT or path.startswith(".github" + os.sep):
+                continue
+            if name == "SUMMARY.md" and (os.sep + "book" + os.sep) in path:
+                continue
+            out.append(path)
+    return sorted(out)
+
+FILES = all_markdown()
 LIB_RS = ["fhir/src/lib.rs", "fhir-store/src/lib.rs", "fhir-loco/src/lib.rs"] + \
     sorted(glob.glob("fhir-*/crates/fhir-*-store/src/lib.rs"))
 

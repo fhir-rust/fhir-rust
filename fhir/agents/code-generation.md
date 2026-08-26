@@ -1,6 +1,6 @@
 # Code generation
 
-This crate is spec-driven: the official FHIR specification JSON is the input,
+This crate is spec-driven: the official FHIR® specification JSON is the input,
 Rust is the output. This document explains the generators so agents can extend
 them rather than hand-writing model shapes. The normative contract is
 [`../spec/08-code-generation.md`](../spec/08-code-generation.md).
@@ -31,7 +31,7 @@ in bulk.
 | `conceptmaps.json`, `search-parameters.json`, `dataelements.json`, `profiles-others.json` | supporting bundles |
 
 R3 and R4 also ship `v2-tables.json` and `v3-codesystems.json`. These are
-deliberately not read: they are external HL7 v2/v3 terminologies, not
+deliberately not read: they are external HL7® v2/v3 terminologies, not
 FHIR-defined ones, and no FHIR element has a `required` binding into them.
 
 The R4 and R5 bundles have **identical structure** — same `StructureDefinition`,
@@ -164,3 +164,9 @@ fix-ups, or reverted to a compiling state first.
 - A definition that fails to parse **stops** generation rather than being
   skipped. Keep it that way: silently skipping one drops a whole resource from
   the model, and this rule is what surfaced two of R3's differences immediately.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

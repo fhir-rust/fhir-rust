@@ -1,6 +1,6 @@
 # Extensions
 
-FHIR extensions are a `Vec<Extension>` keyed by `url`. The `ExtensionExt` trait
+FHIR® extensions are a `Vec<Extension>` keyed by `url`. The `ExtensionExt` trait
 (in the prelude) adds the everyday operations to every resource and datatype
 that carries extensions.
 
@@ -56,3 +56,9 @@ assert_eq!(serde_json::to_value(&ext).unwrap()["valueString"], "hi");
 
 See [Primitive extensions](json-serialization.md#primitive-extensions-_field)
 for the `_field` sibling representation on ordinary primitive elements.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

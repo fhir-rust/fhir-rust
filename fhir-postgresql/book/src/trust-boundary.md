@@ -78,7 +78,7 @@ Stated rather than implied, so nobody discovers it during an audit:
   checks exist anywhere in this port.
 - **Profile conformance.** Base-specification structure only — not US Core,
   IPS, or any implementation guide.
-- **Referential integrity across resources.** FHIR permits dangling
+- **Referential integrity across resources.** FHIR® permits dangling
   references and so does this schema (`M3.10`) — child tables carry no
   foreign key to the resource they reference, only to their own parent row.
 
@@ -124,3 +124,9 @@ GRANT SELECT, INSERT ON r5.patient_history TO your_app_role;  -- and each *_hist
 With both in place, rewriting history needs a role with `ALTER TABLE`
 privilege deliberately disabling a trigger — an act that is itself visible in
 the server log, not merely a bug in application code.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

@@ -19,7 +19,7 @@ kept as the record of how the corpus went green.
 ## Summary
 
 **As of the T28 corpus gate: R5 2823/2824, R4 2713/2912, R3 1490/1664.** The
-R4 and R3 shortfalls are three understood classes of *non-conformant HL7
+R4 and R3 shortfalls are three understood classes of *non-conformant HL7®
 example* — omitted `Questionnaire.item.linkId` (1..1), `SearchParameter.base`
 (1..*), and `SearchParameter.code` (1..1) — recorded as counted classes in the
 per-release test files. The model is correct in each case; relaxing it to
@@ -35,7 +35,7 @@ accept them would make the suite green by making the model wrong.
 **Status.** Resolved:
 - **Category A** (`_field` primitive extensions) — rolled across the whole model
   in T6/T7.
-- **Category B** — complex datatypes now model the FHIR `Element` base
+- **Category B** — complex datatypes now model the FHIR® `Element` base
   (`id` + `extension`); added to 19 datatype structs by
   `siblings::apply_element_base_group`.
 - **Category C** (missing scalar fields) — the fields existed but were dropped by
@@ -170,3 +170,9 @@ be absent, so deserialization fails outright. All should become `Option`.
   today, so it stays green as a regression guard while A–D are burned down.
 - As each category is fixed, move representative files from the failing set into
   the curated subset so future regressions are caught by the always-on test.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

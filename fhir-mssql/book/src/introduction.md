@@ -7,7 +7,7 @@
 >
 > Anything below that names `fhir-mssql serve`, an HTTP endpoint, or a status
 > code is really **`fhir-loco`** — a separate crate (Loco.rs, Axum, Tokio,
-> Hyper) that mounts a FHIR REST API over a store. `fhir-mssql` itself is a
+> Hyper) that mounts a FHIR® REST API over a store. `fhir-mssql` itself is a
 > **library**: no binary, no `serve`, no HTTP surface, no CLI
 > ([`C0.17`](../../../spec/databases/00-conformance.md),
 > [`C0.18`](../../../spec/databases/00-conformance.md)).
@@ -79,3 +79,9 @@ resources) were `fhir-postgresql`'s own, copied in by the same defect
 See the [conformance matrix](../../../spec/databases/conformance-matrix.md)
 for the requirement-by-requirement detail, and this port's
 [`README.md`](../../README.md) for what compiles today.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.
