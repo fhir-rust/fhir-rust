@@ -375,7 +375,7 @@ dependencies = [
  "fhir-store",
  "futures-util",
  "getrandom 0.3.4",
- "hmac 0.12.1",
+ "hmac 0.13.0",
  "rustls",
  "rustls-native-certs",
  "serde_json",
