@@ -33,7 +33,7 @@ tokio = { version = "1", features = [
     "macros",
     "time",
 ], optional = true }
-quick-xml = { version = "0.41", optional = true }
+quick-xml = { version = "0.42", optional = true }
 
 [dev-dependencies]
 # The doctests demonstrate this crate through the facade (`use fhir::…`),
