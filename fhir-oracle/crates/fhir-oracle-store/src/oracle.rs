@@ -897,23 +897,22 @@ impl OracleStore {
                     );
                 }
             }
-            for rm in map.resources.values() {
-                for t in &rm.tables {
+            // Catalog-driven, like `fhir-mssql`'s `sys.tables` sweep, not
+            // map-driven (F-93): each FHIR version is its own Oracle user
+            // (`M14.5`), so `user_tables` is exactly this store's world. A
+            // map-driven loop left tables the connected map did not name —
+            // a relocated-column table from an earlier `O10.4c` upgrade,
+            // say — standing with their rows but without their FKs, and a
+            // later re-shred collided with that residue (ORA-00001).
+            let tables = conn.query("SELECT table_name FROM user_tables", &[]);
+            if let Ok(rows) = tables {
+                for row in rows.flatten() {
+                    let tname: String = row.get(0).unwrap_or_default();
                     let _ = conn.execute(
-                        &format!(
-                            "DROP TABLE {s}.{} CASCADE CONSTRAINTS",
-                            quote_ident(&t.name)
-                        ),
+                        &format!("DROP TABLE {s}.{} CASCADE CONSTRAINTS", quote_ident(&tname)),
                         &[],
                     );
                 }
-            }
-            for t in [
-                "fhir_oracle_meta",
-                "fhir_oracle_access_log",
-                "fhir_oracle_countersign",
-            ] {
-                let _ = conn.execute(&format!("DROP TABLE {s}.{}", quote_ident(t)), &[]);
             }
             conn.commit().map_err(db_err)?;
             Ok(())
@@ -2399,6 +2398,16 @@ fn diff_maps(map: &RelMap, old_map: &RelMap) -> Result<(Vec<String>, Vec<String>
 /// that is still installed (`G2.5`'s stored asset) while the store already
 /// carries the new one. Factored out for that caller so the migration reads
 /// through the same path the conformance suite exercises on every other read.
+///
+/// **This function must never end the caller's transaction** (F-93). It used
+/// to finish with a hygiene `rollback()` so a pooled connection went back
+/// clean — harmless under `get`, whose reads lock nothing, but fatal in the
+/// re-shred verify: that call sits inside the per-resource write transaction,
+/// so the rollback silently discarded the delete and both re-inserts after
+/// the verify had already read them, the following `commit()` committed
+/// nothing, and the old row's data "reappeared" for the leftover check to
+/// find. Every hosted run of the re-shred tests failed that way from the day
+/// they landed. Callers that want a clean connection roll back themselves.
 fn recon_with_map(
     conn: &Connection,
     s: &str,
@@ -2413,7 +2422,6 @@ fn recon_with_map(
         )
         .is_ok();
     if !present {
-        let _ = conn.rollback();
         return Ok(None);
     }
 
@@ -2583,7 +2591,6 @@ fn recon_with_map(
         }
     }
 
-    let _ = conn.rollback();
     let v = fhir_oracle_map::reconstruct::reconstruct(rm, &input, Some(id))?;
     Ok(Some(v))
 }
