@@ -39,6 +39,31 @@ jobs:
       - name: Check
         run: ./scripts/check-shared-core.sh --diff
 
+  tags:
+    name: TG1 — tags name published versions
+    runs-on: ubuntu-latest
+    steps:
+      # Tags are the point of this job, and actions/checkout fetches none by
+      # default.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check
+        run: ./scripts/check-tags.sh
+
+  forbid-unsafe:
+    name: R13.14 — every crate root forbids unsafe code
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Text only, no toolchain: this asserts that the attribute is present,
+      # which is a property of the source. That the attribute also *compiles*
+      # everywhere is asserted by each family's own build job.
+      - name: Check
+        run: ./scripts/check-forbid-unsafe.sh
+
   trademarks:
     name: HL7® fair use — registration mark and disclaimer
     runs-on: ubuntu-latest
