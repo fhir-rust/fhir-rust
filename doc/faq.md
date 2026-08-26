@@ -1,6 +1,6 @@
 # FAQ
 
-## Why not just store FHIR as JSONB?
+## Why not just store FHIR® as JSONB?
 
 Because JSON storage makes writing easy and querying painful, and a clinical
 system does far more querying than writing.
@@ -219,3 +219,9 @@ remaining substituted documentation.
 The rule that catches everyone: the shared Rust core must be changed in **all
 six ports in one commit** (`W16.7`). Check with `./scripts/check-shared-core.sh`
 before and after; CI runs it too (**F-10** fixed).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

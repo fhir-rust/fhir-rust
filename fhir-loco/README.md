@@ -1,6 +1,6 @@
 # fhir-loco
 
-A FHIR RESTful API server: Rust, [Loco](https://loco.rs),
+A FHIR® RESTful API server: Rust, [Loco](https://loco.rs),
 [Axum](https://github.com/tokio-rs/axum), Tokio and Hyper.
 
 The HTTP half of this repository's FHIR persistence. The engine-agnostic
@@ -208,3 +208,9 @@ healthy instance serving nothing. If you add startup work, put it in
 
 [A quick tour](https://loco.rs/docs/getting-started/tour/) or
 [the complete guide](https://loco.rs/docs/getting-started/guide/).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

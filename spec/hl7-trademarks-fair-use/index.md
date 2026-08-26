@@ -29,6 +29,10 @@ crates) — the script extracts doc-comment prose, `er7-rust`'s
 `prose_rust_docs` approach, and applies the same two rules to what docs.rs
 renders.
 
-**Not yet covered:** the four families' own markdown (`fhir/`, the six
-ports' `README.md` and `book/`, `fhir-store/`, `fhir-loco/`). Widening the
-`FILES` list in the script is the way to cover it.
+**Covered since 2026-08-26, beyond the root:** `doc/`, `fhir-store/` and
+`fhir-loco/` top-level pages, and the six ports' `README.md` — all gated by
+the script and compliant. **Not yet covered:** the `fhir/` family's own
+markdown (its `fhir.md` is a generated transcript that would drown the
+check — covering the family means choosing which of its files are prose),
+the ports' `book/` chapters and internal docs, and `fhir-loco`'s interior
+pages. Widening the `FILES` list in the script is the way to cover them.

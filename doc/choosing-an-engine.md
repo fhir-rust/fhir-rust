@@ -83,7 +83,7 @@ verifies in any other ([`audit.md`](../spec/databases/audit.md)).
 
 ### SQLite
 
-**The embeddable one.** No server, one file per FHIR version, engine bundled and
+**The embeddable one.** No server, one file per FHIR® version, engine bundled and
 pinned rather than whatever the host ships. Its tests need no environment
 variables and always run — which, as its own test header notes, means a green
 run there proves more than a green run in the inherited PostgreSQL suites.
@@ -184,3 +184,9 @@ logical rows under the same identifiers.
 What does not carry across is the hash chain. A chain verified under one port
 should be verified there, before the export, and the destination starts a new
 chain — reported as beginning where it begins, never backfilled (`M3.16e`).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

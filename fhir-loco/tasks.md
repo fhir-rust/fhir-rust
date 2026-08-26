@@ -7,7 +7,7 @@ ports this service sits over.
 
 ## Done
 
-- [x] **FHIR REST CRUD over `fhir-sqlite`.** read/vread/create/update/delete/
+- [x] **FHIR® REST CRUD over `fhir-sqlite`.** read/vread/create/update/delete/
   search/instance-history at `/{version}/{rtype}…`
   (`src/controllers/fhir.rs`), verified end to end by 10 request tests
   (`tests/requests/`), including `create_read_update_delete_round_trip`,
@@ -121,3 +121,9 @@ ports this service sits over.
 
 The [conformance matrix](../spec/databases/conformance-matrix.md) is the status
 document to trust. This file is a plan; it is not evidence (`C0.9`).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

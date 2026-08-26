@@ -43,7 +43,7 @@ Normative text: [`spec/03-storage-model.md`](../spec/databases/03-storage-model.
 | `actor`, `actor_source`, `client`, `request_id`, `reason` | the audit envelope |
 | `prev_hash`, per-algorithm digest columns, tag columns | the chain |
 
-## `ColTy` → FHIR primitive
+## `ColTy` → FHIR® primitive
 
 | FHIR | `ColTy` | Notes |
 | --- | --- | --- |
@@ -162,3 +162,9 @@ add an indexable derived column rather than drop the index (`P6.4a`).
 
 Example corpus: 7,399 resources across all three versions, all round-tripping
 losslessly — measured on `fhir-postgresql`.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

@@ -97,11 +97,17 @@ Grouped by `plan.md` workstream. Order within a group is priority order.
 
 ### Compliance — licensing and trademarks
 
-- [ ] Widen the trademark gate's scope beyond root + `help/**`: first
-      `doc/` (12 files, currently non-compliant), then `fhir/`, then the six
-      ports' `README.md`/`book/` and `fhir-store/`/`fhir-loco/` — the port
-      sweep is a shared-core-adjacent change (six identical edits; scope it
-      per `CLAUDE.md` before starting).
+- [x] Widen the trademark gate beyond root + `help/**` — first tranche done
+      2026-08-26: `doc/` (12 files), `fhir-store/` and `fhir-loco/`
+      top-level pages, and the six ports' `README.md` are in the script's
+      scope and compliant (23 files fixed mechanically; the six README
+      edits identical modulo engine name). Corrected while sweeping: the
+      six port READMEs claimed "MIT OR Apache-2.0" where the manifests
+      carry the five-way expression.
+- [ ] Widen the trademark gate's remaining tranche: the `fhir/` family's
+      own markdown (needs a decision on which files are prose vs generated
+      transcript), the ports' `book/` chapters and internal docs, and
+      `fhir-loco`'s interior pages — recorded in the spec's coverage note.
 - [x] Replace the ports' `LICENSE-APACHE` header-boilerplate files — done
       2026-08-26: all six are now copies of `LICENSES/Apache-2.0.txt` (§4 of
       Apache-2.0 requires recipients be given the License, and a header

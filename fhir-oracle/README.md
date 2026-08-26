@@ -1,4 +1,4 @@
-# fhir-oracle — FHIR in Oracle Database, relationally
+# fhir-oracle — FHIR® in Oracle Database, relationally
 
 The intent: store [FHIR](https://hl7.org/fhir/) resources in Oracle Database as
 **real relational tables** — typed columns, child tables, foreign keys, and
@@ -182,4 +182,12 @@ security — see "Still open" above. (Upgrade/backfill left this list
 
 ## License
 
-MIT OR Apache-2.0.
+`MIT OR Apache-2.0 OR BSD-3-Clause OR GPL-2.0-only OR GPL-3.0-only` —
+your choice of any one of the five; the reasoning and full texts are in
+the repository's [LICENSE.md](../LICENSE.md) and [LICENSES/](../LICENSES/).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

@@ -238,7 +238,7 @@ Removes history rows and leaves a tombstone recording who, what, when, why, and
 which chain it terminated (`M3.18`). Emit a checkpoint immediately afterwards:
 it is what separates a recorded intentional removal from the unrecorded kind.
 
-## Several FHIR versions in one process
+## Several FHIR® versions in one process
 
 ```rust
 async fn open(version: &str) -> anyhow::Result<SqliteStore> {
@@ -285,3 +285,9 @@ assert_eq!(fold(&fold("Ærø")), "aero"); // idempotent — L5
 
 Identical on every port (`X15.4`). If you are debugging a search that should
 match and does not, fold both sides by hand first — it is usually the answer.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

@@ -10,7 +10,7 @@ ports.
 | --- | --- | --- |
 | **Authentication** — who is this | — | ✔ |
 | **Authorization** — may they see it | — | ✔ |
-| SMART on FHIR scopes, compartments | — | ✔ |
+| SMART on FHIR® scopes, compartments | — | ✔ |
 | Consent evaluation | — | ✔ |
 | `meta.security` label enforcement | — | ✔ |
 | Rate limiting per identity | — | ✔ |
@@ -153,3 +153,9 @@ header be honoured only from a configured trusted proxy; `fhir-loco` never
 implemented that check, so under `PR12.2` its header should have been ignored
 rather than trusted. A signature it can verify itself is a property of the
 request, not an assumption about the topology.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

@@ -21,7 +21,7 @@ Read in order the first time; each builds on the last.
 3. **[Querying with SQL](tutorial-03-querying-sql.md)** — treat it as the
    relational schema it is. Joins, aggregates, and the idioms that differ per
    engine.
-4. **[FHIR search](tutorial-04-search.md)** — search parameters, modifiers,
+4. **[FHIR® search](tutorial-04-search.md)** — search parameters, modifiers,
    paging, and why "aero" finds "Ærø".
 5. **[History and audit](tutorial-05-history-and-audit.md)** — versions,
    attribution, the tamper-evident chain, keys, and erasure.
@@ -88,3 +88,9 @@ Where a port differs materially, the page says so.
 - Requirement ids appear inline — `(M3.4a)` — so you can get from an explanation
   to the decision behind it.
 - Limitations are stated next to capabilities, not in a footnote.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

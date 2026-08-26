@@ -41,11 +41,22 @@ DISCLAIMER = ("HL7®, and FHIR® are the registered trademarks of Health Level S
               "endorsement by HL7.")
 MARKS = ("HL7", "FHIR", "CDA")
 
-# Scope: the public-facing documents at the repository root, plus help/, plus
-# the rustdoc of the nine top-level crate roots (what docs.rs renders).
-# The four families' own markdown is not yet covered; widening these lists is
-# the way to cover it, and is deliberately a visible edit.
-FILES = sorted(glob.glob("*.md")) + sorted(glob.glob("help/**/*.md", recursive=True))
+# Scope: the public-facing documents at the repository root, plus help/,
+# doc/, the two support crates' top-level pages, the six ports' READMEs
+# (markdown widened 2026-08-26), plus the rustdoc of the nine top-level
+# crate roots (what docs.rs renders). Still not covered: the fhir/ family's
+# own markdown (its fhir.md is a generated transcript that would drown the
+# check), the ports' book/ chapters and internal docs, and fhir-loco's
+# interior pages — widening these lists further is the way to cover them,
+# and is deliberately a visible edit.
+FILES = sorted(
+    set(glob.glob("*.md"))
+    | set(glob.glob("help/**/*.md", recursive=True))
+    | set(glob.glob("doc/*.md"))
+    | set(glob.glob("fhir-store/*.md"))
+    | set(glob.glob("fhir-loco/*.md"))
+    | set(glob.glob("fhir-*/README.md"))
+)
 LIB_RS = ["fhir/src/lib.rs", "fhir-store/src/lib.rs", "fhir-loco/src/lib.rs"] + \
     sorted(glob.glob("fhir-*/crates/fhir-*-store/src/lib.rs"))
 

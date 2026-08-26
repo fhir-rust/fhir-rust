@@ -61,7 +61,7 @@ SELECT n.family, count(o.id) AS observations
  LIMIT 20;
 ```
 
-There is no foreign key behind that join (`M3.10`) — FHIR permits dangling
+There is no foreign key behind that join (`M3.10`) — FHIR® permits dangling
 references, so enforcing one would make load order matter and reject real data.
 The join still uses the index on `(ref_type, ref_id)` that the generator emits
 for every reference column (`P6.4`).
@@ -213,3 +213,9 @@ indexable derived column rather than silently drop the index and scan
 - [Tutorial 4 — FHIR search](tutorial-04-search.md), which compiles to exactly
   this kind of SQL, generated
 - [Examples](examples.md) for more recipes
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

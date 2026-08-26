@@ -9,7 +9,7 @@ file records *why*, and drafts the decisions not yet made. Companion:
 
 - **D1 — Loco.rs over bare axum.** The framework supplies boot phases,
   config-per-environment, a test harness, and a background-worker queue; the
-  FHIR controller is plain axum underneath.
+  FHIR® controller is plain axum underneath.
 - **D2 — mounted over `fhir-sqlite`.** One embedded store, no DSN, no service
   container in CI. Multi-port wiring is open (see `tasks.md`): the
   HTTP-facing store surface this crate calls exists in full only in sqlite.
@@ -82,3 +82,9 @@ matters: a `tower` `ConcurrencyLimitLayer`/`LoadShedLayer` added in
 `after_routes`, the same hook the metrics middleware uses. Not built now:
 shedding behaviour needs a load target to tune against, and an untuned limit
 is a new outage mode.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

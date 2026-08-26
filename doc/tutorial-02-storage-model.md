@@ -1,6 +1,6 @@
 # Tutorial 2 — the storage model
 
-What a FHIR resource actually becomes. This is the idea everything else rests
+What a FHIR® resource actually becomes. This is the idea everything else rests
 on; once it clicks, the SQL, the search, and the porting all follow.
 
 Normative reference: [`spec/03-storage-model.md`](../spec/databases/03-storage-model.md).
@@ -222,3 +222,9 @@ full path — and records the mapping, so two paths can never collide silently
 - [Storage model reference](storage-model.md) for looking things up
 - [`spec/03-storage-model.md`](../spec/databases/03-storage-model.md) for the normative
   text
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

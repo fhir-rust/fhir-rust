@@ -1,4 +1,4 @@
-# Tutorial 4 — FHIR search
+# Tutorial 4 — FHIR® search
 
 FHIR search parameters compile to SQL predicates over the normalized columns.
 No query engine, no interpreter — the generator turns each parameter into a
@@ -198,3 +198,9 @@ under load, never as a wrong answer.
 - [Tutorial 5 — history and audit](tutorial-05-history-and-audit.md)
 - [The folding specification](../spec/databases/locale-accent-folding.md) — normative, and
   worth reading before changing anything about matching
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.
