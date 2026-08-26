@@ -12,10 +12,12 @@ keeps its own changelog with the detail this one summarises:
 | Model | [`fhir/CHANGELOG.md`](fhir/CHANGELOG.md) |
 | Databases | [postgresql](fhir-postgresql/CHANGELOG.md) · [sqlite](fhir-sqlite/CHANGELOG.md) · [mysql](fhir-mysql/CHANGELOG.md) · [mariadb](fhir-mariadb/CHANGELOG.md) · [mssql](fhir-mssql/CHANGELOG.md) · [oracle](fhir-oracle/CHANGELOG.md) |
 
-**This repository has no tags and no GitHub releases.** Dates below are commit
-dates, and the only published artefacts are the crates.io versions named in the
-2026-08-22 entry. That gap is tracked as `PM-70` in
-[`help/outreach/index.md`](help/outreach/index.md).
+**Tags exist as of 2026-08-26; GitHub releases still do not.** Sixteen
+annotated tags name the 2026-08-22 publication (see the Unreleased entry and
+`spec/git-tags-name-published-versions/`). Dates below are commit dates, and
+the only published artefacts are the crates.io versions named in the
+2026-08-22 entry. The remaining releases half of the gap is tracked as
+`PM-70` in [`help/outreach/index.md`](help/outreach/index.md).
 
 History before 2026-08-01 belongs to the separate projects this monorepo was
 assembled from, and lives in the per-family changelogs above.
@@ -27,7 +29,25 @@ Repository-level documents added: `CITATION.cff`, `CODEOWNERS`,
 `BENCHMARKS.md`, `NEWS.md`, `PHI.md`, `SECURITY.md`, `CONTRIBUTING.md`,
 `CODE_OF_CONDUCT.md`, `RFC.md`, `GOVERNANCE.md`, this file, SPDX information in `LICENSE.md`,
 `LICENSES/` with the full text of all five licence options, `.github/FUNDING.yml`,
-and `help/outreach/index.md`. No code changed.
+and `help/outreach/index.md`.
+
+Code changes, each version-bumping the crates it touched (six ports to
+0.5.1, `fhir-store` and `fhir-loco` to 0.2.1, `fhir` to 4.1.1 — bumped, not
+yet published; `scripts/check-published-match.sh` reports the 13 untouched
+published crates matching and the 21 bumped ones as not yet published):
+
+- `#![forbid(unsafe_code)]` at every crate root in the repository, gated by
+  `scripts/check-forbid-unsafe.sh` in `gates.yml`.
+- A Trademarks section in every top-level crate's rustdoc, so the disclaimer
+  reaches docs.rs readers, gated with the same trademark check.
+- `fhir-loco`: `clippy::result_large_err` allowed on the one loco-convention
+  handler, with the reason stated (`loco_rs::Error` is the framework's type).
+- `fhir-sqlite`: the torn-read concurrency test's reader/writer overlap is
+  now structural (barrier + done flag) rather than probabilistic — its first
+  hosted run proved the old shape could finish reading before the writer
+  started, failing its own T11.12 guard on a slow runner.
+- mysql/mariadb: the env-mutating SSL default test moved to an integration
+  test, which `forbid(unsafe_code)` requires.
 
 Decided: the five-way licence expression stays as it is, and the reasoning is
 recorded in `LICENSE.md`.

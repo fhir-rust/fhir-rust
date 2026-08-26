@@ -10,7 +10,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.5.0"
+version = "0.5.1"
 keywords = ["fhir", "healthcare", "mariadb", "hl7", "medical"]
 categories = ["database", "science", "data-structures"]
 edition = "2024"
@@ -19,9 +19,9 @@ repository = "https://github.com/fhir-rust/fhir-rust/"
 rust-version = "1.90"
 
 [workspace.dependencies]
-fhir-mariadb-map = { path = "crates/fhir-mariadb-map", version = "0.5.0" }
-fhir-mariadb-gen = { path = "crates/fhir-mariadb-gen", version = "0.5.0" }
-fhir-mariadb-store = { path = "crates/fhir-mariadb-store", version = "0.5.0" }
+fhir-mariadb-map = { path = "crates/fhir-mariadb-map", version = "0.5.1" }
+fhir-mariadb-gen = { path = "crates/fhir-mariadb-gen", version = "0.5.1" }
+fhir-mariadb-store = { path = "crates/fhir-mariadb-store", version = "0.5.1" }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["arbitrary_precision", "float_roundtrip", "preserve_order"] }
 thiserror = "2"
