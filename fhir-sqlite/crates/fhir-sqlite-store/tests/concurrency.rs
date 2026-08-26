@@ -151,30 +151,67 @@ async fn reads_never_tear_under_concurrent_writes() {
 
     let reader_store = second_handle(&db).await;
 
+    // The first hosted run of this suite (2026-08-26) proved the previous
+    // shape timing-sensitive: reader and writer were spawned side by side,
+    // and on a slow runner the reader finished its fixed 600 iterations
+    // before the writer committed anything, tripping the T11.12 guard below
+    // with "only ever saw generation 1". The barrier and the done flag make
+    // the overlap structural instead of probabilistic: the reader records
+    // generation 1 before the writer may start, keeps reading until the
+    // writer has finished, and reads once more after — so a working store
+    // must show it at least two generations, on any scheduler.
+    let barrier = Arc::new(tokio::sync::Barrier::new(2));
+    let done = Arc::new(std::sync::atomic::AtomicBool::new(false));
+
     let writer = tokio::spawn({
         let store = store.clone();
+        let barrier = barrier.clone();
+        let done = done.clone();
         async move {
+            barrier.wait().await;
             for n in 1..=150 {
                 store
                     .put(&patient("torn", n), &Audit::cli())
                     .await
                     .expect("write");
             }
+            done.store(true, std::sync::atomic::Ordering::Release);
         }
     });
 
-    let reader = tokio::spawn(async move {
-        let mut seen = 0usize;
-        let mut generations = std::collections::HashSet::new();
-        for _ in 0..600 {
-            if let Some(got) = reader_store.get("Patient", "torn").await.expect("read") {
-                assert_coherent(&got);
-                generations.insert(generation(&got).expect("generation"));
-                seen += 1;
+    let reader = tokio::spawn({
+        let barrier = barrier.clone();
+        let done = done.clone();
+        async move {
+            let mut seen = 0usize;
+            let mut generations = std::collections::HashSet::new();
+            let mut read = |got: Option<Value>, seen: &mut usize| {
+                if let Some(got) = got {
+                    assert_coherent(&got);
+                    generations.insert(generation(&got).expect("generation"));
+                    *seen += 1;
+                }
+            };
+            // One read before the writer is released: generation 1, always.
+            read(
+                reader_store.get("Patient", "torn").await.expect("read"),
+                &mut seen,
+            );
+            barrier.wait().await;
+            while !done.load(std::sync::atomic::Ordering::Acquire) {
+                read(
+                    reader_store.get("Patient", "torn").await.expect("read"),
+                    &mut seen,
+                );
+                tokio::task::yield_now().await;
             }
-            tokio::task::yield_now().await;
+            // And one after it finished: generation 151, always.
+            read(
+                reader_store.get("Patient", "torn").await.expect("read"),
+                &mut seen,
+            );
+            (seen, generations.len())
         }
-        (seen, generations.len())
     });
 
     writer.await.expect("writer");
