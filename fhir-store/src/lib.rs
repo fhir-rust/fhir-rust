@@ -4,6 +4,12 @@
 //! the tamper-evident audit chain, the attribution and disclosure records it
 //! commits to, and the value types every port's operations return.
 //!
+//! # Trademarks
+//!
+//! HL7®, and FHIR® are the registered trademarks of Health Level Seven
+//! International and their use of these trademarks does not constitute an
+//! endorsement by HL7.
+//!
 //! # Why this crate exists
 //!
 //! Six ports — `fhir-postgresql`, `fhir-sqlite`, `fhir-mysql`, `fhir-mariadb`,
@@ -28,6 +34,10 @@
 //!
 //! It also opens no sockets and speaks no HTTP. The RESTful surface is
 //! `fhir-loco`.
+// Nothing here has any business dereferencing a raw pointer: this code
+// parses and reshapes untrusted clinical data, and memory safety is the
+// property that keeps a malformed resource from becoming a vulnerability.
+#![forbid(unsafe_code)]
 
 pub mod chain;
 

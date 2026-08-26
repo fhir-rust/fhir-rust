@@ -1,5 +1,11 @@
 //! fhir-oracle-store: the Oracle layer.
 //!
+//! # Trademarks
+//!
+//! HL7®, and FHIR® are the registered trademarks of Health Level Seven
+//! International and their use of these trademarks does not constitute an
+//! endorsement by HL7.
+//!
 //! # Live-verified, 2026-08-04 — Store level (`C0.8`)
 //!
 //! Written 2026-08-04 with no Oracle Instant Client on the build host, and
@@ -25,6 +31,10 @@
 //!
 //! See `oracle.rs`'s own module doc for the architecture decisions behind
 //! the implementation.
+// Nothing here has any business dereferencing a raw pointer: this code
+// parses and reshapes untrusted clinical data, and memory safety is the
+// property that keeps a malformed resource from becoming a vulnerability.
+#![forbid(unsafe_code)]
 
 /// The tamper-evident audit chain, shared by every port (`M3.16`).
 pub use fhir_store::chain;

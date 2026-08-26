@@ -1,9 +1,20 @@
 //! fhir-postgresql-store: the PostgreSQL layer. Applies generated DDL, writes
 //! shredded resources transactionally with history, and reads rows back for
-//! reconstruction.//!
+//! reconstruction.
+//!
 //! Values cross the wire as text with explicit casts (`($n::text)::numeric`),
 //! which keeps the lexical fidelity `M3.6`/`R4.2` require — decimal scale and
 //! partial dates — intact in both directions.
+//!
+//! # Trademarks
+//!
+//! HL7®, and FHIR® are the registered trademarks of Health Level Seven
+//! International and their use of these trademarks does not constitute an
+//! endorsement by HL7.
+// Nothing here has any business dereferencing a raw pointer: this code
+// parses and reshapes untrusted clinical data, and memory safety is the
+// property that keeps a malformed resource from becoming a vulnerability.
+#![forbid(unsafe_code)]
 
 /// The tamper-evident audit chain, shared by every port (`M3.16`).
 pub use fhir_store::chain;

@@ -1,6 +1,6 @@
 //! # FHIR for Rust
 //!
-//! `fhir` is a Rust implementation of the **HL7 FHIR®** data model, together
+//! `fhir` is a Rust implementation of the **HL7® FHIR®** data model, together
 //! with a code generator that produces it from the official FHIR specification
 //! JSON files. Five releases are modelled: **R5** (5.0.0) under [`r5`],
 //! **R4** (4.0.1) under [`r4`], **R3** (3.0.2, also called STU3) under
@@ -26,8 +26,11 @@
 //! - **A code generator** under [`codegen`] that reads the specification JSON
 //!   for a release and emits its Rust model.
 //!
-//! FHIR® is a registered trademark of Health Level Seven International. This
-//! crate is not affiliated with or endorsed by HL7.
+//! ## Trademarks
+//!
+//! HL7®, and FHIR® are the registered trademarks of Health Level Seven
+//! International and their use of these trademarks does not constitute an
+//! endorsement by HL7. This crate is not affiliated with or endorsed by HL7.
 //!
 //! ## Installation
 //!

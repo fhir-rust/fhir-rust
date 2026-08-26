@@ -14,6 +14,16 @@
 //! from-scratch `bb8::ManageConnection`; transactions are plain
 //! `BEGIN`/`COMMIT`/`ROLLBACK TRANSACTION` statements, since T-SQL has no
 //! richer primitive to bind to.
+//!
+//! # Trademarks
+//!
+//! HL7®, and FHIR® are the registered trademarks of Health Level Seven
+//! International and their use of these trademarks does not constitute an
+//! endorsement by HL7.
+// Nothing here has any business dereferencing a raw pointer: this code
+// parses and reshapes untrusted clinical data, and memory safety is the
+// property that keeps a malformed resource from becoming a vulnerability.
+#![forbid(unsafe_code)]
 
 /// The tamper-evident audit chain, shared by every port (`M3.16`).
 pub use fhir_store::chain;

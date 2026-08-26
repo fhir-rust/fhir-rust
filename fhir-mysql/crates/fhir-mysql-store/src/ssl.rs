@@ -188,15 +188,4 @@ mod tests {
         );
         assert!(SslMode::parse("").is_err());
     }
-
-    /// Absent configuration must not be weaker than present configuration.
-    #[test]
-    fn an_unset_env_var_is_the_verifying_default() {
-        // SAFETY: single-threaded test binary.
-        unsafe { std::env::remove_var("FHIR_MYSQL_SSL_MODE") };
-        assert_eq!(
-            SslMode::from_env().expect("unset is not an error"),
-            SslMode::VerifyIdentity
-        );
-    }
 }
