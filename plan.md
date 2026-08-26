@@ -92,9 +92,13 @@ posture. Open items for each are in `tasks.md`.
   needing an owner decision". The oldest open decision in the repo.
 - **F-51 (Medium).** Oracle DDL maintained by hand; the fix is
   owner-sequenced at the generator (see also the F-90 history).
-- **Publishing shape.** Move to crates.io Trusted Publishing from CI, or
-  keep laptop publishing and say so permanently. `PM-70` blocks outreach
-  either way until tags and releases exist.
+- ~~**Publishing shape.**~~ Decided 2026-08-26: **documented laptop
+  publishing, permanently** — the owner's judgment that GitHub is not
+  reliable enough to hold the publish path, made hours after an Actions
+  major outage stalled every hosted run. The six inert `publish.yml`
+  workflows are deleted; `spec/publishing.md` is the process; the residual
+  (one machine, one person, a long-lived local token) is recorded in
+  MAINTAINERS.md. (`PM-70`'s tags and releases exist as of the same day.)
 
 ## Non-goals (for now)
 

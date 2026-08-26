@@ -13,7 +13,7 @@ property of the forge.
 | Advisories, licenses, SBOM | `ci.yml` (`supply-chain`) | `.woodpecker/supply-chain.yaml` |
 | TLS-only server | removed — see below |  |
 | Tag → artifacts | `.github/workflows/release.yml` | `.woodpecker/release.yaml` |
-| crates.io | `.github/workflows/publish.yml` (manual) | — |
+| crates.io | a documented laptop step ([`spec/publishing.md`](../../spec/publishing.md)) — decided 2026-08-26; no publish workflow exists | — |
 
 ## What actually gates a merge
 
@@ -70,7 +70,7 @@ create by accident; an immutable published version is impossible to withdraw.
 
 | Secret | Used by | Purpose |
 | --- | --- | --- |
-| `CARGO_REGISTRY_TOKEN` | GitHub `publish.yml` (environment `crates-io`) | crates.io upload |
+| crates.io registry token | the maintainer's machine only (`~/.cargo/credentials.toml`); GitHub stores no secret — verified 2026-08-26 | crates.io upload, as a laptop step |
 | `codeberg_token` | Woodpecker `release.yaml` | attach artifacts to a Codeberg release |
 
 Neither pipeline needs access to any database containing real data, and

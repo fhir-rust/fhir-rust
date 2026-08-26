@@ -33,21 +33,24 @@ inventory nobody can hand over.
 | --- | --- | --- | --- |
 | The GitHub organisation `fhir-rust` and the repository in it | the source, issues, settings, and any future release | the maintainer's account, as the organisation's owner | GitHub's organisation-recovery process, which is between GitHub and the owner. Being org-owned rather than user-owned means a second owner *could* be added without moving the repository — that is the cheapest continuity improvement available to this project, and it has not been taken |
 | The crates.io account owning all 34 published crates | every published version of every crate | the maintainer | the crates.io owner list is the recovery surface, and it holds one account. Crate ownership must move before anyone else can publish, whatever repository access they have |
-| `CARGO_REGISTRY_TOKEN`, a repository secret in the `crates-io` environment | nothing today — see the note below | the repository | a long-lived registry token, not Trusted Publishing. It is the one stored credential in the project and therefore the one that can leak |
+| The crates.io registry token | every publish — a laptop step by decision, see the note below | the maintainer's machine (`~/.cargo/credentials.toml`); **verified 2026-08-26: GitHub stores no secret and no `crates-io` environment exists** — an earlier revision of this row claimed a repository secret that was never there | a long-lived token, not Trusted Publishing; the one stored credential in the project and therefore the one that can leak, now in exactly one place |
 | The `GITHUB_TOKEN` minted per workflow run | CI results only; no artefact is published from CI | GitHub, per run; nothing stored | not applicable — there is no credential to lose |
 | The Codeberg and GitLab push mirrors | copies of the source | the maintainer's accounts on each | not applicable to continuity: they are mirrors, and GitHub is canonical |
 
 **Two honest notes on that table.**
 
-*The publish workflow does not run.* Each port carries
-`fhir-<engine>/.github/workflows/publish.yml` — manual `workflow_dispatch`, a
-typed `confirm` input, a dry-run default, gates before upload. It is carefully
-written and it is **inert**: GitHub reads workflows only from
-`.github/workflows/` at the repository root, and the root directory contains no
-publish workflow. The 2026-08-22 publication of all 34 crates was therefore run
-from a developer machine, as [`spec/publishing.md`](spec/publishing.md) records.
-Either promote those workflows to the root or delete them; a workflow that looks
-like a control but is not one is worse than no workflow.
+*Publishing is a documented laptop step — decided, not pending.* The owner
+decided on 2026-08-26 that crates.io publishing stays a manual step on the
+maintainer's machine rather than moving to CI or crates.io Trusted
+Publishing, on the grounds that GitHub is not reliable enough to put the
+publish path behind — a position the decision date itself illustrates: it
+was taken hours after a GitHub Actions major outage swallowed push events
+and stalled every hosted run. The six inert per-port `publish.yml`
+workflows were deleted the same day, per this file's own earlier rule that
+a workflow which looks like a control but is not one is worse than none.
+The process is [`spec/publishing.md`](spec/publishing.md); the accepted
+residual is that publication rests on one machine and one person, which is
+the bus-factor note above restated.
 
 *Nothing is signed.* Commits and tags carry no OpenPGP or SSH signature
 (`git log -1 --format=%G?` returns `N`). Tags and GitHub releases exist as of

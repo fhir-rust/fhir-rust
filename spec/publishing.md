@@ -26,6 +26,20 @@ of what the obstacles were and how each was resolved, not as a description of
 today. **The live gate, not this file, is the thing to trust** — it runs against
 crates.io and this paragraph does not.
 
+**The publish path is decided, 2026-08-26: a documented laptop step,
+permanently.** The owner ruled out crates.io Trusted Publishing from CI on
+reliability grounds — GitHub is not dependable enough to hold the publish
+path, a judgment made hours after an Actions major outage swallowed push
+events and stalled every hosted run. Consequences executed the same day: the
+six inert per-port `publish.yml` workflows are deleted; the only registry
+credential is the maintainer machine's `~/.cargo/credentials.toml` (verified:
+GitHub stores no secret and no `crates-io` environment exists); and this
+document plus the "Before any release" list in
+[`agents/release.md`](../agents/release.md) are the whole of the process. The
+accepted residual — one machine, one person, an unsigned upload path — is
+recorded in [`MAINTAINERS.md`](../MAINTAINERS.md) and stands until evidence
+reopens the question (RFC.md §10 still solicits it).
+
 Two things the publication does *not* establish, and which no crates.io upload
 could:
 

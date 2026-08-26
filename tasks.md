@@ -78,9 +78,16 @@ Grouped by `plan.md` workstream. Order within a group is priority order.
 - [ ] Sign commits and tags going forward; record the posture change in
       MAINTAINERS.md (which now says tags and releases exist but nothing is
       signed).
-- [ ] Decide the publishing shape: crates.io Trusted Publishing from CI vs
-      documented laptop publishing; the per-port `publish.yml` workflows are
-      currently inert either way.
+- [x] Decide the publishing shape — decided by the owner 2026-08-26:
+      **documented laptop publishing stays, permanently**, because GitHub is
+      not reliable enough to hold the publish path (decided hours after an
+      Actions major outage). Executed in the same change: the six inert
+      per-port `publish.yml` workflows deleted per MAINTAINERS.md's own
+      rule, the six `doc/ci.md` rows and `agents/release.md` updated, and
+      MAINTAINERS.md's token row corrected — verified via the API that
+      GitHub stores no registry secret and no `crates-io` environment
+      exists (the row had claimed one); the only credential is the
+      maintainer machine's `~/.cargo/credentials.toml`.
 - [x] Enable GitHub private vulnerability reporting, dependabot, and add
       `.github/ISSUE_TEMPLATE/` — done 2026-08-26, secret scanning too:
       PVR flipped via the API and verified enabled; dependabot alerts and

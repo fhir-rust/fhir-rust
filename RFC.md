@@ -126,12 +126,16 @@ A dialect-expert answer here moves a High finding that has sat still.
 
 ### 10. Should publishing move to CI?
 
-All 34 crates were published from a maintainer laptop with a long-lived
-registry token; the per-port `publish.yml` workflows are inert, and there
-are no tags, releases, or signatures yet. The choice is crates.io Trusted
-Publishing from CI versus documented laptop publishing made permanent. If
-you have run either at this scale — 34 crates, one repository — what broke,
-and which failure mode would you rather explain to a security reviewer?
+**Decided 2026-08-26: it does not.** Documented laptop publishing is
+permanent — the owner's judgment that GitHub is not reliable enough to hold
+the publish path, made hours after an Actions major outage stalled every
+hosted run. The inert `publish.yml` workflows are deleted, the process is
+`spec/publishing.md`, and the residual (one machine, one person, a
+long-lived local token) is recorded in MAINTAINERS.md. The question stays
+here because the *evidence request* still stands: if you have run Trusted
+Publishing at this scale — 34 crates, one repository — what broke, and
+which failure mode would you rather explain to a security reviewer? A
+strong answer could reopen the decision; that is what this file is for.
 
 ## What kind of feedback helps most
 

@@ -89,7 +89,7 @@ fails on the other is a bug in the pipelines, not a property of the forge.
 | Advisories, licenses, SBOM | `ci.yml` (`supply-chain`) | `.woodpecker/supply-chain.yaml` |
 | TLS-only database | `ci.yml` (`tls-database`) | — |
 | Tag → artifacts | `release.yml` | `.woodpecker/release.yaml` |
-| crates.io | `publish.yml` (manual) | — |
+| crates.io | a documented laptop step (`spec/publishing.md`) — decided 2026-08-26; no publish workflow | — |
 
 The unit-test job passes with no database and no FHIR packages, because those
 tests self-skip. The **live pipeline is the required gate**, not an optional
