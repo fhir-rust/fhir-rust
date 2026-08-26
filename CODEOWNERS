@@ -1,0 +1,11 @@
+# Code owners
+#
+# GitHub requests a review from the owner of any path a pull request touches.
+# This project has one maintainer, so one line covers the repository; see
+# MAINTAINERS.md for what that means and what it does not.
+#
+# The email form works only where it matches a GitHub account that can be
+# granted access to this repository. If GitHub reports this file as invalid,
+# replace the address with the maintainer's @handle — the effect is identical.
+
+* joel@joelparkerhenderson.com
