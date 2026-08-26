@@ -205,11 +205,29 @@ jobs:
             -c ssl=on -c ssl_cert_file=/certs/server.crt \
             -c ssl_key_file=/certs/server.key \
             -c hba_file=/certs/pg_hba.conf
-          for _ in $(seq 1 40); do
-            if sudo podman exec pgtls pg_isready -U fhir-postgresql >/dev/null 2>&1; then break; fi
+          # Readiness over TCP with TLS from the host, not pg_isready inside
+          # the container: the postgres image's init phase runs a temporary
+          # server that answers on the unix socket, so an in-container
+          # pg_isready can report ready during init and then hit the restart
+          # window — which is exactly how this job's first hosted run failed
+          # ("rejecting connections", 1.3s after container start). A
+          # successful TLS SELECT is both the true readiness signal and a
+          # positive check of the certificate setup.
+          ready=0
+          for _ in $(seq 1 60); do
+            if PGPASSWORD=fhir-postgresql psql \
+                 "host=localhost port=5432 user=fhir-postgresql dbname=fhir-postgresql sslmode=require sslrootcert=$PWD/pgtls/server.crt" \
+                 -c 'select 1' >/dev/null 2>&1; then
+              ready=1
+              break
+            fi
             sleep 1
           done
-          sudo podman exec pgtls pg_isready -U fhir-postgresql
+          if [ "$ready" != 1 ]; then
+            echo "::error::server never became ready over TLS"
+            sudo podman logs pgtls | tail -50
+            exit 1
+          fi
       - name: Plaintext must be refused
         env:
           PGHOST: localhost
