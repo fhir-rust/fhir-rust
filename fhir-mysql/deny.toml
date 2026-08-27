@@ -8,14 +8,13 @@
 # Any unpatched advisory fails the build. When one has no fix yet, add it
 # here with a dated note rather than lowering the bar globally.
 yanked = "deny"
-ignore = [
-    # rustls-pemfile 2.x is archived (unmaintained); pulled transitively by
-    # mysql_async 0.34, which has no released fix yet. It parses local PEM
-    # files handed to it by configuration — not attacker-controlled input on
-    # any path this port exposes. Re-evaluate when mysql_async moves to
-    # rustls-pki-types' parser (as fhir-postgresql already did directly).
-    "RUSTSEC-2025-0134",
-]
+# Resolved 2026-08-27: mysql_async bumped 0.34 -> 0.37 (GHSA-rhfx-m35p-ff5j,
+# an `lru` soundness advisory that needed it) and rustls-pemfile — the
+# subject of the entry this comment replaces — dropped out of the tree
+# entirely as a side effect, verified absent from both lockfiles. No ignore
+# needed; recorded here rather than left silent, so a future reader does not
+# wonder why the exception vanished.
+ignore = []
 
 [licenses]
 # Permissive licences only. Anything copyleft in a linked dependency would

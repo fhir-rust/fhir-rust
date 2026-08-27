@@ -191,6 +191,7 @@ type-/system-level history, multi-port wiring, is tracked in that crate's
 | [F-91](#f-91) | Medium | The mysql/mariadb **store suites never ran in CI**: the DDL step ahead of them failed (F-90) and cargo stops at the first failing test binary, while the step still called itself "expected to skip until T64" — stale twice over, since the stores have spoken their own engines for weeks. Their first real execution (2026-08-11, the moment F-90's fix let the DDL step pass) refused the service container's self-signed certificate under the verifying default (`UnknownIssuer`) — the store keeping exactly the promise F-54 measures, against a job that had never declared its TLS intent | **fixed** 2026-08-11 — both live jobs declare `FHIR_*_SSL_MODE: DISABLED` (plaintext by design, mirroring the pg job's explicit `PGSSLMODE: disable`, F-88), the step is named honestly, and the stale T64 rationale for the missing TLS-only job is rewritten: what is actually missing is a `require_secure_transport=ON` server for the plaintext-refusal half |
 | [F-92](#f-92) | Medium | F-91's genre, two more members, found by checking that the O10.4b tests actually *ran* in the green jobs: **mariadb's main store suite** (`mariadb_store.rs`, 13 tests) gated on `FHIR_MYSQL_TEST_DSN` — the mysql port's variable — so it skip-passed silently in CI while the header even said "skips silently"; and **mssql's live job had no store-suite step at all** — the workflow predates the store (F-65) and still said "cannot be written honestly until there is a store", so the store suite including F-47's 12 upgrade tests had never run hosted | **fixed** 2026-08-12 — the env var renamed to `FHIR_MARIADB_TEST_DSN` (14 sites, one file), the mssql step added with TLS intent already declared in the DSN (`TrustServerCertificate=true`, the F-91 lesson), and both stale rationales rewritten. **Verified** the same day: mariadb's 13-test suite ran green in its first genuine CI execution, and mssql's store suite ran green including the O10.4b tests |
 | [F-93](#f-93) | Medium | `fhir-oracle`'s `O10.4c` re-shred **never passed a hosted run**, despite landing in a commit whose message said "live-verified" (2026-08-22) — that commit's own CI run was red, and every run since failed the two re-shred tests the same way. Root cause: `recon_with_map` ended with a hygiene `rollback()`, and the re-shred's byte-identical verify calls it *inside* the per-resource write transaction — the verify read the uncommitted new-shape rows, the rollback then silently discarded the delete and both re-inserts, the `commit()` committed nothing, and the leftover guard correctly reported the old data still in place ("re-shred left data behind"). Fixing that unmasked a second defect the rollback had been hiding: `drop_schema` was **map-scoped** — unlike `fhir-mssql`'s catalog-driven `sys.tables` sweep — so a table the connected map did not name (a relocated-column table from an earlier run) survived with its rows but without its FKs, and the next re-shred collided with the residue (ORA-00001 on `(rid, ords)`) | **fixed** 2026-08-26 — both rollbacks removed from `recon_with_map` (callers own their transactions; the function's doc now states why it must never end the caller's transaction), and `drop_schema` sweeps `user_tables` (`M14.5` makes the connecting user exactly this store's world). **Live-verified** on Oracle Database Free 23: the upgrade suite 16/16 **twice consecutively** — the second pass is the point, it exercises the residue class — plus the store suite 7/7 and `root_extension`; the first passing runs these two tests have ever had, hosted or local |
+| [F-94](#f-94) | Low | Dependabot alerts on `main` surfaced `GHSA-rhfx-m35p-ff5j` (`lru` `IterMut` violates Stacked Borrows, an internal-pointer soundness defect) reaching `fhir-mysql-store` and `fhir-mariadb-store` as normal dependencies via `mysql_async 0.34.2`'s pinned `lru = "^0.12"`. Separately, `fhir-mysql/deny.toml` and `fhir-mariadb/deny.toml` carried an `ignore` for `RUSTSEC-2025-0134` (`rustls-pemfile` unmaintained) that `cargo deny` was silently no longer able to match — the crate it excused had already left the dependency tree, unnoticed, so the exception was dead and nobody knew | **fixed** 2026-08-27 — `mysql_async` bumped `0.34` → `0.37` in both ports (the minimal version whose own manifest requires `lru ^0.18`, clearing the advisory; `0.35`/`0.36` still required `^0.12`/`^0.14` and would not have). Verified with `cargo check --all-targets --locked` and the offline unit suite (50 tests, both ports) before the bump was accepted, not after; `cargo deny check advisories` reports clean with no `advisory-not-detected` warning. The dead `RUSTSEC-2025-0134` ignore was removed rather than left stale, with a dated comment explaining why the entry disappeared rather than leaving future silence. Unrelated to **F-67**: that finding is `fhir-mssql`'s `rustls-webpki` chain via `tiberius`, a different port and a different dependency, and remains open pending the owner's risk decision |
 | [F-89](#f-89) | Medium | The mysql/mariadb DDL test harness was unportable and **masked real errors**: it passed MariaDB's `--skip-ssl-verify-server-cert` to whatever client exists (Oracle's mysql 8 client rejects it), assumed a utf8mb4 default charset (the runner's client defaults utf8mb3 → ERROR 1253 on the collation probe), and on any early client exit reported the stdin `Broken pipe` instead of reading the client's stderr — hiding whatever the real failure was | **fixed** 2026-08-10 — client-flavor-gated TLS flag, explicit `--default-character-set=utf8mb4`, and EPIPE falls through to collect stderr, so the next failure names itself |
 
 ## What remains, and why
@@ -5367,6 +5368,62 @@ as passes. They were skips — the suites self-skip without credentials, and a
 skipping test is indistinguishable from a passing one in the summary line
 (T11.12, F-91's lesson, relearned live during the very finding that cites
 them).
+
+## F-94
+
+GitHub's push output on `ecfe339` reported "5 vulnerabilities (1 high, 4
+low)". `gh api repos/fhir-rust/fhir-rust/dependabot/alerts` gave the exact
+five: three were `rustls-webpki` in `fhir-mssql/Cargo.lock` — **F-67**,
+already tracked, already open, already awaiting the owner's decision, and
+correctly left untouched here. The other two named a crate this register had
+not seen before: `lru`, `GHSA-rhfx-m35p-ff5j`, one alert each in
+`fhir-mysql/Cargo.lock` and `fhir-mariadb/Cargo.lock`.
+
+`cargo tree -i lru` in both ports showed the same shape: `lru 0.12.5`, a
+normal (not dev) dependency of `mysql_async 0.34.2`, which is a normal
+dependency of the store crate itself. `mysql_async`'s own manifest pins
+`lru = "^0.12"`, so `cargo update -p lru` alone cannot move it — confirmed by
+trying: `cargo update -p lru --precise 0.16.3` (the first patched version)
+fails with "candidate versions found which didn't match: 0.16.3 ... required
+by ... mysql_async v0.34.2". The advisory can only close by moving
+`mysql_async` itself.
+
+Checked before choosing a target rather than jumping to latest: `mysql_async`
+0.35.0 and 0.35.1 still require `lru ^0.12`; 0.36.0 moved to `^0.14`, still
+short of the `0.16.3` fix; 0.37.0 requires `^0.18`, clearing it. `0.37.0` is
+also `mysql_async`'s current latest release, so this is not settling for an
+intermediate — it is the only version in the 0.35–0.37 line that fixes
+anything, and it happens to be the newest.
+
+Applied identically to both ports (`mysql_async = "0.37"` in each workspace
+manifest, `cargo update -p mysql_async --precise 0.37.0`), then verified
+before being trusted rather than after: `cargo check --all-targets --locked`
+green in both, the offline unit suite green in `fhir-mysql-store` (50 tests
+across `fold`, `value`, `ssl`, `mysql` — no database needed, per `T11.12`'s
+discipline about tests that require nothing to pass vacuously), and
+`cargo deny --all-features check advisories` reporting `advisories ok` with
+no warning in either port.
+
+**A second, smaller thing the bump exposed.** Each port's `deny.toml` carried
+an `ignore` for `RUSTSEC-2025-0134` (`rustls-pemfile`, unmaintained), reasoned
+at length when it was written. Running `cargo deny` after the bump printed
+`warning[advisory-not-detected]: advisory was not encountered ... no crate
+matched advisory criteria` — `rustls-pemfile` had already dropped out of the
+dependency tree as a side effect of the `mysql_async` update (confirmed:
+`grep -c 'name = "rustls-pemfile"'` returns `0` in both lockfiles), and the
+ignore rule had gone silently dead. `cargo deny` warns rather than fails on
+this, so nothing would have caught it without a human reading the warning
+line. Removed the entry in both `deny.toml` files with a dated comment
+recording why the exception disappeared, rather than leaving the drop silent
+or the stale reasoning in place.
+
+**A process finding worth generalizing, not just this instance:** an unmatched
+`ignore` entry is evidence in the *opposite* direction from an unpatched
+advisory — it means a stated risk acceptance no longer describes anything
+real — and `cargo deny`'s default posture (warn, not fail) means it can sit
+unnoticed indefinitely. Nothing in this repository's CI currently fails a
+build on `advisory-not-detected`; whether it should is a smaller, separate
+question from this finding, noted rather than decided here.
 
 ---
 
