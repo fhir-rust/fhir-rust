@@ -52,12 +52,13 @@ Grouped by `plan.md` workstream. Order within a group is priority order.
       for contributors", lives near-verbatim in CONTRIBUTING.md §"Using AI
       tools" — verified by reading both before deleting anything). The
       draft's text stays in git history.
-- [ ] **Commit the professionalization pass** (9 modified files, 20+
-      untracked documents, the two staged spec renames) — run
-      `scripts/check-shared-core.sh`, `check-trademarks.sh`, and
-      `check-doc-examples.sh` first. Until this lands, a GitHub visitor sees
-      none of it. Ask before pushing.
-- [ ] Delete `fhir-tmp-stash/` (contains only a `.DS_Store`).
+- [x] **Commit the professionalization pass** — done 2026-08-26: landed,
+      pushed, and hosted-green (see `plan.md`'s end-of-day state). Stale by
+      the time this session picked the file back up; `git status` against
+      `origin/main` is clean.
+- [x] Delete `fhir-tmp-stash/` — done 2026-08-27: it was untracked (one
+      `.DS_Store`, nothing `git rm` would have touched), so removed directly
+      from disk. Nothing to commit for this one.
 
 ### Security and supply chain
 
@@ -148,6 +149,11 @@ Grouped by `plan.md` workstream. Order within a group is priority order.
       The first stale version of this very item ("audit/redaction/
       concurrency tests only in `fhir-postgresql`") was caught and corrected
       2026-08-26 while verifying PHI.md against the tree.
+      **Re-verified 2026-08-27, still current** — `fhir-oracle` remains the
+      only port missing `redaction.rs`/`concurrency.rs` (confirmed by file
+      presence in all six `tests/`), `fhir-postgresql` remains the only port
+      with `audit.rs`/`chain_portability.rs`, and the conformance matrix
+      still shows five of six below Reference. No edit needed.
 
 ### Outreach
 
