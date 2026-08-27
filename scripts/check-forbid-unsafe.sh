@@ -77,7 +77,11 @@ while IFS= read -r manifest; do
   fi
 
   check_root "$name" "$root"
-done < <(find . -name Cargo.toml -not -path "*/target/*" | sort)
+# -prune, not -not -path: the latter still descends into target/ before
+  # filtering, which on a repo with nine cargo workspaces and their build
+  # artifacts on disk makes this walk minutes instead of seconds. -prune
+  # skips the subtree entirely.
+  done < <(find . -name target -prune -o -name Cargo.toml -print | sort)
 
 echo
 if [ "$fail" -gt 0 ]; then

@@ -82,8 +82,12 @@ echo "Published-vs-source check (O10.11)"
 echo
 
 # Every [package] in the tree, excluding fuzz crates (publish = false by design).
-manifests=$(find . -name Cargo.toml \
-  -not -path '*/target/*' -not -path '*/tmp/*' -not -path '*/fuzz/*' | sort)
+# -prune, not -not -path: the latter still walks into target/ before
+# filtering, which with nine workspaces' build artifacts on disk makes this
+# minutes instead of seconds. -prune skips each named subtree entirely.
+manifests=$(find . \
+  \( -name target -o -name tmp -o -name fuzz \) -prune -o \
+  -name Cargo.toml -print | sort)
 
 for m in $manifests; do
   name=$(python3 - "$m" <<'PY'
