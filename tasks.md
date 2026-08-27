@@ -76,9 +76,18 @@ Grouped by `plan.md` workstream. Order within a group is priority order.
       pushed, sixteen releases with `TG1.8`-compliant notes, `fhir 4.1.0`
       marked latest, `releases.atom` live; NEWS.md, MAINTAINERS.md,
       CHANGELOG.md, and the outreach register updated in the same change.
-- [ ] Sign commits and tags going forward; record the posture change in
-      MAINTAINERS.md (which now says tags and releases exist but nothing is
-      signed).
+- [x] Sign commits and tags going forward — done 2026-08-27: SSH commit/tag
+      signing configured `--local` to this repository (not global, so it
+      cannot silently activate elsewhere) with a passphrase-protected
+      ed25519 key held only on the maintainer's machine. The public key is
+      committed at `.github/jph-code-signing.pub` for self-contained
+      verification rather than relying on an external profile. Verified the
+      configuration is structurally correct by attempting a real signed
+      commit before the key was loaded in the agent: it failed cleanly on
+      the passphrase prompt (`fatal: failed to write commit object`) rather
+      than silently succeeding unsigned or hanging, and left no stray
+      commit. Every commit and tag before 2026-08-27 stays unsigned
+      (MAINTAINERS.md records the cutover and does not rewrite history).
 - [x] Decide the publishing shape — decided by the owner 2026-08-26:
       **documented laptop publishing stays, permanently**, because GitHub is
       not reliable enough to hold the publish path (decided hours after an

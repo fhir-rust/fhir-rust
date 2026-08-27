@@ -12,15 +12,29 @@ keeps its own changelog with the detail this one summarises:
 | Model | [`fhir/CHANGELOG.md`](fhir/CHANGELOG.md) |
 | Databases | [postgresql](fhir-postgresql/CHANGELOG.md) · [sqlite](fhir-sqlite/CHANGELOG.md) · [mysql](fhir-mysql/CHANGELOG.md) · [mariadb](fhir-mariadb/CHANGELOG.md) · [mssql](fhir-mssql/CHANGELOG.md) · [oracle](fhir-oracle/CHANGELOG.md) |
 
-**Tags exist as of 2026-08-26; GitHub releases still do not.** Sixteen
-annotated tags name the 2026-08-22 publication, each with a GitHub Release
-(see the Unreleased entry and `spec/git-tags-name-published-versions/`), so
-`releases.atom` is a live feed — `PM-70` closed. Dates below are commit
-dates, and the only published artefacts are the crates.io versions named in
-the 2026-08-22 entry.
+**Tags and GitHub releases both exist as of 2026-08-26.** Every
+independently-versioned unit is tagged and carries a GitHub Release —
+`spec/git-tags-name-published-versions/index.md` — so `releases.atom` is a
+live feed and `PM-70` is closed. Commits and tags are signed from 2026-08-27
+onward; everything before that date is unsigned and stays that way
+(`MAINTAINERS.md`). Dates below are commit dates.
 
 History before 2026-08-01 belongs to the separate projects this monorepo was
 assembled from, and lives in the per-family changelogs above.
+
+## 2026-08-27 — commit and tag signing begins
+
+Every commit and tag before this date is unsigned and permanently stays that
+way; history is not rewritten. From this date, commits and tags in this
+repository are signed with an SSH key, configured **locally to this
+repository only** — signing does not silently activate in a clone or a
+sibling project. The public key is committed at
+[`.github/jph-code-signing.pub`](.github/jph-code-signing.pub) for
+self-contained verification. Full posture, what this does and does not prove,
+and the verification command: [`MAINTAINERS.md`](MAINTAINERS.md).
+
+Also: two `tasks.md` checkboxes corrected from stale to actually-done, and
+`fhir-tmp-stash/` (an untracked stray `.DS_Store`) deleted.
 
 ## 2026-08-26 — the description-disclaimer release (second of the day)
 

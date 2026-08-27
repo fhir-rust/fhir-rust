@@ -30,7 +30,9 @@ crate roots' rustdoc; the security surfaces (private vulnerability
 reporting, dependabot alerts and security fixes, secret scanning, a
 nine-workspace `cargo deny` matrix) are on; and publishing is, by owner
 decision, permanently a documented laptop step. Commits and tags remain
-unsigned — the largest standing confession (MAINTAINERS.md).
+signed from 2026-08-27 onward, local-repo SSH signing with the public key
+committed at `.github/jph-code-signing.pub`; commits and tags before that
+date stay unsigned permanently (MAINTAINERS.md).
 
 ## Workstreams — professionalization (2026-08 onward)
 

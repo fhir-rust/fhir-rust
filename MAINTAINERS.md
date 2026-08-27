@@ -52,13 +52,39 @@ The process is [`spec/publishing.md`](spec/publishing.md); the accepted
 residual is that publication rests on one machine and one person, which is
 the bus-factor note above restated.
 
-*Nothing is signed.* Commits and tags carry no OpenPGP or SSH signature
-(`git log -1 --format=%G?` returns `N`). Tags and GitHub releases exist as of
-2026-08-26 — sixteen, one per independently-versioned unit, under
-[`spec/git-tags-name-published-versions/`](spec/git-tags-name-published-versions/index.md) —
-but they are unsigned like everything else, so a consumer still cannot verify
-that a given commit or tag came from the maintainer, and there is no signed
-artefact to check a download against.
+*Signing started 2026-08-27.* Every commit and tag before that date carries no
+signature (`git log --show-signature` on any of them returns `N`) — history is
+not rewritten to add one, so that gap is permanent. From 2026-08-27, commits and
+tags are signed with an SSH key
+(`~/.ssh/id.d/jph-code-signing=8a085b90451ad01ba7646faae803accc=ssh-ed25519-with-passphrase`,
+passphrase-protected, held on the maintainer's own hardware — not escrowed, the
+same posture the crates.io Trusted Publisher table above would describe if one
+existed here) via `gpg.format=ssh`, configured **locally to this repository**
+(`git config --local`, not global), so signing does not silently start in a
+project that never opted in.
+
+Verification needs the signer's public key in a local allowed-signers file
+(`git config gpg.ssh.allowedSignersFile`) — there is no PKI, so a clone that
+has not been told which key to trust cannot verify a signature, only see that
+one is present. The public key is committed in this repository, at
+[`.github/jph-code-signing.pub`](.github/jph-code-signing.pub) — deliberately
+in-tree rather than only on an external profile, so verifying a commit's
+signature never depends on a service outside this repository staying
+reachable or staying honest. To verify:
+
+```sh
+echo "joel@joelparkerhenderson.com $(cat .github/jph-code-signing.pub)" \
+  >> ~/.ssh/allowed_signers
+git -c gpg.ssh.allowedSignersFile=~/.ssh/allowed_signers log --show-signature -1
+```
+
+What this closes and what it does not: a signed commit from 2026-08-27 onward
+proves the maintainer's signing key produced it, given the right public key.
+It does not prove the *content* is correct — that is what the gates in
+[`CONTRIBUTING.md`](CONTRIBUTING.md) are for — and it does nothing for the 104
+commits that predate it, which remain exactly as verifiable as they were
+before: not at all, except by trusting this file's claim that they are all one
+author.
 
 ## If the maintainer is unavailable
 
