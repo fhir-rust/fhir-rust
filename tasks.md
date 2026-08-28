@@ -67,10 +67,20 @@ Grouped by `plan.md` workstream. Order within a group is priority order.
       path-triggered on any workspace plus the weekly cron. Verified
       locally first: all nine green, with `fhir-mssql`'s green resting on
       its deny.toml's dated F-67 ignores (`M14.34`) — the acceptance stays
-      visible and F-67 stays open, pending the owner decision below.
-- [ ] **Get an owner decision on F-67** (High, open since it was filed:
-      mssql TLS advisories in published crates). Every outreach prerequisite
-      chain passes through it (`PM-4`).
+      visible.
+- [x] **Get an owner decision on F-67** — done 2026-08-28: **accept the risk
+      formally, keep shipping on upstream `tiberius`, document it loudly.**
+      Reached after investigating three alternatives, each priced before
+      being set aside — a from-scratch driver (~3–4.5 months, and worse on
+      the trust axis than the flawed 6-year incumbent), a fork carrying the
+      one upstream fix that exists (`prisma/tiberius#419`; 1–2 weeks plus an
+      open-ended maintenance tail, and unusable by a published crate as a
+      git dependency regardless), and one newer alternative crate (`ms-tds`,
+      disqualified on sight — its own description advertises
+      offensive/exploitation tooling). Full account: `M14.34` in
+      `fhir-mssql/spec/14-mssql-dialect.md`. `deny.toml`'s ignores, the audit
+      register, and every document naming this risk now say so. Unblocks
+      `PM-4`.
 - [x] Create git tags and GitHub releases for the published versions
       (`PM-70`) — done 2026-08-26: sixteen annotated tags at `e28964e`
       pushed, sixteen releases with `TG1.8`-compliant notes, `fhir 4.1.0`
@@ -166,9 +176,14 @@ Grouped by `plan.md` workstream. Order within a group is priority order.
 
 ### Outreach
 
-- [ ] Blocked on `PM-70`–`PM-75` (tags/releases, signing, F-67, GPL-scanner
-      note, licensing fixes) — then execute `help/outreach/index.md` phase 1.
-      The claims register governs every public sentence.
+- [ ] Was blocked on `PM-70`–`PM-75`. Tags/releases, signing, the F-67
+      decision, the GPL-scanner note, and the licensing fixes are all now
+      done — the F-67 piece closed 2026-08-28 (accept formally, see above).
+      **Still genuinely incomplete: `PM-72` benchmarks** — one port of six has
+      a real harness, and the JSONB-vs-relational comparison the whole pitch
+      rests on has never been run. That is what remains before
+      `help/outreach/index.md` phase 1 executes. The claims register governs
+      every public sentence regardless.
 
 ### Audit and harmonization
 

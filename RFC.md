@@ -113,16 +113,23 @@ the one we are least sure about.
 Nobody sends this and it is the most useful signal there is. A paragraph on why
 you closed the tab is worth more than a feature request.
 
-### 9. What would you do about F-67?
+### 9. Did we miss a driver alternative for F-67?
 
-The oldest open decision in the repository: four TLS advisories reach the
-shipping `fhir-mssql-store` crate through its driver stack, `native-tls`
-fails the handshake as an escape route, and the
-[audit register](spec/databases/audit.md) records it as a standing risk only
-the owner can accept, mitigate, or re-platform away. If you run SQL Server
-in production: does encrypted transport with a known-vulnerable certificate
-parser beat no port at all? Is there a driver stack we have not considered?
-A dialect-expert answer here moves a High finding that has sat still.
+The oldest open decision in the repository has a decision now: four TLS
+advisories reach the shipping `fhir-mssql-store` crate through its driver
+stack, `native-tls` fails the handshake as an escape route, and — as of
+2026-08-28 — the owner has accepted the risk formally rather than chase a
+replacement, after investigating and pricing three alternatives (a
+from-scratch driver, a fork of the one upstream fix that exists,
+`prisma/tiberius#419`, and one newer crate disqualified on sight). Full
+account: `M14.34` in `fhir-mssql/spec/14-mssql-dialect.md`.
+
+That decision was made with the alternatives we could find. **If you know a
+TDS driver, a fork, or a mitigation this search missed** — or if you run SQL
+Server in production and have a view on whether encrypted transport with a
+known-vulnerable certificate parser beats no port at all — that is still a
+genuinely useful thing to send, and it is the one question here with a real
+chance of reopening a closed decision rather than just informing an open one.
 
 ### 10. Should publishing move to CI?
 

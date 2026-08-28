@@ -34,9 +34,23 @@ ignore = [
     # a viable substitute here, only elsewhere. 0.12.3 is tiberius's newest
     # release (confirmed against the crates.io index the same day) and it
     # pins `rustls-native-certs 0.6`. RUSTSEC says of rustls-pemfile itself
-    # "No safe upgrade is available". See `M14.34` for the full account and
-    # the options that remain: a different driver, or accepting this as a
-    # standing residual risk pending one.
+    # "No safe upgrade is available".
+    #
+    # **Owner decision, 2026-08-28: accept formally, keep shipping, document
+    # loudly.** Three alternatives were investigated first, each priced
+    # before being set aside — a from-scratch driver (~3-4.5 months for a
+    # narrow reimplementation, and still worse on the trust axis than a
+    # flawed but 6-year, 50-contributor incumbent), the one crate that
+    # already carries the fix upstream (`prisma/tiberius#419` — clean and
+    # CI-green on the fork, but zero maintainer review in 3+ months and
+    # structurally unusable by a published crate, since cargo forbids a
+    # `git` dependency in one), and the one newer alternative crate
+    # (`ms-tds` — disqualified on sight: its own description advertises
+    # offensive/exploitation tooling alongside the driver). See `M14.34` for
+    # the full account of all three. This ignore is now a standing,
+    # deliberate risk acceptance, not a placeholder awaiting a decision —
+    # revisit only on new information (tiberius releasing a fix, or #419
+    # gaining maintainer review), not on a renewal schedule.
     "RUSTSEC-2025-0134",
 
     # RUSTSEC-2026-0098, -0099, -0104 — three rustls-webpki 0.101.7 defects in
@@ -58,8 +72,11 @@ ignore = [
     # 0.21.12` pins `^0.101`, so `cargo update -p rustls-webpki` changes
     # nothing — verified. `native-tls` does not work on this host (above), so
     # it is not an escape from this one either. Recorded 2026-08-02, corrected
-    # 2026-08-04; see `M14.34` — this now needs an owner decision, not another
-    # renewal of this comment.
+    # 2026-08-04.
+    #
+    # Owner decision, 2026-08-28: same as `RUSTSEC-2025-0134` above — accepted
+    # formally after investigating and pricing three alternatives, none
+    # viable today. See that entry and `M14.34` for the full account.
     "RUSTSEC-2026-0098",
     "RUSTSEC-2026-0099",
     "RUSTSEC-2026-0104",

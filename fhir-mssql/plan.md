@@ -132,7 +132,9 @@ Work breakdown: [`tasks.md`](tasks.md).
   trust/no-trust mechanism itself is live-verified (`tests/ssl_live.rs`),
   yet `O10.7` is **not claimed**: the driver's rustls-webpki dependency
   chain carries unpatched advisories that reach the shipping store crate
-  (**F-67**) — a standing risk awaiting an owner decision.
+  (**F-67**) — a standing risk, formally accepted by the owner 2026-08-28
+  after a driver-replacement investigation found no viable alternative
+  (`M14.34`), not an open question awaiting a call.
 
 ## Risks
 

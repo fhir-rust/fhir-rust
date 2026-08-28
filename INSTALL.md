@@ -37,9 +37,12 @@ relying on any of it. The levels are what has been *verified for that port*, not
 what its code contains.
 
 > **`fhir-mssql` carries a known advisory risk.** Four TLS advisories reach the
-> shipping `fhir-mssql-store` through its driver stack, recorded as **F-67** and
-> still open. Run `cargo audit` and make your own decision before depending on
-> that port.
+> shipping `fhir-mssql-store` through its driver stack, recorded as **F-67**.
+> The project accepted this risk formally on 2026-08-28 rather than chase a
+> replacement — investigated and priced a driver replacement first, found none
+> viable (see `M14.34` in `fhir-mssql/spec/14-mssql-dialect.md`) — but that is
+> the project's risk tolerance, not necessarily yours. Run `cargo audit` and
+> make your own decision before depending on that port.
 
 ## Install a store
 

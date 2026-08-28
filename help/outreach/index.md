@@ -47,7 +47,7 @@ caution is now closed.
 | **Benchmarks exist for one port of six.** `fhir-postgresql` has a real gated harness (`crates/fhir-postgresql-store/tests/bench.rs`) and measured numbers; the other five have `doc/benchmarks.md` pages but no harness | `find . -name bench.rs`; `fhir-postgresql/doc/benchmarks.md` | Better than the last assessment claimed, and still short of the pitch: the *JSONB comparison* the whole argument rests on has never been run. See **PM-72** and [`BENCHMARKS.md`](../../BENCHMARKS.md). |
 | **No news route.** Six port `CHANGELOG.md` files and `fhir/CHANGELOG.md` exist — but **0 git tags, 0 GitHub releases** | `git tag \| wc -l` → `0`; `GET /repos/.../releases` → `[]` | 34 crates published and nothing a stranger can subscribe to. See **PM-70**. |
 | The licence **is** precise — `MIT OR Apache-2.0 OR BSD-3-Clause OR GPL-2.0-only OR GPL-3.0-only`, declared identically in all 33 manifests — but GitHub reads it as `NOASSERTION` and the expression names GPL | [`LICENSE.md`](../../LICENSE.md); `grep -rn ^license --include=Cargo.toml`; GitHub API `license.spdx_id` | Not the problem yesterday's assessment assumed. See the correction below and **PM-75**. |
-| Two audit findings remain open, one **High** | [audit](../../spec/databases/audit.md): **F-51** (oracle DDL executed by hand), **F-67** (**High** — four TLS advisories now reach the shipping `fhir-mssql-store`; `native-tls` fails the handshake) | **F-67 is a promotion blocker for `fhir-mssql`, not for the repository.** It is a published crate with known advisories in its dependency tree. Do not promote that port by name until it is resolved or documented; see **PM-4**. |
+| Two audit findings remain open, one **High** | [audit](../../spec/databases/audit.md): **F-51** (oracle DDL executed by hand), **F-67** (**High** — four TLS advisories now reach the shipping `fhir-mssql-store`; `native-tls` fails the handshake; **owner accepted the risk formally 2026-08-28**, see `M14.34`) | **F-67 is documented, not silent, and PM-4 is done.** It is a published crate with known advisories in its dependency tree and a stated decision about them. `fhir-mssql` may be named externally now — always alongside the risk, never without it. |
 | All six dialect annexes are still **proposed** (`X15.9`) | [`spec/index.md`](../../spec/index.md) *Gaps* | No annex may be cited as evidence for a conformance level — including in a slide, a blog post, or a Zulip message. |
 | The `O10.4c` re-shred was verified on one developer machine, not in CI | [publishing readiness](../../spec/publishing.md) | "Verified" in outreach must mean *hosted CI*, per `C0.9`/`T11.13`. A green laptop is not a public claim. |
 
@@ -122,11 +122,16 @@ each one delivers a stranger to a GitHub page that currently says `FHIR Rust`.
   is detection and GPL-in-expression, not precision.* Original text: so GitHub and licence scanners resolve it
   (e.g. `MIT OR Apache-2.0`, with the "contact us for custom licensing" prose
   kept *below* the machine-readable line, not instead of it).
-- **PM-4 — Decide F-67 before naming `fhir-mssql` externally.** Either resolve
-  the advisories, or publish a short statement in the crate's README saying
-  which advisories apply, why the port is still published, and what a user
-  should do. Both are defensible; silence is not, and the first person to run
-  `cargo audit` after reading our post will find it.
+- **PM-4 — Decide F-67 before naming `fhir-mssql` externally.** *Done
+  2026-08-28.* Either resolve the advisories, or publish a short statement in
+  the crate's README saying which advisories apply, why the port is still
+  published, and what a user should do — the owner took the second branch:
+  accept the risk formally, keep shipping, document it loudly. Reached after
+  investigating and pricing three alternatives (`M14.34` in
+  `fhir-mssql/spec/14-mssql-dialect.md`), none viable without either an
+  unbounded maintenance tail or a multi-month build worse on the trust axis
+  than the incumbent. `fhir-mssql` may now be named externally, with the risk
+  stated — see `INSTALL.md`, `PHI.md`, `SECURITY.md`, all already doing so.
 - **PM-5 — Write one status page a non-contributor can read in 90 seconds.**
   *Sharpened by **PM-76** (2026-08-26): what segment A means by "conformance
   statement" is a specific FHIR artefact, not a status page.*

@@ -89,8 +89,9 @@ Not "planned and unstarted" — **absent**.
   self-signed certificate. Not claimed anyway — the driver's TLS dependency
   chain carries four unpatched advisories now confirmed reaching the
   shipping store crate (**F-67**), and `native-tls` fails the handshake on
-  this host, so there is no available fix, only a decision to accept the
-  residual risk, replace the driver, or leave the transport story open.
+  this host, so there is no available fix. **Decided 2026-08-28: accept the
+  residual risk formally**, after investigating and pricing a driver
+  replacement (`M14.34`) and finding none viable. Not left open.
 
 ## Not decided, not merely undone
 

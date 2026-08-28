@@ -22,6 +22,29 @@ onward; everything before that date is unsigned and stays that way
 History before 2026-08-01 belongs to the separate projects this monorepo was
 assembled from, and lives in the per-family changelogs above.
 
+## 2026-08-28 — F-67 decided: accept the risk formally
+
+The oldest open decision in the repository closed. Investigated and priced
+three alternatives before accepting: a from-scratch TDS driver (~3–4.5
+months, and worse on the trust axis than the flawed 6-year incumbent), a
+fork carrying the one upstream fix that exists
+([`prisma/tiberius#419`](https://github.com/prisma/tiberius/pull/419) —
+clean and CI-green on its own fork, but no maintainer review in 3+ months,
+and unusable by a published crate regardless since cargo forbids a `git`
+dependency in one), and one newer alternative crate (`ms-tds`, disqualified
+on sight — its own description advertises offensive/exploitation tooling
+alongside its driver code). Full account with real numbers:
+[`M14.34`](fhir-mssql/spec/14-mssql-dialect.md).
+
+Decision: keep shipping `fhir-mssql-store` on upstream `tiberius`, document
+the risk loudly rather than quietly. `deny.toml`'s four ignores, the
+[audit register](spec/databases/audit.md)'s F-67 row, and every document
+that names this risk to a reader — `SECURITY.md`, `PHI.md`, `INSTALL.md`,
+`RFC.md`, `plan.md`, `tasks.md`, `help/outreach/index.md` — now say so
+consistently. `PM-4` (outreach's mssql-naming prerequisite) is satisfied by
+the documented-statement branch it always offered; `PM-72` (benchmarks) is
+now the only thing still gating outreach phase 1.
+
 ## 2026-08-28 — funding channels, checked rather than assumed
 
 `spec/free-open-source-funding/` executed: GitHub Sponsors was already live

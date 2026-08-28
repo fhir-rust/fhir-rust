@@ -413,11 +413,38 @@ schema per FHIR® version.
   should not be re-opened as "try harder to find a driver" without new
   information** — specifically, either `tiberius` PR #419 acquiring
   maintainer review and a release, or a decision to accept the ODBC/FreeTDS
-  trade-off deliberately. The two remaining live options are the two that
-  were already on the table before this investigation: accept the risk
-  formally, or state the TLS story unresolved and caution against relying on
-  it. Which of those is now the owner's decision to make, informed rather
-  than deferred.
+  trade-off deliberately.
+
+  A third, cheaper option was priced the same day, on request: not a
+  from-scratch driver but a fork carrying #419's already-written fix. Real
+  numbers, not a guess — the patch is Apache-2.0, `fhir-mssql-store`'s own
+  source touches none of the changed surface (one doc-comment mention of
+  `TrustServerCertificate`, nothing else), and the fork's own CI (not
+  upstream's, which shows nothing) has run it green against SQL Server
+  2017/2019/2022 and `azure-sql-edge` across the `rustls`/`chrono`/`time`
+  feature combinations — two jobs red (`clippy`, one macOS test), not the
+  whole matrix. Estimated at 1–2 weeks to a private fork (at the cost of
+  `fhir-mssql-store` no longer being publishable while pinned to a git
+  dependency — cargo forbids that in a published crate) or 2–3 weeks to a
+  crates.io republish of the fork under our own name, plus an *open-ended*
+  tail: every future advisory anywhere in `tiberius`'s tree becomes ours to
+  patch alone, on no one else's schedule, for as long as the fork is
+  maintained. Real, and materially cheaper than from-scratch — and still not
+  taken, on the reasoning below.
+
+  **Owner decision, 2026-08-28: accept the risk formally, keep shipping
+  `fhir-mssql-store` on upstream `tiberius`, document it loudly rather than
+  quietly.** Weighed against a fork that trades a known, bounded, well-
+  understood risk (four advisories, precisely diagnosed, in a widely-used
+  6-year driver) for an unbounded, indefinite maintenance obligation on a
+  homegrown TLS-carrying fork — the fork is not obviously the safer position,
+  only a different one, and its cost never stops accruing. `deny.toml`'s
+  four ignores are now a standing, deliberate acceptance rather than a
+  placeholder; [`spec/databases/audit.md`](../../spec/databases/audit.md)
+  **F-67** and every document that names this risk to a reader carry the
+  same decision. Revisit only on new information — `tiberius` releasing a
+  fix, or PR #419 acquiring real maintainer review — not on a renewal
+  schedule.
 
   **What this does *not* undermine: `tests/ssl_live.rs` genuinely confirms
   the verification *mechanism* works** — `TrustServerCertificate=false`

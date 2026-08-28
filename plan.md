@@ -74,8 +74,10 @@ posture. Open items for each are in `tasks.md`.
 
 5. **Outreach.** `help/outreach/index.md` is thorough and self-gating: its
    prerequisites (`PM-70`–`PM-75`: tags/releases, signing, F-67 decision,
-   GPL-scanner note, licensing fixes) are exactly the supply-chain items
-   above. No promotion until they close.
+   GPL-scanner note, licensing fixes) are all now closed — F-67 as of
+   2026-08-28, accept-and-document. What still gates phase 1 is `PM-72`:
+   benchmarks exist for one port of six, and the JSONB-vs-relational
+   comparison the whole pitch rests on has never been run.
 
 6. **Audit and harmonization.** The audit register is the family's reference
    implementation, and it currently fails its own hygiene rule (F-73's
@@ -87,9 +89,15 @@ posture. Open items for each are in `tasks.md`.
 
 ## Open decisions (awaiting a call, not code)
 
-- **F-67 (High).** The mssql TLS advisory exposure in published crates —
-  named in SECURITY.md, PHI.md, INSTALL.md, and `PM-4` as "a standing risk
-  needing an owner decision". The oldest open decision in the repo.
+- ~~**F-67 (High).**~~ Decided 2026-08-28: **accept the risk formally, keep
+  shipping on upstream `tiberius`, document it loudly.** The oldest open
+  decision in the repo, closed after investigating and pricing three
+  alternatives — a from-scratch driver, a fork of the one upstream fix that
+  exists (`prisma/tiberius#419`), and one newer alternative crate (`ms-tds`,
+  disqualified on sight) — none viable without either an unbounded
+  maintenance tail or a cost worse than the flawed incumbent. Full account:
+  `M14.34` in `fhir-mssql/spec/14-mssql-dialect.md`. The advisories stay
+  unpatched; the decision about them does not stay open.
 - **F-51 (Medium).** Oracle DDL maintained by hand; the fix is
   owner-sequenced at the generator (see also the F-90 history).
 - ~~**Publishing shape.**~~ Decided 2026-08-26: **documented laptop

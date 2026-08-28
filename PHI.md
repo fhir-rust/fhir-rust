@@ -126,8 +126,12 @@ about people. This is a structural property you can check against the tree.
 Stated here so you find them from this page rather than from an audit:
 
 - **`fhir-mssql` carries four open TLS advisories** that reach the shipping
-  crate through its driver stack — **F-67**, still open, and the only **High**
-  finding currently in the [audit register](spec/databases/audit.md). If
+  crate through its driver stack — **F-67**, the only **High** finding
+  currently in the [audit register](spec/databases/audit.md). The project
+  formally accepted this risk 2026-08-28 rather than chase a replacement,
+  after investigating and pricing three alternatives and finding none viable
+  (full account: `M14.34`, `fhir-mssql/spec/14-mssql-dialect.md`) — that is
+  the project's own risk tolerance, not necessarily yours. If
   encrypted transport to SQL Server matters to you, read that finding before
   depending on the port.
 - **No Inferno run has ever been performed** against `fhir-loco`, so
