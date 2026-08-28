@@ -26,6 +26,14 @@ on:
 permissions:
   contents: read
 
+# Every job below that builds Rust starts by removing preinstalled tooling
+# this repository never uses — Android SDK/NDK, .NET, GHC, Swift — which
+# otherwise leaves only ~14 GB free on a stock ubuntu-latest runner before
+# anything is built. Not a hypothetical: this repository has already hit a
+# hosted-runner ceiling once (see the comment above the fhir/ build matrix —
+# a combined build was SIGTERM-killed at 12.9 GB peak RSS on a 7 GB runner),
+# and every crate this monorepo adds makes the margin thinner, not wider.
+#
 jobs:
   shared-core:
     name: X15.1 — shared core identical across six ports
@@ -82,6 +90,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Free disk space (unused preinstalled runner bloat)
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc \
+            /usr/local/.ghcup /usr/local/share/boost /opt/hostedtoolcache/CodeQL \
+            /opt/az "$AGENT_TOOLSDIRECTORY" 2>/dev/null || true
+          df -h /
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
 

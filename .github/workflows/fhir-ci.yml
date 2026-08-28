@@ -31,6 +31,14 @@ defaults:
   run:
     working-directory: fhir
 
+# Every job below that builds Rust starts by removing preinstalled tooling
+# this repository never uses — Android SDK/NDK, .NET, GHC, Swift — which
+# otherwise leaves only ~14 GB free on a stock ubuntu-latest runner before
+# anything is built. Not a hypothetical: this repository has already hit a
+# hosted-runner ceiling once (see the comment above the fhir/ build matrix —
+# a combined build was SIGTERM-killed at 12.9 GB peak RSS on a 7 GB runner),
+# and every crate this monorepo adds makes the margin thinner, not wider.
+#
 jobs:
 # The three release models are separate crates, so enabling them together is
 # three rustc processes rather than one. Peak RSS measured on this
@@ -58,6 +66,12 @@ jobs:
           - { name: r2, flags: "--no-default-features --features r2" }
     steps:
       - uses: actions/checkout@v4
+      - name: Free disk space (unused preinstalled runner bloat)
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc \
+            /usr/local/.ghcup /usr/local/share/boost /opt/hostedtoolcache/CodeQL \
+            /opt/az "$AGENT_TOOLSDIRECTORY" 2>/dev/null || true
+          df -h /
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
@@ -82,6 +96,12 @@ jobs:
           - { name: r2, flags: "--no-default-features --features r2", scope: "--lib" }
     steps:
       - uses: actions/checkout@v4
+      - name: Free disk space (unused preinstalled runner bloat)
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc \
+            /usr/local/.ghcup /usr/local/share/boost /opt/hostedtoolcache/CodeQL \
+            /opt/az "$AGENT_TOOLSDIRECTORY" 2>/dev/null || true
+          df -h /
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
@@ -128,6 +148,12 @@ jobs:
         release: [2, 3, 4, 4b, 5, 6]
     steps:
       - uses: actions/checkout@v4
+      - name: Free disk space (unused preinstalled runner bloat)
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc \
+            /usr/local/.ghcup /usr/local/share/boost /opt/hostedtoolcache/CodeQL \
+            /opt/az "$AGENT_TOOLSDIRECTORY" 2>/dev/null || true
+          df -h /
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
@@ -157,6 +183,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Free disk space (unused preinstalled runner bloat)
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc \
+            /usr/local/.ghcup /usr/local/share/boost /opt/hostedtoolcache/CodeQL \
+            /opt/az "$AGENT_TOOLSDIRECTORY" 2>/dev/null || true
+          df -h /
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
@@ -178,6 +210,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Free disk space (unused preinstalled runner bloat)
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc \
+            /usr/local/.ghcup /usr/local/share/boost /opt/hostedtoolcache/CodeQL \
+            /opt/az "$AGENT_TOOLSDIRECTORY" 2>/dev/null || true
+          df -h /
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
@@ -193,6 +231,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Free disk space (unused preinstalled runner bloat)
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc \
+            /usr/local/.ghcup /usr/local/share/boost /opt/hostedtoolcache/CodeQL \
+            /opt/az "$AGENT_TOOLSDIRECTORY" 2>/dev/null || true
+          df -h /
       - uses: dtolnay/rust-toolchain@1.88.0
       - uses: Swatinem/rust-cache@v2
         with:
@@ -212,6 +256,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Free disk space (unused preinstalled runner bloat)
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc \
+            /usr/local/.ghcup /usr/local/share/boost /opt/hostedtoolcache/CodeQL \
+            /opt/az "$AGENT_TOOLSDIRECTORY" 2>/dev/null || true
+          df -h /
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
@@ -244,6 +294,12 @@ jobs:
       RUSTDOCFLAGS: -D warnings
     steps:
       - uses: actions/checkout@v4
+      - name: Free disk space (unused preinstalled runner bloat)
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc \
+            /usr/local/.ghcup /usr/local/share/boost /opt/hostedtoolcache/CodeQL \
+            /opt/az "$AGENT_TOOLSDIRECTORY" 2>/dev/null || true
+          df -h /
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
@@ -256,6 +312,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Free disk space (unused preinstalled runner bloat)
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc \
+            /usr/local/.ghcup /usr/local/share/boost /opt/hostedtoolcache/CodeQL \
+            /opt/az "$AGENT_TOOLSDIRECTORY" 2>/dev/null || true
+          df -h /
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
@@ -308,12 +370,28 @@ jobs:
       # to every local build, which uses the path dependency. Hence 1.1.0.
       - run: cargo publish --dry-run -p fhir
         continue-on-error: true
+      # Each dry-run above packages *and compiles* the crate a second time,
+      # isolated under target/package/ — real disk, disposable the moment the
+      # step exits, and not the incremental tree Swatinem/rust-cache saves.
+      # Cleaned once, after all three, rather than between them: the three
+      # crates share dependencies (fhir -> fhir-core -> fhir-derive-macros),
+      # and whatever reuse cargo gets across them is worth more than clearing
+      # early.
+      - name: Clean the dry-run packaging output
+        if: always()
+        run: rm -rf target/package
 
   supply-chain:
     name: SBOM
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Free disk space (unused preinstalled runner bloat)
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc \
+            /usr/local/.ghcup /usr/local/share/boost /opt/hostedtoolcache/CodeQL \
+            /opt/az "$AGENT_TOOLSDIRECTORY" 2>/dev/null || true
+          df -h /
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
@@ -336,6 +414,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Free disk space (unused preinstalled runner bloat)
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc \
+            /usr/local/.ghcup /usr/local/share/boost /opt/hostedtoolcache/CodeQL \
+            /opt/az "$AGENT_TOOLSDIRECTORY" 2>/dev/null || true
+          df -h /
       - uses: dtolnay/rust-toolchain@stable
       # R13.15: a consumer compiles `src/`, not a 22 MB LLM transcript.
       # Every downstream `cargo vendor` and CI cache pays for whatever ships.
@@ -369,6 +453,10 @@ jobs:
             size=$(stat -c%s "target/package/$crate-$version.crate")
             measured=$((measured + 1))
             echo "$crate $version: $size bytes"
+            # Measured; the tarball itself is disposable and this job has no
+            # cache to protect (no Swatinem/rust-cache step), so free it
+            # before the next crate rather than let seven of them pile up.
+            rm -f "target/package/$crate-$version.crate"
             if [ "$size" -ge 10485760 ]; then
               echo "::error::$crate exceeds 10 MB ($size bytes)"
               fail=1
@@ -396,6 +484,12 @@ jobs:
           - { target: roundtrip_json_r5, release: r5 }
     steps:
       - uses: actions/checkout@v4
+      - name: Free disk space (unused preinstalled runner bloat)
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc \
+            /usr/local/.ghcup /usr/local/share/boost /opt/hostedtoolcache/CodeQL \
+            /opt/az "$AGENT_TOOLSDIRECTORY" 2>/dev/null || true
+          df -h /
       - uses: dtolnay/rust-toolchain@nightly
       - uses: Swatinem/rust-cache@v2
         with:
@@ -416,7 +510,7 @@ jobs:
           path: fhir/fuzz/artifacts/
 
   fuzz-releases:
-    name: Fuzz ${{ matrix.target }}
+    name: Fuzz ${{ matrix.kind }}_${{ matrix.release }}
     # The readers are shared, but the `ElementMeta` table driving them is
     # per-release, and so are the generated structs and choice enums. A
     # document that is harmless in R5 can take a different path in DSTU1,
@@ -435,6 +529,12 @@ jobs:
         kind: [parse_xml, roundtrip_json]
     steps:
       - uses: actions/checkout@v4
+      - name: Free disk space (unused preinstalled runner bloat)
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc \
+            /usr/local/.ghcup /usr/local/share/boost /opt/hostedtoolcache/CodeQL \
+            /opt/az "$AGENT_TOOLSDIRECTORY" 2>/dev/null || true
+          df -h /
       - uses: dtolnay/rust-toolchain@nightly
       - uses: Swatinem/rust-cache@v2
         with:
@@ -460,6 +560,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Free disk space (unused preinstalled runner bloat)
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc \
+            /usr/local/.ghcup /usr/local/share/boost /opt/hostedtoolcache/CodeQL \
+            /opt/az "$AGENT_TOOLSDIRECTORY" 2>/dev/null || true
+          df -h /
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
