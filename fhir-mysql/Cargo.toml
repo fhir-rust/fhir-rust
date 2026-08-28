@@ -44,7 +44,17 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal", "syn
 # how this port shipped a plaintext-only connection (O10.7, F-54). rustls
 # rather than native-tls to match every other port and avoid an OpenSSL build
 # dependency.
-mysql_async = { version = "0.37", default-features = false, features = ["minimal", "rustls-tls"] }
+#
+# `ring` alongside it, not optional: since mysql_async 0.37 (F-94), the
+# bare `rustls-tls` feature is provider-agnostic and installs no
+# process-level rustls::crypto::CryptoProvider, so the first real TLS
+# handshake panics ("Could not automatically determine the process-level
+# CryptoProvider... call CryptoProvider::install_default()") rather than
+# quietly picking one. `ring` over `aws-lc-rs`: it is pure Rust and needs no
+# C compiler or cmake, keeping the build-dependency profile this comment
+# already commits to. Verified: reproduced the panic live against this
+# port's mariadb dev container with `ring` absent, gone with it present.
+mysql_async = { version = "0.37", default-features = false, features = ["minimal", "rustls-tls", "ring"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
