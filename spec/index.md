@@ -181,7 +181,8 @@ These record reality rather than intent, and are non-normative:
 | [databases conformance matrix](databases/conformance-matrix.md) | which port satisfies which core requirement **today** |
 | [databases audit](databases/audit.md) | every known divergence between spec, docs, and code, with evidence |
 | [`fhir/spec/13-assurance.md`](../fhir/spec/13-assurance.md) | what must hold before the model crate is depended on clinically |
-| [publishing readiness](publishing.md) | what stands between all 33 crates and crates.io — **cross-family** |
+| [publishing readiness](publishing.md) | how all 34 crates reach crates.io today, and the record of what stood between them before 2026-08-22 — **cross-family** |
+| [trusted publishing](trusted-publishing/index.md) | why this repository does not use it yet, reconciled against the family-wide statement of intent — **cross-family** |
 
 The conformance matrix is the document to trust for port status. A README, a
 `book/` chapter, and a `tasks.md` checkbox are all weaker evidence than it, and

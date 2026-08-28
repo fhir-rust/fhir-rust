@@ -62,7 +62,8 @@ says which one governs which code.
 | | |
 | --- | --- |
 | [Specification root](spec/index.md) | all four families, precedence, id namespaces |
-| [Publishing readiness](spec/publishing.md) | what blocks all 33 crates from crates.io |
+| [Publishing readiness](spec/publishing.md) | how all 34 crates reach crates.io — a documented laptop step, by decision |
+| [Trusted Publishing](spec/trusted-publishing/index.md) | why not yet, checked against each forge's actual support rather than assumed |
 | [Database core](spec/databases/index.md) | the normative core, sections 0–16 |
 | [Compliance mapping](spec/databases/13-compliance-mapping.md) | regulation → requirement → evidence |
 | [Conformance matrix](spec/databases/conformance-matrix.md) | per-port status |

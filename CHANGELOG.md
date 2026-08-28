@@ -22,6 +22,28 @@ onward; everything before that date is unsigned and stays that way
 History before 2026-08-01 belongs to the separate projects this monorepo was
 assembled from, and lives in the per-family changelogs above.
 
+## 2026-08-28 — Trusted Publishing: checked, and reconciled with an earlier decision
+
+`spec/trusted-publishing/index.md` stated a family-wide intent to adopt it
+once production-ready across every forge and destination. Checked against
+each registry's own documentation rather than assumed: crates.io Trusted
+Publishing is GA on GitHub Actions and available on GitLab.com CI (not
+self-hosted); Codeberg/Forgejo has none yet, upstream. That alone would
+leave the condition unmet for this repository's three mirrors.
+
+But a more specific, already-recorded decision governs here regardless:
+the owner ruled out publishing from CI entirely on 2026-08-26, on GitHub
+Actions reliability grounds, not on Trusted Publishing's own readiness.
+Trusted Publishing has no CI workflow to attach to under that model, so the
+two facts don't compete — the CI decision settles it either way. Recorded
+in the spec doc's own status section, cross-referenced from
+`spec/publishing.md`, `MAINTAINERS.md`, `README.md`, `index.md`, and
+`spec/index.md`.
+
+Corrected while touring those routing tables: `README.md`, `index.md`, and
+`spec/index.md` all still described `spec/publishing.md` as "what blocks"
+publication and named 33 crates — stale since all 34 published 2026-08-22.
+
 ## 2026-08-28 — F-67 decided: accept the risk formally
 
 The oldest open decision in the repository closed. Investigated and priced

@@ -45,7 +45,13 @@ pass on.
 permanently.** The owner ruled out crates.io Trusted Publishing from CI on
 reliability grounds — GitHub is not dependable enough to hold the publish
 path, a judgment made hours after an Actions major outage swallowed push
-events and stalled every hosted run. Consequences executed the same day: the
+events and stalled every hosted run. This is a repository-specific decision,
+not a statement that Trusted Publishing itself is unready: crates.io support
+for it is generally available on GitHub Actions and on GitLab.com CI (not
+self-hosted), and only Codeberg/Forgejo — one of this repository's three
+mirrors — has no support yet upstream. Both facts and their reconciliation
+are recorded in [`spec/trusted-publishing/index.md`](trusted-publishing/index.md).
+Consequences executed the same day: the
 six inert per-port `publish.yml` workflows are deleted; the only registry
 credential is the maintainer machine's `~/.cargo/credentials.toml` (verified:
 GitHub stores no secret and no `crates-io` environment exists); and this

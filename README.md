@@ -248,7 +248,8 @@ requirement and to the test that evidences it.
 | [`spec/databases/index.md`](spec/databases/index.md) | the normative core, shared by all six ports |
 | [`spec/databases/conformance-matrix.md`](spec/databases/conformance-matrix.md) | what each port actually satisfies |
 | [`spec/databases/audit.md`](spec/databases/audit.md) | every known divergence, with evidence |
-| [`spec/publishing.md`](spec/publishing.md) | what blocks these crates from crates.io |
+| [`spec/publishing.md`](spec/publishing.md) | how these crates reach crates.io — a documented laptop step, by decision, since all 34 already have |
+| [`spec/trusted-publishing/index.md`](spec/trusted-publishing/index.md) | why that decision means no Trusted Publishing here yet, checked against each forge's actual support |
 | [`fhir/spec/index.md`](fhir/spec/index.md) | the model crate's specification |
 | [`AGENTS.md`](AGENTS.md) | contributing — human or agent |
 | `fhir-<engine>/book/` | that port's user guide |
