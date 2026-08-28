@@ -192,6 +192,8 @@ type-/system-level history, multi-port wiring, is tracked in that crate's
 | [F-92](#f-92) | Medium | F-91's genre, two more members, found by checking that the O10.4b tests actually *ran* in the green jobs: **mariadb's main store suite** (`mariadb_store.rs`, 13 tests) gated on `FHIR_MYSQL_TEST_DSN` — the mysql port's variable — so it skip-passed silently in CI while the header even said "skips silently"; and **mssql's live job had no store-suite step at all** — the workflow predates the store (F-65) and still said "cannot be written honestly until there is a store", so the store suite including F-47's 12 upgrade tests had never run hosted | **fixed** 2026-08-12 — the env var renamed to `FHIR_MARIADB_TEST_DSN` (14 sites, one file), the mssql step added with TLS intent already declared in the DSN (`TrustServerCertificate=true`, the F-91 lesson), and both stale rationales rewritten. **Verified** the same day: mariadb's 13-test suite ran green in its first genuine CI execution, and mssql's store suite ran green including the O10.4b tests |
 | [F-93](#f-93) | Medium | `fhir-oracle`'s `O10.4c` re-shred **never passed a hosted run**, despite landing in a commit whose message said "live-verified" (2026-08-22) — that commit's own CI run was red, and every run since failed the two re-shred tests the same way. Root cause: `recon_with_map` ended with a hygiene `rollback()`, and the re-shred's byte-identical verify calls it *inside* the per-resource write transaction — the verify read the uncommitted new-shape rows, the rollback then silently discarded the delete and both re-inserts, the `commit()` committed nothing, and the leftover guard correctly reported the old data still in place ("re-shred left data behind"). Fixing that unmasked a second defect the rollback had been hiding: `drop_schema` was **map-scoped** — unlike `fhir-mssql`'s catalog-driven `sys.tables` sweep — so a table the connected map did not name (a relocated-column table from an earlier run) survived with its rows but without its FKs, and the next re-shred collided with the residue (ORA-00001 on `(rid, ords)`) | **fixed** 2026-08-26 — both rollbacks removed from `recon_with_map` (callers own their transactions; the function's doc now states why it must never end the caller's transaction), and `drop_schema` sweeps `user_tables` (`M14.5` makes the connecting user exactly this store's world). **Live-verified** on Oracle Database Free 23: the upgrade suite 16/16 **twice consecutively** — the second pass is the point, it exercises the residue class — plus the store suite 7/7 and `root_extension`; the first passing runs these two tests have ever had, hosted or local |
 | [F-94](#f-94) | Low | Dependabot alerts on `main` surfaced `GHSA-rhfx-m35p-ff5j` (`lru` `IterMut` violates Stacked Borrows, an internal-pointer soundness defect) reaching `fhir-mysql-store` and `fhir-mariadb-store` as normal dependencies via `mysql_async 0.34.2`'s pinned `lru = "^0.12"`. Separately, `fhir-mysql/deny.toml` and `fhir-mariadb/deny.toml` carried an `ignore` for `RUSTSEC-2025-0134` (`rustls-pemfile` unmaintained) that `cargo deny` was silently no longer able to match — the crate it excused had already left the dependency tree, unnoticed, so the exception was dead and nobody knew | **fixed** 2026-08-27 — `mysql_async` bumped `0.34` → `0.37` in both ports (the minimal version whose own manifest requires `lru ^0.18`, clearing the advisory; `0.35`/`0.36` still required `^0.12`/`^0.14` and would not have). Verified with `cargo check --all-targets --locked` and the offline unit suite (50 tests, both ports) before the bump was accepted, not after; `cargo deny check advisories` reports clean with no `advisory-not-detected` warning. The dead `RUSTSEC-2025-0134` ignore was removed rather than left stale, with a dated comment explaining why the entry disappeared rather than leaving future silence. Unrelated to **F-67**: that finding is `fhir-mssql`'s `rustls-webpki` chain via `tiberius`, a different port and a different dependency, and remains open pending the owner's risk decision |
+| [F-95](#f-95) | **High** | **F-94's own fix broke hosted CI on both ports it touched, and the verification that shipped it did not catch it.** The `mysql_async 0.34 -> 0.37` bump was verified with `cargo check --all-targets --locked` and `cargo test --locked --lib --bins` — unit tests only. `--lib --bins` excludes everything under `tests/`, which is exactly where `ssl_live.rs` lives, and that file only runs at all inside the live-database CI job (it self-skips without a DSN). The first hosted run after the push found it: `tls_is_configurable_and_verification_is_not_a_no_op` panicked in both `fhir-mysql-store` and `fhir-mariadb-store` — `rustls::crypto::CryptoProvider::get_default()` finding none installed, because `mysql_async 0.37` split its `rustls-tls` feature from its crypto backend (`aws-lc-rs` or `ring`), where `0.34`'s did not need the split | **fixed** 2026-08-28 — `ring` added to both ports' `mysql_async` feature list (pure Rust, no C/cmake toolchain, matching the existing comment's stated reason for choosing rustls over native-tls in the first place). Verified by reproducing the exact panic live against each port's own dev container before the fix, and its disappearance after — not inferred from the diff. Then the full store suite re-run for both, all binaries, no truncation: `mysql_store`/`concurrency`/`redaction`/`roundtrip_types`/`ssl_default`/`ssl_live`/`upgrade`, 44 tests, 0 failed. `cargo deny check advisories` still clean. **The verification-scope lesson, stated for next time:** a dependency bump's own tests are not enough evidence when the crate ships integration tests that need infrastructure the bump's own CI job doesn't provide — `cargo test --workspace` unit-only is what F-90/F-91/F-92's "does it actually run" lesson was already about, applied here to a different kind of change and missed anyway |
+| [F-96](#f-96) | Medium | **Unrelated to F-94/F-95, found the same audit pass**: `fhir-postgresql` and `fhir-loco` (which depends on it) both failed hosted `cargo deny` with `error[yanked]: detected yanked crate` on `chacha20 0.10.1` — pulled in via `rand 0.10.2 -> postgres-protocol -> tokio-postgres`, a chain neither this session nor **F-94** touched. crates.io yanked `0.10.1` upstream after both lockfiles had already pinned it; `yanked = "deny"` in each port's `deny.toml` (the same policy line **F-94** relies on) is what caught it | **fixed** 2026-08-28 — `cargo update -p chacha20` in both workspaces (`0.10.1` → `0.10.2`, the fix `cargo deny`'s own error message named). Verified: `cargo deny check advisories` clean in both, `cargo check --all-targets --locked` green in both |
 | [F-89](#f-89) | Medium | The mysql/mariadb DDL test harness was unportable and **masked real errors**: it passed MariaDB's `--skip-ssl-verify-server-cert` to whatever client exists (Oracle's mysql 8 client rejects it), assumed a utf8mb4 default charset (the runner's client defaults utf8mb3 → ERROR 1253 on the collation probe), and on any early client exit reported the stdin `Broken pipe` instead of reading the client's stderr — hiding whatever the real failure was | **fixed** 2026-08-10 — client-flavor-gated TLS flag, explicit `--default-character-set=utf8mb4`, and EPIPE falls through to collect stderr, so the next failure names itself |
 
 ## What remains, and why
@@ -5424,6 +5426,84 @@ real — and `cargo deny`'s default posture (warn, not fail) means it can sit
 unnoticed indefinitely. Nothing in this repository's CI currently fails a
 build on `advisory-not-detected`; whether it should is a smaller, separate
 question from this finding, noted rather than decided here.
+
+## F-95
+
+The push that fixed F-94 (`259e209`, an unrelated CI workflow change layered
+on top) turned four hosted jobs red: `fhir-mysql CI`'s and `fhir-mariadb
+CI`'s live-database jobs, both failing at the same step, `Store live suite`.
+`gh run view --json jobs` narrowed it to one test each:
+`tls_is_configurable_and_verification_is_not_a_no_op`, in `tests/ssl_live.rs`
+in both ports.
+
+The panic named its own cause: `rustls::crypto::CryptoProvider::get_default()`
+found nothing installed. `mysql_async 0.34`'s `rustls-tls` feature apparently
+selected a crypto backend implicitly; `0.37`'s manifest, fetched and read
+rather than guessed at, shows the split explicitly —
+`default-rustls-ring = ["default-rustls-no-provider", "ring"]` and the
+`aws-lc-rs` equivalent both layer on top of a `default-rustls-no-provider`
+base that `rustls-tls` alone resolves to. Enabling `rustls-tls` without also
+naming a provider feature is valid to cargo and broken at first real use — the
+exact shape of defect a compiler cannot catch and only an exercised code path
+finds.
+
+**Why this got past the F-94 verification that immediately preceded it.**
+That entry's own text says what was run: `cargo check --all-targets --locked`
+and `cargo test --locked --lib --bins`. `--lib --bins` is precise about what
+it excludes — everything under `tests/`, which is where integration tests
+live in a cargo package, and `ssl_live.rs` is one. It cannot fail an
+invocation that never compiles it. Worse, even `cargo test` without `--lib
+--bins` would not have caught this in an ordinary developer run: `ssl_live.rs`
+self-skips without `FHIR_MYSQL_TEST_DSN`/`FHIR_MARIADB_TEST_DSN` set, so it
+only ever executes inside the live-database CI job, against a real service
+container. No unit test, and no offline integration test, exercises this
+path — by design, since it is inherently about a live TLS handshake. The
+hosted live job was always the first and only place this could be caught, and
+it was not consulted before the push.
+
+**Fixed** by reproducing before trusting the fix, not the reverse. Brought up
+each port's own dev container (`fhir-mariadb`'s and `fhir-mysql`'s
+`scripts/db.sh up`, already running from earlier work), ran
+`cargo test --release -p fhir-<port>-store --test ssl_live` against it with
+the pre-fix manifest, and got the identical panic locally, live, before
+changing anything — confirming the local containers reproduce what hosted CI
+saw rather than assuming they would. Added the `ring` feature (both
+manifests): pure Rust, no C compiler or cmake, chosen over `aws-lc-rs` to keep
+faith with the adjacent comment's existing reason for preferring rustls over
+native-tls at all. Re-ran the same command against the same running
+containers: both tests green. Then, because a fix verified only on the test
+that caught it is exactly F-91/F-92's failure shape one level up, ran every
+test binary in both stores with no output truncation this time —
+`mysql_store`, `concurrency`, `redaction`, `roundtrip_types`, `ssl_default`,
+`ssl_live`, `upgrade` — 44 tests, 0 failed, and re-checked
+`cargo deny --all-features check advisories` clean in both.
+
+**The lesson, stated so the next dependency bump does not relearn it:** a
+crate that ships integration tests gated on live infrastructure has coverage
+its own default `cargo test` cannot demonstrate, and a change to that crate's
+dependency graph is not verified until the gated tests have actually run
+against the infrastructure they need — this repository's own container
+scripts make that a two-command check (`scripts/db.sh up`, then the live test
+target), and the excuse of "unit tests were clean" was not good enough here.
+
+## F-96
+
+Found in the same pass, unrelated to F-94/F-95: `fhir Security Audit`'s
+`cargo-deny` matrix also failed on `fhir-postgresql` and `fhir-loco` (which
+depends on it), with `error[yanked]: detected yanked crate (try `cargo update
+-p chacha20`)`. `chacha20 0.10.1` reaches both through
+`rand 0.10.2 -> postgres-protocol -> tokio-postgres -> fhir-postgresql-store`,
+a chain neither this session's mysql/mariadb work nor **F-94** touched at
+all — crates.io yanked the version out from under two lockfiles that had
+already pinned it, and `yanked = "deny"` (the same `deny.toml` line that makes
+**F-94**'s dead-ignore detection possible) is what caught it on the next push
+rather than the one that actually introduced the pin.
+
+**Fixed** by doing exactly what `cargo deny`'s own error message named:
+`cargo update -p chacha20` in both `fhir-postgresql` and `fhir-loco`
+(`0.10.1` → `0.10.2`). Verified `cargo deny --all-features check advisories`
+clean in both afterward, and `cargo check --all-targets --locked` green in
+both.
 
 ---
 
