@@ -351,11 +351,73 @@ schema per FHIR® version.
 
   They stay ignored in `deny.toml`, with the corrected reasoning above rather
   than the stale one, because there is no fix available today: no newer
-  tiberius, no working alternative TLS backend on this host, and the only
-  other pure-Rust TDS driver does not exist. This is now a standing residual
-  risk requiring an explicit owner decision — accept it formally, pursue a
-  different driver, or drop TLS as this port's transport story — not a
-  research question with an obvious next experiment.
+  tiberius, no working alternative TLS backend on this host, and — as of when
+  this was written — the only other pure-Rust TDS driver did not exist. This
+  is now a standing residual risk requiring an explicit owner decision —
+  accept it formally, pursue a different driver, or drop TLS as this port's
+  transport story — not a research question with an obvious next experiment.
+
+  **The "pursue a different driver" branch was investigated, 2026-08-28, on
+  the owner's direction, and found no viable near-term fix — recorded here
+  because a negative result checked this thoroughly is worth as much as a
+  positive one, and the next person should not re-spend the effort.**
+
+  *A fix exists upstream and is not usable.* `prisma/tiberius` has an open
+  pull request, **#419** ("Rustls vulnerability fix", opened 2026-05-12,
+  branch `jakewimmer/tiberius@rustls-vuln-fix`), that does exactly what this
+  port needs: bumps `tokio-rustls` 0.24→0.26 (`rustls` 0.21→0.23), pulling in
+  `rustls-webpki` 0.103.13 and closing all three CVEs; drops `rustls-pemfile`
+  entirely in favour of `rustls-pki-types`' `PemObject`, closing the fourth.
+  Checked via the GitHub API rather than skimmed: `mergeable: true`,
+  `mergeable_state: clean` against current `main`. It has had **zero review
+  from a `prisma` org member** in the three-plus months since it was opened —
+  only the author and an automated review bot have commented — and the base
+  repository's own `pushed_at` is 2026-03-06, over five months stale at time
+  of writing. This is not "help is on the way"; it is a maintenance-health
+  signal in its own right; `tiberius` looks under-maintained on a timescale
+  that makes waiting for a release an unbounded bet, not a plan.
+
+  It is also structurally unusable *even if it merged tomorrow*: it is a git
+  branch on a fork, not a crates.io release, and **cargo refuses to publish a
+  crate with a `git` dependency.** `fhir-mssql-store` is a published crate —
+  that is the whole point of this repository's release model (`C0.17`,
+  `C0.18`, `W16.x`) — so pinning to the fork directly would mean either
+  un-publishing this port or maintaining a private patched release
+  ourselves, neither of which is "pursue a different driver," both of which
+  are bigger commitments than an investigation authorizes on its own.
+
+  *A newer entrant exists and disqualifies itself.* `ms-tds` (`0.1.1`,
+  published 2026-08-09 — after the "does not exist" line above was written,
+  which is why that line is now qualified rather than deleted) is a second
+  pure-Rust TDS client. Its own crates.io description rules it out on sight:
+  alongside the driver functionality it advertises "offensive primitives
+  (`xp_cmdshell`, `xp_dirtree` UNC coerce, linked-server enum)" — penetration-
+  testing and exploitation tooling, not defensive database-driver hygiene.
+  Whatever its TLS posture, adopting an offense-oriented crate as the core
+  dependency of a store built for patient data would be a values mismatch this
+  project should not paper over for the sake of a version bump, and at 249
+  downloads and three weeks old it has no track record besides. Not evaluated
+  further; ruled out on what it says about itself.
+
+  *The system-dependency paths still work and still cost what `M14.24` said
+  they cost.* ODBC (`odbc-api` plus Microsoft's official driver) and FreeTDS
+  bindings are both mature enough to trust technically, and both require
+  installing a driver on every deployment host — exactly what `M14.24` chose
+  a pure-Rust driver to avoid. Reversing that is a real architectural
+  decision with consequences for every one of this port's users, not a
+  substitute driver crate; it was not attempted here because choosing it is
+  the owner's call, not a default to fall into because the pure-Rust path is
+  blocked.
+
+  **Net effect of this investigation: it does not resolve F-67, and it
+  should not be re-opened as "try harder to find a driver" without new
+  information** — specifically, either `tiberius` PR #419 acquiring
+  maintainer review and a release, or a decision to accept the ODBC/FreeTDS
+  trade-off deliberately. The two remaining live options are the two that
+  were already on the table before this investigation: accept the risk
+  formally, or state the TLS story unresolved and caution against relying on
+  it. Which of those is now the owner's decision to make, informed rather
+  than deferred.
 
   **What this does *not* undermine: `tests/ssl_live.rs` genuinely confirms
   the verification *mechanism* works** — `TrustServerCertificate=false`
