@@ -22,6 +22,17 @@ onward; everything before that date is unsigned and stays that way
 History before 2026-08-01 belongs to the separate projects this monorepo was
 assembled from, and lives in the per-family changelogs above.
 
+## 2026-08-28 — funding channels, checked rather than assumed
+
+`spec/free-open-source-funding/` executed: GitHub Sponsors was already live
+(verified via GitHub's own API, not assumed), so `.github/FUNDING.yml` now
+declares it alongside Patreon, Ko-fi and PayPal. Open Collective is not
+set up — checked against its own API, no collective exists at either
+`joelparkerhenderson` or `fhir-rust` — and creating one needs the
+maintainer's own sign-in, so it stays a stated open item in
+[`CONTRIBUTING.md`](CONTRIBUTING.md), [`NEWS.md`](NEWS.md), and the spec
+itself rather than being invented or left silent.
+
 ## 2026-08-27 — commit and tag signing begins
 
 Every commit and tag before this date is unsigned and permanently stays that

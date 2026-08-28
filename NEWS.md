@@ -100,6 +100,20 @@ As of 2026-08-26 there are git tags and GitHub releases — sixteen, naming the
 `https://github.com/fhir-rust/fhir-rust/releases.atom` is a live,
 subscribable feed. There is still no mailing list.
 
+## How to support this project
+
+**GitHub Sponsors is live**: [github.com/sponsors/joelparkerhenderson](https://github.com/sponsors/joelparkerhenderson),
+plus Patreon, Ko-fi and PayPal — all four declared in
+[`.github/FUNDING.yml`](.github/FUNDING.yml), which is what puts the "Sponsor"
+button on the repository page. **Open Collective is not set up** — checked
+against its own API rather than assumed, and neither `joelparkerhenderson` nor
+`fhir-rust` exists there. [`CONTRIBUTING.md`](CONTRIBUTING.md) has the full
+list and what donations do and do not buy.
+
+Time is worth more than money here, and the most useful thing anyone can send
+is a round-trip failure against their own FHIR bundles — see
+[`RFC.md`](RFC.md).
+
 ## Press contacts
 
 | | |

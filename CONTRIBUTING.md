@@ -76,10 +76,21 @@ If this is useful to you and you would rather send money than time:
 
 | | |
 | --- | --- |
-| GitHub Sponsors | [github.com/sponsors/joelparkerhenderson](https://github.com/sponsors/joelparkerhenderson) |
+| GitHub Sponsors | [github.com/sponsors/joelparkerhenderson](https://github.com/sponsors/joelparkerhenderson) — verified live |
 | Patreon | [patreon.com/joelparkerhenderson](https://www.patreon.com/joelparkerhenderson) |
 | Ko-fi | [ko-fi.com/joelparkerhenderson](https://ko-fi.com/joelparkerhenderson) |
 | PayPal | [paypal.me/joelparkerhenderson](https://paypal.me/joelparkerhenderson) |
+
+All four are declared in [`.github/FUNDING.yml`](.github/FUNDING.yml), which is
+what puts the "Sponsor" button on the repository page.
+
+**No Open Collective yet.** It was on the list; it is not set up. Checked
+against Open Collective's own API rather than assumed: no collective exists at
+either `joelparkerhenderson` or `fhir-rust`. Creating one needs the
+maintainer's own sign-in and a fiscal-host choice (Open Source Collective is
+the usual one for projects like this), which is not something to do on someone
+else's behalf. If that changes, it gets a row here and in
+[`.github/FUNDING.yml`](.github/FUNDING.yml) the same day — not before.
 
 **What money buys here, honestly:** maintainer time, and the cost of running six
 real database engines in CI. It does not buy a support contract, a service-level
