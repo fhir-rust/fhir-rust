@@ -196,6 +196,7 @@ type-/system-level history, multi-port wiring, is tracked in that crate's
 | [F-95](#f-95) | **High** | **F-94's own fix broke hosted CI on both ports it touched, and the verification that shipped it did not catch it.** The `mysql_async 0.34 -> 0.37` bump was verified with `cargo check --all-targets --locked` and `cargo test --locked --lib --bins` — unit tests only. `--lib --bins` excludes everything under `tests/`, which is exactly where `ssl_live.rs` lives, and that file only runs at all inside the live-database CI job (it self-skips without a DSN). The first hosted run after the push found it: `tls_is_configurable_and_verification_is_not_a_no_op` panicked in both `fhir-mysql-store` and `fhir-mariadb-store` — `rustls::crypto::CryptoProvider::get_default()` finding none installed, because `mysql_async 0.37` split its `rustls-tls` feature from its crypto backend (`aws-lc-rs` or `ring`), where `0.34`'s did not need the split | **fixed** 2026-08-28 — `ring` added to both ports' `mysql_async` feature list (pure Rust, no C/cmake toolchain, matching the existing comment's stated reason for choosing rustls over native-tls in the first place). Verified by reproducing the exact panic live against each port's own dev container before the fix, and its disappearance after — not inferred from the diff. Then the full store suite re-run for both, all binaries, no truncation: `mysql_store`/`concurrency`/`redaction`/`roundtrip_types`/`ssl_default`/`ssl_live`/`upgrade`, 44 tests, 0 failed. `cargo deny check advisories` still clean. **The verification-scope lesson, stated for next time:** a dependency bump's own tests are not enough evidence when the crate ships integration tests that need infrastructure the bump's own CI job doesn't provide — `cargo test --workspace` unit-only is what F-90/F-91/F-92's "does it actually run" lesson was already about, applied here to a different kind of change and missed anyway |
 | [F-96](#f-96) | Medium | **Unrelated to F-94/F-95, found the same audit pass**: `fhir-postgresql` and `fhir-loco` (which depends on it) both failed hosted `cargo deny` with `error[yanked]: detected yanked crate` on `chacha20 0.10.1` — pulled in via `rand 0.10.2 -> postgres-protocol -> tokio-postgres`, a chain neither this session nor **F-94** touched. crates.io yanked `0.10.1` upstream after both lockfiles had already pinned it; `yanked = "deny"` in each port's `deny.toml` (the same policy line **F-94** relies on) is what caught it | **fixed** 2026-08-28 — `cargo update -p chacha20` in both workspaces (`0.10.1` → `0.10.2`, the fix `cargo deny`'s own error message named). Verified: `cargo deny check advisories` clean in both, `cargo check --all-targets --locked` green in both |
 | [F-97](#f-97) | Medium | Surfaced closing **F-51**: the append-only trigger's `M3.17`/`M3.18` enforcement (`M14.29`, already known to have failed open once — `M14.29a`) and the `Bool` CHECK's `M14.8` enforcement were verified only by SQL-text unit tests, never against a live server. A CHECK clause that parses but never fires would pass the existing unit test the same way the trigger's `M14.29a` bug passed a read-through | **fixed** 2026-08-29 — `tests/oracle_constraints.rs` (`fhir-oracle-map`): a live `UPDATE`/undeclared `DELETE` against a seeded row, asserting the exact `ORA-20001`/`ORA-20002` errors (not merely `is_err()`, which is the distinction `M14.29a`'s own bug hid), the declared-erasure escape hatch confirmed to still work, and a live `INSERT` of `2` into a `NUMBER(1) CHECK (... IN (0,1))` column asserting `ORA-02290`. **Found and fixed in the same pass, not shipped and left flaky:** libtest runs a binary's `#[test]` functions concurrently by default, and the first version had both tests provision the same throwaway user — reproduced 3 of 3 failures before splitting each test onto its own user (`TRIGTEST`, `BOOLTEST`), 0 of many after. Wired into `fhir-oracle-ci.yml` beside **F-51**'s DDL-install step |
+| [F-98](#f-98) | Medium | `scripts/check-published-match.sh` reports "ok" for a crate whose source has genuinely diverged from what it published, when the divergence is a workspace-inherited dependency requirement (`sha2.workspace = true` etc.) — its `--exclude Cargo.toml` comparison relies on `Cargo.toml.orig`, which preserves the unresolved `.workspace = true` reference rather than the literal version crates.io actually receives | **open** — found 2026-08-29 bumping `sha2`/`sha3` in `fhir-postgresql`/`fhir-sqlite`: the gate said "34 matched, 0 mismatched" while the crates.io API confirmed `fhir-postgresql-map` 0.6.0's published manifest declares `sha2 ^0.10`, which the tree's new `sha2 = "0.11"` workspace requirement no longer matches. Worked around by bumping the affected crates to a patch version regardless of what the gate reported (commit `ca34cdf`), not by trusting it. Not fixed: a correct fix needs to compare the crate's *normalized*, packaged `Cargo.toml` (which does resolve `.workspace = true` to a literal) rather than `Cargo.toml.orig`, without reintroducing the cosmetic-reordering false positives `Cargo.toml.orig` was chosen to avoid |
 | [F-89](#f-89) | Medium | The mysql/mariadb DDL test harness was unportable and **masked real errors**: it passed MariaDB's `--skip-ssl-verify-server-cert` to whatever client exists (Oracle's mysql 8 client rejects it), assumed a utf8mb4 default charset (the runner's client defaults utf8mb3 → ERROR 1253 on the collation probe), and on any early client exit reported the stdin `Broken pipe` instead of reading the client's stderr — hiding whatever the real failure was | **fixed** 2026-08-10 — client-flavor-gated TLS flag, explicit `--default-character-set=utf8mb4`, and EPIPE falls through to collect stderr, so the next failure names itself |
 
 ## What remains, and why
@@ -5647,6 +5648,70 @@ user (`TRIGTEST`, `BOOLTEST`); 0 failures in 5 repeated runs after, plus the
 skip and fail-loud paths both re-confirmed against a genuinely unreachable
 connect string, `--release`, and `cargo clippy -- -D warnings` clean.
 Wired into `fhir-oracle-ci.yml` beside **F-51**'s DDL-install step.
+
+## F-98
+
+**`scripts/check-published-match.sh` can report "ok" for a crate whose
+source has genuinely diverged from what crates.io received, when the
+divergence is a workspace-inherited dependency version.** Severity:
+**Medium** — this is the exact gate `agents/release.md` calls "the gate
+that matters most" (`O10.11`), and it has a real blind spot, not a
+hypothetical one.
+
+The script's own header comment explains why it excludes `Cargo.toml` from
+its packaged-file diff: "cargo normalizes this; the verbatim manifest is
+preserved beside it as `Cargo.toml.orig`, which IS compared, so manifest
+changes are still caught." That reasoning holds for a dependency declared
+directly in a member crate's own `Cargo.toml` — but not for one declared
+`sha2.workspace = true`, whose *resolved* version lives only in the
+workspace root's `[workspace.dependencies]` table, a file that is never
+itself part of any member crate's published tarball. `Cargo.toml.orig`
+preserves the member's own manifest exactly as written — still
+`sha2.workspace = true` — regardless of what the workspace root's
+requirement says today or said at publish time. The normalized `Cargo.toml`
+that `cargo package` actually generates (and that crates.io serves to
+consumers) *does* flatten `.workspace = true` to a literal version, but
+that file is precisely the one the script excludes.
+
+**Found while bumping `sha2` and `sha3` in `fhir-postgresql` and
+`fhir-sqlite`** (closing the underlying dependency-update work Dependabot
+had proposed as three overlapping PRs). After changing the workspace-root
+requirement from `sha2 = "0.10"` to `sha2 = "0.11"`,
+`scripts/check-published-match.sh` reported `34 matched, 0 mismatched` —
+vacuously true only in the sense that it compared the wrong file. The
+crates.io API, queried directly, told a different story:
+`GET /api/v1/crates/fhir-postgresql-map/0.6.0/dependencies` returns
+`sha2 ^0.10` for the version already published — a requirement the local
+tree's new `sha2 = "0.11"` no longer satisfies. Confirmed for all six
+affected member crates (`fhir-postgresql-map`/`-gen`/`-store`,
+`fhir-sqlite-map`/`-gen`/`-store`) the same way, all published at `0.6.0`
+per the API's `max_version`, none of them flagged by the script.
+
+**What this means in practice: the script's "ok" is not proof for any
+crate whose dependency versions are declared via workspace inheritance —
+which, in this repository, is all of them** (every port's `map`/`gen`/
+`store` crates declare their crates.io dependencies as `foo.workspace =
+true`, per `X15.1`'s shared-core convention). A change to a workspace-root
+`[workspace.dependencies]` version can silently pass this gate while
+genuinely violating `O10.11`.
+
+**Not fixed here, worked around instead:** the six affected crates plus
+`fhir-loco` (whose `Cargo.lock` also needed regenerating as a companion,
+for an unrelated but compounding reason — see the commit) were bumped to a
+patch version (`0.6.1`/`0.3.1`) regardless of what the gate reported,
+restoring genuine compliance without relying on the tool to confirm it
+(commit `ca34cdf`). A correct fix needs the script to additionally compare
+each crate's *normalized* `Cargo.toml` — the one `cargo package` actually
+produces, with `.workspace = true` resolved — while still tolerating
+cargo's own cosmetic normalization (key reordering, quoting) so the fix
+doesn't reintroduce the false positives `Cargo.toml.orig` was chosen to
+avoid in the first place. That is real design work, not a one-line patch,
+and is left open rather than attempted under time pressure.
+
+*Found investigating a routine dependency bump, by cross-checking the
+gate's "ok" against the crates.io API directly rather than trusting it —
+exactly the discipline `agents/release.md` asks for and this finding
+exists because, this once, it was actually applied.*
 
 ---
 
