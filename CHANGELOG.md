@@ -22,6 +22,33 @@ onward; everything before that date is unsigned and stays that way
 History before 2026-08-01 belongs to the separate projects this monorepo was
 assembled from, and lives in the per-family changelogs above.
 
+## 2026-08-29 — F-97: the append-only trigger and boolean CHECK, live-tested
+
+Closing F-51 said it plainly rather than leaving it implicit: two behaviours
+this port relies on were verified only by hand, or only by a unit test
+checking generated SQL *text*, never against a real engine. Both are the
+exact class of defect a text check cannot catch -- `M14.29a` already lived
+through this once, when the trigger's first version read as correct and
+silently let a forbidden DELETE through, because `NVL('', 'x') != 'y'` is
+NULL, not TRUE, once Oracle folds the empty string to NULL. Checked, not
+assumed, that neither behaviour was covered elsewhere: `fhir-oracle-store`'s
+own live suite has no mention of either M14.29 or M14.8.
+
+`crates/fhir-oracle-map/tests/oracle_constraints.rs`: a live `UPDATE` and an
+undeclared `DELETE` against a seeded row, asserting the exact `ORA-20001`/
+`ORA-20002` errors rather than merely `is_err()` -- the precise distinction
+M14.29a's bug hid -- with the declared-erasure escape hatch confirmed still
+to work; and a live `INSERT` of `2` into a `NUMBER(1) CHECK (... IN (0,1))`
+column asserting exactly `ORA-02290`. Both constraints are generic enough to
+test on a minimal synthetic table rather than the full generated schema.
+
+Found and fixed in the same pass, not shipped flaky: the first version gave
+both `#[test]` functions the same throwaway Oracle user, on the wrong
+assumption that libtest runs one binary's tests sequentially. It does not by
+default -- reproduced 3 of 3 failures with a shared user, 0 of many after
+splitting each test onto its own (`TRIGTEST`, `BOOLTEST`). Wired into
+`fhir-oracle-ci.yml` beside F-51's DDL-install step.
+
 ## 2026-08-29 — F-51 fixed: fhir-oracle's DDL install is now a live test
 
 `fhir-oracle`'s Schema-level claim (`C0.8`, `C0.9`) rested on a hand-run

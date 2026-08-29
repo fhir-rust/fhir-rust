@@ -133,6 +133,12 @@ jobs:
       # regression is found before spending time creating them.
       - name: Generated DDL installs on a live server (fhir-oracle-map)
         run: cargo test --release -p fhir-oracle-map --test oracle_ddl -- --nocapture
+      # F-97: does the append-only trigger actually refuse a forbidden
+      # UPDATE/DELETE, and does the boolean CHECK actually reject 2 — not
+      # just look correct in the generated SQL text. Provisions its own
+      # TRIGTEST/BOOLTEST users, same reasoning as the step above.
+      - name: Append-only trigger and boolean CHECK enforce live (fhir-oracle-map)
+        run: cargo test --release -p fhir-oracle-map --test oracle_constraints -- --nocapture
       # The uppercase users mirror scripts/db.sh's post_ready: unquoted
       # Oracle identifiers resolve uppercase, and a lowercase-quoted user
       # whose session identity still resolved uppercase was a live bug —

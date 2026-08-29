@@ -194,6 +194,7 @@ type-/system-level history, multi-port wiring, is tracked in that crate's
 | [F-94](#f-94) | Low | Dependabot alerts on `main` surfaced `GHSA-rhfx-m35p-ff5j` (`lru` `IterMut` violates Stacked Borrows, an internal-pointer soundness defect) reaching `fhir-mysql-store` and `fhir-mariadb-store` as normal dependencies via `mysql_async 0.34.2`'s pinned `lru = "^0.12"`. Separately, `fhir-mysql/deny.toml` and `fhir-mariadb/deny.toml` carried an `ignore` for `RUSTSEC-2025-0134` (`rustls-pemfile` unmaintained) that `cargo deny` was silently no longer able to match — the crate it excused had already left the dependency tree, unnoticed, so the exception was dead and nobody knew | **fixed** 2026-08-27 — `mysql_async` bumped `0.34` → `0.37` in both ports (the minimal version whose own manifest requires `lru ^0.18`, clearing the advisory; `0.35`/`0.36` still required `^0.12`/`^0.14` and would not have). Verified with `cargo check --all-targets --locked` and the offline unit suite (50 tests, both ports) before the bump was accepted, not after; `cargo deny check advisories` reports clean with no `advisory-not-detected` warning. The dead `RUSTSEC-2025-0134` ignore was removed rather than left stale, with a dated comment explaining why the entry disappeared rather than leaving future silence. Unrelated to **F-67**: that finding is `fhir-mssql`'s `rustls-webpki` chain via `tiberius`, a different port and a different dependency — the risk there was formally accepted 2026-08-28, not chased further |
 | [F-95](#f-95) | **High** | **F-94's own fix broke hosted CI on both ports it touched, and the verification that shipped it did not catch it.** The `mysql_async 0.34 -> 0.37` bump was verified with `cargo check --all-targets --locked` and `cargo test --locked --lib --bins` — unit tests only. `--lib --bins` excludes everything under `tests/`, which is exactly where `ssl_live.rs` lives, and that file only runs at all inside the live-database CI job (it self-skips without a DSN). The first hosted run after the push found it: `tls_is_configurable_and_verification_is_not_a_no_op` panicked in both `fhir-mysql-store` and `fhir-mariadb-store` — `rustls::crypto::CryptoProvider::get_default()` finding none installed, because `mysql_async 0.37` split its `rustls-tls` feature from its crypto backend (`aws-lc-rs` or `ring`), where `0.34`'s did not need the split | **fixed** 2026-08-28 — `ring` added to both ports' `mysql_async` feature list (pure Rust, no C/cmake toolchain, matching the existing comment's stated reason for choosing rustls over native-tls in the first place). Verified by reproducing the exact panic live against each port's own dev container before the fix, and its disappearance after — not inferred from the diff. Then the full store suite re-run for both, all binaries, no truncation: `mysql_store`/`concurrency`/`redaction`/`roundtrip_types`/`ssl_default`/`ssl_live`/`upgrade`, 44 tests, 0 failed. `cargo deny check advisories` still clean. **The verification-scope lesson, stated for next time:** a dependency bump's own tests are not enough evidence when the crate ships integration tests that need infrastructure the bump's own CI job doesn't provide — `cargo test --workspace` unit-only is what F-90/F-91/F-92's "does it actually run" lesson was already about, applied here to a different kind of change and missed anyway |
 | [F-96](#f-96) | Medium | **Unrelated to F-94/F-95, found the same audit pass**: `fhir-postgresql` and `fhir-loco` (which depends on it) both failed hosted `cargo deny` with `error[yanked]: detected yanked crate` on `chacha20 0.10.1` — pulled in via `rand 0.10.2 -> postgres-protocol -> tokio-postgres`, a chain neither this session nor **F-94** touched. crates.io yanked `0.10.1` upstream after both lockfiles had already pinned it; `yanked = "deny"` in each port's `deny.toml` (the same policy line **F-94** relies on) is what caught it | **fixed** 2026-08-28 — `cargo update -p chacha20` in both workspaces (`0.10.1` → `0.10.2`, the fix `cargo deny`'s own error message named). Verified: `cargo deny check advisories` clean in both, `cargo check --all-targets --locked` green in both |
+| [F-97](#f-97) | Medium | Surfaced closing **F-51**: the append-only trigger's `M3.17`/`M3.18` enforcement (`M14.29`, already known to have failed open once — `M14.29a`) and the `Bool` CHECK's `M14.8` enforcement were verified only by SQL-text unit tests, never against a live server. A CHECK clause that parses but never fires would pass the existing unit test the same way the trigger's `M14.29a` bug passed a read-through | **fixed** 2026-08-29 — `tests/oracle_constraints.rs` (`fhir-oracle-map`): a live `UPDATE`/undeclared `DELETE` against a seeded row, asserting the exact `ORA-20001`/`ORA-20002` errors (not merely `is_err()`, which is the distinction `M14.29a`'s own bug hid), the declared-erasure escape hatch confirmed to still work, and a live `INSERT` of `2` into a `NUMBER(1) CHECK (... IN (0,1))` column asserting `ORA-02290`. **Found and fixed in the same pass, not shipped and left flaky:** libtest runs a binary's `#[test]` functions concurrently by default, and the first version had both tests provision the same throwaway user — reproduced 3 of 3 failures before splitting each test onto its own user (`TRIGTEST`, `BOOLTEST`), 0 of many after. Wired into `fhir-oracle-ci.yml` beside **F-51**'s DDL-install step |
 | [F-89](#f-89) | Medium | The mysql/mariadb DDL test harness was unportable and **masked real errors**: it passed MariaDB's `--skip-ssl-verify-server-cert` to whatever client exists (Oracle's mysql 8 client rejects it), assumed a utf8mb4 default charset (the runner's client defaults utf8mb3 → ERROR 1253 on the collation probe), and on any early client exit reported the stdin `Broken pipe` instead of reading the client's stderr — hiding whatever the real failure was | **fixed** 2026-08-10 — client-flavor-gated TLS flag, explicit `--default-character-set=utf8mb4`, and EPIPE falls through to collect stderr, so the next failure names itself |
 
 ## What remains, and why
@@ -3217,7 +3218,7 @@ CHECK actually *rejecting* `2` (`M14.8`) — are untouched by this fix. This
 test counts that triggers exist; it does not exercise what they do. Checked,
 not assumed: neither behaviour appears anywhere in `fhir-oracle-store`'s own
 live suite either — `grep -rl "M14.29\|M14.8" fhir-oracle-store/tests/`
-finds nothing. Both are genuinely untested and worth their own finding.
+finds nothing. **Filed and fixed the same day as F-97.**
 
 ---
 
@@ -5561,6 +5562,61 @@ rather than the one that actually introduced the pin.
 (`0.10.1` → `0.10.2`). Verified `cargo deny --all-features check advisories`
 clean in both afterward, and `cargo check --all-targets --locked` green in
 both.
+
+## F-97
+
+**F-51**'s own closure said it plainly rather than leaving it implicit: two
+behaviours this port relies on were verified only by hand, or only by a
+unit test checking the *shape* of generated SQL text, never by exercising
+the real engine. Both are exactly the class of defect a text-shape check
+cannot catch — `M14.29a` already lived through this once: the trigger's
+first version "was written, installed, and observed letting an ordinary
+DELETE through with no error," because `NVL(x, '') != 'y'` evaluates to
+NULL rather than TRUE when Oracle folds the empty string to NULL, and the
+`ELSIF` simply never fired. It read as correct. A `CHECK` clause that
+parses but never actually constrains anything would pass `ddl.rs`'s own
+unit test (which asserts the clause's text is present) the identical way.
+
+Checked before writing a test, not assumed: neither behaviour appeared
+anywhere in `fhir-oracle-store`'s live suite either (`grep -rl
+"M14.29\|M14.8" fhir-oracle-store/tests/` — nothing). Both were genuinely,
+completely untested against a real server.
+
+**Fixed** with `crates/fhir-oracle-map/tests/oracle_constraints.rs`, live
+against `gvenzl/oracle-free`, reusing `oracle_ddl.rs`'s admin-connection
+pattern (`M14.5`: provisioning a fresh schema means provisioning a fresh
+user). Both constraints are generic enough not to need the full generated
+Patient schema — `append_only_triggers` takes only a schema and table name,
+and the boolean CHECK only needs one `Bool` column — so each test builds a
+minimal synthetic table and applies the exact PL/SQL or DDL the generator
+emits, isolated from shredding concerns this finding was never about.
+
+- **The trigger test** seeds one row, then asserts an `UPDATE` is rejected
+  with exactly `ORA-20001` and an undeclared `DELETE` with exactly
+  `ORA-20002` — not merely `is_err()`, which is precisely the distinction
+  `M14.29a`'s bug hid: a silently-succeeding forbidden DELETE and a
+  correctly-rejected one both "work" if only the boolean is checked.
+  Confirms the row survives the rejected DELETE, then confirms the
+  declared-erasure escape hatch (`DBMS_APPLICATION_INFO.SET_CLIENT_INFO`,
+  set and cleared in the same transaction as `M14.29` requires) still
+  removes it.
+- **The CHECK test** inserts `0` and `1` (must succeed), then `2` (must fail
+  with exactly `ORA-02290`, Oracle's constraint-violation code) into a
+  column built with the same `CHECK ("col" IN (0, 1))` clause
+  `create_table` emits.
+
+**Found and fixed in the same pass, not shipped with a known flaw:** the
+first version of this test file gave both `#[test]` functions the same
+throwaway user, on the assumption tests in one binary run one at a time.
+They do not — libtest parallelizes within a binary by default — and both
+tests provisioning (drop-then-create) the same Oracle user at once is
+exactly the "flaky live gate is worse than a failing one" trap
+`mssql_ddl.rs`'s own history already warns about. Reproduced deterministically,
+3 of 3 runs failing the same way, before splitting each test onto its own
+user (`TRIGTEST`, `BOOLTEST`); 0 failures in 5 repeated runs after, plus the
+skip and fail-loud paths both re-confirmed against a genuinely unreachable
+connect string, `--release`, and `cargo clippy -- -D warnings` clean.
+Wired into `fhir-oracle-ci.yml` beside **F-51**'s DDL-install step.
 
 ---
 
