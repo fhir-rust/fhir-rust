@@ -9,6 +9,19 @@ This file did not exist before 2026-08-29. This crate is the FHIR® REST
 surface — it inherited the name `fhir-store` briefly before being renamed
 (**F-37**), and had no changelog under either name.
 
+## 0.3.1 — 2026-08-29
+
+Companion release for `fhir-sqlite` 0.6.1 and `fhir-postgresql` 0.6.1
+(`sha2`/`sha3` dependency bumps): this crate's own `Cargo.lock` needed
+regenerating too, since it embeds `fhir-sqlite-store`/`-map` and
+`fhir-postgresql-store`/`-map` as path dependencies and therefore shares
+their build graph. Dependabot cannot see this — its updates are scoped to
+one directory and it has no way to know a *sibling* workspace's lockfile
+also needs regenerating. `cargo check --locked` now passes (it failed
+before this release, exactly the gap this patch closes); the request
+suite (in-process against `fhir-sqlite`, no server) re-run, all green. No
+source change beyond the regenerated lockfile.
+
 ## 0.3.0 — 2026-08-29
 
 **MSRV declared for the first time: 1.96.** `RV1.4` was unmet here until now

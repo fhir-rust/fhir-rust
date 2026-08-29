@@ -12,6 +12,23 @@
 > releases, and because a changelog is a historical record. What is specific to
 > this port is stated where it differs.
 
+## 0.6.1 — 2026-08-29
+
+`sha2` 0.10 → 0.11, `sha3` 0.10 → 0.12 (dependencies of the audit hash
+chain, M3.16a). Dependabot proposed these; merged manually as one clean,
+verified change rather than three overlapping auto-generated PRs, since
+this crate's `sha2`/`sha3` requirement lives in the workspace root and one
+PR (`sha2` bump) and another (`sha3` bump) both touched the same two
+files' unrelated lines, and a third (targeting this crate alone)
+duplicated part of the first. `cargo check`/`clippy`/`fmt` clean; the full
+corpus suite (no server needed) re-run, all green. No API change. Released
+as a patch rather than bundled into 0.6.0 because that version was already
+published — `O10.11` requires a published version to match its source, and
+`check-published-match.sh` cannot see this specific kind of change (a
+workspace-inherited dependency requirement is invisible to its
+`Cargo.toml.orig`-only comparison — a gap worth fixing separately, not
+something this release papers over).
+
 ## 0.6.0 — 2026-08-29
 
 **MSRV raised 1.90 → 1.96** (spec `spec/rust-msrv-n-minus-2/`, `RV1.1`
