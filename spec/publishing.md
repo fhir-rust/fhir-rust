@@ -246,10 +246,11 @@ That is publication *order*, not a manifest defect: `fhir-sqlite-map` and
 `fhir-sqlite-store` have to reach the registry first. The manifest itself is
 clean.
 
-No `rust-version` was added. The six ports promise `1.90` and CI builds on
-exactly that toolchain; this crate's floor against loco-rs and axum has never
-been measured, and [`agents/release.md`](../agents/release.md#msrv) is explicit
-that an unverified MSRV is a guess. Measure it before promising one.
+No `rust-version` was added at the time. That gap (`RV1.4` unmet) closed
+2026-08-29: this crate now declares `rust-version = "1.96"`, measured against
+loco-rs and axum with `cargo +1.96 check --all-targets --locked` before being
+written down, per [`agents/release.md`](../agents/release.md#msrv) and
+`RV1.5`. See `spec/rust-msrv-n-minus-2/`.
 
 ### P-4 — `fhir-derive-macros` has diverged from its published 1.1.0
 

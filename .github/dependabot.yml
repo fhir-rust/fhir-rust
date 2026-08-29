@@ -12,7 +12,7 @@
 # hour with default limits opened 47 PRs, many of them major bumps (syn 3,
 # reqwest 0.13, rusqlite 0.40), each triggering a port's full live-database
 # CI — and this repository upgrades deliberately, with verification, under
-# an MSRV floor (rust-msrv-n-minus-3). With the limit at 0 dependabot still
+# an MSRV floor (rust-msrv-n-minus-2). With the limit at 0 dependabot still
 # watches every lockfile and opens PRs for SECURITY advisories (automated
 # security fixes are enabled repository-side), and `fhir-security.yml`
 # remains the gate that actually fails the build on a known advisory.

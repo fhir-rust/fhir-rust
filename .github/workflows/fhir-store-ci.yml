@@ -53,6 +53,32 @@ jobs:
       - run: cargo clippy --all-targets -- -D warnings
       - run: cargo test
 
+  msrv:
+    name: Minimum supported Rust version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # `rust-version` in Cargo.toml is a promise to downstream users. Without
+      # a job that builds on exactly that toolchain it is only a claim, and it
+      # breaks silently the first time anyone uses a newer language feature.
+      # This crate declared none at all until 2026-08-29 (RV1.4 unmet, spec
+      # spec/rust-msrv-n-minus-2/) — this job is what RV1.5 requires the
+      # moment a value exists.
+      - name: Read rust-version from Cargo.toml
+        id: msrv
+        run: |
+          v=$(grep -m1 '^rust-version' Cargo.toml | sed 's/.*"\(.*\)".*/\1/')
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          echo "MSRV is $v"
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ steps.msrv.outputs.version }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: fhir-store
+          key: msrv-${{ steps.msrv.outputs.version }}
+      - run: cargo check --workspace --all-targets --locked
+
   supply-chain:
     name: cargo-deny (O10.10)
     runs-on: ubuntu-latest

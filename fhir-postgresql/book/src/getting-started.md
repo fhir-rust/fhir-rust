@@ -5,7 +5,7 @@
 [introduction](introduction.md). Everything below is Rust, called from your
 own `main.rs` or service.
 
-You need PostgreSQL 18 and Rust 1.90+.
+You need PostgreSQL 18 and Rust 1.96+.
 
 ## Add the dependencies
 

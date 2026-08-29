@@ -10,7 +10,7 @@ specifications are in [`spec/`](spec/).
 
 ## Prerequisites
 
-- Rust **1.88** or newer (the crate uses edition 2024; MSRV is pinned via
+- Rust **1.96** or newer (the crate uses edition 2024; MSRV is pinned via
   `rust-version` in `Cargo.toml`).
 - Install the standard components: `rustup component add clippy rustfmt`.
 

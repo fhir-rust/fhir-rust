@@ -5,6 +5,14 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+**MSRV raised 1.88 → 1.96** (spec `spec/rust-msrv-n-minus-2/`, `RV1.1`
+amended from N-3 to N-2, 2026-08-29). Verified with `cargo +1.96 check
+--all-targets --features "r2 r3 r4 r4b r5 r6 xml client precise-decimal" --locked`
+before being declared, per `RV1.5`. Applies to `fhir`, `fhir-core`, and every
+`fhir-r*` crate (14 `Cargo.toml` files in this family).
+
 ## 4.1.0 — 2026-08-22
 
 - `serde_json` gains the `float_roundtrip` feature alongside

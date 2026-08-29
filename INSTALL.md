@@ -13,7 +13,7 @@ compiled into the map crates.
 
 | | |
 | --- | --- |
-| Rust | **1.90** for the database ports, `fhir-store` and `fhir-loco`; **1.88** for the model crate. The policy is current-minus-three (`RV1.1`) |
+| Rust | **1.96**, every crate in the repository alike. The policy is current-minus-two (`RV1.1`) |
 | Edition | 2024 |
 | A database | only for the ports, and only the one you pick — see the table below |
 

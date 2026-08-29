@@ -16,7 +16,7 @@ categories = ["database", "science", "data-structures"]
 edition = "2024"
 license = "MIT OR Apache-2.0 OR BSD-3-Clause OR GPL-2.0-only OR GPL-3.0-only"
 repository = "https://github.com/fhir-rust/fhir-rust/"
-rust-version = "1.90"
+rust-version = "1.96"
 
 [workspace.dependencies]
 fhir-oracle-map = { path = "crates/fhir-oracle-map", version = "0.5.2" }

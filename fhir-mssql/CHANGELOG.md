@@ -24,6 +24,12 @@
 > matrix](../spec/databases/conformance-matrix.md) and this port's own
 > `tasks.md` — not in any entry below, including *Unreleased*.
 
+## Unreleased
+
+**MSRV raised 1.90 → 1.96** (spec `spec/rust-msrv-n-minus-2/`, `RV1.1`
+amended from N-3 to N-2, 2026-08-29). Verified with `cargo +1.96 check
+--all-targets --workspace --locked` before being declared, per `RV1.5`.
+
 ## 0.4.0 — tamper evidence that survives the database (2026-07-27)
 
 **Breaking:** `ChainBreak` gained an `algorithm` field, so a break is

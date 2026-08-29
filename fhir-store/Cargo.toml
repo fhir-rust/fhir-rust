@@ -8,9 +8,13 @@ readme = "README.md"
 repository = "https://github.com/fhir-rust/fhir-rust/"
 keywords = ["fhir", "healthcare", "hl7", "audit", "medical"]
 categories = ["database", "science", "data-structures"]
-# No `rust-version` yet: the six ports promise 1.90 and CI builds on exactly
-# that toolchain, but this crate's own floor has not been measured, and
-# agents/release.md is explicit that an unverified MSRV is a guess.
+# `RV1.4` was unmet here until 2026-08-29: the six ports promised 1.90 and CI
+# built on exactly that toolchain, but this crate's own floor had never been
+# measured, and agents/release.md is explicit that an unverified MSRV is a
+# guess. Measured against 1.96 (the current RV1.1 ceiling, spec
+# spec/rust-msrv-n-minus-2/) with `cargo +1.96 check --all-targets --locked`
+# before being written down, per RV1.5.
+rust-version = "1.96"
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }

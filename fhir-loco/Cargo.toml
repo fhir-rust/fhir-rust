@@ -10,15 +10,18 @@ readme = "README.md"
 repository = "https://github.com/fhir-rust/fhir-rust/"
 keywords = ["fhir", "healthcare", "hl7", "rest", "medical"]
 categories = ["web-programming::http-server", "science", "database"]
-# No `rust-version` yet, deliberately. The six ports promise 1.90 and CI builds
-# on exactly that toolchain; this crate's floor has never been measured, and
-# `agents/release.md` is explicit that an unverified MSRV is a guess. Measure it
-# against loco-rs and axum before promising one.
+# `RV1.4` was unmet here until 2026-08-29: the six ports promised 1.90 and CI
+# built on exactly that toolchain; this crate's floor had never been
+# measured, and `agents/release.md` is explicit that an unverified MSRV is a
+# guess. Measured against loco-rs and axum with `cargo +1.96 check
+# --all-targets --locked` before being written down, per RV1.5.
+rust-version = "1.96"
 default-run = "fhir_loco-cli"
 
-# Publishing is blocked on its dependencies, not on this manifest: the two
-# fhir-sqlite crates below must reach crates.io first (spec/publishing.md P-3).
-# They now carry `version` alongside `path`, which is what Cargo requires at
+# Publishing was blocked on its dependencies until 2026-08-22: the two
+# fhir-sqlite crates below had to reach crates.io first (spec/publishing.md
+# P-3, resolved). All 34 crates are published now — this crate included.
+# They carry `version` alongside `path`, which is what Cargo requires at
 # publish time — path wins locally, the registry version is what ships.
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

@@ -189,8 +189,9 @@ cd fhir-postgresql
 scripts/db.sh up && scripts/db.sh corpus && scripts/db.sh test
 ```
 
-MSRV is **current minus three** (`RV1.1`) — 1.90 for the ports, 1.88 for the
-model crate — and CI verifies it on exactly that toolchain.
+MSRV is **current minus two** (`RV1.1`) — 1.96 across every crate in the
+repository, model and ports alike — and CI verifies it on exactly that
+toolchain.
 
 ## Scope discipline
 

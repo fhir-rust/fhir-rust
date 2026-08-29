@@ -227,7 +227,7 @@ jobs:
       - run: cargo clippy --all-targets --no-default-features --features "r3 xml client" -- -D warnings
 
   msrv:
-    name: MSRV (1.88)
+    name: MSRV (1.96)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -237,7 +237,7 @@ jobs:
             /usr/local/.ghcup /usr/local/share/boost /opt/hostedtoolcache/CodeQL \
             /opt/az "$AGENT_TOOLSDIRECTORY" 2>/dev/null || true
           df -h /
-      - uses: dtolnay/rust-toolchain@1.88.0
+      - uses: dtolnay/rust-toolchain@1.96.0
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: fhir

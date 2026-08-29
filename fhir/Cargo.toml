@@ -10,7 +10,7 @@ repository = "https://github.com/fhir-rust/fhir-rust/"
 license = "MIT OR Apache-2.0 OR BSD-3-Clause OR GPL-2.0-only OR GPL-3.0-only"
 keywords = ["medical", "healthcare", "hospital", "patient", "health"]
 categories = ["api-bindings", "data-structures", "science"]
-rust-version = "1.88"
+rust-version = "1.96"
 # What a consumer compiles, and nothing else (spec R13.15). `llms.txt` is
 # 22 MB of generated transcript; shipping it would put that in every
 # downstream `cargo vendor`, CI cache, and docs.rs build. It lives in the

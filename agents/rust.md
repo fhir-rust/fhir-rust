@@ -106,7 +106,7 @@ cargo clippy --all-targets -- -D warnings
 ```
 
 Both gate CI on both forges. MSRV is `rust-version` in the workspace
-`Cargo.toml` (currently 1.90) and is a promise to downstream users — CI builds
+`Cargo.toml` (currently 1.96) and is a promise to downstream users — CI builds
 on exactly that toolchain, because an unverified MSRV is a guess.
 
 ## Dependencies

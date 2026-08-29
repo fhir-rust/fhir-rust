@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+**MSRV raised 1.90 → 1.96** (spec `spec/rust-msrv-n-minus-2/`, `RV1.1`
+amended from N-3 to N-2, 2026-08-29). Verified with `cargo +1.96 check
+--all-targets --workspace --locked` before being declared, per `RV1.5`.
+
 **Breaking — TLS to the database now verifies by default.** `SslPolicy`'s
 default moved from `Prefer` to `Require`, so a connection with no `PGSSLMODE`
 set validates the server certificate and hostname instead of accepting whatever

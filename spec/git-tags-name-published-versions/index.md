@@ -5,7 +5,7 @@ model, persistence core, databases, and HTTP surface alike — because what a
 tag means is a property of the release surface, not of one family. It is the
 third cross-family document in `spec/`, alongside the [agents directory
 name](../agents-directory-name-is-lowercase/index.md) (`AG1`) and the [MSRV
-rule](../rust-msrv-n-minus-3/index.md) (`RV1`).
+rule](../rust-msrv-n-minus-2/index.md) (`RV1`).
 
 Requirement ids use the prefix `TG1`. Normative language is `C0.1`; ids are
 permanent under `C0.5`.

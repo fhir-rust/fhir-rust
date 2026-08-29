@@ -26,7 +26,7 @@ cargo clippy --all-targets --features "r3 r4 xml client" -- -D warnings
 
 Current baseline with `--features "r3 r4 xml client"`: 1443 unit tests + 1354
 doctests pass, 0 clippy warnings. A change that reduces this is a regression.
-CI also enforces `cargo test --doc`, `doc -D warnings`, the MSRV (1.88), the
+CI also enforces `cargo test --doc`, `doc -D warnings`, the MSRV (1.96), the
 `client`/`xml`/`precise-decimal` feature builds, each release on its own
 (`--no-default-features --features r3`), and the mdBook build.
 

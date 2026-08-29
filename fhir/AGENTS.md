@@ -155,7 +155,7 @@ the `release-crate-doctests` job.
 This crate is currently 100% green. Do not regress it. If you touch the model,
 re-run the full gate **for every release you touched** — only `r5` is on by
 default, so a plain `cargo test` will not notice an R3 or R4 regression.
-CI additionally enforces `doc -D warnings`, the MSRV (1.88), the feature builds
+CI additionally enforces `doc -D warnings`, the MSRV (1.96), the feature builds
 (including each release on its own, `--no-default-features --features r3`), the
 mdBook build, and the proc-macro publish dry-run.
 
