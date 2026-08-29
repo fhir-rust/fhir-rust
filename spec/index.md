@@ -86,15 +86,17 @@ release surface as a whole, as is the layout it is released from; precedence
 rule 4 above is about family-to-family bindings and does not exempt a family
 from `AG1.x` or `RV1.x`.
 
-Three further documents at this level bind the repository as a process rather
+Four further documents at this level bind the repository as a process rather
 than any family's code, and carry prose rules instead of requirement ids:
 [`professionalization/`](professionalization/index.md) (what "professional"
 means here — plans, special files, CI-enforced claims, trademark discipline,
 PHI candour, conduct, family harmonization, gated outreach),
 [`hl7-trademarks-fair-use/`](hl7-trademarks-fair-use/index.md) (the HL7®
-word-mark terms and the check that enforces them), and
+word-mark terms and the check that enforces them),
 [`special-files-for-public-repos/`](special-files-for-public-repos/index.md)
-(the canonical root-document list).
+(the canonical root-document list), and
+[`dependabot/`](dependabot/index.md) (repo-level Dependabot security
+updates and `.github/dependabot.yml`'s scheduled-PR posture).
 
 ### Databases — `spec/databases/`
 

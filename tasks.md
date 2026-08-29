@@ -122,10 +122,17 @@ Grouped by `plan.md` workstream. Order within a group is priority order.
       zero — its first hour on default limits opened 47 major-bump PRs,
       each triggering a port's full live-database CI; all 47 closed with
       the reasoning, which also lives in the file (security advisories
-      still open PRs; `fhir-security.yml` fails the build on any known
-      advisory). Bug-report and wrong-claim templates carry the
-      never-paste-patient-data rule and a stated response expectation;
-      SECURITY.md names the Security tab as a private channel alongside
+      still open PRs regardless of the cap; `fhir-security.yml` fails the
+      build on any known advisory).
+      **Posture changed 2026-08-29 per `spec/dependabot/`:** the zero cap
+      is lifted — each ecosystem now uses GitHub's default limit (5 open
+      PRs) per directory instead. Repo-level alerts and automated security
+      fixes were already on; re-verified via the API the same day
+      (`vulnerability-alerts` 204, `automated-security-fixes` `enabled:
+      true`) before writing this down. Bug-report and wrong-claim templates
+      carry the never-paste-patient-data rule and a stated response
+      expectation; SECURITY.md names the Security tab as a private channel
+      alongside
       email.
 
 ### Compliance — licensing and trademarks

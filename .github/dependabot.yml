@@ -1,22 +1,25 @@
 # Dependabot configuration. Alerts and automated security fixes are
 # repository settings, enabled 2026-08-26 alongside private vulnerability
 # reporting and secret scanning; this file registers every lockfile so those
-# have full coverage, while keeping routine version-update PRs off.
+# have full coverage.
 #
 # One cargo entry per workspace: this monorepo is nine separate Cargo
 # workspaces (see AGENTS.md), and dependabot scopes cargo to a directory's
 # own lockfile.
 #
-# `open-pull-requests-limit: 0` on every cargo entry, deliberately: version
-# updates here are security posture, not a treadmill. This file's first
-# hour with default limits opened 47 PRs, many of them major bumps (syn 3,
-# reqwest 0.13, rusqlite 0.40), each triggering a port's full live-database
-# CI — and this repository upgrades deliberately, with verification, under
-# an MSRV floor (rust-msrv-n-minus-2). With the limit at 0 dependabot still
-# watches every lockfile and opens PRs for SECURITY advisories (automated
-# security fixes are enabled repository-side), and `fhir-security.yml`
-# remains the gate that actually fails the build on a known advisory.
-# Raising a limit is one line here when the posture changes.
+# Scheduled version-update PRs were off (`open-pull-requests-limit: 0`)
+# from when this file was created until 2026-08-29 — the first hour with
+# default limits opened 47 PRs, many of them major bumps (syn 3, reqwest
+# 0.13, rusqlite 0.40), each triggering a port's full live-database CI, and
+# this repository upgrades deliberately, with verification, under an MSRV
+# floor (rust-msrv-n-minus-2). Re-enabled per spec/dependabot/ (owner
+# decision): each ecosystem now uses GitHub's default cap (5 open PRs) per
+# directory rather than an explicit override, so a flood is bounded per
+# workspace even with nine of them. Security-advisory PRs were never
+# affected by the limit either way (automated security fixes are enabled
+# repository-side, independent of `open-pull-requests-limit`), and
+# `fhir-security.yml` remains the gate that actually fails the build on a
+# known advisory.
 version: 2
 updates:
   - package-ecosystem: github-actions
@@ -26,55 +29,46 @@ updates:
       day: monday
   - package-ecosystem: cargo
     directory: /fhir
-    open-pull-requests-limit: 0
     schedule:
       interval: weekly
       day: monday
   - package-ecosystem: cargo
     directory: /fhir-store
-    open-pull-requests-limit: 0
     schedule:
       interval: weekly
       day: monday
   - package-ecosystem: cargo
     directory: /fhir-loco
-    open-pull-requests-limit: 0
     schedule:
       interval: weekly
       day: monday
   - package-ecosystem: cargo
     directory: /fhir-postgresql
-    open-pull-requests-limit: 0
     schedule:
       interval: weekly
       day: monday
   - package-ecosystem: cargo
     directory: /fhir-sqlite
-    open-pull-requests-limit: 0
     schedule:
       interval: weekly
       day: monday
   - package-ecosystem: cargo
     directory: /fhir-mysql
-    open-pull-requests-limit: 0
     schedule:
       interval: weekly
       day: monday
   - package-ecosystem: cargo
     directory: /fhir-mariadb
-    open-pull-requests-limit: 0
     schedule:
       interval: weekly
       day: monday
   - package-ecosystem: cargo
     directory: /fhir-mssql
-    open-pull-requests-limit: 0
     schedule:
       interval: weekly
       day: monday
   - package-ecosystem: cargo
     directory: /fhir-oracle
-    open-pull-requests-limit: 0
     schedule:
       interval: weekly
       day: monday
