@@ -8,6 +8,24 @@ Press and analyst enquiries: see [Press contacts](#press-contacts) below.
 
 ---
 
+## 2026-08-29 — the N-2 MSRV release, and F-67 closed
+
+All 34 crates republished in one pass, byte-verified against the registry
+(`check-published-match.sh`: 34 matched, 0 mismatched). The MSRV policy
+tightened from current-minus-three to current-minus-two — `rust-version`
+raised to 1.96 everywhere, including `fhir-store` and `fhir-loco`, which
+had never declared one before. `fhir-mssql` carries a second, unrelated
+change in the same release: its SQL Server driver switched from `tiberius`
+to `mssql`, a maintained fork created specifically to carry forward the
+TLS advisory fixes tiberius's last release never shipped — clearing the
+audit register's last open finding, **F-67**, and leaving the register with
+no open row at all for the first time. Versions: ports 0.6.0,
+`fhir-store`/`fhir-loco` 0.3.0, `fhir` and `fhir-r2`–`r6` 4.2.0, `fhir-core`
+3.3.0, `fhir-derive-macros` 1.6.0, reservations 0.0.4; each unit tagged
+and released as before.
+
+---
+
 ## 2026-08-26 — the description-disclaimer release (second of the day)
 
 All 34 crates republished a second time the same day, byte-verified against
