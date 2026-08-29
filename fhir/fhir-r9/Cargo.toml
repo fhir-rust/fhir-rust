@@ -1,7 +1,7 @@
 [package]
 name = "fhir-r9"
 description = "Reserved for a future FHIR® Release 9 data model. No such specification exists yet; this crate contains no model. HL7®, and FHIR® are the registered trademarks of Health Level Seven International and their use of these trademarks does not constitute an endorsement by HL7. This project is an independent work."
-version = "0.0.3"
+version = "0.0.4"
 edition = "2024"
 rust-version = "1.96"
 license = "MIT OR Apache-2.0 OR BSD-3-Clause OR GPL-2.0-only OR GPL-3.0-only"

@@ -11,7 +11,7 @@ had a changelog of its own. It starts here rather than being backfilled,
 since the extraction predates this file and reconstructing that history
 would be guessing at dates this crate itself has no record of.
 
-## Unreleased
+## 0.3.0 — 2026-08-29
 
 **MSRV declared for the first time: 1.96.** `RV1.4` was unmet here until now
 — the six ports promised 1.90 and CI built on exactly that toolchain, but

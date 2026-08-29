@@ -49,8 +49,12 @@ const TEST_USER: &str = "DDLTEST";
 /// exactly the resource whose table shape was the one worth testing.
 fn sampled() -> Option<Arc<RelMap>> {
     let mut m = RelMap::bundled("r5").ok()?;
-    m.resources.retain(|k, _| matches!(k.as_str(), "Patient" | "Observation"));
-    assert!(!m.resources.is_empty(), "Patient/Observation are not in the r5 map");
+    m.resources
+        .retain(|k, _| matches!(k.as_str(), "Patient" | "Observation"));
+    assert!(
+        !m.resources.is_empty(),
+        "Patient/Observation are not in the r5 map"
+    );
     // M14.5: the connecting user IS the schema, and Oracle folds an unquoted
     // identifier to uppercase for authentication regardless of how it was
     // created — found live, the hard way, in the store's own tests.
@@ -148,7 +152,10 @@ fn generated_ddl_installs_on_oracle() {
     let tables: i64 = conn
         .query_row_as("SELECT COUNT(*) FROM USER_TABLES", &[])
         .expect("count USER_TABLES");
-    assert!(tables > 5, "schema installed but only {tables} tables exist");
+    assert!(
+        tables > 5,
+        "schema installed but only {tables} tables exist"
+    );
 
     // Triggers are the enforcement behind M3.17; a schema with tables but no
     // triggers would look healthy while guaranteeing nothing.

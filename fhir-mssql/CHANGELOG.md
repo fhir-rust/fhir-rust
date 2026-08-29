@@ -24,7 +24,7 @@
 > matrix](../spec/databases/conformance-matrix.md) and this port's own
 > `tasks.md` — not in any entry below, including *Unreleased*.
 
-## Unreleased
+## 0.6.0 — 2026-08-29
 
 **Security — the SQL Server driver changed from `tiberius` to `mssql`,
 closing F-67.** `tiberius` 0.12.3 — its last release — pinned

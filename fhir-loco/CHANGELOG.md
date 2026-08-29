@@ -9,7 +9,7 @@ This file did not exist before 2026-08-29. This crate is the FHIR® REST
 surface — it inherited the name `fhir-store` briefly before being renamed
 (**F-37**), and had no changelog under either name.
 
-## Unreleased
+## 0.3.0 — 2026-08-29
 
 **MSRV declared for the first time: 1.96.** `RV1.4` was unmet here until now
 — the six ports promised 1.90 and CI built on exactly that toolchain, but

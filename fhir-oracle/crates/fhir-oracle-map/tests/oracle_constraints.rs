@@ -84,9 +84,7 @@ fn provision(admin: &Connection, user: &str) {
 /// `is_err()` on the wrong statement.
 fn ora_code(e: &oracle::Error) -> String {
     let s = e.to_string();
-    s.find("ORA-")
-        .map(|i| s[i..i + 9].to_string())
-        .unwrap_or(s)
+    s.find("ORA-").map(|i| s[i..i + 9].to_string()).unwrap_or(s)
 }
 
 #[test]
@@ -101,7 +99,8 @@ fn append_only_trigger_rejects_update_and_undeclared_delete_but_allows_declared_
     };
     let user = "TRIGTEST";
     provision(&admin, user);
-    let conn = user_connect(user).unwrap_or_else(|| panic!("created {user} but could not connect as it"));
+    let conn =
+        user_connect(user).unwrap_or_else(|| panic!("created {user} but could not connect as it"));
 
     let table = "trig_test";
     conn.execute(
@@ -110,7 +109,8 @@ fn append_only_trigger_rejects_update_and_undeclared_delete_but_allows_declared_
     )
     .expect("create the scratch table");
     for stmt in fhir_oracle_map::ddl::append_only_triggers(user, table) {
-        conn.execute(&stmt, &[]).expect("install the append-only trigger");
+        conn.execute(&stmt, &[])
+            .expect("install the append-only trigger");
     }
     conn.execute(&format!("INSERT INTO \"{table}\" VALUES (1, 'a')"), &[])
         .expect("seed one row");
@@ -118,9 +118,16 @@ fn append_only_trigger_rejects_update_and_undeclared_delete_but_allows_declared_
 
     // M3.17: an ordinary UPDATE must be refused outright, unconditionally.
     let err = conn
-        .execute(&format!("UPDATE \"{table}\" SET val = 'b' WHERE id = 1"), &[])
+        .execute(
+            &format!("UPDATE \"{table}\" SET val = 'b' WHERE id = 1"),
+            &[],
+        )
         .expect_err("UPDATE must be rejected by the trigger");
-    assert_eq!(ora_code(&err), "ORA-20001", "wrong error for a forbidden UPDATE: {err}");
+    assert_eq!(
+        ora_code(&err),
+        "ORA-20001",
+        "wrong error for a forbidden UPDATE: {err}"
+    );
 
     // M3.17 + M3.18: a DELETE with no erasure declaration must also be
     // refused. This is the exact assertion M14.29a's bug would fail:
@@ -128,12 +135,19 @@ fn append_only_trigger_rejects_update_and_undeclared_delete_but_allows_declared_
     let err = conn
         .execute(&format!("DELETE FROM \"{table}\" WHERE id = 1"), &[])
         .expect_err("undeclared DELETE must be rejected by the trigger");
-    assert_eq!(ora_code(&err), "ORA-20002", "wrong error for an undeclared DELETE: {err}");
+    assert_eq!(
+        ora_code(&err),
+        "ORA-20002",
+        "wrong error for an undeclared DELETE: {err}"
+    );
 
     let count: i64 = conn
         .query_row_as(&format!("SELECT COUNT(*) FROM \"{table}\""), &[])
         .expect("count rows after the rejected DELETE");
-    assert_eq!(count, 1, "the rejected DELETE must not have removed the row");
+    assert_eq!(
+        count, 1,
+        "the rejected DELETE must not have removed the row"
+    );
 
     // M3.18: the declared-erasure escape hatch must still work, in the same
     // transaction the annex requires (M14.29).
@@ -144,16 +158,24 @@ fn append_only_trigger_rejects_update_and_undeclared_delete_but_allows_declared_
     .expect("set the erasure declaration");
     conn.execute(&format!("DELETE FROM \"{table}\" WHERE id = 1"), &[])
         .expect("declared erasure DELETE must be allowed");
-    conn.execute("BEGIN DBMS_APPLICATION_INFO.SET_CLIENT_INFO(NULL); END;", &[])
-        .expect("clear the erasure declaration");
+    conn.execute(
+        "BEGIN DBMS_APPLICATION_INFO.SET_CLIENT_INFO(NULL); END;",
+        &[],
+    )
+    .expect("clear the erasure declaration");
     conn.commit().expect("commit the declared erasure");
 
     let count: i64 = conn
         .query_row_as(&format!("SELECT COUNT(*) FROM \"{table}\""), &[])
         .expect("count rows after the declared-erasure DELETE");
-    assert_eq!(count, 0, "the declared-erasure DELETE should have removed the row");
+    assert_eq!(
+        count, 0,
+        "the declared-erasure DELETE should have removed the row"
+    );
 
-    eprintln!("append-only trigger: UPDATE and undeclared DELETE both refused; declared erasure allowed");
+    eprintln!(
+        "append-only trigger: UPDATE and undeclared DELETE both refused; declared erasure allowed"
+    );
 }
 
 #[test]
@@ -168,7 +190,8 @@ fn boolean_check_rejects_out_of_range_values() {
     };
     let user = "BOOLTEST";
     provision(&admin, user);
-    let conn = user_connect(user).unwrap_or_else(|| panic!("created {user} but could not connect as it"));
+    let conn =
+        user_connect(user).unwrap_or_else(|| panic!("created {user} but could not connect as it"));
 
     let table = "bool_test";
     let ty = fhir_oracle_map::ddl::col_sql(fhir_oracle_map::model::ColTy::Bool);
@@ -194,13 +217,20 @@ fn boolean_check_rejects_out_of_range_values() {
     let err = conn
         .execute(&format!("INSERT INTO \"{table}\" VALUES (3, 2)"), &[])
         .expect_err("2 must be rejected by the CHECK constraint");
-    assert_eq!(ora_code(&err), "ORA-02290", "wrong error for a CHECK violation: {err}");
+    assert_eq!(
+        ora_code(&err),
+        "ORA-02290",
+        "wrong error for a CHECK violation: {err}"
+    );
     conn.commit().expect("commit the accepted rows");
 
     let count: i64 = conn
         .query_row_as(&format!("SELECT COUNT(*) FROM \"{table}\""), &[])
         .expect("count rows");
-    assert_eq!(count, 2, "only the two legal rows should have been inserted");
+    assert_eq!(
+        count, 2,
+        "only the two legal rows should have been inserted"
+    );
 
     eprintln!("boolean CHECK: 0 and 1 accepted, 2 rejected with ORA-02290");
 }

@@ -172,7 +172,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-oracle-gen"
-version = "0.5.2"
+version = "0.6.0"
 dependencies = [
  "fhir-oracle-map",
  "flate2",
@@ -184,7 +184,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-oracle-map"
-version = "0.5.2"
+version = "0.6.0"
 dependencies = [
  "flate2",
  "oracle",
@@ -197,7 +197,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-oracle-store"
-version = "0.5.2"
+version = "0.6.0"
 dependencies = [
  "chrono",
  "fhir-oracle-gen",
@@ -219,7 +219,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-store"
-version = "0.2.2"
+version = "0.3.0"
 dependencies = [
  "getrandom",
  "hmac",
