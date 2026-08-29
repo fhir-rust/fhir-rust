@@ -493,7 +493,7 @@ They are not equal, and they do not all gate the same things.
 | --- | --- | --- | --- |
 | **PM-70** news route | ~~convention decided, push + releases outstanding~~ **done 2026-08-26** — tags pushed, 16 releases live, `releases.atom` subscribable | everything ends with "follow along" | ✔ |
 | **PM-74** `CONTRIBUTING.md` + `SECURITY.md` + `CODE_OF_CONDUCT.md` | ~~hours~~ **done 2026-08-26** | PM-21, PM-60, credibility with segment D | ✔ |
-| **PM-75** `LICENSE.md` detection | hours, *plus an owner decision on GPL* | PM-11, PM-60, silent segment-D losses | Phase 0; raise the decision now |
+| **PM-75** `LICENSE.md` detection | ~~hours, *plus an owner decision on GPL*~~ **done 2026-08-26** — owner decided to keep the five-way expression; `LICENSES/` and detection both shipped | PM-11, PM-60, silent segment-D losses | ✔ |
 | **PM-73** PHI statement | ~~a day~~ **done 2026-08-26** | every segment-D evaluation | ✔ |
 | **PM-76** conformance statement | a day for the prose page; longer if generated | PM-11, PM-12, PM-13, procurement | Phase 1; generate the machine-readable half later |
 | **PM-71** comparison page | ~~a day~~ **done 2026-08-26** — [`COMPARISONS.md`](../../COMPARISONS.md) | PM-25, PM-30/31, all of §5F | ✔ |

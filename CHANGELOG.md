@@ -22,6 +22,34 @@ onward; everything before that date is unsigned and stays that way
 History before 2026-08-01 belongs to the separate projects this monorepo was
 assembled from, and lives in the per-family changelogs above.
 
+## 2026-08-29 — a self-assessment re-verified rather than trusted
+
+`spec/professionalization/index.md`'s rule-by-rule assessment was dated
+2026-08-26, "mid-landing", and had not been touched since -- three days in
+which most of what it called open actually closed. Re-verified each rule
+against the tree directly rather than repeating the old text:
+
+- Rule 3: tags (60), signing (active since 2026-08-27), and F-67 (decided
+  2026-08-28) are no longer gaps -- the rule moves from "met as a process"
+  to "met".
+- Rule 4: `fhir-security.yml`'s `cargo deny` trigger was claimed still
+  paths-filtered to `fhir/**`. Checked the workflow file directly: it was
+  not -- both its `push` and `pull_request` triggers already list all nine
+  workspace paths, fixed 2026-08-26 in the same pass this note failed to
+  reflect.
+- Rule 9: `help/outreach/index.md`'s `PM-70`-`PM-75` are five-sixths done,
+  not "exactly the open items" -- only `PM-72` (benchmarks) remains from
+  that set.
+
+Found while re-verifying, not assumed: `LICENSE.md` line 32 still said the
+SPDX expression was declared in "33" manifests, contradicting the correct
+"34" two paragraphs above it in the same file (41 total manifests measured
+fresh, 7 `publish = false`, 34 publishable). And
+`help/outreach/index.md`'s own `PM-75` sequencing-table row still said
+"raise the decision now" for a GPL call the owner had already made and
+that the same file's own `PM-75` write-up already recorded as decided --
+an inconsistency within one document, not between two.
+
 ## 2026-08-28 — Trusted Publishing: checked, and reconciled with an earlier decision
 
 `spec/trusted-publishing/index.md` stated a family-wide intent to adopt it

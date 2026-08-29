@@ -29,7 +29,9 @@ License is any of these or contact us for custom license options.
 This applies to every crate in the repository — all **four** families: the
 model, the persistence core, the six database ports, and the HTTP surface. The
 SPDX expression `MIT OR Apache-2.0 OR BSD-3-Clause OR GPL-2.0-only OR
-GPL-3.0-only` is declared identically in all **33** `[package]` manifests, and
+GPL-3.0-only` is declared identically in all **34** publishable `[package]`
+manifests (of 41 total; the seven `publish = false` fuzz crates are excluded,
+per the paragraph below), and
 `OR` means the recipient chooses; no obligation from one option carries into
 another.
 
