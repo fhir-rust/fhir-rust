@@ -8,8 +8,8 @@
 | `fhir-sqlite` | SQLite 3 | bundled | `rusqlite` (`bundled`) | Store |
 | `fhir-mysql` | MySQL 8.4 | 8.0 | `mysql_async` | Store |
 | `fhir-mariadb` | MariaDB 11.4 | 10.6 | `mysql_async` | Store |
-| `fhir-mssql` | SQL Server | undeclared | `tiberius` (rustls) | Scaffold |
-| `fhir-oracle` | Oracle | **undeclared** | **none chosen** | Scaffold |
+| `fhir-mssql` | SQL Server | 2019+ | `mssql` (rustls; a `tiberius` fork since 2026-08-29, F-67) | Store |
+| `fhir-oracle` | Oracle | 12.2+ | `oracle` (ODPI-C) | Store |
 
 `fhir-sqlite` bundles SQLite rather than linking the host's, because the
 generated DDL depends on version-specific behaviour and the engine should be

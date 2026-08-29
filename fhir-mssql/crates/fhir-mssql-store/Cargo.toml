@@ -1,6 +1,6 @@
 [package]
 name = "fhir-mssql-store"
-description = "SQL Server storage layer for fhir-mssql (Store level: live-verified against azure-sql-edge, 33/33 tests - audit.md F-65; TLS advisory risk F-67). HL7®, and FHIR® are the registered trademarks of Health Level Seven International and their use of these trademarks does not constitute an endorsement by HL7. This project is an independent work."
+description = "SQL Server storage layer for fhir-mssql (Store level: live-verified against azure-sql-edge, 33/33 tests - audit.md F-65; TLS advisories fixed by switching to the mssql driver - F-67 closed). HL7®, and FHIR® are the registered trademarks of Health Level Seven International and their use of these trademarks does not constitute an endorsement by HL7. This project is an independent work."
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -25,13 +25,13 @@ fhir-mssql-map.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
 tokio = { workspace = true, features = ["net"] }
-tiberius.workspace = true
+mssql-driver.workspace = true
 tokio-util.workspace = true
 bb8.workspace = true
 async-trait = "0.1"
-# Only for rendering the DATE/DATETIME2 sort columns tiberius returns as its
-# own `Date`/`DateTime2`, which `FromSql` converts to `chrono` types (tds73
-# feature) — not for anything this store decides on its own.
+# Only for rendering the DATE/DATETIME2 sort columns the driver returns as
+# its own `Date`/`DateTime2`, which `FromSql` converts to `chrono` types
+# (tds73 feature) — not for anything this store decides on its own.
 chrono = { version = "0.4", default-features = false, features = ["std"] }
 tracing.workspace = true
 sha2.workspace = true
@@ -44,7 +44,7 @@ getrandom.workspace = true
 [dev-dependencies]
 fhir-mssql-map.workspace = true
 fhir-mssql-gen.workspace = true
-tiberius.workspace = true
+mssql-driver.workspace = true
 tokio-util.workspace = true
 tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
 tracing.workspace = true

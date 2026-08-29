@@ -107,7 +107,7 @@ the only axis that matters.
 | Flattened views without leaving your existing server | SQL on FHIR / ViewDefinition |
 | FHIR types in Rust, no database | `fhir/`, or `fhirbolt`, or `helios-fhir` |
 | FHIRPath in Rust | `octofhir-fhirpath` |
-| A relational FHIR store on SQL Server or Oracle | this project — and read `F-67` in the [audit register](spec/databases/audit.md) first |
+| A relational FHIR store on SQL Server or Oracle | this project |
 
 ## What would change this page
 

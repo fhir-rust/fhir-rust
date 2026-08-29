@@ -22,6 +22,36 @@ onward; everything before that date is unsigned and stays that way
 History before 2026-08-01 belongs to the separate projects this monorepo was
 assembled from, and lives in the per-family changelogs above.
 
+## 2026-08-29 — F-67 closed: the audit register has no open findings left
+
+The four TLS advisories `deny.toml` had been excusing in `fhir-mssql`
+reached the shipping `fhir-mssql-store` crate through `tiberius` 0.12.3, its
+last release — RUSTSEC-2026-0098/-0099/-0104 (`rustls-webpki 0.101.7`) and
+RUSTSEC-2025-0134 (`rustls-pemfile`, unmaintained). The owner accepted the
+risk formally 2026-08-28 after investigating and pricing three alternatives
+and finding none viable (full account: `M14.34`,
+`fhir-mssql/spec/14-mssql-dialect.md`). One day later a fourth option
+existed that hadn't when that decision was made: the owner published
+`mssql` (github.com/joelparkerhenderson/mssql-rust), a fork of `tiberius`
+maintained specifically to carry forward the fixes tiberius itself stopped
+shipping.
+
+`fhir-mssql`'s driver switched to it (aliased `mssql-driver` in `Cargo.toml`,
+since `fhir-mssql-store` already has a local module named `mssql`); no other
+source change was needed, since the fork kept `tiberius`'s public API.
+Resolved chain: `tokio-rustls 0.26.4` → `rustls 0.23.43` →
+`rustls-webpki 0.103.15` — `cargo tree` confirms none of the four advisory
+packages remain anywhere in the workspace, and `cargo deny check` passes
+with an empty ignore list. Full live suite (40 tests in
+`fhir-mssql-store` plus `fhir-mssql-map`'s `mssql_ddl.rs`) re-verified green
+against `azure-sql-edge` under the new driver. `O10.7` is now claimed for
+this port, and `M14.24`'s carried postscript records the switch alongside
+the investigation it resolved rather than in place of it.
+
+**F-67 was the sole open row in the [audit register](spec/databases/audit.md)**
+(also closing **F-51**, `fhir-oracle`'s DDL live-test gap, fixed the same
+day) — as of this commit, the register has none.
+
 ## 2026-08-29 — F-97: the append-only trigger and boolean CHECK, live-tested
 
 Closing F-51 said it plainly rather than leaving it implicit: two behaviours

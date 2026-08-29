@@ -94,7 +94,7 @@ column that should hold a number, and silently breaks round-trip fidelity.
 ## Async
 
 - `tokio`, multi-thread runtime.
-- Async drivers where they exist (`tokio-postgres`, `mysql_async`, `tiberius`).
+- Async drivers where they exist (`tokio-postgres`, `mysql_async`, `mssql`).
 - `rusqlite` is synchronous, so `fhir-sqlite` wraps calls in `spawn_blocking`.
   Do not "simplify" that away.
 

@@ -58,9 +58,10 @@ posture. Open items for each are in `tasks.md`.
    itself.
 
 3. **Security and supply chain.** `cargo deny` runs weekly and on push — but
-   paths-filtered to `fhir/**`, so the six ports and `fhir-loco`, where
-   **F-67 (High, open: mssql TLS advisories)** lives, are not scanned on
-   push. The publish path is a laptop with a long-lived registry token; the
+   paths-filtered to `fhir/**`, so the six ports and `fhir-loco` were not
+   scanned on push when **F-67 (High: mssql TLS advisories)** was filed
+   there; F-67 itself closed 2026-08-29 (driver switched from `tiberius` to
+   `mssql`). The publish path is a laptop with a long-lived registry token; the
    per-port `publish.yml` workflows are inert. No tags, no signing, no SBOM,
    no Trusted Publishing, no private-vulnerability-reporting config, no
    dependabot, no issue templates.
@@ -74,8 +75,9 @@ posture. Open items for each are in `tasks.md`.
 
 5. **Outreach.** `help/outreach/index.md` is thorough and self-gating: its
    prerequisites (`PM-70`–`PM-75`: tags/releases, signing, F-67 decision,
-   GPL-scanner note, licensing fixes) are all now closed — F-67 as of
-   2026-08-28, accept-and-document. What still gates phase 1 is `PM-72`:
+   GPL-scanner note, licensing fixes) are all now closed — F-67 accepted
+   2026-08-28, then resolved outright 2026-08-29 (driver switch). What still
+   gates phase 1 is `PM-72`:
    benchmarks exist for one port of six, and the JSONB-vs-relational
    comparison the whole pitch rests on has never been run.
 
@@ -96,14 +98,17 @@ posture. Open items for each are in `tasks.md`.
   exists (`prisma/tiberius#419`), and one newer alternative crate (`ms-tds`,
   disqualified on sight) — none viable without either an unbounded
   maintenance tail or a cost worse than the flawed incumbent. Full account:
-  `M14.34` in `fhir-mssql/spec/14-mssql-dialect.md`. The advisories stay
-  unpatched; the decision about them does not stay open.
+  `M14.34` in `fhir-mssql/spec/14-mssql-dialect.md`.
+  **Superseded 2026-08-29: resolved outright**, not just accepted — the
+  owner published `mssql`, a `tiberius` fork maintained to carry the fixes
+  forward. The advisories no longer exist in the dependency tree.
 - ~~**F-51 (Medium).**~~ Fixed 2026-08-29: `tests/oracle_ddl.rs`
   (`fhir-oracle-map`) installs a sampled schema live, on the model of
   `fhir-mssql`'s `mssql_ddl.rs`. The "driver decision" this bullet expected
   turned out to already be decided by evidence this repository had produced
   itself: `fhir-oracle-store` (F-68) already proved the `oracle` crate +
-  Instant Client works live. `F-67` is now the sole open finding.
+  Instant Client works live. With `F-67` closed the same day, the audit
+  register has no open finding left.
 - ~~**Publishing shape.**~~ Decided 2026-08-26: **documented laptop
   publishing, permanently** — the owner's judgment that GitHub is not
   reliable enough to hold the publish path, made hours after an Actions

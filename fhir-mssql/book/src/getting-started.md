@@ -18,7 +18,7 @@ use fhir_mssql_store::mssql::MsSqlStore;
 // version (feature-gated: `r5`, `r4`, `r3`).
 let map: Arc<RelMap> = Arc::new(RelMap::bundled("r5")?);
 
-// The DSN is a tiberius ADO connection string. It MUST name a database
+// The DSN is an mssql ADO connection string. It MUST name a database
 // (`database=fhir_mssql`), not the default `master` — snapshot isolation
 // (M14.25, needed for `get` under concurrent writers) requires
 // ALLOW_SNAPSHOT_ISOLATION at the database level, and SQL Server refuses
@@ -59,7 +59,7 @@ Three crates, no binary:
 | --- | --- |
 | `fhir-mssql-gen` | compiles the FHIR® specification packages into a relational map and the DDL |
 | `fhir-mssql-map` | the map types, shred, reconstruct, fold, canon, and this engine's `ddl.rs` |
-| `fhir-mssql-store` | `mssql.rs` (the driver and operations), `mssql_search.rs` (the search-SQL builder), `pool.rs` (a `bb8` pool over `tiberius`, which has no built-in one) |
+| `fhir-mssql-store` | `mssql.rs` (the driver and operations), `mssql_search.rs` (the search-SQL builder), `pool.rs` (a `bb8` pool over `mssql`, which has no built-in one) |
 
 `fhir-mssql-store` also depends on the shared [`fhir-store`](../../../fhir-store)
 crate for the engine-agnostic half — `Audit`, `AccessRecord`, `PutOutcome`,

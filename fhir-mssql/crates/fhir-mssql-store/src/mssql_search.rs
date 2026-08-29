@@ -7,7 +7,7 @@
 //!
 //! What differs, and why:
 //!
-//! - **Placeholders are numbered `@P1, @P2, …`**, not `?`. `tiberius` binds
+//! - **Placeholders are numbered `@P1, @P2, …`**, not `?`. `mssql` binds
 //!   positionally regardless of the name printed in the SQL text, but every
 //!   value pushed to `binds` still needs a distinct token to reference at its
 //!   position in that text, so the placeholder is generated from the bind

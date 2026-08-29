@@ -34,9 +34,10 @@ not because this port did them.
 - [x] **DDL emitter.** T-SQL, and **executed**: the generated schema installs on SQL Server 2022 via `tests/mssql_ddl.rs` — 131 statements, 102 tables, 4 triggers. That test was flaky until **F-52**; it now passes 8 consecutive runs.
 - [x] **A store.** `crates/fhir-mssql-store/src/mssql.rs`: `connect`, `init`,
   `put`, `get`, `delete`, `history`, `vread`, `verify_audit`, `purge`,
-  `log_access`. `tiberius`, pooled via a hand-written `bb8::ManageConnection`
-  (`pool.rs`, no mature tiberius-specific pool exists). Live-verified — this
-  is not a claim from reading the code (**F-65**).
+  `log_access`. `mssql` (a fork of `tiberius`, since 2026-08-29 — **F-67**),
+  pooled via a hand-written `bb8::ManageConnection` (`pool.rs`, no mature
+  driver-specific pool exists). Live-verified — this is not a claim from
+  reading the code (**F-65**).
 - [x] **A search builder.** `mssql_search.rs`: `@Pn` placeholders, bracketed
   identifiers, `OFFSET … FETCH`, `FLOAT` not `DECIMAL` casts (`M14.8`), no
   `NULLS LAST`. Wired to `search`/`search_full`/`search_page`.
@@ -84,14 +85,17 @@ Not "planned and unstarted" — **absent**.
   test). `U12` holds for `path` here; matrix flipped, **F-47 closed**.
 - [ ] **Verification against full SQL Server.** Only `azure-sql-edge`
   (`M14.31`) — an arm64 subset of the product.
-- [ ] **`O10.7`.** The mechanism is confirmed live (`tests/ssl_live.rs`):
+- [x] **`O10.7`.** The mechanism is confirmed live (`tests/ssl_live.rs`):
   `TrustServerCertificate=false` reproducibly rejects `azure-sql-edge`'s
-  self-signed certificate. Not claimed anyway — the driver's TLS dependency
-  chain carries four unpatched advisories now confirmed reaching the
-  shipping store crate (**F-67**), and `native-tls` fails the handshake on
-  this host, so there is no available fix. **Decided 2026-08-28: accept the
-  residual risk formally**, after investigating and pricing a driver
-  replacement (`M14.34`) and finding none viable. Not left open.
+  self-signed certificate. Was diagnosed but not claimed from 2026-08-04:
+  the driver's TLS dependency chain carried four unpatched advisories
+  reaching the shipping store crate (**F-67**), and `native-tls` failed the
+  handshake on this host, so there was no available fix at the time — a
+  risk accepted formally 2026-08-28 after pricing a driver replacement
+  (`M14.34`) and finding none viable. **Resolved 2026-08-29**: switched from
+  `tiberius` (0.12.3, its last release) to `mssql`, a fork the owner
+  published to carry the fixes forward. `O10.7` is now claimed as well as
+  diagnosed. **F-67 closed.**
 
 ## Not decided, not merely undone
 

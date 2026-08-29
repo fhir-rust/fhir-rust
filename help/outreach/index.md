@@ -47,7 +47,7 @@ caution is now closed.
 | **Benchmarks exist for one port of six.** `fhir-postgresql` has a real gated harness (`crates/fhir-postgresql-store/tests/bench.rs`) and measured numbers; the other five have `doc/benchmarks.md` pages but no harness | `find . -name bench.rs`; `fhir-postgresql/doc/benchmarks.md` | Better than the last assessment claimed, and still short of the pitch: the *JSONB comparison* the whole argument rests on has never been run. See **PM-72** and [`BENCHMARKS.md`](../../BENCHMARKS.md). |
 | **No news route.** Six port `CHANGELOG.md` files and `fhir/CHANGELOG.md` exist — but **0 git tags, 0 GitHub releases** | `git tag \| wc -l` → `0`; `GET /repos/.../releases` → `[]` | 34 crates published and nothing a stranger can subscribe to. See **PM-70**. |
 | The licence **is** precise — `MIT OR Apache-2.0 OR BSD-3-Clause OR GPL-2.0-only OR GPL-3.0-only`, declared identically in all 33 manifests — but GitHub reads it as `NOASSERTION` and the expression names GPL | [`LICENSE.md`](../../LICENSE.md); `grep -rn ^license --include=Cargo.toml`; GitHub API `license.spdx_id` | Not the problem yesterday's assessment assumed. See the correction below and **PM-75**. |
-| One audit finding remains open, **High** | [audit](../../spec/databases/audit.md): **F-51** fixed 2026-08-29 (`tests/oracle_ddl.rs`, live, on the model of `mssql_ddl.rs`); **F-67** (**High** — four TLS advisories now reach the shipping `fhir-mssql-store`; `native-tls` fails the handshake; **owner accepted the risk formally 2026-08-28**, see `M14.34`) is the sole survivor | **F-67 is documented, not silent, and PM-4 is done.** It is a published crate with known advisories in its dependency tree and a stated decision about them. `fhir-mssql` may be named externally now — always alongside the risk, never without it. |
+| The audit register has zero open findings | [audit](../../spec/databases/audit.md): **F-51** fixed 2026-08-29 (`tests/oracle_ddl.rs`, live, on the model of `mssql_ddl.rs`); **F-67** (formerly **High** — four TLS advisories reaching the shipping `fhir-mssql-store`) accepted formally 2026-08-28, then closed outright 2026-08-29 by switching the driver from `tiberius` to `mssql`, a fork maintained to carry the fixes forward | **F-67 is resolved, not just documented, and PM-4 is done.** `fhir-mssql` may be named externally with no TLS caveat attached — the register can now say plainly that nothing is open. |
 | All six dialect annexes are still **proposed** (`X15.9`) | [`spec/index.md`](../../spec/index.md) *Gaps* | No annex may be cited as evidence for a conformance level — including in a slide, a blog post, or a Zulip message. |
 | The `O10.4c` re-shred was verified on one developer machine, not in CI | [publishing readiness](../../spec/publishing.md) | "Verified" in outreach must mean *hosted CI*, per `C0.9`/`T11.13`. A green laptop is not a public claim. |
 
@@ -87,7 +87,7 @@ anything written for an outside reader.
 | "R2, R3, R4, R4B, R5 and R6 modelled in code, one cargo feature each" | "supports R6" without saying it is a draft | `fhir-r6` is generated from 6.0.0-ballot3, is off by default, and can change between ballots. `fhir-r1` and `fhir-r7`–`r10` are name reservations containing no types. |
 | "34 crates published to crates.io" | "released 1.0" / "stable API" | Pre-release, `0.x`/`4.x` mixed; no stability promise stated. |
 | "live-verified against `azure-sql-edge` / `gvenzl/oracle-free` in CI" | "certified", "validated against SQL Server" | The container is not the product. Name the container. |
-| "the audit register lists every known divergence, with one open" | silence about F-67 | Volunteering an open High finding is the strongest credibility signal we own. |
+| "the audit register lists every known divergence, currently none open" | silence about the F-67 finding's history | Volunteering that a High finding existed and how it closed is the strongest credibility signal we own — silence about the history is as misleading as silence about the finding was. |
 | "~7,355 generated tables for R5"; the PostgreSQL numbers in [`BENCHMARKS.md`](../../BENCHMARKS.md), dated and attributed to one dev machine | "scales to N million resources"; any store number for a port that did not produce it | 100k is the largest run; five ports have no harness. `W16.10`, and **F-64** is what happens when it is ignored. |
 
 **PM-0.** Any external artefact — post, email, slide, pitch — cites the
@@ -130,8 +130,11 @@ each one delivers a stranger to a GitHub page that currently says `FHIR Rust`.
   investigating and pricing three alternatives (`M14.34` in
   `fhir-mssql/spec/14-mssql-dialect.md`), none viable without either an
   unbounded maintenance tail or a multi-month build worse on the trust axis
-  than the incumbent. `fhir-mssql` may now be named externally, with the risk
-  stated — see `INSTALL.md`, `PHI.md`, `SECURITY.md`, all already doing so.
+  than the incumbent. **Superseded 2026-08-29: the risk resolved outright**
+  — the owner published `mssql`, a `tiberius` fork maintained to carry the
+  fixes forward, and switching to it clears all four advisories. `fhir-mssql`
+  may now be named externally with no caveat at all — see `INSTALL.md`,
+  `PHI.md`, `SECURITY.md`, all already updated to say so.
 - **PM-5 — Write one status page a non-contributor can read in 90 seconds.**
   *Sharpened by **PM-76** (2026-08-26): what segment A means by "conformance
   statement" is a specific FHIR artefact, not a status page.*
@@ -299,8 +302,8 @@ an opinion), PM-24, PM-60/61 (JOSS and JAMIA reviewers will ask), and the
 
 **Delivered 2026-08-26: [`PHI.md`](../../PHI.md).** It cites the sources below
 rather than restating them, covers all four families, and names the open limits
-(F-67, no Inferno run, the four `?` ports, nothing signed). The gap analysis
-that produced it follows.
+(F-67 at the time, since closed 2026-08-29; no Inferno run; the four `?` ports;
+nothing signed). The gap analysis that produced it follows.
 
 **Exists, and it is better than the gap implies.**
 [`doc/trust-boundary.md`](../../doc/trust-boundary.md) is required by `PR12.8`
@@ -347,7 +350,8 @@ reads `PR12.5` as an answer.
   must not be the reason a deployment cannot be"* — and that sentence should be
   the statement's thesis.
 - **Known open items that bear on it**, named: **F-67** (TLS advisories in the
-  shipping `fhir-mssql-store`), no Inferno run, terminology validation absent.
+  shipping `fhir-mssql-store`, closed 2026-08-29), no Inferno run,
+  terminology validation absent.
 
 **Where.** `PHI.md` or `doc/phi-and-privacy.md` at a findable level, linked from
 the root `README.md`, from `SECURITY.md` (PM-74), and from `doc/index.md`; it
@@ -363,7 +367,8 @@ closest to already having.
 
 **Delivered 2026-08-26:** [`CONTRIBUTING.md`](../../CONTRIBUTING.md) (leading
 with rule 2, the shared-core gate), [`SECURITY.md`](../../SECURITY.md) (a real
-address, a 7/30-day window, publish-if-silent, and F-67 named), and
+address, a 7/30-day window, publish-if-silent, and F-67 named — closed
+2026-08-29), and
 [`CODE_OF_CONDUCT.md`](../../CODE_OF_CONDUCT.md) (Contributor Covenant 2.1 plus
 a claim-accuracy clause). The gap analysis follows.
 

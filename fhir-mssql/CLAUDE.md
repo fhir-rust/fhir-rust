@@ -10,7 +10,7 @@ Four things to know before editing anything here:
 1. The pure-Rust core in `map/src` and `gen/src` is byte-identical across all
    six ports. Change it in all six or not at all (`X15.1`, `W16.7`).
 2. There **is** a store now (`crates/fhir-mssql-store/src/mssql.rs`,
-   `mssql_search.rs`), live-verified against `azure-sql-edge` by 33 tests, 0
+   `mssql_search.rs`), live-verified against `azure-sql-edge` by 40 tests, 0
    `#[ignore]`d (`F-65`). `get` needs `SET TRANSACTION ISOLATION LEVEL
    SNAPSHOT` for `R4.5` — do not simplify it back to a bare `BEGIN
    TRANSACTION`, or to `READ_COMMITTED_SNAPSHOT` alone, both of which were
@@ -26,11 +26,12 @@ Four things to know before editing anything here:
    transactional, so a failed upgrade rolls back rather than leaving a
    half-applied schema (`M14.35`). Table drops in the destructive diff MUST be
    ordered children before their base table, or `DROP TABLE` fails with error
-   3726 against a live server (`M14.36`, found running the tests). `deny.toml`'s
-   `tiberius`-chain advisory ignores now reach a shipping crate, not a
-   dev-dependency — see `M14.34` before "fixing" the comments back to the old
-   (false) scope, and see `F-67` before assuming `native-tls` is a free swap
-   (it fails the handshake on this host).
+   3726 against a live server (`M14.36`, found running the tests). The driver
+   is `mssql`, not `tiberius`, as of 2026-08-29 (`F-67` closed) — a fork
+   maintained specifically to carry the TLS fixes tiberius 0.12.3 never
+   picked up; see `M14.34` for the investigation this replaced and `deny.toml`
+   for the now-empty ignore list. `native-tls` still fails the handshake on
+   this host, so it remains not a free swap for `rustls`.
 4. Normative behaviour is [`../spec/`](../spec/databases/index.md), not this directory.
    Check [`../spec/audit.md`](../spec/databases/audit.md) before reporting a defect — it
    may already be tracked.

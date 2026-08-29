@@ -26,6 +26,28 @@
 
 ## Unreleased
 
+**Security — the SQL Server driver changed from `tiberius` to `mssql`,
+closing F-67.** `tiberius` 0.12.3 — its last release — pinned
+`tokio-rustls 0.24`/`rustls 0.21`/`rustls-webpki 0.101.7`, four unpatched
+advisories deep (RUSTSEC-2026-0098, -0099, -0104, and RUSTSEC-2025-0134),
+all reaching this crate as a normal, shipping dependency, not merely a
+dev-dependency of the DDL test. Investigated at length starting 2026-08-02
+(`M14.34`): a from-scratch driver, a fork of an existing unreviewed PR
+(`prisma/tiberius#419`), and a newer alternative crate (disqualified —
+its own description advertised offensive/exploitation tooling) were each
+priced and set aside, and the owner formally accepted the risk 2026-08-28.
+That changed the next day: `mssql` (github.com/joelparkerhenderson/mssql-rust)
+is a fork of `tiberius` published 2026-08-29 specifically to carry forward
+the fixes tiberius itself stopped shipping. Switching to it resolves
+`rustls-webpki 0.103.15` — none of the four advisory packages remain
+anywhere in this crate's dependency tree, and `deny.toml`'s ignore list is
+now empty. No public API changed; the fork kept `tiberius`'s. `O10.7` is now
+claimed as well as diagnosed. Full live suite re-verified green under the
+new driver: 40 tests in `fhir-mssql-store` (`mssql_store.rs`,
+`concurrency.rs`, `redaction.rs`, `roundtrip_types.rs`, `ssl_live.rs`,
+`upgrade.rs`) plus `fhir-mssql-map`'s `mssql_ddl.rs`, all against
+`azure-sql-edge`.
+
 **MSRV raised 1.90 → 1.96** (spec `spec/rust-msrv-n-minus-2/`, `RV1.1`
 amended from N-3 to N-2, 2026-08-29). Verified with `cargo +1.96 check
 --all-targets --workspace --locked` before being declared, per `RV1.5`.

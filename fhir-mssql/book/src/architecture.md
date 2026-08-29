@@ -20,12 +20,13 @@ of the three is a real store rather than a stub:
   recursion shares tables via ordinal sign lanes), and the search compiler
   that resolves FHIRPath expressions by walking the map tree. Shared code,
   identical across all six ports including its own tests.
-- **fhir-mssql-store** — `mssql.rs` (the `tiberius` driver: `connect`,
-  `init`, `put`, `get`, `delete`, `history`, `vread`, `verify_audit`,
-  `purge`, `log_access`), `mssql_search.rs` (the search-SQL builder), and
-  `pool.rs` (a from-scratch `bb8::ManageConnection`, since `tiberius` ships
-  no pool of its own). Live-verified against `azure-sql-edge` by 24 tests, 0
-  `#[ignore]`d (**F-65**). It also depends on the shared
+- **fhir-mssql-store** — `mssql.rs` (the `mssql` driver, a fork of
+  `tiberius` since 2026-08-29: `connect`, `init`, `put`, `get`, `delete`,
+  `history`, `vread`, `verify_audit`, `purge`, `log_access`),
+  `mssql_search.rs` (the search-SQL builder), and `pool.rs` (a from-scratch
+  `bb8::ManageConnection`, since `mssql` ships no pool of its own).
+  Live-verified against `azure-sql-edge` by 40 tests, 0
+  `#[ignore]`d (**F-65**, **F-15**). It also depends on the shared
   [`fhir-store`](../../../fhir-store) crate for the engine-agnostic half —
   `Audit`, `AccessRecord`, `PutOutcome`, `SearchOutcome`, `ChainBreak`, and
   the hash-chain functions — rather than duplicating them, and re-exports

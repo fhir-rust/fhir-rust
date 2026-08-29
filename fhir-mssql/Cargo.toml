@@ -39,11 +39,25 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal", "syn
 # The SQL Server driver: pure Rust TDS, so no ODBC or FreeTDS on the host.
 # `rustls` for TLS because SQL Server negotiates TLS during login even for
 # an otherwise plaintext connection.
-tiberius = { version = "0.12", default-features = false, features = ["rustls", "tds73", "chrono"] }
+#
+# `mssql` rather than `tiberius` as of 2026-08-29 (closes F-67): `mssql` is
+# the user's own fork (github.com/joelparkerhenderson/mssql-rust, first
+# published 2026-08-28), maintained specifically to track security fixes
+# tiberius 0.12.3 — its last release — never picked up. It resolves
+# `tokio-rustls 0.26` / `rustls 0.23` / `rustls-webpki 0.103.15`, clearing
+# RUSTSEC-2026-0098, -0099, -0104 and RUSTSEC-2025-0134 outright: none of
+# the four advisory packages (`rustls-webpki 0.101.7`, `rustls-pemfile`)
+# appear in the dependency tree at all under this fork, verified with
+# `cargo tree`. Aliased to `mssql-driver` in Cargo (`package = "mssql"`)
+# because this crate already has a local module named `mssql`
+# (`fhir-mssql-store::mssql`) — an unaliased `mssql` dependency collides
+# with it at the crate root. See deny.toml for the advisories this removed
+# and CHANGELOG.md for the account of what was tried before this existed.
+mssql-driver = { package = "mssql", version = "0.1", default-features = false, features = ["rustls", "tds73", "chrono"] }
 tokio-util = { version = "0.7", features = ["compat"] }
-# tiberius ships no connection pool of its own (unlike mysql_async's Pool or
+# mssql ships no connection pool of its own (unlike mysql_async's Pool or
 # tokio-postgres's deadpool). bb8 is driver-agnostic -- the store implements a
-# ~30-line ManageConnection rather than pulling in a tiberius-specific pooling
+# ~30-line ManageConnection rather than pulling in a driver-specific pooling
 # crate, none of which is mature enough to depend on for a PHI-handling store.
 bb8 = "0.8"
 tracing = "0.1"

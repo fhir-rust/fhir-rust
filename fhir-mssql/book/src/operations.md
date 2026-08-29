@@ -10,8 +10,8 @@ server's job, and the server is a separate crate,
 ## Connecting and pooling
 
 `MsSqlStore::connect(dsn, map)` parses an ADO connection string with
-`tiberius::Config::from_ado_string`, builds a `bb8` pool around it
-(`pool.rs` — `tiberius` ships no pool of its own, unlike `mysql_async` or
+`mssql::Config::from_ado_string`, builds a `bb8` pool around it
+(`pool.rs` — `mssql` ships no pool of its own, unlike `mysql_async` or
 `tokio-postgres`), and **borrows and immediately releases one connection**
 before returning. That last step exists because `bb8::Pool::builder().build`
 does not itself open a connection: without it, `connect` against a dead port
@@ -86,7 +86,7 @@ chain that still verifies afterward.
 
 ## Logging ceiling
 
-`tiberius` itself logs full TDS row payloads — including the raw resource
+`mssql` itself logs full TDS row payloads — including the raw resource
 JSON — at `TRACE`, from its own connection and token-decoding internals,
 entirely outside this store's control. `redaction.rs`'s first case failed
 immediately when run at `TRACE`; it was not this crate's code that leaked
@@ -99,17 +99,17 @@ deployment carrying PHI.**
 `connect` negotiates TLS during login regardless of whether the rest of the
 connection is otherwise plaintext — SQL Server's own login handshake
 requires it (`M14.24`). `TrustServerCertificate=false` in the DSN
-(`tiberius`'s verifying `TrustConfig::Default`) measurably **rejects** a
+(`mssql`'s verifying `TrustConfig::Default`) measurably **rejects** a
 self-signed certificate; `=true` accepts it — `tests/ssl_live.rs` proves the
-mechanism is not a no-op. But the certificate-parsing code in that same
-dependency chain (`rustls-webpki 0.101.7`, pinned transitively through
-`tiberius 0.12.3`'s `rustls 0.21`) carries three unpatched CVEs plus one
-unmaintained-crate advisory, now confirmed reaching the shipping
-`fhir-mssql-store` crate rather than only a dev-dependency (`M14.34`,
-**F-67**). `native-tls` was tried as a swap and fails the TLS handshake
-outright against `azure-sql-edge` on this host. **This port does not claim
-`O10.7` satisfied** — the mechanism works and the library underneath it is
-unpatched, and both of those are true at once.
+mechanism is not a no-op. The certificate-parsing code in that same
+dependency chain used to carry three unpatched CVEs plus one
+unmaintained-crate advisory, reaching the shipping `fhir-mssql-store` crate
+rather than only a dev-dependency (`M14.34`, **F-67**) — `native-tls` was
+tried as a swap and fails the TLS handshake outright against
+`azure-sql-edge` on this host. Resolved 2026-08-29 by switching the driver
+from `tiberius` (0.12.3, its last release) to `mssql`, a fork carrying the
+fixes forward: `rustls-webpki 0.103.15` now, none of the four advisories
+remain in the tree. **This port now claims `O10.7` satisfied.**
 
 ## Backup
 
@@ -129,7 +129,7 @@ library's.
 ```sh
 scripts/db.sh up      # SQL Server 2022 (or FHIR_MSSQL_IMAGE=…/azure-sql-edge on arm64)
 scripts/db.sh test    # up, then the live suite
-scripts/db.sh client  # an interactive tiberius-based client inside the container
+scripts/db.sh client  # an interactive mssql-based client inside the container
 scripts/db.sh down
 ```
 

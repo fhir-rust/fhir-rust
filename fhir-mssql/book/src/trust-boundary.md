@@ -174,22 +174,23 @@ assume otherwise:
 | **Key management and at-rest encryption** | This crate holds a chain-signing key only if a caller passes one to `with_chain_keys`; it manages no other secrets and encrypts nothing at rest. |
 | **Terminology validation, profile conformance, FHIRPath invariants beyond what `fhir` enforces, referential integrity across resources** | Out of scope for the storage layer everywhere in this monorepo, not specific to this port. |
 
-### `O10.7`: diagnosed, not satisfied
+### `O10.7`: diagnosed and satisfied
 
-`connect` negotiates TLS during login (`tiberius`/`rustls`, `M14.24`) —
+`connect` negotiates TLS during login (`mssql`/`rustls`, `M14.24`) —
 SQL Server requires it even for an otherwise plaintext connection.
 `tests/ssl_live.rs` proves the trust decision is a real mechanism, not a
 no-op: `TrustServerCertificate=false` measurably rejects
 `azure-sql-edge`'s self-signed certificate, reproducibly, and
-`TrustServerCertificate=true` accepts the same certificate. But the
-certificate-parsing code in the same dependency chain
-(`rustls-webpki 0.101.7`, pinned transitively through `tiberius 0.12.3`'s
-`rustls 0.21`) carries three unpatched CVEs plus one unmaintained-crate
-advisory, confirmed reaching the shipping `fhir-mssql-store` crate, not
-merely a dev-dependency (`M14.34`, **F-67**). `native-tls` was tried as a
-replacement and fails the handshake outright on this host. Both facts are
-true at once — the mechanism works, and the library underneath it does not
-have a fix available today — and this port therefore does **not** claim
-`O10.7` satisfied. Whether to accept that risk formally, fund a different
-driver, or drop TLS as this port's transport story is an open owner
-decision, not a checklist item.
+`TrustServerCertificate=true` accepts the same certificate. The
+certificate-parsing code in the same dependency chain used to carry three
+unpatched CVEs plus one unmaintained-crate advisory (`rustls-webpki
+0.101.7`, pinned transitively through `tiberius 0.12.3`'s `rustls 0.21`),
+reaching the shipping `fhir-mssql-store` crate, not merely a dev-dependency
+(`M14.34`, **F-67**) — `native-tls` was tried as a replacement and fails
+the handshake outright on this host. Resolved 2026-08-29 by switching the
+driver from `tiberius` to `mssql`, a fork of it maintained specifically to
+carry the fixes tiberius's last release (0.12.3) never did: the resolved
+chain is now `rustls-webpki 0.103.15`, and none of the four advisories
+remain anywhere in the dependency tree. Both facts are now true at once —
+the mechanism works, and the library underneath it is current — and this
+port claims `O10.7` satisfied.

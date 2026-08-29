@@ -81,6 +81,12 @@ Grouped by `plan.md` workstream. Order within a group is priority order.
       `fhir-mssql/spec/14-mssql-dialect.md`. `deny.toml`'s ignores, the audit
       register, and every document naming this risk now say so. Unblocks
       `PM-4`.
+      **Superseded 2026-08-29: actually resolved, not just accepted.** The
+      owner published `mssql` (github.com/joelparkerhenderson/mssql-rust), a
+      `tiberius` fork maintained to carry the fixes forward — switching to
+      it clears all four advisories (`rustls-webpki 0.103.15` now, none of
+      the four packages remain in the tree). **F-67 closed** — the audit
+      register has no open row left.
 - [x] Create git tags and GitHub releases for the published versions
       (`PM-70`) — done 2026-08-26: sixteen annotated tags at `e28964e`
       pushed, sixteen releases with `TG1.8`-compliant notes, `fhir 4.1.0`
@@ -178,7 +184,8 @@ Grouped by `plan.md` workstream. Order within a group is priority order.
 
 - [ ] Was blocked on `PM-70`–`PM-75`. Tags/releases, signing, the F-67
       decision, the GPL-scanner note, and the licensing fixes are all now
-      done — the F-67 piece closed 2026-08-28 (accept formally, see above).
+      done — F-67 itself resolved outright 2026-08-29 (driver switch, see
+      above), not merely accepted.
       **Still genuinely incomplete: `PM-72` benchmarks** — one port of six has
       a real harness, and the JSONB-vs-relational comparison the whole pitch
       rests on has never been run. That is what remains before

@@ -61,13 +61,13 @@ way in, and a re-normalized value is not the byte sequence the chain signed.
 
 ## Status
 
-**Store** (`C0.8`): a real `tiberius` store — `connect`, `init`, `put`,
+**Store** (`C0.8`): a real `mssql` store — `connect`, `init`, `put`,
 `get`, `delete`, `history`, `vread`, `search`/`search_full`/`search_page`,
-`verify_audit`, `purge`, `log_access` — live-verified against
-`azure-sql-edge` by 24 tests, 0 `#[ignore]`d (**F-65**). What does not exist:
-`conditional_create_audited`, `put_audited`, `upgrade`, `backfill_norm`,
-`transact_audited`. `O10.7` (encrypted transport) is diagnosed, not
-satisfied — see [The trust boundary](trust-boundary.md).
+`verify_audit`, `purge`, `log_access`, `upgrade`, `backfill_norm` —
+live-verified against `azure-sql-edge` by 40 tests, 0 `#[ignore]`d
+(**F-65**, **F-15**). What does not exist: `conditional_create_audited`,
+`put_audited`, `transact_audited`. `O10.7` (encrypted transport) is
+diagnosed and satisfied — see [The trust boundary](trust-boundary.md).
 
 No benchmark has been run against a live store. `doc/benchmarks.md` in this
 port's repository root records schema-scale and in-memory round-trip figures

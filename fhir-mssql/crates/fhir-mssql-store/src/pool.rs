@@ -1,7 +1,7 @@
-//! A connection pool for `tiberius`, which ships none of its own.
+//! A connection pool for `mssql`, which ships none of its own.
 //!
 //! `mysql_async` and `tokio-postgres` (via `deadpool-postgres`) both arrive
-//! with pooling built in; `tiberius` does not, and no `bb8`/`deadpool`
+//! with pooling built in; `mssql` does not, and no `bb8`/`deadpool`
 //! integration for it is mature enough to depend on for a store handling PHI.
 //! `bb8` itself is driver-agnostic — [`ManageConnection`] is the entire
 //! integration surface — so this is a from-scratch implementation rather than
@@ -9,7 +9,7 @@
 
 use async_trait::async_trait;
 use bb8::ManageConnection;
-use tiberius::{Client, Config};
+use mssql_driver::{Client, Config};
 use tokio::net::TcpStream;
 use tokio_util::compat::{Compat, TokioAsyncWriteCompatExt};
 
@@ -30,7 +30,7 @@ impl ConnectionManager {
 #[async_trait]
 impl ManageConnection for ConnectionManager {
     type Connection = Connection;
-    type Error = tiberius::error::Error;
+    type Error = mssql_driver::error::Error;
 
     async fn connect(&self) -> Result<Self::Connection, Self::Error> {
         let tcp = TcpStream::connect(self.config.get_addr()).await?;
@@ -48,7 +48,7 @@ impl ManageConnection for ConnectionManager {
     }
 
     fn has_broken(&self, _conn: &mut Self::Connection) -> bool {
-        // tiberius surfaces a broken connection through the next call's Result
+        // mssql surfaces a broken connection through the next call's Result
         // rather than through a synchronous flag, so there is nothing to check
         // here without doing the async work `is_valid` already does. bb8 calls
         // this only as a fast pre-check; returning `false` defers entirely to

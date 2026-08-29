@@ -12,8 +12,8 @@ Part of **`fhir-mssql`**, which stores FHIR® R3, R4 and R5 resources in SQL Ser
 > TRANSACTION ISOLATION LEVEL SNAPSHOT`, backed by `ALLOW_SNAPSHOT_ISOLATION`
 > on a dedicated database — `READ_COMMITTED_SNAPSHOT` alone was tried first
 > and found insufficient. `O10.7`'s trust/no-trust mechanism is proven
-> correct live (`tests/ssl_live.rs`), but the TLS library underneath it
-> carries unpatched CVEs with no available fix — see **F-67**.
+> correct live (`tests/ssl_live.rs`), and as of 2026-08-29 the TLS library
+> underneath it is current too — see **F-67**, closed.
 >
 > **What is still missing:** `conditional_create_audited`, `put_audited`,
 > `transact_audited`, `upgrade`, `backfill_norm`.
@@ -21,7 +21,7 @@ Part of **`fhir-mssql`**, which stores FHIR® R3, R4 and R5 resources in SQL Ser
 ## What is here
 
 `mssql.rs` (the store), `mssql_search.rs` (the search query builder),
-`pool.rs` (a hand-written `bb8::ManageConnection` for `tiberius`, which ships
+`pool.rs` (a hand-written `bb8::ManageConnection` for `mssql`, which ships
 no pool of its own), plus `lib.rs` and the shared `chain.rs`.
 
 Live-verifying this store for the first time found and fixed five real
@@ -77,8 +77,8 @@ A conformance level is a claim about what has been **verified for this port**,
 not about what its code contains. This crate is part of a port at **Store**
 level (`C0.8`): a T-SQL DDL emitter and a store, both live-verified against
 `azure-sql-edge`. Not **Reference**: no `conditional_create_audited`,
-`put_audited`, `transact_audited`, `upgrade`, or `backfill_norm`, and `O10.7`
-is diagnosed but not satisfiable with the current TLS dependency (**F-67**).
+`put_audited`, `transact_audited`, `upgrade`, or `backfill_norm`. `O10.7` is
+diagnosed and satisfied (**F-67**, closed 2026-08-29).
 
 The conformance matrix is the document to trust — a README, a book chapter, and
 a `tasks.md` checkbox have all been wrong in this repository before.

@@ -31,6 +31,6 @@ unicode-normalization.workspace = true
 sha2.workspace = true
 
 [dev-dependencies]
-tiberius.workspace = true
+mssql-driver.workspace = true
 tokio-util.workspace = true
 tokio = { workspace = true, features = ["rt-multi-thread", "macros", "net"] }

@@ -7,7 +7,7 @@
 //! commentary) before this suite existed to catch it going forward.
 //!
 //! `Bool` binds to `BIT`, `Int` to `INT`, and the derived sort columns to
-//! `DATE`/`DATETIME2(6)`. `tiberius`'s `Row::get::<T,_>` is `try_get(idx).
+//! `DATE`/`DATETIME2(6)`. `mssql`'s `Row::get::<T,_>` is `try_get(idx).
 //! unwrap()` internally, so reading any resource carrying a boolean, an
 //! integer, or a date without matching the raw `ColumnData` variant panics —
 //! and a panic in a library is a denial of service for whatever hosts it
@@ -76,7 +76,7 @@ async fn assert_round_trips(store: &MsSqlStore, resource: &Value) {
 }
 
 /// The `cell_text` check. `active` is a `boolean`, which this port stores as
-/// `BIT` and tiberius reads back as `ColumnData::Bit`, not `String`.
+/// `BIT` and mssql reads back as `ColumnData::Bit`, not `String`.
 #[tokio::test]
 async fn booleans_survive_a_round_trip() {
     let Some(store) = fresh("fhir_mssql_rt_bool", &["Patient"]).await else {

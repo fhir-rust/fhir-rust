@@ -73,19 +73,16 @@ as deliberate boundaries, not oversights. Reports of them are welcome as
 
 ## Known open issues
 
-Honesty here is part of the policy, and this section is not empty:
+Honesty here is part of the policy: this section is updated, not decorative.
+As of 2026-08-29, the [audit register](spec/databases/audit.md) has **no
+open finding** — the last one, **F-67** (four TLS advisories reaching the
+shipping `fhir-mssql-store` through its driver stack), was accepted
+formally 2026-08-28 and then closed outright the next day by switching the
+driver from `tiberius` to `mssql`, a fork maintained to carry the fixes
+forward. Full account in `M14.34` (`fhir-mssql/spec/14-mssql-dialect.md`).
 
-- **F-67 (High, open — accepted).** Four TLS advisories reach the shipping
-  `fhir-mssql-store` through its driver stack, and `native-tls` fails the
-  handshake on at least one host. **Formally accepted 2026-08-28**, after
-  investigating and pricing a driver replacement and finding none viable
-  without either an unbounded maintenance tail or a build worse on the trust
-  axis than the incumbent — full account in `M14.34`
-  (`fhir-mssql/spec/14-mssql-dialect.md`). It is recorded in full in the
-  [audit register](spec/databases/audit.md) and named in
-  [`INSTALL.md`](INSTALL.md) and [`PHI.md`](PHI.md). Run `cargo audit` and
-  weigh it against your own requirements before depending on `fhir-mssql` —
-  the project's decision is not a substitute for yours.
+Run `cargo audit` yourself before depending on any port — this statement is
+current as of the date above, not a standing guarantee.
 
 The [audit register](spec/databases/audit.md) is the live list. It records every
 known divergence between specification, documentation and code, with the command

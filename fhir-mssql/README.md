@@ -6,10 +6,10 @@ constraints — not JSON blobs.
 
 > ## ⚠ Status: Store
 >
-> **What works:** a real `tiberius` store — `connect`, `init`, `put`, `get`,
+> **What works:** a real `mssql` store — `connect`, `init`, `put`, `get`,
 > `delete`, `history`, `vread`, `search`/`search_full`/`search_page`,
 > `verify_audit`, `purge`, `log_access`, `upgrade`, `backfill_norm` —
-> live-verified against a real server by 33 tests (`mssql_store.rs`,
+> live-verified against a real server by 40 tests (`mssql_store.rs`,
 > `concurrency.rs`, `redaction.rs`, `roundtrip_types.rs`, `ssl_live.rs`,
 > `upgrade.rs`), **0 `#[ignore]`d**, plus the T-SQL DDL emitter that came
 > before it. You can write and read a resource with this crate today.
@@ -28,23 +28,24 @@ constraints — not JSON blobs.
 > `ALLOW_SNAPSHOT_ISOLATION` on a dedicated database (`scripts/db.sh` now
 > provisions one — `master` refuses the option), is what actually stopped it.
 >
-> **`O10.7` is diagnosed, not satisfied.** `tests/ssl_live.rs` confirms live
+> **`O10.7` is diagnosed and satisfied.** `tests/ssl_live.rs` confirms live
 > that certificate verification is a real mechanism, not a no-op —
 > `TrustServerCertificate=false` reproducibly rejects `azure-sql-edge`'s
-> self-signed certificate. But that same investigation found the driver's TLS
-> dependency chain carries four unpatched advisories (three CVEs in
-> `rustls-webpki`, one unmaintained-crate warning) that now reach this
-> *shipping* store crate — `deny.toml` had been ignoring them on the
-> assumption they were dev-only, true when written and false since this port
-> gained a store two tasks later. `native-tls` was tried as an escape and
-> fails the TLS handshake outright on this host. See `M14.34` and
-> [`audit.md`](../spec/databases/audit.md) **F-67**.
+> self-signed certificate. An earlier investigation found the driver's TLS
+> dependency chain carrying four unpatched advisories (three CVEs in
+> `rustls-webpki`, one unmaintained-crate warning) that reached this
+> *shipping* store crate; `native-tls` was tried as an escape and failed the
+> TLS handshake outright on this host. **Resolved 2026-08-29** by switching
+> the driver from `tiberius` (its last release, 0.12.3, never picked the
+> fixes up) to `mssql`, a fork maintained for exactly this — none of the
+> four advisory packages remain anywhere in the dependency tree. See
+> `M14.34` and [`audit.md`](../spec/databases/audit.md) **F-67**, closed.
 >
 > **What does not exist:** `conditional_create_audited`, `put_audited`
 > (optimistic concurrency), `transact_audited`. `upgrade` and `backfill_norm`
 > now exist (closes this port's share of **F-15**) — live-verified against
-> `azure-sql-edge` by 9 more tests (`tests/upgrade.rs`), 0 `#[ignore]`d,
-> bringing the store's live total to 33. Unlike `fhir-mysql`/`fhir-mariadb`,
+> `azure-sql-edge` by 16 tests (`tests/upgrade.rs`), 0 `#[ignore]`d,
+> bringing the store's live total to 40. Unlike `fhir-mysql`/`fhir-mariadb`,
 > `upgrade` is genuinely atomic: T-SQL DDL is transactional, so the whole
 > additive-plus-destructive apply runs inside one `BEGIN TRANSACTION` and
 > rolls back on the first failure rather than leaving a half-upgraded schema.
@@ -139,12 +140,8 @@ than in the DDL. Recorded as a departure (`M14.16`), not hidden.
 In rough order, from the [conformance matrix](../spec/databases/conformance-matrix.md)
 and the annex:
 
-1. **Decide `M14.34`'s residual risk** — the verification mechanism works;
-   the TLS library underneath it does not have a fix available today. Accept
-   the risk formally, fund a different driver, or state the transport story
-   is unresolved.
-2. **The unindexable-column decision**, above (`M14.16`).
-3. **Verification against full SQL Server**, not only `azure-sql-edge`
+1. **The unindexable-column decision**, above (`M14.16`).
+2. **Verification against full SQL Server**, not only `azure-sql-edge`
    (`M14.31`).
 
 `upgrade` and `backfill_norm` are done — every Store-level port now has them

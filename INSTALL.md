@@ -36,13 +36,15 @@ and the [conformance matrix](spec/databases/conformance-matrix.md) before
 relying on any of it. The levels are what has been *verified for that port*, not
 what its code contains.
 
-> **`fhir-mssql` carries a known advisory risk.** Four TLS advisories reach the
-> shipping `fhir-mssql-store` through its driver stack, recorded as **F-67**.
-> The project accepted this risk formally on 2026-08-28 rather than chase a
-> replacement — investigated and priced a driver replacement first, found none
-> viable (see `M14.34` in `fhir-mssql/spec/14-mssql-dialect.md`) — but that is
-> the project's risk tolerance, not necessarily yours. Run `cargo audit` and
-> make your own decision before depending on that port.
+> **`fhir-mssql` carried a known advisory risk, since resolved.** Four TLS
+> advisories reached the shipping `fhir-mssql-store` through its driver
+> stack, recorded as **F-67**. The project accepted the risk formally on
+> 2026-08-28 after investigating and pricing a driver replacement and
+> finding none viable (see `M14.34` in
+> `fhir-mssql/spec/14-mssql-dialect.md`), then resolved it outright the next
+> day by switching the driver from `tiberius` to `mssql`, a fork maintained
+> to carry the fixes forward. **F-67 is closed** — run `cargo audit`
+> yourself to confirm current status before depending on any port.
 
 ## Install a store
 
@@ -195,7 +197,7 @@ gate that keeps them identical:
 ## Verify what you installed
 
 ```sh
-cargo audit                              # known advisories; see F-67 above
+cargo audit                              # known advisories; F-67 above is closed, but check for new ones
 ./scripts/check-published-match.sh       # every crate's source version vs crates.io
 ```
 

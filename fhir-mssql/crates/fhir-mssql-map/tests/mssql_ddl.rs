@@ -17,7 +17,7 @@
 use std::sync::Arc;
 
 use fhir_mssql_map::model::RelMap;
-use tiberius::{Client, Config};
+use mssql_driver::{Client, Config};
 use tokio::net::TcpStream;
 use tokio_util::compat::TokioAsyncWriteCompatExt;
 

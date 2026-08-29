@@ -1,5 +1,13 @@
 //! The SQL Server store.
 //!
+//! # Driver
+//!
+//! Built on [`mssql_driver`] (crate `mssql`), a fork of `tiberius` maintained
+//! by this project's owner specifically to pick up TLS fixes tiberius 0.12.3
+//! — its last release — never did (closes **F-67**, 2026-08-29). The public
+//! API is unchanged from `tiberius`'s, so everything below that describes
+//! driver behaviour describes both.
+//!
 //! # What is implemented, and what is not
 //!
 //! Implemented and verified against a live `azure-sql-edge` container:
@@ -18,7 +26,7 @@
 //!
 //! # Differences from the MySQL/MariaDB stores this was built alongside
 //!
-//! - **No connection pool or typed transaction API in the driver.** `tiberius`
+//! - **No connection pool or typed transaction API in the driver.** `mssql`
 //!   has neither; [`crate::pool`] supplies a pool, and transactions here are
 //!   plain `BEGIN TRANSACTION` / `COMMIT TRANSACTION` / `ROLLBACK TRANSACTION`
 //!   statements rather than a typed `Transaction` handle.
@@ -37,7 +45,7 @@
 use std::sync::Arc;
 
 use fhir_mssql_map::model::{ColTy, RelMap};
-use tiberius::{ColumnData, Row};
+use mssql_driver::{ColumnData, Row};
 
 use crate::StoreError;
 use crate::pool::{self, Pool};
@@ -45,11 +53,11 @@ use crate::pool::{self, Pool};
 /// A history row's chain tip: `(version_id, sha256 link, sha3 link)`.
 type ChainTip = (i64, Option<Vec<u8>>, Option<Vec<u8>>);
 
-fn db_err(e: tiberius::error::Error) -> StoreError {
+fn db_err(e: mssql_driver::error::Error) -> StoreError {
     StoreError::Db(e.to_string())
 }
 
-fn pool_err(e: bb8::RunError<tiberius::error::Error>) -> StoreError {
+fn pool_err(e: bb8::RunError<mssql_driver::error::Error>) -> StoreError {
     StoreError::Pool(e.to_string())
 }
 
@@ -2308,8 +2316,10 @@ impl MsSqlStore {
                 .take(q.count_binds)
                 .map(|b| Bound::Str(Some(b.clone())))
                 .collect();
-            let params: Vec<&dyn tiberius::ToSql> =
-                binds.iter().map(|b| b as &dyn tiberius::ToSql).collect();
+            let params: Vec<&dyn mssql_driver::ToSql> = binds
+                .iter()
+                .map(|b| b as &dyn mssql_driver::ToSql)
+                .collect();
             let row = conn
                 .query(&q.count_sql, &params)
                 .await
@@ -2327,8 +2337,10 @@ impl MsSqlStore {
             .iter()
             .map(|b| Bound::Str(Some(b.clone())))
             .collect();
-        let params: Vec<&dyn tiberius::ToSql> =
-            binds.iter().map(|b| b as &dyn tiberius::ToSql).collect();
+        let params: Vec<&dyn mssql_driver::ToSql> = binds
+            .iter()
+            .map(|b| b as &dyn mssql_driver::ToSql)
+            .collect();
         let rows = conn
             .query(&q.sql, &params)
             .await
@@ -2440,7 +2452,7 @@ fn hist_entry(r: &Row) -> Result<crate::HistEntry, StoreError> {
     })
 }
 
-/// A value ready to bind, independent of `tiberius`'s borrowed `ToSql`
+/// A value ready to bind, independent of `mssql`'s borrowed `ToSql`
 /// lifetime — needed because rows are built up in owned `Vec<Bound>` before
 /// the statement that consumes them exists.
 enum Bound {
@@ -2487,7 +2499,7 @@ fn null_for_ty(ty: ColTy) -> Bound {
     }
 }
 
-impl tiberius::ToSql for Bound {
+impl mssql_driver::ToSql for Bound {
     fn to_sql(&self) -> ColumnData<'_> {
         self.as_column_data()
     }
@@ -2496,7 +2508,7 @@ impl tiberius::ToSql for Bound {
 /// One `INSERT`, one row.
 ///
 /// Not batched into a multi-row `INSERT … VALUES (..), (..), ..` the way the
-/// MySQL store batches: `tiberius` builds each parameter list against a fixed
+/// MySQL store batches: `mssql` builds each parameter list against a fixed
 /// `@P1..@PN` count per call rather than a query builder, so a variable-width
 /// batch needs the SQL string rebuilt per batch size anyway, and one row at a
 /// time is the version proven against a live server in the time available.
@@ -2515,8 +2527,8 @@ async fn insert_row(
         cols.join(", "),
         marks.join(", ")
     );
-    let params: Vec<&dyn tiberius::ToSql> =
-        vals.iter().map(|v| v as &dyn tiberius::ToSql).collect();
+    let params: Vec<&dyn mssql_driver::ToSql> =
+        vals.iter().map(|v| v as &dyn mssql_driver::ToSql).collect();
     conn.execute(sql, &params)
         .await
         .map_err(|e| StoreError::Other(format!("inserting into {table}: {e}")))?;

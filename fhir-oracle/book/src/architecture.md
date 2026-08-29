@@ -47,7 +47,7 @@ Two consequences worth knowing before reading the store's source:
 
 - **The connection pool is the driver's own**, `oracle::pool::Pool` — unlike
   `fhir-mssql`, which had to hand-write a `bb8::ManageConnection` because
-  `tiberius` ships no pool at all.
+  `mssql` (its TDS driver) ships no pool at all.
 - **Row locking uses `SELECT … FOR UPDATE`**, Oracle's native syntax,
   instead of the `WITH (UPDLOCK, ROWLOCK)` hint SQL Server needs for the
   same guarantee.

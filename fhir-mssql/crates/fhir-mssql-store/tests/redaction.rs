@@ -13,12 +13,12 @@
 //!
 //! # A promise this port cannot make at every level
 //!
-//! `tiberius` itself logs full TDS row payloads — the raw JSON `resource`
+//! `mssql` itself logs full TDS row payloads — the raw JSON `resource`
 //! column included — at `TRACE`, from its own connection and token-decoding
 //! internals, entirely outside this store's control. Running this test's
 //! first case at `TRACE` (the level the MySQL suite it was ported from uses)
 //! failed immediately, and it was not this crate's code that leaked the
-//! marker: `tiberius::tds::stream::token`'s own trace lines carried the raw
+//! marker: `mssql_driver::tds::stream::token`'s own trace lines carried the raw
 //! row. `DEBUG` is the ceiling this store can actually promise, and it is
 //! also the realistic one — no operator runs a production connection pool at
 //! `TRACE`, driver-level packet tracing is a wire-debugging tool. **`TRACE`
@@ -95,7 +95,7 @@ async fn phi_reaches_neither_the_log_nor_the_error() {
 
     let sink = Captured::default();
     let writer = sink.clone();
-    // DEBUG, not TRACE — see the module doc comment: `tiberius`'s own
+    // DEBUG, not TRACE — see the module doc comment: `mssql`'s own
     // packet-level tracing logs raw row content that this store's code never
     // sees or controls, which is a driver-tracing hazard rather than
     // something T11.7 is about.

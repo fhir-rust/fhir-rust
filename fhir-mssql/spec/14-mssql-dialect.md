@@ -307,8 +307,9 @@ schema per FHIR® version.
 
 ## Driver and transport
 
-- **M14.24** The driver is `tiberius` — pure-Rust TDS, so no ODBC or FreeTDS on
-  the host — with `rustls`, because SQL Server negotiates TLS during login even
+- **M14.24** The driver is `mssql` (a fork of `tiberius`, since 2026-08-29 —
+  see `M14.34`'s postscript) — pure-Rust TDS, so no ODBC or FreeTDS on the
+  host — with `rustls`, because SQL Server negotiates TLS during login even
   for an otherwise plaintext connection (`O10.7`).
 
 - **M14.34** **That choice carries four unfixed advisories, and — unlike when
@@ -457,6 +458,37 @@ schema per FHIR® version.
   the first and not the second, so it MUST NOT claim `O10.7` satisfied,
   though it is closer to satisfying it — and more precisely diagnosed — than
   before this pass.
+
+  **Postscript, 2026-08-29 — F-67 closed. The 2026-08-28 risk acceptance
+  above was overtaken the very next day, not by new information about
+  `tiberius` or PR #419, but by a new option the investigation above did not
+  have: the project's owner published `mssql`
+  (github.com/joelparkerhenderson/mssql-rust), a fork of `tiberius`
+  maintained specifically to carry forward the security fixes tiberius
+  itself stopped shipping after 0.12.3.** This is, functionally, the "fork
+  carrying #419's fix" option priced above — but instead of a private or
+  third-party fork with an open-ended maintenance tail, it is now this
+  project's own crate, published to crates.io, with the review problem PR
+  #419 had (zero maintainer attention in 3+ months) simply not applying to
+  work reviewed as this project's own. `Cargo.toml`'s dependency changed
+  from `tiberius` to `mssql` (aliased `mssql-driver`, since this crate
+  already has a local module named `mssql`); no other source change was
+  needed, since the fork kept `tiberius`'s public API. `cargo tree` confirms
+  the resolved chain is now `tokio-rustls 0.26.4` → `rustls 0.23.43` →
+  `rustls-webpki 0.103.15` — none of RUSTSEC-2026-0098, -0099, -0104, or
+  RUSTSEC-2025-0134's packages remain anywhere in the tree. `deny.toml`'s
+  ignore list is empty; `cargo deny check` passes clean. The full live
+  suite (`tests/mssql_store.rs`, `concurrency.rs`, `redaction.rs`,
+  `roundtrip_types.rs`, `ssl_live.rs`, `upgrade.rs`, `mssql_ddl.rs` — 46
+  tests) passes against `azure-sql-edge` under this driver. `O10.7` is now
+  claimed, not merely diagnosed.
+
+  The 2026-08-28 decision text above is kept rather than deleted: it was the
+  right call given the options that existed at the time, and the reasoning
+  for rejecting a fork someone else controlled (an unbounded, indefinite
+  maintenance obligation, on no one else's schedule) is exactly why a fork
+  this project controls is a different, acceptable trade rather than the
+  same one revisited.
 
 ## Snapshot isolation and write serialization — decided and verified
 

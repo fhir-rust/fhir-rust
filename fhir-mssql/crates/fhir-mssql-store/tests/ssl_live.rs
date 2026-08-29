@@ -6,7 +6,7 @@
 //! Proving that a verifying connection *succeeds* proves almost nothing: if
 //! certificate checking were a no-op, it would succeed too. So the
 //! load-bearing assertion here is that `TrustServerCertificate=false`
-//! (`tiberius`'s verifying `TrustConfig::Default`, using the OS's native
+//! (`mssql`'s verifying `TrustConfig::Default`, using the OS's native
 //! root store) **rejects** a connection to `azure-sql-edge`'s self-signed
 //! certificate, which `TrustServerCertificate=true` (`TrustConfig::TrustAll`)
 //! accepts without complaint.
@@ -80,7 +80,7 @@ async fn tls_is_configurable_and_verification_is_not_a_no_op() {
         return;
     };
 
-    // 1. The server is reachable at all, over `tiberius`'s default
+    // 1. The server is reachable at all, over `mssql`'s default
     //    `EncryptionLevel::Off` (login-only encryption — see `mssql.rs`'s
     //    module doc and `M14.34`). Without this, test 3's failure could just
     //    be "no server".
@@ -89,7 +89,7 @@ async fn tls_is_configurable_and_verification_is_not_a_no_op() {
         .expect("default encryption: the server must be reachable for this test to mean anything");
 
     // 2. Full-session TLS engages. This also proves the `rustls` feature is
-    //    compiled into `tiberius` — with `default-features = false` and no
+    //    compiled into `mssql` — with `default-features = false` and no
     //    `rustls` feature, there would be no TLS at all and this would fail
     //    to compile, let alone connect.
     let encrypt_trust_all = with_params(
@@ -105,9 +105,9 @@ async fn tls_is_configurable_and_verification_is_not_a_no_op() {
     // The error `bb8` surfaces here is its own "Timed out in bb8" — `pool::
     // connect_pool`'s eager reachability probe (added for a different reason,
     // see its own doc comment) retries through `bb8`'s connection timeout
-    // before giving up, rather than propagating `tiberius`'s immediate
+    // before giving up, rather than propagating `mssql`'s immediate
     // `invalid peer certificate: Other(UnsupportedCertVersion)` — confirmed
-    // by running this same DSN directly against `tiberius::Client::connect`
+    // by running this same DSN directly against `mssql_driver::Client::connect`
     // outside the pool, bypassing `bb8` entirely. So this assertion checks
     // only that the connection **fails**, not the wrapped message text: the
     // message a caller sees depends on `bb8`'s retry/timeout behaviour, not

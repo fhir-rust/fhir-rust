@@ -218,7 +218,7 @@ live-confirmed.
 | `P6.6` fold in Rust | • | • | • | • | • | • | `fold.rs` identical across ports |
 | `P6.8` parameter binding | • | • | • | • | — | — | fuzz seed corpus committed in all six |
 | `O10.4a` backfill on fold change | • | • | • | • | • | • | **F-15** fixed on all six ports, live-verified by a `tests/upgrade.rs` on each; oracle last, 2026-08-09 (**F-47** step 1) |
-| `O10.7` encrypted transport | • | — | • | • | ! | ? | all three networked ports **default to verifying**. pg since **F-17** (`tests/ssl_default.rs`); mysql/mariadb since **F-54**, which also had to enable the `rustls-tls` Cargo feature — `minimal` excluded TLS entirely. Live-verified on MySQL 8.4 and MariaDB 11.4 by asserting `VERIFY_IDENTITY` **rejects** a self-signed certificate; mutation-verified both ways. `—` for SQLite (embedded file, no connection); oracle `?` — the store exists now (**F-68**) but transport security is undecided (`M14.22`). mssql `!`, not unverified: `tests/ssl_live.rs` now proves the trust/no-trust *mechanism* works (`TrustServerCertificate=false` reproducibly rejects `azure-sql-edge`'s self-signed certificate; `=true` accepts it) — but the certificate-parsing code in that same dependency chain (`rustls-webpki 0.101.7`) carries three unpatched CVEs, now confirmed reaching the shipping `fhir-mssql-store` crate rather than only a dev-dependency as `deny.toml` used to (wrongly) claim. `native-tls` was tried as an escape and fails the handshake outright on this host. See **F-67** |
+| `O10.7` encrypted transport | • | — | • | • | • | ? | all four networked ports **default to verifying**. pg since **F-17** (`tests/ssl_default.rs`); mysql/mariadb since **F-54**, which also had to enable the `rustls-tls` Cargo feature — `minimal` excluded TLS entirely. Live-verified on MySQL 8.4 and MariaDB 11.4 by asserting `VERIFY_IDENTITY` **rejects** a self-signed certificate; mutation-verified both ways. `—` for SQLite (embedded file, no connection); oracle `?` — the store exists now (**F-68**) but transport security is undecided (`M14.22`). mssql `•` since 2026-08-29 (**F-67** closed): `tests/ssl_live.rs` proves the trust/no-trust *mechanism* works (`TrustServerCertificate=false` reproducibly rejects `azure-sql-edge`'s self-signed certificate; `=true` accepts it), and the certificate-parsing code in that dependency chain — which used to carry three unpatched CVEs reaching the shipping `fhir-mssql-store` crate — is current: the driver switched from `tiberius` to `mssql`, a fork maintained to carry the fixes forward, resolving `rustls-webpki 0.103.15` |
 | `O10.10` supply-chain evidence | • | • | • | • | • | • | `deny.toml` + CI in all six |
 | `O10.12` CI runs target engine | ~ | ~ | ~ | ~ | ~ | — | each port's CI now lives at the repository root (`<port>-ci.yml`, F-49 closed 2026-08-06) and provisions the right engine (mssql SQL Server 2022; oracle's gate stays removed rather than faked, F-06). Still `~`, not `•`: no hosted run has executed yet — the cells turn `•` when the first push runs them green |
 | `T11.1` corpus round-trip | • | • | • | • | ? | ? | |
@@ -294,21 +294,23 @@ way mssql did, by connecting a store and running it (**F-68**).
   likewise no `transact_audited`, no conditional create/delete, no
   `emit_checkpoint`. Also the `T11.8` gaps shared with sqlite.
 - **`fhir-mssql` → Reference.** Reached Store this pass (**F-65**): a real
-  `tiberius` store with search, live-tested, including `R4.5` — fixed in a
+  store with search, live-tested, including `R4.5` — fixed in a
   same-day follow-up once the first attempt (`READ_COMMITTED_SNAPSHOT` alone)
   was tried live and found insufficient; `SET TRANSACTION ISOLATION LEVEL
   SNAPSHOT` backed by a dedicated database is what actually works. `O10.7`'s
-  verification mechanism is now confirmed live (**F-67**), but the same pass
-  found the four TLS advisories `deny.toml` had been ignoring now reach the
+  verification mechanism was confirmed live (**F-67**), and the same pass
+  found the four TLS advisories `deny.toml` had been ignoring reaching the
   shipping store crate, not just a dev-dependency as previously believed —
-  `native-tls` was tried as a fix and fails the handshake on this host, so
-  this is a standing risk needing an owner decision, not the last item on a
-  checklist. `upgrade`/`backfill_norm` are also now done, closing this port's
-  share of **F-15** — live-verified by `tests/upgrade.rs` (9 tests), and
+  `native-tls` was tried as a fix and failed the handshake on this host, so
+  the risk was accepted formally by the owner (2026-08-28), then closed
+  outright the next day by switching the driver from `tiberius` to `mssql`,
+  a fork maintained to carry the fixes forward — `O10.7` is now claimed.
+  `upgrade`/`backfill_norm` are also now done, closing this port's
+  share of **F-15** — live-verified by `tests/upgrade.rs` (16 tests), and
   genuinely atomic (`M14.35`) unlike `fhir-mysql`/`fhir-mariadb`'s equivalent,
-  since T-SQL DDL is transactional. What remains, in rough order: the `M14.34`
-  decision above; verification against full SQL Server rather than
-  `azure-sql-edge` (`M14.31`); and the unindexable-column decision (`M14.16`).
+  since T-SQL DDL is transactional. What remains, in rough order:
+  verification against full SQL Server rather than `azure-sql-edge`
+  (`M14.31`); and the unindexable-column decision (`M14.16`).
 - **`fhir-oracle` → Reference.** Reached Store this pass (**F-68**): Oracle
   Instant Client installed on the host, a real `scripts/db.sh` and
   `tests/oracle_store.rs` built, and four real defects found and fixed by

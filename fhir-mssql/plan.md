@@ -40,10 +40,11 @@ Work breakdown: [`tasks.md`](tasks.md).
   R3/R4/R5 serde types + spec parser. The generator reuses its
   spec-package parsing where practical rather than re-implementing
   StructureDefinition traversal.
-- **D5 — tiberius, not sqlx.** SQL here is generated and
+- **D5 — a pure-Rust TDS driver, not sqlx.** SQL here is generated and
   dynamic; sqlx's compile-time checking can't see it, so its cost buys
   nothing. (The original reasoning was tokio-postgres's pipelining and
-  binary-format parameters; this port's driver is tiberius.)
+  binary-format parameters; this port's driver was `tiberius`, then, from
+  2026-08-29, `mssql` — a fork of it — closing **F-67**.)
 - **D6 — axum for HTTP.** Inherited, and no longer this port's decision: the
   HTTP surface is [`fhir-loco`](../fhir-loco/) (Loco.rs, which is Axum
   underneath), and that crate owns the middleware for
@@ -127,14 +128,15 @@ Work breakdown: [`tasks.md`](tasks.md).
   flight between the server and the database is exactly as sensitive as PHI
   in flight to the client — but the machinery this entry used to describe
   (rustls, `sslmode` honored, a startup bind refusal) is the ancestor's and
-  none of it exists here: the tiberius DSN uses `TrustServerCertificate`,
-  there is no `sslmode`, and nothing refuses a non-loopback bind. The
-  trust/no-trust mechanism itself is live-verified (`tests/ssl_live.rs`),
-  yet `O10.7` is **not claimed**: the driver's rustls-webpki dependency
-  chain carries unpatched advisories that reach the shipping store crate
-  (**F-67**) — a standing risk, formally accepted by the owner 2026-08-28
-  after a driver-replacement investigation found no viable alternative
-  (`M14.34`), not an open question awaiting a call.
+  none of it exists here: the DSN uses `TrustServerCertificate`, there is no
+  `sslmode`, and nothing refuses a non-loopback bind. The trust/no-trust
+  mechanism itself is live-verified (`tests/ssl_live.rs`), and `O10.7` **is
+  now claimed**: the driver's rustls-webpki dependency chain carried
+  unpatched advisories reaching the shipping store crate (**F-67**) — a risk
+  formally accepted by the owner 2026-08-28 after a driver-replacement
+  investigation found no viable alternative (`M14.34`) — resolved 2026-08-29
+  by switching from `tiberius` (0.12.3, its last release) to `mssql`, a fork
+  the owner published specifically to carry the fixes forward.
 
 ## Risks
 

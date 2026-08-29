@@ -81,8 +81,10 @@ between — recorded here rather than left to read as still true.
   `git log -1 --format=%G?` returns `G`), laptop publishing is a stated
   permanent decision rather than an open gap, and **F-67 was decided
   2026-08-28** — accept the risk formally, documented in `M14.34` and
-  everywhere the risk is named to a reader. Nothing here is an open item any
-  more; the record of how each closed is what `tasks.md` and the audit
+  everywhere the risk is named to a reader — then **closed outright
+  2026-08-29** by switching the driver from `tiberius` to `mssql`. Nothing
+  here is an open item any more; the record of how each closed is what
+  `tasks.md` and the audit
   register hold.
 - **Rule 4 — met.** Eleven workflows cover all four families
   (`fhir-ci.yml`, one `<port>-ci.yml` per port, `fhir-store-ci.yml`,

@@ -115,21 +115,23 @@ you closed the tab is worth more than a feature request.
 
 ### 9. Did we miss a driver alternative for F-67?
 
-The oldest open decision in the repository has a decision now: four TLS
-advisories reach the shipping `fhir-mssql-store` crate through its driver
-stack, `native-tls` fails the handshake as an escape route, and — as of
-2026-08-28 — the owner has accepted the risk formally rather than chase a
-replacement, after investigating and pricing three alternatives (a
-from-scratch driver, a fork of the one upstream fix that exists,
-`prisma/tiberius#419`, and one newer crate disqualified on sight). Full
-account: `M14.34` in `fhir-mssql/spec/14-mssql-dialect.md`.
+**Resolved 2026-08-29 — no longer an open question.** Four TLS advisories
+reached the shipping `fhir-mssql-store` crate through its driver stack,
+`native-tls` failed the handshake as an escape route, and on 2026-08-28 the
+owner accepted the risk formally rather than chase a replacement, after
+investigating and pricing three alternatives (a from-scratch driver, a fork
+of the one upstream fix that exists, `prisma/tiberius#419`, and one newer
+crate disqualified on sight). Full account: `M14.34` in
+`fhir-mssql/spec/14-mssql-dialect.md`.
 
-That decision was made with the alternatives we could find. **If you know a
-TDS driver, a fork, or a mitigation this search missed** — or if you run SQL
-Server in production and have a view on whether encrypted transport with a
-known-vulnerable certificate parser beats no port at all — that is still a
-genuinely useful thing to send, and it is the one question here with a real
-chance of reopening a closed decision rather than just informing an open one.
+That acceptance was overtaken the very next day: the owner published `mssql`
+(github.com/joelparkerhenderson/mssql-rust), a fork of `tiberius` maintained
+specifically to carry forward the fixes tiberius's last release (0.12.3)
+never shipped. `fhir-mssql-store` now depends on it; none of the four
+advisories remain in the dependency tree, and the full live suite passes
+against `azure-sql-edge` under the new driver. If you find a problem with
+*that* driver, `github.com/joelparkerhenderson/mssql-rust` is where it's
+maintained — that is still a genuinely useful thing to send.
 
 ### 10. Should publishing move to CI?
 

@@ -9,7 +9,7 @@
 //! not covered, and `C0.9`: the level claimed for this port is only what the
 //! live suite actually exercises.
 //!
-//! `tiberius` has no built-in connection pool or typed transaction API, unlike
+//! `mssql` has no built-in connection pool or typed transaction API, unlike
 //! `mysql_async` or `tokio-postgres`. [`pool`] supplies the former with a
 //! from-scratch `bb8::ManageConnection`; transactions are plain
 //! `BEGIN`/`COMMIT`/`ROLLBACK TRANSACTION` statements, since T-SQL has no

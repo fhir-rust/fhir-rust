@@ -22,7 +22,7 @@ of it.
 | Does it write PHI to logs? | **Not at default level** — `O10.2`, and `T11.7` tests it. |
 | Does it record who accessed a record? | **Yes**, deliberately — and that record contains identifiers. See below. |
 | Can I erase a patient? | Yes — `M3.18`, erasure with a tombstone, mapped to GDPR Art. 17. |
-| Is the database connection encrypted? | **Verifying by default on PostgreSQL, MySQL, MariaDB, and SQL Server** — `O10.7` (but read **F-67** for SQL Server). SQLite has no connection; Oracle's transport security is undecided (`M14.22`). |
+| Is the database connection encrypted? | **Verifying by default on PostgreSQL, MySQL, MariaDB, and SQL Server** — `O10.7` satisfied on all four (SQL Server since **F-67** closed 2026-08-29). SQLite has no connection; Oracle's transport security is undecided (`M14.22`). |
 | Is it a medical device? | **No**, and it cannot make your deployment compliant. See "What this is not". |
 | Who do I contact? | [`SECURITY.md`](SECURITY.md) for anything sensitive; [`MAINTAINERS.md`](MAINTAINERS.md) otherwise. |
 
@@ -125,15 +125,15 @@ about people. This is a structural property you can check against the tree.
 
 Stated here so you find them from this page rather than from an audit:
 
-- **`fhir-mssql` carries four open TLS advisories** that reach the shipping
-  crate through its driver stack — **F-67**, the only **High** finding
-  currently in the [audit register](spec/databases/audit.md). The project
-  formally accepted this risk 2026-08-28 rather than chase a replacement,
-  after investigating and pricing three alternatives and finding none viable
-  (full account: `M14.34`, `fhir-mssql/spec/14-mssql-dialect.md`) — that is
-  the project's own risk tolerance, not necessarily yours. If
-  encrypted transport to SQL Server matters to you, read that finding before
-  depending on the port.
+- **`fhir-mssql` carried four TLS advisories** that reached the shipping
+  crate through its driver stack — **F-67**, formerly the only **High**
+  finding in the [audit register](spec/databases/audit.md). The project
+  accepted this risk formally 2026-08-28 after investigating and pricing
+  three alternatives and finding none viable (full account: `M14.34`,
+  `fhir-mssql/spec/14-mssql-dialect.md`), then resolved it outright the next
+  day by switching the driver from `tiberius` to `mssql`, a fork maintained
+  to carry the fixes forward — none of the four advisories remain in the
+  dependency tree. **F-67 is closed.**
 - **No Inferno run has ever been performed** against `fhir-loco`, so
   ONC/HTI FHIR conformance and Bulk Data are recorded as *partly* satisfied in
   §13 rather than as met.

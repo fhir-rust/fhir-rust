@@ -42,7 +42,7 @@ Summarized from the annex; the annex governs.
 | Append-only (`M3.17`) | `CREATE OR ALTER TRIGGER … INSTEAD OF`, `THROW 50000`; no `DROP` window (`M14.19`) |
 | Erasure (`M3.18`) | `SESSION_CONTEXT` — T-SQL's nearest equivalent to `SET LOCAL` (`M14.21`) |
 | Paging / placeholders | `OFFSET … FETCH`, `@P1`, no `NULLS LAST` (`M14.22`) |
-| Transport (`O10.7`) | `tiberius` + rustls (`M14.24`); verification mechanism confirmed live (`tests/ssl_live.rs`), but the driver's TLS dependency chain carries 4 unpatched CVEs now confirmed reaching the shipping store crate — `native-tls` tried as an escape, fails the handshake on this host (`M14.34`, **F-67**). Not claimed |
+| Transport (`O10.7`) | `mssql` (a `tiberius` fork since 2026-08-29) + rustls (`M14.24`); verification mechanism confirmed live (`tests/ssl_live.rs`). The driver's TLS dependency chain carried 4 unpatched CVEs reaching the shipping store crate — `native-tls` tried as an escape, fails the handshake on this host — resolved by the driver switch, not by an escape (`M14.34`, **F-67 closed**). Claimed |
 | Snapshot isolation (`M14.25`) | **decided and verified**: `SET TRANSACTION ISOLATION LEVEL SNAPSHOT` in `get`, backed by `ALLOW_SNAPSHOT_ISOLATION` on a dedicated `fhir_mssql` database — `READ_COMMITTED_SNAPSHOT` alone was tried first and live-confirmed *not* to fix it |
 | Write serialization (`M14.26`) | **decided and verified**: `WITH (UPDLOCK, ROWLOCK)`, 8 of 8 racing writers got distinct consecutive versions live |
 | Undecided | install atomicity at scale (`M14.27`) |
@@ -69,14 +69,19 @@ Summarized from the annex; the annex governs.
   after the first attempt, `READ_COMMITTED_SNAPSHOT` alone, was tried live and
   found insufficient). See the [register](../../spec/databases/audit.md)
   **F-65**.
-- **F-67 (High)** — `deny.toml` ignored 4 TLS advisories on the reasoning that
-  `tiberius` was only a dev-dependency; that stopped being true the moment
-  **F-65** gave this port a store, unnoticed for two days. Corrected, not
-  fixed: no working alternative exists (`native-tls` fails the handshake on
-  this host), so this is now a standing residual risk pending an owner
-  decision. The same investigation confirmed `O10.7`'s trust/no-trust
-  mechanism genuinely works (`tests/ssl_live.rs`). See `M14.34` and the
-  [register](../../spec/databases/audit.md) **F-67**.
+- **F-67 (High), closed 2026-08-29** — `deny.toml` ignored 4 TLS advisories on
+  the reasoning that `tiberius` was only a dev-dependency; that stopped being
+  true the moment **F-65** gave this port a store, unnoticed for two days.
+  Corrected first (2026-08-04), then formally risk-accepted by the owner
+  (2026-08-28) after `native-tls` and two other alternatives were
+  investigated and found nonviable (`M14.34`). Actually resolved the next
+  day: the owner published `mssql`, a `tiberius` fork maintained to carry
+  security fixes tiberius's last release (0.12.3) never did, and this port's
+  driver now depends on it — none of the four advisory packages remain
+  anywhere in the dependency tree, verified with `cargo tree`. The same
+  investigation confirmed `O10.7`'s trust/no-trust mechanism genuinely works
+  (`tests/ssl_live.rs`); it is now claimed as well as verified. See `M14.34`
+  and the [register](../../spec/databases/audit.md) **F-67**.
 
 ## Contents of the core
 

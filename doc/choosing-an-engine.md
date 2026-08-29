@@ -10,7 +10,7 @@ the `store` crate — and in how much has been verified.
 | Production today | **`fhir-postgresql`** | the only port whose test suite substantiates its claims |
 | Embedded, no server | **`fhir-sqlite`** | one file, bundled engine, always-runnable tests |
 | An existing MySQL/MariaDB estate | `fhir-mysql`, `fhir-mariadb` | native stores and search, live CI gates |
-| SQL Server | `fhir-mssql` | native store and search, live-verified incl. `upgrade` (**F-65**); note the TLS advisory risk (**F-67**) |
+| SQL Server | `fhir-mssql` | native store and search, live-verified incl. `upgrade` (**F-65**); `O10.7` satisfied (**F-67** closed) |
 | Oracle | `fhir-oracle`, cautiously | native store, search, and `upgrade`/backfill, live-verified (**F-68**, **F-15**) — but no concurrency/redaction tests, and `R4.5` snapshot reads are a confirmed open gap |
 
 ## Status in detail
@@ -116,17 +116,19 @@ on session time zone and its range ends in 2038.
 ### SQL Server
 
 **Store level since 2026-08-04** (**F-65** — an earlier revision of this
-section began "Not usable yet"). A real `tiberius` store with search,
-live-verified against `azure-sql-edge` by 33 tests, 0 ignored, including
+section began "Not usable yet"). A real `mssql` store with search,
+live-verified against `azure-sql-edge` by 41 tests, 0 ignored, including
 `upgrade`/`backfill_norm` (this port's `upgrade` is genuinely one
 transaction — T-SQL DDL is transactional, `M14.35`). `R4.5` snapshot reads
 needed two live attempts: `READ_COMMITTED_SNAPSHOT` alone still tore;
 `SET TRANSACTION ISOLATION LEVEL SNAPSHOT` on a dedicated database is what
 works. What to weigh before choosing it:
 
-- **The TLS advisory risk (`F-67`)**: three unpatched `rustls-webpki` CVEs
-  reach the shipping store crate, and `native-tls` fails the handshake — a
-  standing risk awaiting an owner decision, so `O10.7` is `!` in the matrix.
+- **The TLS advisory risk (`F-67`) is closed.** Three unpatched
+  `rustls-webpki` CVEs used to reach the shipping store crate, and
+  `native-tls` fails the handshake — resolved 2026-08-29 by switching the
+  driver from `tiberius` (its last release, 0.12.3) to `mssql`, a fork
+  maintained to carry the fixes forward. `O10.7` is `•` in the matrix.
 - Verified only against `azure-sql-edge`, not full SQL Server (`M14.31`).
 - A token's `system`/`code` are `NVARCHAR(MAX)` and are dropped from their
   index, so those searches scan. The intended fix is a persisted computed

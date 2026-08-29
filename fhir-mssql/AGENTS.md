@@ -25,9 +25,9 @@ Normative behaviour is the monorepo core plus this port's annex:
 
 ## Specific to this port
 
-**Store.** `store/src/mssql.rs` and `mssql_search.rs` are a real `tiberius`
-store with search, live-verified against `azure-sql-edge` by 33 tests, 0
-`#[ignore]`d (**F-65**; **F-15** closed here, 9 more tests in
+**Store.** `store/src/mssql.rs` and `mssql_search.rs` are a real `mssql`
+store with search, live-verified against `azure-sql-edge` by 40 tests, 0
+`#[ignore]`d (**F-65**; **F-15** closed here, 16 more tests in
 `tests/upgrade.rs`). `R4.5` (stable reads under concurrent writers) needed
 two tries — `READ_COMMITTED_SNAPSHOT` alone was tried live and still tore;
 `get` issuing `SET TRANSACTION ISOLATION LEVEL SNAPSHOT`, backed by
@@ -38,12 +38,14 @@ setup. `upgrade` is one transaction, unlike `fhir-mysql`/`fhir-mariadb` — a
 failed one rolls back rather than half-applying (`M14.35`) — and its
 destructive table drops MUST go children-before-base or SQL Server refuses
 with error 3726 (`M14.36`, found live). No `conditional_create_audited`,
-`put_audited`, or `transact_audited`. `O10.7`'s trust mechanism is confirmed working
-live (`tests/ssl_live.rs`) but not claimed — the driver's TLS chain carries
-four unpatched advisories now confirmed reaching this shipping crate, and
-`native-tls` fails the handshake on this host (**F-67**; `M14.34`). CI now provisions SQL Server 2022 and
-`FHIR_MSSQL_REQUIRE_DB=1` makes an absent database fail rather than skip
-(**F-06** fixed).
+`put_audited`, or `transact_audited`. `O10.7`'s trust mechanism is confirmed
+working live (`tests/ssl_live.rs`) and now claimed — the driver's TLS chain
+carried four unpatched advisories reaching this shipping crate, resolved
+2026-08-29 by switching from `tiberius` (0.12.3, its last release) to
+`mssql`, a fork maintained for exactly this (**F-67** closed; `M14.34`).
+`native-tls` still fails the handshake on this host. CI now provisions SQL
+Server 2022 and `FHIR_MSSQL_REQUIRE_DB=1` makes an absent database fail
+rather than skip (**F-06** fixed).
 
 ## The rule that catches people here
 

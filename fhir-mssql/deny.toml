@@ -8,79 +8,41 @@
 # Any unpatched advisory fails the build. When one has no fix yet, add it
 # here with a dated note rather than lowering the bar globally.
 yanked = "deny"
-ignore = [
-    # RUSTSEC-2025-0134 — rustls-pemfile is unmaintained (repository archived
-    # August 2025). Not a vulnerability; an unmaintained-crate advisory.
-    #
-    #   rustls-pemfile 1.0.4
-    #     <- rustls-native-certs 0.6.3
-    #        <- tiberius 0.12.3
-    #           <- fhir-mssql-store   <-- NORMAL dependency, not dev
-    #
-    # **Correction, 2026-08-04: this entry's original reasoning was wrong as
-    # soon as the store existed, and nobody updated it.** It used to say
-    # "verified absent from `cargo tree -e normal`... nothing that ships is
-    # affected" — true in 2026-08-02, when tiberius was only a dev-dependency
-    # of the DDL test. `fhir-mssql-store` (a published, shipping crate) now
-    # depends on it directly, confirmed by running `cargo tree -p
-    # fhir-mssql-store -e normal` and seeing this chain in the normal tree.
-    # This advisory now reaches every consumer of the published store crate.
-    #
-    # Still ignored, not because the exposure is small but because there is
-    # no fix: `native-tls` was tried as an escape from the whole rustls chain
-    # (2026-08-04) and rejected — it fails the TLS handshake outright against
-    # this server's certificate on this host ("Error forming TLS connection:
-    # connection closed via error"), including with blind trust, so it is not
-    # a viable substitute here, only elsewhere. 0.12.3 is tiberius's newest
-    # release (confirmed against the crates.io index the same day) and it
-    # pins `rustls-native-certs 0.6`. RUSTSEC says of rustls-pemfile itself
-    # "No safe upgrade is available".
-    #
-    # **Owner decision, 2026-08-28: accept formally, keep shipping, document
-    # loudly.** Three alternatives were investigated first, each priced
-    # before being set aside — a from-scratch driver (~3-4.5 months for a
-    # narrow reimplementation, and still worse on the trust axis than a
-    # flawed but 6-year, 50-contributor incumbent), the one crate that
-    # already carries the fix upstream (`prisma/tiberius#419` — clean and
-    # CI-green on the fork, but zero maintainer review in 3+ months and
-    # structurally unusable by a published crate, since cargo forbids a
-    # `git` dependency in one), and the one newer alternative crate
-    # (`ms-tds` — disqualified on sight: its own description advertises
-    # offensive/exploitation tooling alongside the driver). See `M14.34` for
-    # the full account of all three. This ignore is now a standing,
-    # deliberate risk acceptance, not a placeholder awaiting a decision —
-    # revisit only on new information (tiberius releasing a fix, or #419
-    # gaining maintainer review), not on a renewal schedule.
-    "RUSTSEC-2025-0134",
-
-    # RUSTSEC-2026-0098, -0099, -0104 — three rustls-webpki 0.101.7 defects in
-    # X.509 name-constraint handling and CRL parsing (the last a reachable
-    # panic). Same now-normal chain, one layer deeper:
-    #
-    #   rustls-webpki 0.101.7
-    #     <- rustls 0.21.12
-    #        <- tokio-rustls 0.24.1
-    #           <- tiberius 0.12.3
-    #              <- fhir-mssql-store   <-- NORMAL dependency, not dev
-    #
-    # **Same correction as above, and sharper here**: `rustls-webpki` is the
-    # crate that performs the certificate validation `tests/ssl_live.rs`
-    # proves this store actually relies on for `O10.7` — the exact code path
-    # with three unpatched defects is the one now confirmed load-bearing for
-    # every TLS connection this store makes, in a crate that ships. The fixes
-    # are in `rustls-webpki >= 0.103.12`, which needs `rustls 0.23`; `rustls
-    # 0.21.12` pins `^0.101`, so `cargo update -p rustls-webpki` changes
-    # nothing — verified. `native-tls` does not work on this host (above), so
-    # it is not an escape from this one either. Recorded 2026-08-02, corrected
-    # 2026-08-04.
-    #
-    # Owner decision, 2026-08-28: same as `RUSTSEC-2025-0134` above — accepted
-    # formally after investigating and pricing three alternatives, none
-    # viable today. See that entry and `M14.34` for the full account.
-    "RUSTSEC-2026-0098",
-    "RUSTSEC-2026-0099",
-    "RUSTSEC-2026-0104",
-]
+# **F-67, closed 2026-08-29 — no ignores below, and there is a reason to say
+# so rather than just deleting silently.** From 2026-08-02 to 2026-08-28 this
+# section carried four ignored advisories — RUSTSEC-2025-0134
+# (rustls-pemfile, unmaintained) and RUSTSEC-2026-0098/-0099/-0104
+# (rustls-webpki 0.101.7, X.509 name-constraint and CRL-parsing defects, the
+# last a reachable panic) — all four reaching this crate through one chain:
+#
+#   rustls-webpki 0.101.7 / rustls-pemfile 1.0.4
+#     <- rustls-native-certs 0.6.3 / rustls 0.21.12
+#        <- tokio-rustls 0.24.1
+#           <- tiberius 0.12.3
+#              <- fhir-mssql-store   <-- NORMAL dependency, not dev
+#
+# `tiberius` 0.12.3 was, and remains, its last release. The 2026-08-28 owner
+# decision (recorded at length in git history for this file) was to accept
+# the risk formally rather than keep shipping it silently, after pricing
+# three alternatives and setting each aside: a from-scratch driver
+# (~3-4.5 months), the one fork that already carried a fix upstream
+# (`prisma/tiberius#419` — CI-green but zero maintainer review in 3+ months,
+# and unusable by a published crate since cargo forbids a `git` dependency
+# in one), and `ms-tds` (disqualified on sight — its own description
+# advertises offensive/exploitation tooling).
+#
+# What changed 2026-08-29: the owner published `mssql`
+# (github.com/joelparkerhenderson/mssql-rust), a fork of tiberius maintained
+# specifically to carry security fixes tiberius itself stopped shipping —
+# which is exactly the `#419`-style fix the investigation above found and
+# set aside for lack of review, minus the review problem, since it is now
+# this project's own crate rather than someone else's unreviewed branch.
+# Switching `Cargo.toml`'s dependency from `tiberius` to `mssql` (aliased
+# `mssql-driver` — see that file's comment) resolves `tokio-rustls 0.26` /
+# `rustls 0.23` / `rustls-webpki 0.103.15`. None of the four advisory
+# packages appear anywhere in this workspace's tree any longer, confirmed
+# with `cargo tree` before this comment was written. Nothing to ignore.
+ignore = []
 
 [licenses]
 # Permissive licences only. Anything copyleft in a linked dependency would
