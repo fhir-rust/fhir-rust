@@ -11,7 +11,13 @@ Five things to know before editing anything here:
    ports, modulo whitespace. Change it in all six or not at all (`X15.1`,
    `W16.7`); check with `../scripts/check-shared-core.sh`.
 2. `ddl.rs` **is** an Oracle emitter now (**F-08** closed): the full R5 schema —
-   9,636 statements — installs on 26ai with 0 invalid objects.
+   9,636 statements — installs on 26ai with 0 invalid objects. That was
+   verified by hand; `crates/fhir-oracle-map/tests/oracle_ddl.rs` (**F-51**
+   closed 2026-08-29) is the live *test* — a sampled schema (`Patient`,
+   `Observation`), not the full one — and it is what actually re-runs on
+   every push, not a transcript. It provisions its own throwaway user
+   (`M14.5`: user is schema) via a SYSTEM connection, the one piece of this
+   port's live tests that needs admin credentials.
 3. `crates/fhir-oracle-store/src/` **connects and has been live-tested**
    (**F-68**, superseding **F-66**'s "compiles but never connected"):
    `tests/oracle_store.rs` runs the full CRUD/history/search/audit surface

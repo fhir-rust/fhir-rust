@@ -98,8 +98,12 @@ posture. Open items for each are in `tasks.md`.
   maintenance tail or a cost worse than the flawed incumbent. Full account:
   `M14.34` in `fhir-mssql/spec/14-mssql-dialect.md`. The advisories stay
   unpatched; the decision about them does not stay open.
-- **F-51 (Medium).** Oracle DDL maintained by hand; the fix is
-  owner-sequenced at the generator (see also the F-90 history).
+- ~~**F-51 (Medium).**~~ Fixed 2026-08-29: `tests/oracle_ddl.rs`
+  (`fhir-oracle-map`) installs a sampled schema live, on the model of
+  `fhir-mssql`'s `mssql_ddl.rs`. The "driver decision" this bullet expected
+  turned out to already be decided by evidence this repository had produced
+  itself: `fhir-oracle-store` (F-68) already proved the `oracle` crate +
+  Instant Client works live. `F-67` is now the sole open finding.
 - ~~**Publishing shape.**~~ Decided 2026-08-26: **documented laptop
   publishing, permanently** — the owner's judgment that GitHub is not
   reliable enough to hold the publish path, made hours after an Actions

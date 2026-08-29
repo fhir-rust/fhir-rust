@@ -149,7 +149,7 @@ type-/system-level history, multi-port wiring, is tracked in that crate's
 | [F-48](#f-48) | Low | the shared-core gate did not watch `gen/tests/`, and could not while its normalization was line-based — rustfmt wraps by crate-name *length* | **fixed** 2026-08-02 — token-based verdict, 75→100 files |
 | [F-49](#f-49) | **High** | No workflow in this repository runs: all 20-odd sit under `<family>/.github/workflows/`, which GitHub does not read. Every "gated in CI" claim is unverified | **fixed** 2026-08-06 — root gates first (`gates.yml`), then every family's CI consolidated to root files with paths filters and working-directory defaults; first hosted run pending a push |
 | [F-50](#f-50) | Medium | The `U2a` reference rule attached an adjunct to `c_url`, which no index uses, while every port indexes `(c_type, c_id)` — 453 of R5's 1,947 search targets unindexable on Oracle | **fixed** 2026-08-02 — all six; gaps now 0 |
-| [F-51](#f-51) | Medium | `fhir-oracle`'s DDL was executed by hand, not by a test, so `C0.9` keeps the port at Scaffold; a live test needs an Oracle driver decision | open |
+| [F-51](#f-51) | Medium | `fhir-oracle`'s DDL was executed by hand, not by a test, so `C0.9` keeps the port at Scaffold; a live test needs an Oracle driver decision | **fixed** 2026-08-29 — the "driver decision" turned out to already be decided by precedent: `fhir-oracle-store` (F-68) already proves the `oracle` crate + Instant Client works live, so no architectural choice remained, only mechanical work. `tests/oracle_ddl.rs` (`fhir-oracle-map`) installs a sampled schema live, verified against `gvenzl/oracle-free`, wired into `fhir-oracle-ci.yml` |
 | [F-52](#f-52) | **High** | The repository's only live database test was flaky — its cleanup dropped tables before foreign keys and discarded the error, so failures were misattributed to a correct `CREATE TABLE` | **fixed** 2026-08-03 — 5/5 runs green |
 | [F-53](#f-53) | Medium | Every store crate's module doc called itself "the PostgreSQL layer" and described operations the two scaffolds do not have — F-01 in `src/` | **fixed** 2026-08-03 — all six |
 | [F-54](#f-54) | **High** | `fhir-mysql` and `fhir-mariadb` carried PHI over an unencrypted database link with no way to encrypt it — the `minimal` Cargo feature excluded TLS entirely | **fixed** 2026-08-03 — `SslMode`, verifying default, live-verified on both engines |
@@ -3169,6 +3169,55 @@ Two behaviours are additionally verified only by hand and would be lost the same
 way: the append-only trigger refusing `UPDATE`/`DELETE` and permitting a
 declared erasure (`M14.29`), and the `Bool` CHECK rejecting `2` (`M14.8`). The
 first is the one that already failed open once (`M14.29a`).
+
+**Fixed 2026-08-29.** The "real decision" this finding described turned out
+to already be decided, by evidence this repository had produced itself and
+not connected to this finding: **F-68**, four items later in this same
+register, already proved `fhir-oracle-store` connecting live via the `oracle`
+crate and Oracle Instant Client — option (a) above, chosen and working,
+months before this finding was revisited. There was no remaining
+architectural question, only the mechanical work of giving the *map* crate
+(which had never depended on a driver, unlike the store) its own copy of
+that same proven dependency.
+
+Added `oracle` as a dev-dependency of `fhir-oracle-map` and
+`tests/oracle_ddl.rs`, on the model `mssql_ddl.rs` set: install a sampled
+schema (`Patient`, `Observation`), assert the statement count, apply every
+statement, and count `USER_TABLES`/`USER_TRIGGERS` afterward rather than
+trust a lack of errors. **One genuine Oracle-specific complication the SQL
+Server model does not have:** Oracle unifies user and schema (`M14.5`), so
+"install into a fresh schema" means "create a fresh database user" — a
+SYSTEM-level privilege no regular test login holds. The test therefore
+connects twice, as SYSTEM to provision a throwaway `DDLTEST` user and then
+as that user to install and verify, mirroring in Rust exactly what this
+port's own `scripts/db.sh` (`post_ready`) and `fhir-oracle-ci.yml` ("Create
+the version users") already do in shell for the `R3`/`R4`/`R5` users the
+*store's* tests use — a different, dedicated user, so this test cannot
+collide with those.
+
+**Live-verified before being trusted, not after:** run twice consecutively
+against a real `gvenzl/oracle-free` container to confirm the drop-and-recreate
+cleanup is not flaky the way `mssql_ddl.rs`'s own history warns it can be (166
+statements, 105 tables, 2 triggers, identically, both times); the skip path
+confirmed silent without `FHIR_ORACLE_REQUIRE_DB`; the fail-loud path
+confirmed to panic rather than skip with it set, against a genuinely
+unreachable connect string; `--release` and `cargo clippy -- -D warnings`
+both clean. Wired into `fhir-oracle-ci.yml`'s existing live-database job,
+ahead of the version-user creation it does not depend on.
+
+**What this does and does not establish.** The port's Schema-level claim
+(`C0.8`, `C0.9`) is now justified by a test that runs, not a transcript —
+that is what this finding asked for, and it is done. **Not established:**
+the full ~9,636-statement R5 install remains verified only by the hand-run
+transcript **F-08** left behind (this test samples two resource types, the
+same trade-off `mssql_ddl.rs` makes, for speed rather than exhaustiveness);
+and the two hand-only behaviours named above — the append-only trigger
+actually *refusing* a forbidden `UPDATE`/`DELETE` (`M14.29`), and the `Bool`
+CHECK actually *rejecting* `2` (`M14.8`) — are untouched by this fix. This
+test counts that triggers exist; it does not exercise what they do. Checked,
+not assumed: neither behaviour appears anywhere in `fhir-oracle-store`'s own
+live suite either — `grep -rl "M14.29\|M14.8" fhir-oracle-store/tests/`
+finds nothing. Both are genuinely untested and worth their own finding.
 
 ---
 

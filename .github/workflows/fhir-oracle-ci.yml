@@ -90,6 +90,10 @@ jobs:
       FHIR_ORACLE_TEST_USER: r5
       FHIR_ORACLE_TEST_PASSWORD: Fhir-Oracle-CI-2026
       FHIR_ORACLE_TEST_CONNECT: 127.0.0.1:1521/FHIR
+      # Same value the "Create the version users" step below already uses as
+      # SYSTEM's password — fhir-oracle-map's DDL live test (F-51) needs it
+      # too, to provision its own throwaway user (M14.5: user is schema).
+      FHIR_ORACLE_ADMIN_PASSWORD: Fhir-Oracle-CI-2026
       # A live job that reaches no server must be red, not a green run
       # that skipped everything (T11.12, T11.13, F-06).
       FHIR_ORACLE_REQUIRE_DB: "1"
@@ -122,6 +126,13 @@ jobs:
           sudo mkdir -p /opt/oracle
           sudo unzip -q ic.zip -d /opt/oracle
           echo "LD_LIBRARY_PATH=$(echo /opt/oracle/instantclient_*)" >> "$GITHUB_ENV"
+      # F-51: does the generated DDL actually install, verified by a test
+      # rather than the hand-run transcript F-08 left behind. Provisions and
+      # drops its own DDLTEST user, so it needs no version user created first
+      # — placed before that step for exactly that reason, and so a DDL
+      # regression is found before spending time creating them.
+      - name: Generated DDL installs on a live server (fhir-oracle-map)
+        run: cargo test --release -p fhir-oracle-map --test oracle_ddl -- --nocapture
       # The uppercase users mirror scripts/db.sh's post_ready: unquoted
       # Oracle identifiers resolve uppercase, and a lowercase-quoted user
       # whose session identity still resolved uppercase was a live bug —

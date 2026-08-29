@@ -31,7 +31,7 @@ not because this port did them.
 - [x] **Search-parameter compilation.** Shared, including the `U1`–`U13`
   adjunct channel this port needs because it cannot index its unbounded text
   type (`TEXT_ADJUNCTS = true`).
-- [x] **DDL emitter.** Oracle, and **executed**: the full R5 schema — 158 resources, 9,636 statements — installed on Oracle 26ai with 0 invalid objects and 0 unindexable search targets (**F-08**). Verified by hand at first (**F-51**), and since **F-68** it is also what every `tests/oracle_store.rs::init_installs_tables_and_triggers` run installs live.
+- [x] **DDL emitter.** Oracle, and **executed**: the full R5 schema — 158 resources, 9,636 statements — installed on Oracle 26ai with 0 invalid objects and 0 unindexable search targets (**F-08**). Verified by hand at first; since **F-68** it is also what every `tests/oracle_store.rs::init_installs_tables_and_triggers` run installs live; and since **F-51** closed (2026-08-29) `crates/fhir-oracle-map/tests/oracle_ddl.rs` is a live *test* of a sampled install, on every push — the port's Schema-level claim (`C0.8`, `C0.9`) is no longer justified by a transcript alone.
 - [x] **A store.** `crates/fhir-oracle-store/src/` implements `connect`,
   `init`, `put`, `get`, `delete`, `history`, `vread`, `verify_audit`, `purge`,
   `log_access`, `search`/`search_full`/`search_page` — connected to a live

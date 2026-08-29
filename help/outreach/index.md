@@ -47,7 +47,7 @@ caution is now closed.
 | **Benchmarks exist for one port of six.** `fhir-postgresql` has a real gated harness (`crates/fhir-postgresql-store/tests/bench.rs`) and measured numbers; the other five have `doc/benchmarks.md` pages but no harness | `find . -name bench.rs`; `fhir-postgresql/doc/benchmarks.md` | Better than the last assessment claimed, and still short of the pitch: the *JSONB comparison* the whole argument rests on has never been run. See **PM-72** and [`BENCHMARKS.md`](../../BENCHMARKS.md). |
 | **No news route.** Six port `CHANGELOG.md` files and `fhir/CHANGELOG.md` exist — but **0 git tags, 0 GitHub releases** | `git tag \| wc -l` → `0`; `GET /repos/.../releases` → `[]` | 34 crates published and nothing a stranger can subscribe to. See **PM-70**. |
 | The licence **is** precise — `MIT OR Apache-2.0 OR BSD-3-Clause OR GPL-2.0-only OR GPL-3.0-only`, declared identically in all 33 manifests — but GitHub reads it as `NOASSERTION` and the expression names GPL | [`LICENSE.md`](../../LICENSE.md); `grep -rn ^license --include=Cargo.toml`; GitHub API `license.spdx_id` | Not the problem yesterday's assessment assumed. See the correction below and **PM-75**. |
-| Two audit findings remain open, one **High** | [audit](../../spec/databases/audit.md): **F-51** (oracle DDL executed by hand), **F-67** (**High** — four TLS advisories now reach the shipping `fhir-mssql-store`; `native-tls` fails the handshake; **owner accepted the risk formally 2026-08-28**, see `M14.34`) | **F-67 is documented, not silent, and PM-4 is done.** It is a published crate with known advisories in its dependency tree and a stated decision about them. `fhir-mssql` may be named externally now — always alongside the risk, never without it. |
+| One audit finding remains open, **High** | [audit](../../spec/databases/audit.md): **F-51** fixed 2026-08-29 (`tests/oracle_ddl.rs`, live, on the model of `mssql_ddl.rs`); **F-67** (**High** — four TLS advisories now reach the shipping `fhir-mssql-store`; `native-tls` fails the handshake; **owner accepted the risk formally 2026-08-28**, see `M14.34`) is the sole survivor | **F-67 is documented, not silent, and PM-4 is done.** It is a published crate with known advisories in its dependency tree and a stated decision about them. `fhir-mssql` may be named externally now — always alongside the risk, never without it. |
 | All six dialect annexes are still **proposed** (`X15.9`) | [`spec/index.md`](../../spec/index.md) *Gaps* | No annex may be cited as evidence for a conformance level — including in a slide, a blog post, or a Zulip message. |
 | The `O10.4c` re-shred was verified on one developer machine, not in CI | [publishing readiness](../../spec/publishing.md) | "Verified" in outreach must mean *hosted CI*, per `C0.9`/`T11.13`. A green laptop is not a public claim. |
 
@@ -87,7 +87,7 @@ anything written for an outside reader.
 | "R2, R3, R4, R4B, R5 and R6 modelled in code, one cargo feature each" | "supports R6" without saying it is a draft | `fhir-r6` is generated from 6.0.0-ballot3, is off by default, and can change between ballots. `fhir-r1` and `fhir-r7`–`r10` are name reservations containing no types. |
 | "34 crates published to crates.io" | "released 1.0" / "stable API" | Pre-release, `0.x`/`4.x` mixed; no stability promise stated. |
 | "live-verified against `azure-sql-edge` / `gvenzl/oracle-free` in CI" | "certified", "validated against SQL Server" | The container is not the product. Name the container. |
-| "the audit register lists every known divergence, with two open" | silence about F-67 | Volunteering an open High finding is the strongest credibility signal we own. |
+| "the audit register lists every known divergence, with one open" | silence about F-67 | Volunteering an open High finding is the strongest credibility signal we own. |
 | "~7,355 generated tables for R5"; the PostgreSQL numbers in [`BENCHMARKS.md`](../../BENCHMARKS.md), dated and attributed to one dev machine | "scales to N million resources"; any store number for a port that did not produce it | 100k is the largest run; five ports have no harness. `W16.10`, and **F-64** is what happens when it is ignored. |
 
 **PM-0.** Any external artefact — post, email, slide, pitch — cites the
@@ -855,7 +855,7 @@ questions on Zulip. Stars, upvotes and impressions are diagnostics of reach,
 not of progress, and should never appear in a status document here.
 
 The corresponding trap: promotion generates pressure to soften the status
-language, because "pre-release, two open findings, dialect annexes still
+language, because "pre-release, one open finding, dialect annexes still
 proposed" reads as weakness to a marketer. In this domain it reads as competence
 to the only people whose adoption matters. **The honesty is the differentiator**
 — HL7's own community has watched a decade of vendors claim conformance they

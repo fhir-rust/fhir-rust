@@ -29,3 +29,13 @@ flate2.workspace = true
 unicode-normalization.workspace = true
 # U4: the checksum adjunct is computed here, never by a SQL function.
 sha2.workspace = true
+
+[dev-dependencies]
+# For tests/oracle_ddl.rs only (F-51): does the generated DDL actually install
+# on a real server? `oracle` binds ODPI-C, which needs Oracle Instant Client
+# present on the host at build and test time — the same dependency
+# `fhir-oracle-store` already carries and F-68 already proved works live, so
+# this is not a new architectural question, just this crate's own copy of a
+# path already verified to work. Synchronous, unlike `fhir-mssql-map`'s
+# `tiberius` dev-dependency, so no tokio dev-dependency is needed here.
+oracle = { workspace = true, features = ["chrono"] }

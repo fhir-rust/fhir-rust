@@ -22,6 +22,45 @@ onward; everything before that date is unsigned and stays that way
 History before 2026-08-01 belongs to the separate projects this monorepo was
 assembled from, and lives in the per-family changelogs above.
 
+## 2026-08-29 — F-51 fixed: fhir-oracle's DDL install is now a live test
+
+`fhir-oracle`'s Schema-level claim (`C0.8`, `C0.9`) rested on a hand-run
+`podman exec ... sqlplus` transcript, not a test that runs. The finding
+named a real-sounding blocker -- "a live test needs an Oracle driver
+decision" -- that turned out to already be decided: **F-68** had already
+proved `fhir-oracle-store` connecting live via the `oracle` crate and Oracle
+Instant Client, months earlier. No architectural choice remained, only the
+mechanical work of giving `fhir-oracle-map` (which had never depended on a
+driver) its own copy of that same proven path.
+
+`crates/fhir-oracle-map/tests/oracle_ddl.rs`, on the model of
+`fhir-mssql`'s `mssql_ddl.rs`: installs a sampled schema (`Patient`,
+`Observation`) live and counts tables and triggers afterward rather than
+trust a lack of errors. One genuine Oracle-specific complication SQL
+Server's model does not have: Oracle unifies user and schema (`M14.5`), so
+installing into a fresh schema means creating a fresh database user, which
+needs a SYSTEM-level connection no regular test login holds -- the test
+connects twice, mirroring in Rust what this port's own `scripts/db.sh` and
+CI workflow already do in shell for the version users the *store's* tests
+use, with its own dedicated, non-colliding user.
+
+Verified live before being trusted: run twice consecutively against a real
+`gvenzl/oracle-free` container (166 statements, 105 tables, 2 triggers,
+identically both times -- the idempotency check `mssql_ddl.rs`'s own
+history warns is not free); the skip and fail-loud paths both confirmed
+against a genuinely unreachable connect string; `--release` and
+`cargo clippy -- -D warnings` clean. Wired into `fhir-oracle-ci.yml`.
+
+**What this does not establish, stated rather than left implicit:** the
+full ~9,636-statement R5 install remains hand-verified only (**F-08**); and
+two behaviours -- the append-only trigger actually refusing a forbidden
+`UPDATE`/`DELETE` (`M14.29`) and the `Bool` CHECK actually rejecting `2`
+(`M14.8`) -- are untouched by this fix and confirmed, not assumed, absent
+from `fhir-oracle-store`'s own live suite too. Both are genuinely untested
+and worth their own finding.
+
+`F-67` is now the sole open finding in the audit register.
+
 ## 2026-08-29 — a self-assessment re-verified rather than trusted
 
 `spec/professionalization/index.md`'s rule-by-rule assessment was dated
