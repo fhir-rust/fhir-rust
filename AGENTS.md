@@ -91,7 +91,7 @@ were misattributed rather than unfinished.
    core — `model.rs`, `shred.rs`, `reconstruct.rs`, `value.rs`, `fold.rs`,
    `canon.rs`, `error.rs`, and all of `gen/` **including its tests** — is
    identical across all six ports and must stay that way (`X15.1`). Check with
-   `./scripts/check-shared-core.sh` — 100 files. It compares tokens rather than
+   `./scripts/check-shared-core.sh` — 110 files. It compares tokens rather than
    lines (`X15.1a`), because rustfmt wraps by crate-name length and a line-based
    gate reports that as a divergence nobody can fix.
    **Run it yourself before pushing.** `.github/workflows/gates.yml` at the
@@ -118,8 +118,8 @@ were misattributed rather than unfinished.
 | What must be true of a port | [`spec/databases/index.md`](spec/databases/index.md) |
 | What must be true of the model crate | [`fhir/spec/index.md`](fhir/spec/index.md) |
 | How ports may differ | [`spec/databases/15-portability-and-dialects.md`](spec/databases/15-portability-and-dialects.md) |
-| What is currently broken | [`spec/audit.md`](spec/databases/audit.md) |
-| Which port does what | [`spec/conformance-matrix.md`](spec/databases/conformance-matrix.md) |
+| What is currently broken | [`spec/databases/audit.md`](spec/databases/audit.md) |
+| Which port does what | [`spec/databases/conformance-matrix.md`](spec/databases/conformance-matrix.md) |
 | Tutorials and examples | [`doc/`](doc/index.md) |
 | A port's design decisions | `fhir-<engine>/plan.md` |
 | A port's work breakdown | `fhir-<engine>/tasks.md` |

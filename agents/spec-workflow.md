@@ -118,8 +118,14 @@ the parts that are easy to skip.
 2. **Consequence.** `L13`: a deployment that changes the fold must backfill
    `_norm` first. `O10.4a` generalizes it: a migration that changes stored
    derived values must ship a backfill.
-3. **Reality.** Only `fhir-postgresql` has `backfill_norm`. Four ports have no
-   `upgrade` at all, so for them the migration is a full reload (**F-15**).
+3. **Reality, at the time this example was written (F-15 open).** Only
+   `fhir-postgresql` had `backfill_norm`; four ports had no `upgrade` at all, so
+   for them the migration was a full reload. **This is now historical**: F-15
+   closed 2026-08-09 on the last of the six ports, and every port has both
+   `upgrade` and `backfill_norm` today (`find . -name upgrade.rs -path
+   '*/src/*'` and `grep -rl backfill_norm */crates/*/src/` each return all
+   six). The step still matters as a worked example of checking reality rather
+   than assuming it — just don't cite its numbers as current.
 4. **Test.** `L16` requires mutation verification: disable the expansion, watch
    the test fail with `left: "ærø", right: "aero"`. It was, and two of the
    original test expectations turned out to be wrong before the code was.

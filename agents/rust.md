@@ -34,7 +34,7 @@ done
 ```
 
 `scripts/check-shared-core.sh` gates this (**F-10** fixed) — the loop above is
-what it automates, across 100 files including `gen/tests/`. It runs from
+what it automates, across 110 files including `gen/tests/`. It runs from
 `.github/workflows/gates.yml`, the one workflow in this repository that is in a
 directory GitHub reads (**F-49**). Note that the
 script compares *tokens*, not lines, which the loop above does not: rustfmt
@@ -113,9 +113,12 @@ on exactly that toolchain, because an unverified MSRV is a guess.
 
 - Add to `[workspace.dependencies]`, reference as `foo.workspace = true`.
 - Every driver dependency carries a comment explaining **why that driver**, and
-  a port with *no* driver says why not — `fhir-oracle` is Scaffold and choosing
-  one is blocked on open annex questions. Two ports carried a comment describing
-  a driver they did not depend on (**F-03**, fixed); do not add a third.
+  a port with *no* driver would need to say why not. No port is in that state
+  today — `fhir-oracle` was the last to pick one, choosing the `oracle` crate
+  (ODPI-C/OCI bindings) over `sqlx` on 2026-08-04, recorded in
+  `fhir-oracle/Cargo.toml` — so this is a pattern to keep, not a live example to
+  cite. Two ports once carried a comment describing a driver they did not depend
+  on (**F-03**, fixed); do not add a third.
 - New dependencies pass `cargo deny` (advisories, licenses, bans). A license
   that is not in the workspace's list is a conversation, not a commit.
 

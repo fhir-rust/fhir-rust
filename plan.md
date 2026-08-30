@@ -9,7 +9,7 @@ worldwide, in settings where a wrong claim has clinical cost.
 
 Method: **specification-driven development, with an adversarial audit
 culture.** Normative behavior lives in `spec/` and `fhir/spec/`; the findings
-register (`spec/databases/audit.md`, 92 findings and counting) exists because
+register (`spec/databases/audit.md`, 98 findings and counting) exists because
 this repository's main failure mode has been confident text that nothing
 substantiates. Engineering status is read from the
 [conformance matrix](spec/databases/conformance-matrix.md) and the dialect
@@ -81,13 +81,14 @@ posture. Open items for each are in `tasks.md`.
    benchmarks exist for one port of six, and the JSONB-vs-relational
    comparison the whole pitch rests on has never been run.
 
-6. **Audit and harmonization.** The audit register is the family's reference
-   implementation, and it currently fails its own hygiene rule (F-73's
-   failure mode): the intro's open list says F-51 and F-67, while the F-90
-   row reads "open …" yet ends "Closed in full 2026-08-12". This repository
-   also holds the canonical special-files list and trademark spec that the
-   siblings have drifted from; harmonization means the siblings re-sync from
-   here, and this repo keeps its canon accurate.
+6. **Audit and harmonization.** The audit register's F-73 hygiene defect
+   (a summary-table cell whose own text contradicted itself) was fixed
+   2026-08-26. One row is genuinely open again as of 2026-08-29: **F-98**
+   (`check-published-match.sh` compares the wrong manifest for
+   workspace-inherited dependencies). This repository also holds the
+   canonical special-files list and trademark spec that the siblings have
+   drifted from; harmonization means the siblings re-sync from here, and
+   this repo keeps its canon accurate.
 
 ## Open decisions (awaiting a call, not code)
 
@@ -107,8 +108,9 @@ posture. Open items for each are in `tasks.md`.
   `fhir-mssql`'s `mssql_ddl.rs`. The "driver decision" this bullet expected
   turned out to already be decided by evidence this repository had produced
   itself: `fhir-oracle-store` (F-68) already proved the `oracle` crate +
-  Instant Client works live. With `F-67` closed the same day, the audit
-  register has no open finding left.
+  Instant Client works live. `F-67` closed the same day, but **F-98** was
+  filed that same day too (found bumping `sha2`/`sha3`); the audit register
+  is not empty — see `spec/databases/audit.md`'s "What remains" table.
 - ~~**Publishing shape.**~~ Decided 2026-08-26: **documented laptop
   publishing, permanently** — the owner's judgment that GitHub is not
   reliable enough to hold the publish path, made hours after an Actions

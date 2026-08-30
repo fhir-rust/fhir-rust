@@ -7,14 +7,25 @@ Governing requirements: `O10.10`, `O10.11`, `W16.11`–`W16.15`.
 Each port versions **independently** (`W16.11`) — a fix to one port must not
 require a bump in the other five.
 
-All six currently sit at **`0.4.0`** — manifest, lock file, and changelog in
-agreement since 2026-08-01, when the manifests were found a release behind at
-`0.1.0` and corrected (**F-34**).
+All 34 publishable crates across the four families have already been published
+to crates.io, more than once: the first full publication landed 2026-08-22
+(21 crates going out for the first time, seven more re-published after a
+`serde_json/float_roundtrip` bump), then the whole set went out again twice
+more on 2026-08-26 — once for the routine bump that followed hosted CI turning
+green, once for the trademark-disclaimer text required in every `description`.
+`scripts/check-published-match.sh` reported `34 matched, 0 mismatched` after
+each pass. See [`spec/publishing.md`](../spec/publishing.md) for the full
+history, and "Before any release" below for the laptop step that does the
+actual upload.
 
-None of those four releases reached crates.io: the eighteen port crate names are
-unregistered, so the **first publication will be `0.4.0`** with nothing beneath
-it on the registry. Say so in the changelog when it happens, rather than leaving
-a reader to wonder where `0.1.0`–`0.3.1` went.
+Versions keep moving independently per port (`W16.11`), so "current" is a
+moving target — read it from source rather than this file:
+`grep '^version' fhir-<engine>/Cargo.toml` (five ports sit at `0.6.0`,
+`fhir-postgresql` and `fhir-sqlite` at `0.6.1` as of 2026-08-29;
+`fhir-store` `0.3.0`, `fhir-loco` `0.3.1`). The question for a release is no
+longer "has this ever been published" — it has — but whether the tree's
+version has moved past what crates.io already holds for that crate, which is
+exactly what `check-published-match.sh` (below) answers.
 
 The workspace `[workspace.package] version` governs all three crates in a port,
 and `[workspace.dependencies]` pins the sibling path dependencies to the same
@@ -68,11 +79,16 @@ retrofit.
 
 - Every store crate described itself as **"PostgreSQL storage layer"**
   (**F-02**, fixed). `description` is published to crates.io and rendered on
-  docs.rs — read by exactly the person who has not looked at the code yet. The
-  two Scaffold ports now say so in the description itself.
-- `fhir-mssql` and `fhir-oracle` are **Scaffold**. Publishing either under a
-  name that implies a working FHIR® store is a claim about clinical software made
-  to people who cannot check it.
+  docs.rs — read by exactly the person who has not looked at the code yet.
+  `fhir-mssql` and `fhir-oracle`, the two ports that were Scaffold at the time,
+  were made to say so in the description itself.
+- That description now needs updating again: `fhir-mssql` and `fhir-oracle` are
+  no longer Scaffold. Both reached **Store** (`fhir-mssql`: **F-65**;
+  `fhir-oracle`: **F-68**) per the [conformance
+  matrix](../spec/databases/conformance-matrix.md), and no port sits below
+  Store today. A crate's `description` must track its level as it moves —
+  publishing a Scaffold-era description after the port has earned Store is the
+  same understatement as the reverse claim, just less dangerous.
 - All six READMEs claimed the reference port's results (**F-01**, fixed). The
   `book/` directories still do — fix those before a release, not after.
 
@@ -91,7 +107,7 @@ fails on the other is a bug in the pipelines, not a property of the forge.
 | Tag → artifacts | `release.yml` | `.woodpecker/release.yaml` |
 | crates.io | a documented laptop step (`spec/publishing.md`) — decided 2026-08-26; no publish workflow | — |
 
-The unit-test job passes with no database and no FHIR packages, because those
+The unit-test job passes with no database and no FHIR® packages, because those
 tests self-skip. The **live pipeline is the required gate**, not an optional
 extra — and it must provision the port's own engine (`O10.12`). `fhir-oracle`
 has no such pipeline, deliberately: it has nothing to point one at, and a gate
@@ -143,17 +159,30 @@ minor-version event, not a patch.
    against this crate. That register covers all **four** families and is the one
    place the crates.io view is assembled.
 
-Step 6 blocks **every** port, on one finding that is not any port's fault:
-**F-49** — no workflow in this repository runs, because they all sit under
-`<family>/.github/workflows/` and GitHub reads only the root. Until that is
-resolved, `C0.9`'s "justified by tests that run in that port's CI" cannot be
-satisfied by anyone.
+Step 6 no longer blocks every port. **F-49** — no workflow in this repository
+ran, because they all sat under `<family>/.github/workflows/` and GitHub reads
+only the root — was fixed 2026-08-06 by the root-level CI consolidation, and
+`C0.9`'s "justified by tests that run in that port's CI" is now satisfiable:
+every port's live gate has since run hosted against its own engine —
+PostgreSQL re-run 2026-08-03, MySQL and MariaDB measured 2026-08-03 (their
+full-schema install gap, **F-90**, closed 2026-08-12), `fhir-mssql` measured
+2026-08-10, and `fhir-oracle`'s live job, restored by **F-06**'s fix, ran
+green on its first hosted execution 2026-08-12. See the [conformance
+matrix](../spec/databases/conformance-matrix.md) for the current state of
+each.
 
-No port has an open High finding of its own. `fhir-oracle` cleared **F-08** (its
-DDL is now Oracle and installs on 26ai); `fhir-postgresql` cleared **F-07**
-(chain portability). `fhir-sqlite`, `fhir-mysql` and `fhir-mariadb` are blocked
-instead by step 5 — they now have concurrency, redaction and upgrade suites, but
-no audit suite of PostgreSQL's depth, and `T11.15` determinism is unmeasured.
+No port has an open High finding of its own, and no port remains **Scaffold**:
+`fhir-mssql` and `fhir-oracle`, the last two, reached **Store** (**F-65**,
+**F-68**). `fhir-oracle` also cleared **F-08** (its DDL is Oracle and installs
+on 26ai); `fhir-postgresql` cleared **F-07** (chain portability). With no CI
+or conformance blocker left, the pacing item for a release today is the
+mechanical "Before any release" list above, run per port before each bump —
+not a finding to fix first. What separates **Store** from **Reference** is
+depth, not a blocker: `fhir-sqlite`, `fhir-mysql`, and `fhir-mariadb` have
+concurrency, redaction, and upgrade suites but no `audit.rs` of PostgreSQL's
+depth, and `T11.15` determinism is unmeasured there — that bears on a
+Reference-level claim in step 7, not on publishing at the level each port has
+actually earned.
 
 ## Pushing
 
@@ -163,14 +192,21 @@ resolved: none of the six ports, nor `fhir/`, has a `.git` of its own any more.
 They are directories in one repository with one remote,
 `git@github.com:fhir-rust/fhir-rust.git`.
 
-Two things remain, and neither is the original problem:
+One thing remains, and it is not the original problem: that URL does not
+resolve anonymously, which a private repository also does — unverified rather
+than known-absent ([`spec/publishing.md`](../spec/publishing.md) **P-5**).
 
-- that URL does not resolve anonymously, which a private repository also does —
-  unverified rather than known-absent ([`spec/publishing.md`](../spec/publishing.md) **P-5**);
-- `fhir-store/` is a **nested repository with no remote**, untracked by the
-  parent (**F-37**), so `git add` on it records a gitlink rather than the files
-  and a clone would get an empty directory with no error. Settle that before
-  pushing anything meant to include it.
+The old `fhir-store/`-nested-repository warning is obsolete, and for a more
+confusing reason than the six-remotes one above. **F-37** was real, but it was
+about a *different* directory that used to be called `fhir-store/` — the HTTP
+surface, which had its own untracked `.git` with no remote. It was fixed
+2026-08-02 by removing the nested repo and committing the source directly;
+that directory was then renamed `fhir-loco` the same day (**F-45**). The name
+`fhir-store` was reused a few days later for an unrelated extraction — the
+small shared audit/value-type library, not a server — and **that** crate has
+never had a nested `.git`: `git ls-files -s fhir-store/ | grep 160000` returns
+nothing (no gitlink-mode entries), verified 2026-08-04 and re-verified since.
+Do not carry F-37's caution forward onto the crate that now holds this name.
 
 ## Trademarks
 

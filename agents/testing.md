@@ -110,8 +110,17 @@ thing that found the SQLite and MySQL ports' real bugs.
 
 Only `fhir-postgresql` has the full suite: `concurrency.rs`, `audit.rs`,
 `redaction.rs`, `upgrade.rs`, `live.rs`, `m2_semantics.rs`,
-`search_semantics.rs`, `bench.rs`. The other stores have one test file each, and
-two ports have none.
+`search_semantics.rs`, `bench.rs`. The other five now carry multi-file suites
+of their own — `concurrency.rs`, `redaction.rs`, `upgrade.rs`, and
+`roundtrip_types.rs` are common to all of them, plus a TLS suite on the
+networked ones — but none has PostgreSQL's `audit.rs`, `live.rs`,
+`m2_semantics.rs`, `search_semantics.rs`, or `bench.rs`, and coverage is not
+even across the five: `fhir-oracle`'s `store/tests/` is the thinnest, still
+missing a TLS suite and any `search_page` concurrency coverage. Counts drift
+with every port that closes a gap, so read them live —
+`find fhir-<engine>/crates/*-store/tests -name '*.rs'` — or from the
+[conformance matrix](../spec/databases/conformance-matrix.md) rather than
+trusting a number written here.
 
 The consequence is in the [conformance matrix](../spec/databases/conformance-matrix.md):
 `R4.5`, `H5.4`, `T11.6`, `T11.7`, and `T11.8` are `?` outside PostgreSQL. Those

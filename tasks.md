@@ -23,8 +23,8 @@ dialect annex for what works. Nothing here speaks for a port.
 - [x] Outreach plan exists (`help/outreach/index.md`, with claims register
       and prerequisites `PM-70`–`PM-75`) and correctly gates promotion on
       supply-chain work.
-- [x] 34 crates published to crates.io (2026-08-22); audit register at 92
-      findings with reproducible evidence per finding.
+- [x] 34 crates published to crates.io (2026-08-22); audit register at 98
+      findings with reproducible evidence per finding (one open: F-98).
 
 ## Next up
 
@@ -85,8 +85,9 @@ Grouped by `plan.md` workstream. Order within a group is priority order.
       owner published `mssql` (github.com/joelparkerhenderson/mssql-rust), a
       `tiberius` fork maintained to carry the fixes forward — switching to
       it clears all four advisories (`rustls-webpki 0.103.15` now, none of
-      the four packages remain in the tree). **F-67 closed** — the audit
-      register has no open row left.
+      the four packages remain in the tree). **F-67 closed** — but **F-98**
+      was filed the same day (found bumping `sha2`/`sha3`; see
+      `spec/databases/audit.md`), so the register is not empty.
 - [x] Create git tags and GitHub releases for the published versions
       (`PM-70`) — done 2026-08-26: sixteen annotated tags at `e28964e`
       pushed, sixteen releases with `TG1.8`-compliant notes, `fhir 4.1.0`

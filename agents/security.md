@@ -103,8 +103,10 @@ a value escapes into a log, a response, and a ticket simultaneously.
 
 The redaction test is the enforcement: a full CRUD + search cycle over a
 resource containing a distinctive marker, asserting no log line ever contains
-it. Only `fhir-postgresql` has it (`redaction.rs`); porting it is high-value
-work.
+it. Five of the six ports have it (`redaction.rs`, alongside `concurrency.rs`):
+`fhir-postgresql`, `fhir-sqlite`, `fhir-mysql`, `fhir-mariadb`, and
+`fhir-mssql`. Only `fhir-oracle` still lacks both files; porting them there is
+the remaining high-value work.
 
 **The checkpoint is the exception, and deliberately so.** `M3.16c` emits chain
 checkpoints on a dedicated `audit_checkpoint` log target precisely because they

@@ -49,7 +49,7 @@ sync manifest — from the site entirely: `spec/agent-skills/index.md` and
 `spec/llms-json-and-llms-txt/index.md` existed but linked from nowhere.
 Closed: `spec/index.md`, `README.md`, and `index.md` now all reference them.
 
-## 2026-08-29 — F-67 closed: the audit register has no open findings left
+## 2026-08-29 — F-67 closed
 
 The four TLS advisories `deny.toml` had been excusing in `fhir-mssql`
 reached the shipping `fhir-mssql-store` crate through `tiberius` 0.12.3, its
@@ -77,7 +77,28 @@ the investigation it resolved rather than in place of it.
 
 **F-67 was the sole open row in the [audit register](spec/databases/audit.md)**
 (also closing **F-51**, `fhir-oracle`'s DDL live-test gap, fixed the same
-day) — as of this commit, the register has none.
+day) — briefly leaving the register empty. **F-98 was filed later the same
+day** (see below), so the register did not stay empty for long.
+
+## 2026-08-29 — the N-2 MSRV release: all 34 crates republished, F-98 found
+
+The MSRV policy tightened from current-minus-three to current-minus-two:
+`rust-version` raised to `1.96` across all nine workspaces, including
+`fhir-store` and `fhir-loco`, which had never declared one before
+(`spec/rust-msrv-n-minus-2/`, replacing the N-3 doc; `RV1.1`–`RV1.6`
+amended in place per this repo's own `C0.5`). `.github/dependabot.yml`'s
+deliberate `open-pull-requests-limit: 0` was lifted at the same time.
+
+All 34 crates republished in one pass alongside the `fhir-mssql` driver
+switch above: ports `0.6.0`, `fhir-store`/`fhir-loco` `0.3.0`, `fhir` and
+`fhir-r2`–`r6` `4.2.0`, `fhir-core` `3.3.0`, `fhir-derive-macros` `1.6.0`,
+reservations `0.0.4`; each unit tagged and released.
+`check-published-match.sh` reported `34 matched, 0 mismatched` — but
+bumping `sha2`/`sha3` in the same pass surfaced **F-98**: that gate
+compares `Cargo.toml.orig`, which does not resolve `foo.workspace = true`
+to the literal version crates.io actually receives, so it cannot catch a
+divergence introduced only through a workspace-root dependency bump. Not
+fixed in this pass; see the audit register.
 
 ## 2026-08-29 — F-97: the append-only trigger and boolean CHECK, live-tested
 
