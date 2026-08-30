@@ -1,107 +1,319 @@
 {
-  "name": "fhir-rust",
-  "summary": "A Rust monorepo for the HL7 FHIR standard: the data model, six relational database ports, and an HTTP surface over them.",
-  "homepage": "https://github.com/fhir-rust/fhir-rust",
-  "trademarks": "HL7 and FHIR are registered trademarks of Health Level Seven International; this project is not affiliated with or endorsed by HL7.",
-  "notes": [
-    "Paths below are relative to the repository root.",
-    "Four families compose one way only: model -> persistence core -> database ports -> HTTP surface. No family is normative for another; spec/index.md is the one place that says which specification governs which code.",
-    "R4.x is used by two unrelated requirement sets: fhir/spec/04-resources.md and spec/databases/04-shredding-and-reconstruction.md. Resolve a bare citation by the file it appears in."
-  ],
-  "sections": [
-    {
-      "title": "Start here",
-      "links": [
-        { "title": "AGENTS.md", "path": "AGENTS.md", "description": "Operational guidance shared by every contributor and agent; its five rules are the ones that get broken." },
-        { "title": "CLAUDE.md", "path": "CLAUDE.md", "description": "Repo-specific orientation and documented traps: stale claims, name collisions, the shared-core rule." },
-        { "title": "README.md", "path": "README.md", "description": "Project overview, the four families, status table." },
-        { "title": "spec/index.md", "path": "spec/index.md", "description": "Root of every normative specification; the R4.x collision note; precedence rules." },
-        { "title": "INSTALL.md", "path": "INSTALL.md", "description": "These are libraries, not a CLI or server; how to add one to a Rust project." }
-      ]
-    },
-    {
-      "title": "Model — FHIR resources and datatypes as Rust types",
-      "links": [
-        { "title": "fhir/README.md", "path": "fhir/README.md", "description": "Every resource and datatype for releases R2–R6, generated from HL7's own spec packages." },
-        { "title": "fhir/spec/index.md", "path": "fhir/spec/index.md", "description": "Model specification, ids R1.x–R14.x." },
-        { "title": "fhir/AGENTS.md", "path": "fhir/AGENTS.md", "description": "Agent guidance specific to the model crate." },
-        { "title": "fhir/fhir.md", "path": "fhir/fhir.md", "description": "Generated, searchable index of every resource and field." },
-        { "title": "fhir/examples", "path": "fhir/examples", "description": "Runnable examples: building a resource, extensions, code-system enums, CRUD, converting between releases." }
-      ]
-    },
-    {
-      "title": "Database ports — FHIR resources as real relational tables",
-      "links": [
-        { "title": "spec/databases/index.md", "path": "spec/databases/index.md", "description": "Normative core shared by all six ports, sections 0–16." },
-        { "title": "spec/databases/conformance-matrix.md", "path": "spec/databases/conformance-matrix.md", "description": "What is actually verified per port today; trust this over any README if they disagree." },
-        { "title": "spec/databases/audit.md", "path": "spec/databases/audit.md", "description": "Tracked findings; a change may already be a known issue here." },
-        { "title": "spec/databases/15-portability-and-dialects.md", "path": "spec/databases/15-portability-and-dialects.md", "description": "How the shared Rust core and per-engine dialect annexes relate." },
-        { "title": "fhir-postgresql", "path": "fhir-postgresql/", "description": "PostgreSQL 18 — Reference level, full store, full test suite." },
-        { "title": "fhir-sqlite", "path": "fhir-sqlite/", "description": "SQLite 3 — Store level, embeddable, no server." },
-        { "title": "fhir-mysql", "path": "fhir-mysql/", "description": "MySQL 8.4 — Store level." },
-        { "title": "fhir-mariadb", "path": "fhir-mariadb/", "description": "MariaDB 11.4 — Store level." },
-        { "title": "fhir-mssql", "path": "fhir-mssql/", "description": "SQL Server — Store level, live-verified against azure-sql-edge." },
-        { "title": "fhir-oracle", "path": "fhir-oracle/", "description": "Oracle Database — Store level, live-verified against gvenzl/oracle-free." }
-      ]
-    },
-    {
-      "title": "Persistence core",
-      "links": [
-        { "title": "fhir-store/README.md", "path": "fhir-store/README.md", "description": "The engine-agnostic half of storage: audit chain, attribution, shared result types. A small library, not the HTTP surface, despite a past name collision (see CLAUDE.md)." }
-      ]
-    },
-    {
-      "title": "HTTP surface",
-      "links": [
-        { "title": "fhir-loco/README.md", "path": "fhir-loco/README.md", "description": "A FHIR RESTful API server (Loco/Axum/Tokio/Hyper) mounted over fhir-sqlite; the only crate in the repo that speaks HTTP." },
-        { "title": "fhir-loco/spec/index.md", "path": "fhir-loco/spec/index.md", "description": "Server specification, ids SV1.x–SV4.x." }
-      ]
-    },
-    {
-      "title": "Documentation and tutorials",
-      "links": [
-        { "title": "doc/index.md", "path": "doc/index.md", "description": "Tutorials index for the database ports." },
-        { "title": "doc/tutorial-01-getting-started.md", "path": "doc/tutorial-01-getting-started.md", "description": "Install a schema, write and read a resource, no server required." },
-        { "title": "doc/tutorial-02-storage-model.md", "path": "doc/tutorial-02-storage-model.md", "description": "What a resource becomes: base tables, child tables, references." },
-        { "title": "doc/tutorial-03-querying-sql.md", "path": "doc/tutorial-03-querying-sql.md", "description": "Treat the store as the relational schema it is." },
-        { "title": "doc/tutorial-04-search.md", "path": "doc/tutorial-04-search.md", "description": "FHIR search parameters, modifiers, paging." },
-        { "title": "doc/tutorial-05-history-and-audit.md", "path": "doc/tutorial-05-history-and-audit.md", "description": "Versions, attribution, the tamper-evident chain, erasure." },
-        { "title": "doc/tutorial-06-porting.md", "path": "doc/tutorial-06-porting.md", "description": "Porting the core to a new database engine." },
-        { "title": "doc/choosing-an-engine.md", "path": "doc/choosing-an-engine.md", "description": "The six ports compared: status, type bindings, costs." },
-        { "title": "doc/storage-model.md", "path": "doc/storage-model.md", "description": "Conceptual reference for the storage model, for lookup rather than reading through." },
-        { "title": "doc/trust-boundary.md", "path": "doc/trust-boundary.md", "description": "What these libraries guarantee about PHI, and what a deployment must provide." },
-        { "title": "doc/faq.md", "path": "doc/faq.md", "description": "Frequently asked questions." },
-        { "title": "doc/examples.md", "path": "doc/examples.md", "description": "Worked examples." }
-      ]
-    },
-    {
-      "title": "Agent skills",
-      "links": [
-        { "title": "fhir-skill/SKILL.md", "path": "fhir-skill/SKILL.md", "description": "General-purpose skill for end users: FHIR concepts, terminology, and repo-grounded examples." },
-        { "title": "fhir-rust-maintainer-skill/SKILL.md", "path": "fhir-rust-maintainer-skill/SKILL.md", "description": "Technical skill for maintainers: checklists and commands for shared-core changes, spec changes, and verification before claiming something works." }
-      ]
-    },
-    {
-      "title": "Optional",
-      "optional": true,
-      "links": [
-        { "title": "CHANGELOG.md", "path": "CHANGELOG.md", "description": "What changed in the software, per release." },
-        { "title": "NEWS.md", "path": "NEWS.md", "description": "What happened to the project, in reverse order." },
-        { "title": "CONTRIBUTING.md", "path": "CONTRIBUTING.md", "description": "How to contribute." },
-        { "title": "CODE_OF_CONDUCT.md", "path": "CODE_OF_CONDUCT.md", "description": "Community standards." },
-        { "title": "SECURITY.md", "path": "SECURITY.md", "description": "Reporting a vulnerability." },
-        { "title": "PHI.md", "path": "PHI.md", "description": "Plain-language PHI/privacy answers for a reviewer or vendor questionnaire." },
-        { "title": "GOVERNANCE.md", "path": "GOVERNANCE.md", "description": "Decision-making and project governance." },
-        { "title": "MAINTAINERS.md", "path": "MAINTAINERS.md", "description": "Who maintains what." },
-        { "title": "BENCHMARKS.md", "path": "BENCHMARKS.md", "description": "Performance numbers, with the caveats to read first." },
-        { "title": "COMPARISONS.md", "path": "COMPARISONS.md", "description": "How this project compares to other FHIR implementations." },
-        { "title": "RFC.md", "path": "RFC.md", "description": "Open questions the project wants feedback on." },
-        { "title": "AI_STATEMENT.md", "path": "AI_STATEMENT.md", "description": "How AI assistance is used and disclosed in this project." },
-        { "title": "plan.md", "path": "plan.md", "description": "The professionalization plan and its rationale." },
-        { "title": "tasks.md", "path": "tasks.md", "description": "Repository-level checklist; verified work only, per its own rule." },
-        { "title": "LICENSE.md", "path": "LICENSE.md", "description": "License." },
-        { "title": "CITATION.cff", "path": "CITATION.cff", "description": "How to cite this project." }
-      ]
-    }
-  ]
+	"name": "fhir-rust",
+	"summary": "A Rust monorepo for the HL7 FHIR standard: the data model, six relational database ports, and an HTTP surface over them.",
+	"homepage": "https://github.com/fhir-rust/fhir-rust",
+	"trademarks": "HL7 and FHIR are registered trademarks of Health Level Seven International; this project is not affiliated with or endorsed by HL7.",
+	"notes": [
+		"This is https://fhir-rust.github.io's copy of the monorepo's curated map: each entry's url resolves at this site's own page where one is published, and at the source repository (https://github.com/fhir-rust/fhir-rust) otherwise.",
+		"Four families compose one way only: model -> persistence core -> database ports -> HTTP surface. No family is normative for another; spec/index.md is the one place that says which specification governs which code.",
+		"R4.x is used by two unrelated requirement sets: fhir/spec/04-resources.md and spec/databases/04-shredding-and-reconstruction.md. Resolve a bare citation by the file it appears in."
+	],
+	"sections": [
+		{
+			"title": "Start here",
+			"links": [
+				{
+					"title": "AGENTS.md",
+					"description": "Operational guidance shared by every contributor and agent; its five rules are the ones that get broken.",
+					"url": "https://github.com/fhir-rust/fhir-rust/blob/main/AGENTS.md"
+				},
+				{
+					"title": "CLAUDE.md",
+					"description": "Repo-specific orientation and documented traps: stale claims, name collisions, the shared-core rule.",
+					"url": "https://github.com/fhir-rust/fhir-rust/blob/main/CLAUDE.md"
+				},
+				{
+					"title": "README.md",
+					"description": "Project overview, the four families, status table.",
+					"url": "https://fhir-rust.github.io/overview/"
+				},
+				{
+					"title": "spec/index.md",
+					"description": "Root of every normative specification; the R4.x collision note; precedence rules.",
+					"url": "https://fhir-rust.github.io/specs/"
+				},
+				{
+					"title": "INSTALL.md",
+					"description": "These are libraries, not a CLI or server; how to add one to a Rust project.",
+					"url": "https://github.com/fhir-rust/fhir-rust/blob/main/INSTALL.md"
+				}
+			]
+		},
+		{
+			"title": "Model — FHIR resources and datatypes as Rust types",
+			"links": [
+				{
+					"title": "fhir/README.md",
+					"description": "Every resource and datatype for releases R2–R6, generated from HL7's own spec packages.",
+					"url": "https://fhir-rust.github.io/model/"
+				},
+				{
+					"title": "fhir/spec/index.md",
+					"description": "Model specification, ids R1.x–R14.x.",
+					"url": "https://fhir-rust.github.io/model/spec/"
+				},
+				{
+					"title": "fhir/AGENTS.md",
+					"description": "Agent guidance specific to the model crate.",
+					"url": "https://github.com/fhir-rust/fhir-rust/blob/main/fhir/AGENTS.md"
+				},
+				{
+					"title": "fhir/fhir.md",
+					"description": "Generated, searchable index of every resource and field.",
+					"url": "https://github.com/fhir-rust/fhir-rust/blob/main/fhir/fhir.md"
+				},
+				{
+					"title": "fhir/examples",
+					"description": "Runnable examples: building a resource, extensions, code-system enums, CRUD, converting between releases.",
+					"url": "https://fhir-rust.github.io/examples/"
+				}
+			]
+		},
+		{
+			"title": "Database ports — FHIR resources as real relational tables",
+			"links": [
+				{
+					"title": "spec/databases/index.md",
+					"description": "Normative core shared by all six ports, sections 0–16.",
+					"url": "https://fhir-rust.github.io/spec/"
+				},
+				{
+					"title": "spec/databases/conformance-matrix.md",
+					"description": "What is actually verified per port today; trust this over any README if they disagree.",
+					"url": "https://fhir-rust.github.io/conformance/"
+				},
+				{
+					"title": "spec/databases/audit.md",
+					"description": "Tracked findings; a change may already be a known issue here.",
+					"url": "https://fhir-rust.github.io/spec/audit/"
+				},
+				{
+					"title": "spec/databases/15-portability-and-dialects.md",
+					"description": "How the shared Rust core and per-engine dialect annexes relate.",
+					"url": "https://fhir-rust.github.io/spec/15-portability-and-dialects/"
+				},
+				{
+					"title": "fhir-postgresql",
+					"description": "PostgreSQL 18 — Reference level, full store, full test suite.",
+					"url": "https://github.com/fhir-rust/fhir-rust/tree/main/fhir-postgresql"
+				},
+				{
+					"title": "fhir-sqlite",
+					"description": "SQLite 3 — Store level, embeddable, no server.",
+					"url": "https://github.com/fhir-rust/fhir-rust/tree/main/fhir-sqlite"
+				},
+				{
+					"title": "fhir-mysql",
+					"description": "MySQL 8.4 — Store level.",
+					"url": "https://github.com/fhir-rust/fhir-rust/tree/main/fhir-mysql"
+				},
+				{
+					"title": "fhir-mariadb",
+					"description": "MariaDB 11.4 — Store level.",
+					"url": "https://github.com/fhir-rust/fhir-rust/tree/main/fhir-mariadb"
+				},
+				{
+					"title": "fhir-mssql",
+					"description": "SQL Server — Store level, live-verified against azure-sql-edge.",
+					"url": "https://github.com/fhir-rust/fhir-rust/tree/main/fhir-mssql"
+				},
+				{
+					"title": "fhir-oracle",
+					"description": "Oracle Database — Store level, live-verified against gvenzl/oracle-free.",
+					"url": "https://github.com/fhir-rust/fhir-rust/tree/main/fhir-oracle"
+				}
+			]
+		},
+		{
+			"title": "Persistence core",
+			"links": [
+				{
+					"title": "fhir-store/README.md",
+					"description": "The engine-agnostic half of storage: audit chain, attribution, shared result types. A small library, not the HTTP surface, despite a past name collision (see CLAUDE.md).",
+					"url": "https://fhir-rust.github.io/store/"
+				}
+			]
+		},
+		{
+			"title": "HTTP surface",
+			"links": [
+				{
+					"title": "fhir-loco/README.md",
+					"description": "A FHIR RESTful API server (Loco/Axum/Tokio/Hyper) mounted over fhir-sqlite; the only crate in the repo that speaks HTTP.",
+					"url": "https://fhir-rust.github.io/server/"
+				},
+				{
+					"title": "fhir-loco/spec/index.md",
+					"description": "Server specification, ids SV1.x–SV4.x.",
+					"url": "https://fhir-rust.github.io/server/spec/"
+				}
+			]
+		},
+		{
+			"title": "Documentation and tutorials",
+			"links": [
+				{
+					"title": "doc/index.md",
+					"description": "Tutorials index for the database ports.",
+					"url": "https://fhir-rust.github.io/docs/guides/"
+				},
+				{
+					"title": "doc/tutorial-01-getting-started.md",
+					"description": "Install a schema, write and read a resource, no server required.",
+					"url": "https://fhir-rust.github.io/docs/tutorial-01-getting-started/"
+				},
+				{
+					"title": "doc/tutorial-02-storage-model.md",
+					"description": "What a resource becomes: base tables, child tables, references.",
+					"url": "https://fhir-rust.github.io/docs/tutorial-02-storage-model/"
+				},
+				{
+					"title": "doc/tutorial-03-querying-sql.md",
+					"description": "Treat the store as the relational schema it is.",
+					"url": "https://fhir-rust.github.io/docs/tutorial-03-querying-sql/"
+				},
+				{
+					"title": "doc/tutorial-04-search.md",
+					"description": "FHIR search parameters, modifiers, paging.",
+					"url": "https://fhir-rust.github.io/docs/tutorial-04-search/"
+				},
+				{
+					"title": "doc/tutorial-05-history-and-audit.md",
+					"description": "Versions, attribution, the tamper-evident chain, erasure.",
+					"url": "https://fhir-rust.github.io/docs/tutorial-05-history-and-audit/"
+				},
+				{
+					"title": "doc/tutorial-06-porting.md",
+					"description": "Porting the core to a new database engine.",
+					"url": "https://fhir-rust.github.io/docs/tutorial-06-porting/"
+				},
+				{
+					"title": "doc/choosing-an-engine.md",
+					"description": "The six ports compared: status, type bindings, costs.",
+					"url": "https://fhir-rust.github.io/docs/choosing-an-engine/"
+				},
+				{
+					"title": "doc/storage-model.md",
+					"description": "Conceptual reference for the storage model, for lookup rather than reading through.",
+					"url": "https://fhir-rust.github.io/docs/storage-model/"
+				},
+				{
+					"title": "doc/trust-boundary.md",
+					"description": "What these libraries guarantee about PHI, and what a deployment must provide.",
+					"url": "https://fhir-rust.github.io/docs/trust-boundary/"
+				},
+				{
+					"title": "doc/faq.md",
+					"description": "Frequently asked questions.",
+					"url": "https://fhir-rust.github.io/docs/faq/"
+				},
+				{
+					"title": "doc/examples.md",
+					"description": "Worked examples.",
+					"url": "https://fhir-rust.github.io/docs/examples/"
+				}
+			]
+		},
+		{
+			"title": "Agent skills",
+			"links": [
+				{
+					"title": "fhir-skill/SKILL.md",
+					"description": "General-purpose skill for end users: FHIR concepts, terminology, and repo-grounded examples.",
+					"url": "https://github.com/fhir-rust/fhir-rust/blob/main/fhir-skill/SKILL.md"
+				},
+				{
+					"title": "fhir-rust-maintainer-skill/SKILL.md",
+					"description": "Technical skill for maintainers: checklists and commands for shared-core changes, spec changes, and verification before claiming something works.",
+					"url": "https://github.com/fhir-rust/fhir-rust/blob/main/fhir-rust-maintainer-skill/SKILL.md"
+				}
+			]
+		},
+		{
+			"title": "Optional",
+			"optional": true,
+			"links": [
+				{
+					"title": "CHANGELOG.md",
+					"description": "What changed in the software, per release.",
+					"url": "https://github.com/fhir-rust/fhir-rust/blob/main/CHANGELOG.md"
+				},
+				{
+					"title": "NEWS.md",
+					"description": "What happened to the project, in reverse order.",
+					"url": "https://github.com/fhir-rust/fhir-rust/blob/main/NEWS.md"
+				},
+				{
+					"title": "CONTRIBUTING.md",
+					"description": "How to contribute.",
+					"url": "https://github.com/fhir-rust/fhir-rust/blob/main/CONTRIBUTING.md"
+				},
+				{
+					"title": "CODE_OF_CONDUCT.md",
+					"description": "Community standards.",
+					"url": "https://github.com/fhir-rust/fhir-rust/blob/main/CODE_OF_CONDUCT.md"
+				},
+				{
+					"title": "SECURITY.md",
+					"description": "Reporting a vulnerability.",
+					"url": "https://github.com/fhir-rust/fhir-rust/blob/main/SECURITY.md"
+				},
+				{
+					"title": "PHI.md",
+					"description": "Plain-language PHI/privacy answers for a reviewer or vendor questionnaire.",
+					"url": "https://github.com/fhir-rust/fhir-rust/blob/main/PHI.md"
+				},
+				{
+					"title": "GOVERNANCE.md",
+					"description": "Decision-making and project governance.",
+					"url": "https://github.com/fhir-rust/fhir-rust/blob/main/GOVERNANCE.md"
+				},
+				{
+					"title": "MAINTAINERS.md",
+					"description": "Who maintains what.",
+					"url": "https://github.com/fhir-rust/fhir-rust/blob/main/MAINTAINERS.md"
+				},
+				{
+					"title": "BENCHMARKS.md",
+					"description": "Performance numbers, with the caveats to read first.",
+					"url": "https://github.com/fhir-rust/fhir-rust/blob/main/BENCHMARKS.md"
+				},
+				{
+					"title": "COMPARISONS.md",
+					"description": "How this project compares to other FHIR implementations.",
+					"url": "https://github.com/fhir-rust/fhir-rust/blob/main/COMPARISONS.md"
+				},
+				{
+					"title": "RFC.md",
+					"description": "Open questions the project wants feedback on.",
+					"url": "https://github.com/fhir-rust/fhir-rust/blob/main/RFC.md"
+				},
+				{
+					"title": "AI_STATEMENT.md",
+					"description": "How AI assistance is used and disclosed in this project.",
+					"url": "https://github.com/fhir-rust/fhir-rust/blob/main/AI_STATEMENT.md"
+				},
+				{
+					"title": "plan.md",
+					"description": "The professionalization plan and its rationale.",
+					"url": "https://github.com/fhir-rust/fhir-rust/blob/main/plan.md"
+				},
+				{
+					"title": "tasks.md",
+					"description": "Repository-level checklist; verified work only, per its own rule.",
+					"url": "https://github.com/fhir-rust/fhir-rust/blob/main/tasks.md"
+				},
+				{
+					"title": "LICENSE.md",
+					"description": "License.",
+					"url": "https://github.com/fhir-rust/fhir-rust/blob/main/LICENSE.md"
+				},
+				{
+					"title": "CITATION.cff",
+					"description": "How to cite this project.",
+					"url": "https://github.com/fhir-rust/fhir-rust/blob/main/CITATION.cff"
+				}
+			]
+		}
+	]
 }

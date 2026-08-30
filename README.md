@@ -52,20 +52,22 @@ the site builds from a bare checkout with no sibling repositories present.
 
 ## Vendored, not fetched
 
-Three directories are generated. **Do not edit them by hand** — change the
-source and re-run the script.
+These are generated. **Do not edit them by hand** — change the source and
+re-run the script.
 
-| Directory | Script | From |
+| Directory / file | Script | From |
 | --- | --- | --- |
 | `content/` | `npm run sync:content` | the monorepo: `README.md`, `index.md`, `doc/`, `spec/`, `fhir/`, `fhir-loco/`, `fhir-store/` |
 | `src/lib/lily/` | `npm run sync:lily` | the Lily Design System checkout |
 | `static/themes/` | `npm run sync:lily` | Lily's themes |
+| `static/llms.txt`, `static/llms.json` | `npm run sync:llms` | the monorepo's `llms.txt`/`llms.json` ([spec](https://github.com/fhir-rust/fhir-rust/blob/main/spec/llms-json-and-llms-txt/index.md)), with every link rewritten to wherever it resolves from *this* domain via `routeFor()`/`sourceUrl()` (see [`src/lib/paths.js`](src/lib/paths.js)) — the workspace copies use repository-relative links, which don't resolve on a live site |
 
-`npm run sync` runs both. Each script takes its source from an environment
-variable when the default location is wrong:
+`npm run sync` runs all three. Each script takes its source from an
+environment variable when the default location is wrong:
 
 ```sh
 WORKSPACE=/path/to/fhir-rust npm run sync:content   # default: ../fhir-rust
+WORKSPACE=/path/to/fhir-rust npm run sync:llms       # default: ../fhir-rust
 LILY=/path/to/lily-design-system npm run sync:lily
 ```
 

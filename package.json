@@ -5,9 +5,10 @@
 	"type": "module",
 	"private": "true",
 	"scripts": {
-		"sync": "node bin/sync-content.mjs && node bin/sync-lily.mjs",
+		"sync": "node bin/sync-content.mjs && node bin/sync-lily.mjs && node bin/sync-llms.mjs",
 		"sync:content": "node bin/sync-content.mjs",
 		"sync:lily": "node bin/sync-lily.mjs",
+		"sync:llms": "node bin/sync-llms.mjs",
 		"dev": "vite dev",
 		"build": "vite build",
 		"preview": "vite preview",
