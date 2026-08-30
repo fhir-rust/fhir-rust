@@ -21,7 +21,7 @@ Four pieces, stacked one way — see the root [`README.md`](../README.md) and
 
 1. **[`fhir/`](../fhir/)** — the data model. Every FHIR resource and datatype
    as a Rust struct, generated from HL7's own specification packages, for
-   releases R2 through R6 (R4 is the default; others are cargo features).
+   releases R2 through R6 (R5 is the default; others are cargo features).
 2. **[`fhir-store/`](../fhir-store/)** — the engine-agnostic half of
    persistence: the audit chain and shared result types.
 3. **Six database ports** (`fhir-postgresql`, `fhir-sqlite`, `fhir-mysql`,

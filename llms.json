@@ -1,8 +1,8 @@
 {
   "name": "fhir-rust",
-  "summary": "A Rust monorepo for the HL7 FHIR standard: the data model, six relational database ports, and an HTTP surface over them.",
+  "summary": "A Rust monorepo for the HL7® FHIR® standard: the data model, six relational database ports, and an HTTP surface over them.",
   "homepage": "https://github.com/fhir-rust/fhir-rust",
-  "trademarks": "HL7 and FHIR are registered trademarks of Health Level Seven International; this project is not affiliated with or endorsed by HL7.",
+  "trademarks": "HL7®, and FHIR® are the registered trademarks of Health Level Seven International and their use of these trademarks does not constitute an endorsement by HL7.",
   "notes": [
     "Paths below are relative to the repository root.",
     "Four families compose one way only: model -> persistence core -> database ports -> HTTP surface. No family is normative for another; spec/index.md is the one place that says which specification governs which code.",
@@ -22,7 +22,7 @@
     {
       "title": "Model — FHIR resources and datatypes as Rust types",
       "links": [
-        { "title": "fhir/README.md", "path": "fhir/README.md", "description": "Every resource and datatype for releases R2–R6, generated from HL7's own spec packages." },
+        { "title": "fhir/README.md", "path": "fhir/README.md", "description": "Every resource and datatype for releases R2–R6 plus R4B, generated from HL7's own spec packages." },
         { "title": "fhir/spec/index.md", "path": "fhir/spec/index.md", "description": "Model specification, ids R1.x–R14.x." },
         { "title": "fhir/AGENTS.md", "path": "fhir/AGENTS.md", "description": "Agent guidance specific to the model crate." },
         { "title": "fhir/fhir.md", "path": "fhir/fhir.md", "description": "Generated, searchable index of every resource and field." },

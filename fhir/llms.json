@@ -1,8 +1,9 @@
 {
   "name": "fhir",
-  "version": "3.0.0",
-  "description": "A Rust implementation of the HL7 FHIR data model, plus a spec-driven code generator that produces it from the official FHIR specification JSON. Five releases are modelled, R6 (6.0.0-ballot3), R5 (5.0.0), R4 (4.0.1), R3 (3.0.2, also called STU3) and R2 (1.0.2, also called DSTU2), each as its own crate (fhir-release-N) re-exported behind a cargo feature. Every resource and datatype is a serde-serializable Rust type that round-trips to and from canonical FHIR JSON, and fhir::convert::between::<S, T> converts a document between releases with a structural LossReport.",
+  "version": "4.2.0",
+  "description": "A Rust implementation of the HL7® FHIR® data model, plus a spec-driven code generator that produces it from the official FHIR specification JSON. Six releases are modelled, R6 (6.0.0-ballot3), R5 (5.0.0), R4B (4.3.0), R4 (4.0.1), R3 (3.0.2, also called STU3) and R2 (1.0.2, also called DSTU2), each as its own crate (fhir-release-N) re-exported behind a cargo feature. Every resource and datatype is a serde-serializable Rust type that round-trips to and from canonical FHIR JSON, and fhir::convert::between::<S, T> converts a document between releases with a structural LossReport.",
   "repository": "https://github.com/fhir-rust/fhir-rust/",
+  "trademarks": "HL7®, and FHIR® are the registered trademarks of Health Level Seven International and their use of these trademarks does not constitute an endorsement by HL7.",
   "import_as": "fhir",
   "modules": {
     "r5": "FHIR Release 5 (5.0.0) API root (feature `r5`, on by default).",
@@ -135,6 +136,16 @@
       "complex_datatypes": 43,
       "resources": 146,
       "code_system_enums": 486
+    },
+    "r4b": {
+      "fhir_version": "4.3.0",
+      "module": "fhir::r4b",
+      "feature": "r4b",
+      "default": false,
+      "primitive_datatypes": 20,
+      "complex_datatypes": 44,
+      "resources": 141,
+      "code_system_enums": 531
     },
     "r3": {
       "fhir_version": "3.0.2",

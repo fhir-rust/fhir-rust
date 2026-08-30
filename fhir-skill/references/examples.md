@@ -11,7 +11,7 @@ version- or engine-specific.
   equivalent under `fhir-r2` .. `fhir-r6`) — one file per resource type,
   e.g. `patient.rs`, `observation.rs`. Each is a struct with `serde`
   derives that round-trips to canonical FHIR JSON.
-- **A datatype**: `fhir/fhir-r4/src/datatypes/` — `human_name.rs`,
+- **A datatype**: `fhir/fhir-r4/src/types/` — `human_name.rs`,
   `codeable_concept.rs`, `period.rs`, and the rest.
 - **A generated, searchable index of every resource and field**:
   [`fhir/fhir.md`](../../fhir/fhir.md) — the fastest way to answer "does
@@ -23,7 +23,7 @@ version- or engine-specific.
   patterns), `convert_release.rs` (moving a resource between FHIR versions).
   Run any of them with `cargo run --example <name>` from `fhir/`.
 - **What "R2 through R6" means in code**: the feature-gated modules
-  `fhir::r2` .. `fhir::r6` in the `fhir` crate (default feature is R4) — see
+  `fhir::r2` .. `fhir::r6` in the `fhir` crate (default feature is R5) — see
   `fhir/README.md` for which releases are on by default.
 
 ## Storing a resource as relational tables

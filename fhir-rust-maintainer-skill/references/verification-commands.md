@@ -34,13 +34,15 @@ the job you're relying on actually sets it.
 ## Does CI provision the right engine?
 
 ```sh
-grep -n "image:" fhir-<engine>/.github/workflows/ci.yml
+grep -n "image:" .github/workflows/fhir-<engine>-ci.yml
 ```
 
 Since the **F-49** consolidation, family CI files live at the repo root
-(`<port>-ci.yml` per port, `fhir-ci.yml`, `fhir-loco-ci.yml`,
-`fhir-store-ci.yml`), path-filtered to their family — check there if the
-per-port path is empty. A job that provisions the wrong database (this
+(`fhir-<port>-ci.yml` per port, plus `fhir-ci.yml`, `fhir-loco-ci.yml`,
+`fhir-store-ci.yml`), path-filtered to their family. There is no per-port
+`fhir-<engine>/.github/workflows/` directory any more — that path is always
+empty post-F-49, not merely sometimes empty, so the root-level file above is
+the only place to look. A job that provisions the wrong database (this
 repo's history: MySQL provisioned for `mssql`/`oracle` jobs invoking a test
 target that didn't exist, **F-06**) can pass for reasons that have nothing to
 do with the port working.
