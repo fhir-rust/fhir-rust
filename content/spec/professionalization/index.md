@@ -75,8 +75,9 @@ between — recorded here rather than left to read as still true.
   source, the root, with the `spec/special-files-for-public-repos/` copy a
   pointer rather than a divergent draft; and that same file's own status
   section is current, not stale, as of 2026-08-26.
-- **Rule 3 — met.** The gaps this rule is about are no longer gaps: 60
-  annotated tags exist (`spec/git-tags-name-published-versions/`), commit and
+- **Rule 3 — met.** The gaps this rule is about are no longer gaps: annotated
+  tags exist for every published version (`git tag -l | wc -l` to count them
+  at any time; `spec/git-tags-name-published-versions/`), commit and
   tag signing has been active since 2026-08-27 (verified:
   `git log -1 --format=%G?` returns `G`), laptop publishing is a stated
   permanent decision rather than an open gap, and **F-67 was decided
@@ -94,11 +95,12 @@ between — recorded here rather than left to read as still true.
   rather than trusted from the prior assessment: both its `push` and
   `pull_request` triggers list all nine workspace paths, and its job matrix
   runs `cargo deny` against each workspace's own `deny.toml` independently.
-- **Rule 5 — met at its declared scope.** `scripts/check-trademarks.sh`
-  passes on root `*.md` + `help/**` and on the nine top-level crate roots'
-  rustdoc (run 2026-08-26). The four families' own markdown is not yet
-  covered — recorded in `spec/hl7-trademarks-fair-use/index.md` and
-  `tasks.md` §Compliance.
+- **Rule 5 — met tree-wide.** `scripts/check-trademarks.sh` passes on root
+  `*.md` + `help/**` and on the nine top-level crate roots' rustdoc (run
+  2026-08-26). Coverage has been tree-wide since 2026-08-26 — every markdown
+  file in the repository, including each port's `book/` chapters — as
+  recorded in `spec/hl7-trademarks-fair-use/index.md` and `tasks.md`
+  §Compliance.
 - **Rule 6 — met.** PHI.md committed 2026-08-26, corrected against the
   conformance matrix before landing.
 - **Rule 7 — met.** CODE_OF_CONDUCT.md committed 2026-08-26, claims

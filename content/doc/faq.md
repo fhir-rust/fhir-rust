@@ -208,9 +208,10 @@ MariaDB. That was **F-01**, the most serious finding in the
 [audit register](../spec/databases/audit.md), and all six were rewritten on 2026-07-31.
 
 The same substitution produced an Oracle DDL emitter that emits MySQL types
-(**F-08**, still open) and two dialect annexes titled "14. MySQL dialect" in
-ports targeting neither (**F-16**, rewritten). The `book/` directories are the
-remaining substituted documentation.
+(**F-08**, fixed 2026-08-03 — full R5 schema installed on 26ai, 0 invalid
+objects) and two dialect annexes titled "14. MySQL dialect" in ports targeting
+neither (**F-16**, rewritten). The `book/` directories were the last
+substituted documentation, and they too were fixed, 2026-08-03 (**F-56**).
 
 ## How do I contribute?
 

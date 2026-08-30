@@ -1,8 +1,8 @@
 {
 	"name": "fhir-rust",
-	"summary": "A Rust monorepo for the HL7 FHIR standard: the data model, six relational database ports, and an HTTP surface over them.",
+	"summary": "A Rust monorepo for the HL7® FHIR® standard: the data model, six relational database ports, and an HTTP surface over them.",
 	"homepage": "https://github.com/fhir-rust/fhir-rust",
-	"trademarks": "HL7 and FHIR are registered trademarks of Health Level Seven International; this project is not affiliated with or endorsed by HL7.",
+	"trademarks": "HL7®, and FHIR® are the registered trademarks of Health Level Seven International and their use of these trademarks does not constitute an endorsement by HL7.",
 	"notes": [
 		"This is https://fhir-rust.github.io's copy of the monorepo's curated map: each entry's url resolves at this site's own page where one is published, and at the source repository (https://github.com/fhir-rust/fhir-rust) otherwise.",
 		"Four families compose one way only: model -> persistence core -> database ports -> HTTP surface. No family is normative for another; spec/index.md is the one place that says which specification governs which code.",
@@ -44,7 +44,7 @@
 			"links": [
 				{
 					"title": "fhir/README.md",
-					"description": "Every resource and datatype for releases R2–R6, generated from HL7's own spec packages.",
+					"description": "Every resource and datatype for releases R2–R6 plus R4B, generated from HL7's own spec packages.",
 					"url": "https://fhir-rust.github.io/model/"
 				},
 				{

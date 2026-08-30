@@ -6,7 +6,9 @@ pages explain how it works and how to use it.
 
 The repository's other two families are documented elsewhere: the model crate in
 [`fhir/`](../fhir/README.md), the HTTP surface in
-[`fhir-store/`](../fhir-store/README.md). [`spec/index.md`](../spec/index.md)
+[`fhir-loco/`](../fhir-loco/README.md) (`fhir-store/` is the engine-agnostic
+persistence-core library the ports share, not the HTTP surface).
+[`spec/index.md`](../spec/index.md)
 routes between all three.
 
 ## Tutorials
@@ -59,8 +61,10 @@ results with the engine name substituted, and documented a CLI existing in no
 workspace (**F-01**). If a README and the matrix disagree, the README is the
 defect.
 
-The per-port `book/` directories have **not** been rewritten and still contain
-PostgreSQL text and REST chapters for a service that does not exist.
+The per-port `book/` directories were rewritten on 2026-08-03 (**F-56**): each
+now names its own engine and its own backup tooling, opens with a "Read this
+first" banner, and attributes every `serve`/endpoint/status code to
+`fhir-loco`, the separate crate that actually provides them.
 
 ## Which engine does the examples use
 

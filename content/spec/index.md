@@ -24,7 +24,7 @@ conformance model.
 
 | Family | Code | Specification | Ids | Status |
 | --- | --- | --- | --- | --- |
-| **Model** | [`fhir/`](../fhir/) | [`fhir/spec/index.md`](../fhir/spec/index.md) — 14 sections | `R1.x`–`R14.x` | specified, versioned `3.0.0` |
+| **Model** | [`fhir/`](../fhir/) | [`fhir/spec/index.md`](../fhir/spec/index.md) — 14 sections | `R1.x`–`R14.x` | specified, versioned (see [`fhir/Cargo.toml`](../fhir/Cargo.toml) for the current version) |
 | **Persistence core** | [`fhir-store/`](../fhir-store/) | governed by [`spec/databases/`](databases/index.md) — `M3.16`, `PR12.x` | shares the database ids | specified |
 | **Databases** | [`fhir-postgresql/`](../fhir-postgresql/) and five sibling ports | [`spec/databases/index.md`](databases/index.md) — sections 0–16 | see table below | specified, pre-release |
 | **HTTP surface** | [`fhir-loco/`](../fhir-loco/) | [`fhir-loco/spec/index.md`](../fhir-loco/spec/index.md) — 4 sections | `SV1.x`–`SV4.x` | specified 2026-08-03 |
@@ -86,8 +86,9 @@ release surface as a whole, as is the layout it is released from; precedence
 rule 4 above is about family-to-family bindings and does not exempt a family
 from `AG1.x` or `RV1.x`.
 
-Six further documents at this level bind the repository as a process rather
-than any family's code, and carry prose rules instead of requirement ids:
+Eight further documents at this level bind the repository as a process
+rather than any family's code, and carry prose rules instead of requirement
+ids:
 [`professionalization/`](professionalization/index.md) (what "professional"
 means here — plans, special files, CI-enforced claims, trademark discipline,
 PHI candour, conduct, family harmonization, gated outreach),
@@ -104,7 +105,12 @@ maintainers), and
 [`llms-json-and-llms-txt/`](llms-json-and-llms-txt/index.md) (the root
 `llms.txt`/`llms.json` AI-guidance files, and what a site publishing its own
 copy must do differently — repository-relative links don't resolve off a git
-checkout).
+checkout),
+[`free-open-source-funding/`](free-open-source-funding/index.md) (GitHub
+Sponsors, Open Collective, and `.github/FUNDING.yml`), and
+[`serde-json-float-roundtrip-arbitrary-precision/`](serde-json-float-roundtrip-arbitrary-precision/index.md)
+(the `serde_json` feature flags that keep floats and arbitrary-precision
+numbers round-tripping losslessly through JSON).
 
 ### Databases — `spec/databases/`
 

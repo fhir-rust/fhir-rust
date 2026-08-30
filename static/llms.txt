@@ -3,11 +3,11 @@
 > A Rust monorepo for the HL7® FHIR® standard: the data model, six relational
 > database ports, and an HTTP surface over them.
 
-HL7® and FHIR® are registered trademarks of Health Level Seven International;
-this project is not affiliated with or endorsed by HL7. This is https://fhir-rust.github.io's
-copy of the monorepo's curated map: each link below resolves at this site's
-own page where one is published, and at the source repository
-(https://github.com/fhir-rust/fhir-rust) otherwise.
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7. Canonical repository:
+https://github.com/fhir-rust/fhir-rust — all links below are paths relative to
+its root.
 
 Four families, composing one way only (model → persistence core → database
 ports → HTTP surface); no family is normative for another, and `spec/index.md`
@@ -27,7 +27,7 @@ by the file it appears in.
 
 ## Model — FHIR® resources and datatypes as Rust types
 
-- [fhir/README.md](https://fhir-rust.github.io/model/): every resource and datatype for releases R2–R6, generated from HL7's own spec packages
+- [fhir/README.md](https://fhir-rust.github.io/model/): every resource and datatype for releases R2–R6 plus R4B, generated from HL7's own spec packages
 - [fhir/spec/index.md](https://fhir-rust.github.io/model/spec/): model specification, ids `R1.x`–`R14.x`
 - [fhir/AGENTS.md](https://github.com/fhir-rust/fhir-rust/blob/main/fhir/AGENTS.md): agent guidance specific to the model crate
 - [fhir/fhir.md](https://github.com/fhir-rust/fhir-rust/blob/main/fhir/fhir.md): generated, searchable index of every resource and field — fastest way to look up "does X have field Y"

@@ -33,8 +33,8 @@ who reads about this project has no way to hear about it again.
     crate carries `version.workspace = true`, so `fhir-sqlite-map`, `-gen` and
     `-store` cannot diverge and one tag names all three;
   - otherwise, a **single crate**. The model family's crates version
-    independently and demonstrably diverge — `fhir` 4.1.0, `fhir-core` 3.2.0,
-    `fhir-derive-macros` 1.5.0 — so each takes its own tag.
+    independently and demonstrably diverge — `fhir` 4.2.0, `fhir-core` 3.3.0,
+    `fhir-derive-macros` 1.6.0 — so each takes its own tag.
 
   The distinction is mechanical, not editorial: a unit is a workspace if its
   members inherit `version.workspace`, and a crate otherwise. Nothing here
@@ -56,9 +56,14 @@ who reads about this project has no way to hear about it again.
   reasoning applied to tags rather than to requirement ids: a tag that moves
   makes every prior citation of it a lie.
 - **TG1.6** A tag SHOULD be annotated (`git tag -a`) rather than lightweight,
-  so that it carries a date, an author and a message. Signing is not required
-  and is not currently possible: this repository signs nothing
-  ([`MAINTAINERS.md`](../../MAINTAINERS.md)).
+  so that it carries a date, an author and a message. Signing has been
+  active since 2026-08-27: commits and tags from that date onward are signed
+  with an SSH key, and are verifiable given the maintainer's public key
+  (`git tag -v` on a tag from that date returns a good signature). Everything
+  before 2026-08-27 carries no signature and stays that way — this is not
+  applied retroactively (`git log --show-signature` on an earlier commit
+  returns `N`) — as recorded in
+  [`MAINTAINERS.md`](../../MAINTAINERS.md).
 
 ## Releases
 
