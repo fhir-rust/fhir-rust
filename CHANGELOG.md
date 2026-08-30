@@ -22,6 +22,33 @@ onward; everything before that date is unsigned and stays that way
 History before 2026-08-01 belongs to the separate projects this monorepo was
 assembled from, and lives in the per-family changelogs above.
 
+## 2026-08-30 — agent skills, llms.txt/llms.json, and a site-navigation gap closed
+
+Two new top-level agent skill folders, per `spec/agent-skills/index.md`:
+[`fhir-skill/`](fhir-skill/SKILL.md) (FHIR® concepts, terminology, and
+repo-grounded examples, for end users) and
+[`fhir-rust-maintainer-skill/`](fhir-rust-maintainer-skill/SKILL.md)
+(checklists and commands for shared-core, spec, and verification work, for
+maintainers). Both initially shipped without the required HL7® mark and
+disclaimer on five prose pages; `scripts/check-trademarks.sh` caught it on
+the next push, fixed the same day.
+
+Root-level [`llms.txt`](llms.txt) and [`llms.json`](llms.json), per
+`spec/llms-json-and-llms-txt/index.md`: a curated map of the repository's
+most important content for AI tools, each under 40k bytes, with every link
+verified to resolve. `fhir-rust.github.io` initially published a byte-for-
+byte copy at its own `/llms.txt`, which shipped links that mostly 404 on
+that domain (repository-relative paths don't resolve off a git checkout);
+fixed by adding a generator (`bin/sync-llms.mjs` in that repository) that
+rewrites every entry through the site's own `routeFor()`/`sourceUrl()`
+mapping instead, and the spec now says a site copy must do this.
+
+Both new spec directories were missing from `spec/index.md`'s own
+cross-family list, and — because that list is also `fhir-rust.github.io`'s
+sync manifest — from the site entirely: `spec/agent-skills/index.md` and
+`spec/llms-json-and-llms-txt/index.md` existed but linked from nowhere.
+Closed: `spec/index.md`, `README.md`, and `index.md` now all reference them.
+
 ## 2026-08-29 — F-67 closed: the audit register has no open findings left
 
 The four TLS advisories `deny.toml` had been excusing in `fhir-mssql`

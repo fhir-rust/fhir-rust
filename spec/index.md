@@ -86,7 +86,7 @@ release surface as a whole, as is the layout it is released from; precedence
 rule 4 above is about family-to-family bindings and does not exempt a family
 from `AG1.x` or `RV1.x`.
 
-Four further documents at this level bind the repository as a process rather
+Six further documents at this level bind the repository as a process rather
 than any family's code, and carry prose rules instead of requirement ids:
 [`professionalization/`](professionalization/index.md) (what "professional"
 means here — plans, special files, CI-enforced claims, trademark discipline,
@@ -94,9 +94,17 @@ PHI candour, conduct, family harmonization, gated outreach),
 [`hl7-trademarks-fair-use/`](hl7-trademarks-fair-use/index.md) (the HL7®
 word-mark terms and the check that enforces them),
 [`special-files-for-public-repos/`](special-files-for-public-repos/index.md)
-(the canonical root-document list), and
+(the canonical root-document list),
 [`dependabot/`](dependabot/index.md) (repo-level Dependabot security
-updates and `.github/dependabot.yml`'s scheduled-PR posture).
+updates and `.github/dependabot.yml`'s scheduled-PR posture),
+[`agent-skills/`](agent-skills/index.md) (the two top-level agent skill
+folders — [`fhir-skill/`](../fhir-skill/SKILL.md) for end users,
+[`fhir-rust-maintainer-skill/`](../fhir-rust-maintainer-skill/SKILL.md) for
+maintainers), and
+[`llms-json-and-llms-txt/`](llms-json-and-llms-txt/index.md) (the root
+`llms.txt`/`llms.json` AI-guidance files, and what a site publishing its own
+copy must do differently — repository-relative links don't resolve off a git
+checkout).
 
 ### Databases — `spec/databases/`
 
