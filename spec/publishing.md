@@ -81,9 +81,9 @@ premise, **F-76**). **Method:**
 workspace; the crates.io API for all 32 package names; anonymous HTTP for every
 declared `repository` URL.
 
-## The 33 crates
+## The 34 crates
 
-Thirty-three `[package]` manifests, in four families. Fuzz crates are
+Thirty-four `[package]` manifests, in four families. Fuzz crates are
 `publish = false` by design and are excluded.
 
 The count changed on 2026-08-02: `fhir-store` was split in two. The name now

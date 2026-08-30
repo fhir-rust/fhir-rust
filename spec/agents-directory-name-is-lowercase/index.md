@@ -51,8 +51,8 @@ recorded below.
 
 | Path | State |
 | --- | --- |
-| [`agents/`](../agents/index.md) — 8 files | conforming |
-| [`fhir/agents/`](../fhir/agents/) — 5 files | conforming |
+| [`agents/`](../../agents/index.md) — 8 files | conforming |
+| [`fhir/agents/`](../../fhir/agents/) — 5 files | conforming |
 | `fhir/.claude/agents/` | conforming — the tool defines it (`AG1.3`) |
 | `AGENTS.md` at the root, in `fhir/`, and in all six ports | conforming — a file, not a directory (`AG1.2`) |
 
