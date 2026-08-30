@@ -27,6 +27,20 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    ignore:
+      # `dtolnay/rust-toolchain@1.96.0` in fhir-ci.yml's msrv job is not an
+      # action-revision pin -- that ref IS the Rust toolchain version the
+      # action installs. Dependabot's github-actions updater doesn't know
+      # that distinction and walks it like any other tag: PR #19 ("bump
+      # dtolnay/rust-toolchain from 1.88.0 to 1.100.0", closed without
+      # merging) would have pinned a Rust version that does not exist.
+      # This pin moves by hand, in the same change that recomputes the MSRV
+      # under spec/rust-msrv-n-minus-2/ -- never as an automated bump.
+      # Reported by a peer session working on snomed-rust, which hit the
+      # same shape live: RUSTSEC-class exposure without a matching filed
+      # advisory, but confirmed here against this repo's own PR #19 before
+      # acting on it, not assumed from the report alone.
+      - dependency-name: "dtolnay/rust-toolchain"
   - package-ecosystem: cargo
     directory: /fhir
     schedule:
