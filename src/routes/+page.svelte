@@ -1,6 +1,5 @@
 <script>
-	import Card from '$lib/lily/components/Card.svelte';
-	import SectionHeading from '$lib/lily/components/SectionHeading.svelte';
+	import { Card, SectionHeading } from 'lily-design-system-svelte-headless';
 	import { REPOSITORY, SITE_NAME, SITE_TAGLINE, SITE_URL } from '$lib/site.js';
 
 	let { data } = $props();

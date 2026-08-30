@@ -24,8 +24,9 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      # No sync step: content/, src/lib/lily/ and static/themes/ are committed,
-      # so the site builds without the sibling checkouts it was vendored from.
+      # No sync step: content/ and static/themes/ are committed, and Lily's
+      # Svelte components/helpers are npm dependencies (package-lock.json),
+      # so the site builds without the sibling checkouts they came from.
       - run: npm ci
       - run: npm run build
       - uses: actions/configure-pages@v5

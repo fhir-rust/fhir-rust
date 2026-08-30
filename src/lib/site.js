@@ -29,7 +29,7 @@ export const ORG_OPENEHR = 'https://github.com/openehr-rust';
 /** The repository whose Markdown this site renders. */
 export const REPOSITORY = REPO_MONO;
 
-/** Themes vendored into static/themes/ by bin/sync-lily.mjs. */
+/** Themes vendored into static/themes/ by bin/sync-lily-themes.mjs. */
 export const THEMES = [
 	'light',
 	'dark',

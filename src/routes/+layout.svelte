@@ -1,10 +1,8 @@
 <script>
 	import { page } from '$app/state';
-	import SkipLink from '$lib/lily/components/SkipLink.svelte';
-	import Header from '$lib/lily/components/Header.svelte';
-	import Footer from '$lib/lily/components/Footer.svelte';
-	import ThemePicker from '$lib/lily/helpers/ThemePicker.svelte';
-	import TextSizePicker from '$lib/lily/helpers/TextSizePicker.svelte';
+	import { SkipLink, Header, Footer } from 'lily-design-system-svelte-headless';
+	import { ThemePicker } from 'lily-design-system-svelte-theme-picker';
+	import { TextSizePicker } from 'lily-design-system-svelte-text-size-picker';
 	import { REPOSITORY, SITE_NAME, THEMES, THEME_LABELS } from '$lib/site.js';
 	import '../styles/site.css';
 

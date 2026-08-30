@@ -59,25 +59,33 @@ re-run the script.
 | Directory / file | Script | From |
 | --- | --- | --- |
 | `content/` | `npm run sync:content` | the monorepo: `README.md`, `index.md`, `doc/`, `spec/`, `fhir/`, `fhir-loco/`, `fhir-store/` |
-| `src/lib/lily/` | `npm run sync:lily` | the Lily Design System checkout |
-| `static/themes/` | `npm run sync:lily` | Lily's themes |
+| `static/themes/` | `npm run sync:lily-themes` | Lily's theme CSS |
 | `static/llms.txt`, `static/llms.json` | `npm run sync:llms` | the monorepo's `llms.txt`/`llms.json` ([spec](https://github.com/fhir-rust/fhir-rust/blob/main/spec/llms-json-and-llms-txt/index.md)), with every link rewritten to wherever it resolves from *this* domain via `routeFor()`/`sourceUrl()` (see [`src/lib/paths.js`](src/lib/paths.js)) — the workspace copies use repository-relative links, which don't resolve on a live site |
 
 `npm run sync` runs all three. Each script takes its source from an
 environment variable when the default location is wrong:
 
 ```sh
-WORKSPACE=/path/to/fhir-rust npm run sync:content   # default: ../fhir-rust
-WORKSPACE=/path/to/fhir-rust npm run sync:llms       # default: ../fhir-rust
-LILY=/path/to/lily-design-system npm run sync:lily
+WORKSPACE=/path/to/fhir-rust npm run sync:content        # default: ../fhir-rust
+WORKSPACE=/path/to/fhir-rust npm run sync:llms            # default: ../fhir-rust
+LILY=/path/to/lily-design-system npm run sync:lily-themes
 ```
 
 `content/` mirrors the monorepo's layout rather than flattening it, so every
 document's own relative links resolve exactly as they do in the repository.
 
-Lily's Svelte components are MIT licensed and vendored rather than installed:
-the helpers are not published to npm. The commit they came from is recorded in
-`src/lib/lily/VENDOR.md`.
+Lily's Svelte components and picker helpers are installed from npm
+(`lily-design-system-svelte-headless`,
+`lily-design-system-svelte-theme-picker`,
+`lily-design-system-svelte-text-size-picker` — see `dependencies` in
+`package.json`), not vendored. **Done 2026-08-30**, replacing a checkout-vendored
+copy: those three packages didn't exist on npm when this site was first built,
+so `src/lib/lily/` carried the components and helpers verbatim, ahead of what
+npm had. All three are MIT-or-Apache-2.0-or-GPL-2.0-or-GPL-3.0 licensed and,
+as of the commit that made this switch, byte-identical to what was vendored.
+The one piece with no npm package yet is Lily's theme CSS — headless
+components ship no styles by design — so `static/themes/` is still vendored
+from a sibling checkout, recorded in `static/themes/VENDOR.md`.
 
 ## How links are handled
 

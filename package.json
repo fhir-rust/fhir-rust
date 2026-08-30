@@ -5,9 +5,9 @@
 	"type": "module",
 	"private": "true",
 	"scripts": {
-		"sync": "node bin/sync-content.mjs && node bin/sync-lily.mjs && node bin/sync-llms.mjs",
+		"sync": "node bin/sync-content.mjs && node bin/sync-lily-themes.mjs && node bin/sync-llms.mjs",
 		"sync:content": "node bin/sync-content.mjs",
-		"sync:lily": "node bin/sync-lily.mjs",
+		"sync:lily-themes": "node bin/sync-lily-themes.mjs",
 		"sync:llms": "node bin/sync-llms.mjs",
 		"dev": "vite dev",
 		"build": "vite build",
@@ -23,6 +23,9 @@
 	},
 	"dependencies": {
 		"github-slugger": "^2.0.0",
+		"lily-design-system-svelte-headless": "^0.3.1",
+		"lily-design-system-svelte-text-size-picker": "^0.1.1",
+		"lily-design-system-svelte-theme-picker": "^0.1.1",
 		"marked": "^18.0.10"
 	}
 }

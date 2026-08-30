@@ -1,14 +1,16 @@
 <script>
-	import ArticleLayout from '$lib/lily/components/ArticleLayout.svelte';
-	import BreadcrumbNav from '$lib/lily/components/BreadcrumbNav.svelte';
-	import BreadcrumbList from '$lib/lily/components/BreadcrumbList.svelte';
-	import BreadcrumbListItem from '$lib/lily/components/BreadcrumbListItem.svelte';
-	import ContentsNav from '$lib/lily/components/ContentsNav.svelte';
-	import ContentsList from '$lib/lily/components/ContentsList.svelte';
-	import ContentsListItem from '$lib/lily/components/ContentsListItem.svelte';
-	import PaginationNav from '$lib/lily/components/PaginationNav.svelte';
-	import PaginationList from '$lib/lily/components/PaginationList.svelte';
-	import PaginationListItem from '$lib/lily/components/PaginationListItem.svelte';
+	import {
+		ArticleLayout,
+		BreadcrumbNav,
+		BreadcrumbList,
+		BreadcrumbListItem,
+		ContentsNav,
+		ContentsList,
+		ContentsListItem,
+		PaginationNav,
+		PaginationList,
+		PaginationListItem
+	} from 'lily-design-system-svelte-headless';
 	import { REPOSITORY, SITE_NAME, SITE_URL } from '$lib/site.js';
 
 	let { data } = $props();
