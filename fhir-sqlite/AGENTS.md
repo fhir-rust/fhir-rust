@@ -37,7 +37,7 @@ nothing to diff against and must still be reloaded.
 The pure-Rust core — `map/src/{model,shred,reconstruct,value,fold,canon,error}.rs`
 and all of `gen/src` — is **identical across all six ports** (`X15.1`). Editing
 it here alone is a divergence, not a fix; apply the change to all six in one
-commit (`W16.7`). Nothing in CI checks this yet (**F-10**).
+commit (`W16.7`), verified with `../scripts/check-shared-core.sh` (**F-10** fixed).
 
 Dialect differences belong in exactly two places: `map/src/ddl.rs` and the
 `store` crate — and, when they change what the core requires, in a numbered
@@ -63,4 +63,5 @@ database guarantee, so the live suite is the gate that means something.
 - [`tasks.md`](tasks.md) — the work breakdown.
 - [`plan.md`](plan.md) — design decisions and their reasons.
 
-**Do not push:** `origin` is still the ancestor project's repository (**F-11**).
+**Pushing:** still ask first — see [`../CLAUDE.md`](../CLAUDE.md#commit-and-push)
+for the current, narrower reason (F-37, not the old six-remotes one).

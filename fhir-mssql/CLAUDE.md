@@ -21,7 +21,7 @@ Four things to know before editing anything here:
    fix.
 3. No `conditional_create_audited`, `put_audited`, `transact_audited`. `upgrade`
    and `backfill_norm` **do** exist now (closes this port's share of `F-15`),
-   live-verified by `tests/upgrade.rs` (9 tests, 0 `#[ignore]`d). Unlike
+   live-verified by `tests/upgrade.rs` (16 tests, 0 `#[ignore]`d). Unlike
    `fhir-mysql`/`fhir-mariadb`, `upgrade` is one transaction — T-SQL DDL is
    transactional, so a failed upgrade rolls back rather than leaving a
    half-applied schema (`M14.35`). Table drops in the destructive diff MUST be

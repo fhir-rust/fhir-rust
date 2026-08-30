@@ -52,7 +52,7 @@ rather than skip (**F-06** fixed).
 The pure-Rust core — `map/src/{model,shred,reconstruct,value,fold,canon,error}.rs`
 and all of `gen/src` — is **identical across all six ports** (`X15.1`). Editing
 it here alone is a divergence, not a fix; apply the change to all six in one
-commit (`W16.7`). Nothing in CI checks this yet (**F-10**).
+commit (`W16.7`), verified with `../scripts/check-shared-core.sh` (**F-10** fixed).
 
 Dialect differences belong in exactly two places: `map/src/ddl.rs` and the
 `store` crate — and, when they change what the core requires, in a numbered

@@ -52,9 +52,10 @@ and `R4.5` has no working answer at all. (`upgrade`/`backfill_norm` left
 this list 2026-08-09: `tests/upgrade.rs`, 9 live tests — resumable DDL
 `M14.35`, chunked meta `M14.36`, ROWID-keyset backfill `M14.37` — closing
 **F-15**'s last port. Run the live suite with `--test-threads=1`: every
-test shares the one uppercase `R5` schema, `M14.5`.) The
-eleven MySQL-asserting tests in `ddl.rs` are still `#[ignore]`d and still
-need replacing (`M14.25`, `T11.14`).
+test shares the one uppercase `R5` schema, `M14.5`.) The eleven
+`#[ignore]`d MySQL-asserting tests in `ddl.rs` were replaced by one
+consolidated `no_mysql_or_postgres_constructs_survive` test closing
+**F-08** — none remain ignored (`M14.25`).
 
 The engine floor is Oracle 12.2 (`M14.2`) under a 63-byte identifier budget;
 **F-09** is closed.
@@ -70,7 +71,7 @@ than TRUE — so `DELETE` on history was permitted with no error at all
 The pure-Rust core — `map/src/{model,shred,reconstruct,value,fold,canon,error}.rs`
 and all of `gen/src` — is **identical across all six ports** (`X15.1`). Editing
 it here alone is a divergence, not a fix; apply the change to all six in one
-commit (`W16.7`). Nothing in CI checks this yet (**F-10**).
+commit (`W16.7`), verified with `../scripts/check-shared-core.sh` (**F-10** fixed).
 
 Dialect differences belong in exactly two places: `map/src/ddl.rs` and the
 `store` crate — and, when they change what the core requires, in a numbered
