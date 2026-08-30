@@ -52,21 +52,21 @@ features: you compile only what you use. `r5` is on by default.
 ```toml
 [dependencies]
 # R5 only (the default)
-fhir = "3"
+fhir = "4"
 
 # R5 plus older releases
-# fhir = { version = "3", features = ["r4"] }
-# fhir = { version = "3", features = ["r2", "r3", "r4"] }
+# fhir = { version = "4", features = ["r4"] }
+# fhir = { version = "4", features = ["r2", "r3", "r4"] }
 
 # One older release on its own — no two releases compile unless you ask for both
-# fhir = { version = "3", default-features = false, features = ["r4"] }
-# fhir = { version = "3", default-features = false, features = ["r2"] }
+# fhir = { version = "4", default-features = false, features = ["r4"] }
+# fhir = { version = "4", default-features = false, features = ["r2"] }
 
 # The R6 ballot draft — outside the semver promise until R6 is final
-# fhir = { version = "3", default-features = false, features = ["r6"] }
+# fhir = { version = "4", default-features = false, features = ["r6"] }
 
 # Optional capabilities
-# fhir = { version = "3", features = ["xml", "client"] }
+# fhir = { version = "4", features = ["xml", "client"] }
 
 serde_json = "1" # or any other serde data format
 ```

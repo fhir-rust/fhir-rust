@@ -36,7 +36,7 @@ Six ports, one specification, one engine.
 | [`fhir-oracle`](fhir-oracle/) | Oracle Database | **Store** — live-verified against `gvenzl/oracle-free` (**F-68**), `upgrade`/backfill included (**F-15**, 2026-08-09); `R4.5` open |
 
 Those are conformance levels, defined in
-[`spec/00-conformance.md`](spec/databases/00-conformance.md). They are the honest version:
+[`spec/databases/00-conformance.md`](spec/databases/00-conformance.md). They are the honest version:
 what has been *verified for that port*, not what its code contains. The
 [conformance matrix](spec/databases/conformance-matrix.md) breaks them down requirement by
 requirement, and it is the document to read before choosing one.
@@ -50,7 +50,7 @@ requirement, and it is the document to read before choosing one.
 > own engine and attributes every `serve`/endpoint to `fhir-loco`
 > (**F-56**). The [conformance matrix](spec/databases/conformance-matrix.md) is
 > the status document to trust, and [`spec/audit.md`](spec/databases/audit.md)
-> lists the five findings still open.
+> lists one finding still open (F-98).
 
 ## Also here: the model crate
 
@@ -150,8 +150,8 @@ SQLite needs no server, so it is the shortest path to a working store:
 
 ```toml
 [dependencies]
-fhir-sqlite-map   = "0.4"
-fhir-sqlite-store = "0.4"   # add `features = ["r3", "r4"]` for other versions
+fhir-sqlite-map   = "0.6.1"
+fhir-sqlite-store = "0.6.1"   # add `features = ["r3", "r4"]` for other versions
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 serde_json = "1"
 ```
@@ -214,7 +214,7 @@ Full walkthroughs: [`doc/`](doc/index.md).
 | Production today, with the full test suite behind it | `fhir-postgresql` |
 | Embedded, no server, a single file | `fhir-sqlite` |
 | An existing MySQL or MariaDB estate | `fhir-mysql`, `fhir-mariadb` |
-| SQL Server or Oracle | not yet — see the [matrix](spec/databases/conformance-matrix.md) |
+| SQL Server or Oracle | supported, Store level — `fhir-mssql`, `fhir-oracle`; see the [matrix](spec/databases/conformance-matrix.md) for remaining gaps (no `conditional_create_audited`/`put_audited`/`transact_audited` on mssql; no working `R4.5` mechanism and no `search_page` concurrency coverage on Oracle) |
 
 [`doc/choosing-an-engine.md`](doc/choosing-an-engine.md) has the long version,
 including what each engine costs you in its type bindings.
@@ -314,7 +314,7 @@ prefix collision between them.
 ## License
 
 `MIT OR Apache-2.0 OR BSD-3-Clause OR GPL-2.0-only OR GPL-3.0-only` — declared
-identically by all 33 crates in the repository, across all four families. `OR`
+identically by all 34 crates in the repository, across all four families. `OR`
 means you choose; no obligation from one option carries into another.
 
 Full statement: [`LICENSE.md`](LICENSE.md). Versions already on crates.io keep

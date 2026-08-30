@@ -52,8 +52,8 @@ Each port ships three crates. You normally need two:
 
 ```toml
 [dependencies]
-fhir-sqlite-map   = "0.5"   # the relational map, compiled in
-fhir-sqlite-store = "0.5"   # the store: put/get/delete/history/search/audit
+fhir-sqlite-map   = "0.6.1"   # the relational map, compiled in
+fhir-sqlite-store = "0.6.1"   # the store: put/get/delete/history/search/audit
 tokio      = { version = "1", features = ["rt-multi-thread", "macros"] }
 serde_json = "1"
 ```
@@ -68,8 +68,8 @@ if you are regenerating assets from FHIR specification packages.
 R5 is on by default. Add the others as features, on **both** crates:
 
 ```toml
-fhir-sqlite-map   = { version = "0.5", features = ["r3", "r4"] }
-fhir-sqlite-store = { version = "0.5", features = ["r3", "r4"] }
+fhir-sqlite-map   = { version = "0.6.1", features = ["r3", "r4"] }
+fhir-sqlite-store = { version = "0.6.1", features = ["r3", "r4"] }
 ```
 
 ## Use it
@@ -137,7 +137,7 @@ database, no I/O.
 
 ```toml
 [dependencies]
-fhir = { version = "4.1", features = ["r5"] }   # or r2, r3, r4, r4b, r6
+fhir = { version = "4.2", features = ["r5"] }   # or r2, r3, r4, r4b, r6
 ```
 
 The database ports do **not** depend on it: they shred `serde_json::Value`
