@@ -255,6 +255,22 @@ requirement and to the test that evidences it.
 | `fhir-<engine>/book/` | that port's user guide |
 | `fhir-<engine>/plan.md` | that port's design decisions |
 
+## AI tooling
+
+Machine-readable guidance, alongside the human-oriented docs above.
+
+| | |
+| --- | --- |
+| [`llms.txt`](llms.txt) / [`llms.json`](llms.json) | a curated map of the repository's most important content, under 40k bytes each ([spec](spec/llms-json-and-llms-txt/index.md)) |
+| [`fhir-skill/`](fhir-skill/SKILL.md) | agent skill for end users — FHIR® concepts, terminology, examples grounded in this repo |
+| [`fhir-rust-maintainer-skill/`](fhir-rust-maintainer-skill/SKILL.md) | agent skill for maintainers — checklists and commands for shared-core, spec, and verification work |
+| [spec/agent-skills/index.md](spec/agent-skills/index.md) | the requirement behind the two skill folders above |
+
+The docs site publishes its own copy at
+[fhir-rust.github.io/llms.txt](https://fhir-rust.github.io/llms.txt) —
+generated, not copied, so every link resolves on that domain rather than
+against this repository's paths.
+
 ## Project documents
 
 | | |

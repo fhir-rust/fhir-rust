@@ -19,6 +19,7 @@ The source is the fhir-rust **monorepo** (four families in one repository):
 | `/docs/<name>/` | `doc/<name>.md` — the guides and six tutorials |
 | `/specs/` | `spec/index.md` — the four-family specification root |
 | `/specs/publishing/` | `spec/publishing.md` |
+| `/specs/<slug>/` | the single-topic cross-family specs `spec/index.md` links to — agent skills, agents-directory casing, Dependabot, funding, git tags, HL7 trademark fair use, llms.txt/llms.json, professionalization, MSRV, the serde_json float-roundtrip decision, the special-files list, Trusted Publishing |
 | `/spec/` | `spec/databases/index.md` — the database core |
 | `/spec/<name>/` | `spec/databases/<name>.md` — the normative sections, the audit register, the fold |
 | `/conformance/` | `spec/databases/conformance-matrix.md` |

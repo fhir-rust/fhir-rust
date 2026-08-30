@@ -51,24 +51,30 @@ const files = [
 
 // Directory -> same directory inside content/. Only *.md is copied.
 //
-// The ten single-topic specs below are the cross-family documents
-// spec/index.md itself links to (agents directory casing, Dependabot,
-// funding, git tags, HL7 trademark fair use, professionalization, the MSRV
-// policy, the serde_json float-roundtrip decision, the special-files list,
-// and Trusted Publishing) — added here after they'd accumulated for weeks
-// with no sync-script update, so spec/index.md's own links 404'd on this
-// site while resolving fine in the repository. Each is a single `index.md`
-// (one also carries a template file, `special-files-for-public-repos/
-// AI_STATEMENT.md`) — flat, matching every other entry in this list, not
-// nested further.
+// The single-topic specs below are the cross-family documents spec/index.md
+// itself links to (agent skills, agents directory casing, Dependabot,
+// funding, git tags, HL7 trademark fair use, the AI-guidance llms.txt/
+// llms.json files, professionalization, the MSRV policy, the serde_json
+// float-roundtrip decision, the special-files list, and Trusted Publishing)
+// — added here after they'd accumulated for weeks with no sync-script
+// update, so spec/index.md's own links 404'd on this site while resolving
+// fine in the repository. `agent-skills` and `llms-json-and-llms-txt` hit
+// the same gap a second time (added to spec/index.md 2026-08-30, missed
+// here until the next day) -- both are named in the array below AND in
+// routeFor()'s switch in src/lib/paths.js; a spec dir needs both or its
+// links resolve nowhere. Each is a single `index.md` (one also carries a
+// template file, `special-files-for-public-repos/AI_STATEMENT.md`) — flat,
+// matching every other entry in this list, not nested further.
 const dirs = [
 	'doc',
 	'spec/databases',
+	'spec/agent-skills',
 	'spec/agents-directory-name-is-lowercase',
 	'spec/dependabot',
 	'spec/free-open-source-funding',
 	'spec/git-tags-name-published-versions',
 	'spec/hl7-trademarks-fair-use',
+	'spec/llms-json-and-llms-txt',
 	'spec/professionalization',
 	'spec/rust-msrv-n-minus-2',
 	'spec/serde-json-float-roundtrip-arbitrary-precision',

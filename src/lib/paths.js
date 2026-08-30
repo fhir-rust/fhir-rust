@@ -42,6 +42,8 @@ export function routeFor(path) {
 		// once the sync script started vendoring them (they'd accumulated for
 		// weeks with no route here, so spec/index.md's own links fell back to
 		// a GitHub URL instead of staying on this site).
+		case 'spec/agent-skills/index.md':
+			return '/specs/agent-skills/';
 		case 'spec/agents-directory-name-is-lowercase/index.md':
 			return '/specs/agents-directory-name-is-lowercase/';
 		case 'spec/dependabot/index.md':
@@ -52,6 +54,8 @@ export function routeFor(path) {
 			return '/specs/git-tags-name-published-versions/';
 		case 'spec/hl7-trademarks-fair-use/index.md':
 			return '/specs/hl7-trademarks-fair-use/';
+		case 'spec/llms-json-and-llms-txt/index.md':
+			return '/specs/llms-json-and-llms-txt/';
 		case 'spec/professionalization/index.md':
 			return '/specs/professionalization/';
 		case 'spec/rust-msrv-n-minus-2/index.md':

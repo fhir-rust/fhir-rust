@@ -37,6 +37,15 @@ says which one governs which code.
 | [Tutorial 6 — porting](doc/tutorial-06-porting.md) | adding a seventh database |
 | [Examples](doc/examples.md) | short, runnable recipes |
 
+### Using an AI agent
+
+| | |
+| --- | --- |
+| [`llms.txt`](llms.txt) · [`llms.json`](llms.json) | curated map of the repo for AI tools, plain text / structured — [spec](spec/llms-json-and-llms-txt/index.md) |
+| [`fhir-skill/`](fhir-skill/SKILL.md) | agent skill: FHIR® concepts, terminology, examples — for end users |
+| [`fhir-rust-maintainer-skill/`](fhir-rust-maintainer-skill/SKILL.md) | agent skill: checklists and commands for maintaining this repository |
+| [fhir-rust.github.io/llms.txt](https://fhir-rust.github.io/llms.txt) | the same map, generated with links that resolve on that domain instead of this repository's paths |
+
 ### Contributing
 
 | | |
