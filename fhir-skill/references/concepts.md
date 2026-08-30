@@ -1,4 +1,4 @@
-# FHIR concepts
+# FHIR® concepts
 
 Deeper explanations of the ideas behind the terms in
 [`glossary.md`](glossary.md). Still general FHIR® knowledge — the point is to
@@ -31,7 +31,7 @@ into relational form, which is a large part of what "lossless" means.
 
 Base FHIR resources are deliberately minimal — the "80%" that most
 implementers need. Everything else goes through extensions, identified by a
-canonical URL rather than a name registered with HL7. A US Core
+canonical URL rather than a name registered with HL7®. A US Core
 `race`/`ethnicity` extension on `Patient`, a lab-specific device extension on
 `Observation` — these are normal, not edge cases. Any system that silently
 drops unrecognized extensions is not round-tripping FHIR correctly, which is
@@ -79,3 +79,9 @@ storing the resource correctly in the first place. This repository's ports
 each maintain a tamper-evident audit chain (hash-linked records) alongside
 the resource data, verifiable independently of the resource content itself.
 See `references/examples.md` for where that lives in the code.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

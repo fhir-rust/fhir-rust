@@ -1,4 +1,4 @@
-# FHIR terminology
+# FHIR® terminology
 
 Plain-language definitions of the terms that come up most. This is general
 FHIR® knowledge (from the HL7® specification), not specific to this
@@ -69,3 +69,9 @@ concern from the resource data itself.
 handling it correctly (encryption, access logging, redaction, erasure) is a
 first-class concern in this repository's database ports, not an
 afterthought.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

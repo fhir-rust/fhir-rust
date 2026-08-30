@@ -1,6 +1,6 @@
 ---
 name: fhir-rust-maintainer-skill
-description: Technical implementation skill for maintainers and agents working on this repository's code, spec, or docs — checklists and exact commands for shared-core changes across the six database ports, spec-driven changes, verifying a claim before making it, and pre-commit/pre-push checks. Use when the task is contributing to, fixing, or reviewing this repo, as opposed to explaining FHIR concepts to an end user (that's fhir-skill).
+description: Technical implementation skill for maintainers and agents working on this repository's code, spec, or docs — checklists and exact commands for shared-core changes across the six database ports, spec-driven changes, verifying a claim before making it, and pre-commit/pre-push checks. Use when the task is contributing to, fixing, or reviewing this repo, as opposed to explaining FHIR® concepts to an end user (that's fhir-skill).
 ---
 
 # Maintaining fhir-rust
@@ -73,3 +73,9 @@ migration), a backfill story per port (dialect differs, but all six ports
 have `upgrade`/`backfill_norm` as of F-15), and a mutation-verified test.
 Say this before starting work, not after discovering it partway through —
 see [`references/shared-core-checklist.md`](references/shared-core-checklist.md).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

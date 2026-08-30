@@ -1,4 +1,4 @@
-# Where FHIR concepts show up in this repo
+# Where FHIR® concepts show up in this repo
 
 Pointers, not copies. Code moves; these paths were checked against the repo
 at the time of writing, but read the linked file for the current, exact
@@ -69,3 +69,9 @@ version- or engine-specific.
 
 Prefer the source file every time — these pointers describe *where to look*,
 not a frozen snapshot of what's there.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

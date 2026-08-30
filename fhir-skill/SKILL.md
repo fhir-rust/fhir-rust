@@ -12,9 +12,7 @@ implementation, spec compliance, or contribution questions, the
 `fhir-rust-maintainer-skill` covers that instead.
 
 FHIR (Fast Healthcare Interoperability Resources, pronounced "fire") is the
-HL7® standard for exchanging electronic health records. HL7® and FHIR® are
-registered trademarks of Health Level Seven International; this repository
-and skill are not affiliated with or endorsed by HL7.
+HL7® standard for exchanging electronic health records.
 
 ## How this repo implements FHIR
 
@@ -60,3 +58,9 @@ tables, and the REST API is what serves those tables over HTTP.
 - If a question is about the FHIR standard in general and this repo has no
   special angle on it, answer from FHIR knowledge directly; there is no need
   to force a repo reference where none is relevant.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.
