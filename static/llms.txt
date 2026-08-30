@@ -1,0 +1,94 @@
+# fhir-rust
+
+> A Rust monorepo for the HL7® FHIR® standard: the data model, six relational
+> database ports, and an HTTP surface over them.
+
+HL7® and FHIR® are registered trademarks of Health Level Seven International;
+this project is not affiliated with or endorsed by HL7. Canonical repository:
+https://github.com/fhir-rust/fhir-rust — all links below are paths relative to
+its root.
+
+Four families, composing one way only (model → persistence core → database
+ports → HTTP surface); no family is normative for another, and `spec/index.md`
+is the one place that says which specification governs which code. A stated
+trap for readers, human or automated: `R4.x` is used by two unrelated
+requirement sets (`fhir/spec/04-resources.md` and
+`spec/databases/04-shredding-and-reconstruction.md`) — resolve a bare citation
+by the file it appears in.
+
+## Start here
+
+- [AGENTS.md](AGENTS.md): operational guidance shared by every contributor and agent; its five rules are the ones that get broken
+- [CLAUDE.md](CLAUDE.md): repo-specific orientation and documented traps (stale claims, name collisions, the shared-core rule)
+- [README.md](README.md): project overview, the four families, status table
+- [spec/index.md](spec/index.md): root of every normative specification; the `R4.x` collision note; precedence rules
+- [INSTALL.md](INSTALL.md): these are libraries, not a CLI or server — how to add one to a Rust project
+
+## Model — FHIR® resources and datatypes as Rust types
+
+- [fhir/README.md](fhir/README.md): every resource and datatype for releases R2–R6, generated from HL7's own spec packages
+- [fhir/spec/index.md](fhir/spec/index.md): model specification, ids `R1.x`–`R14.x`
+- [fhir/AGENTS.md](fhir/AGENTS.md): agent guidance specific to the model crate
+- [fhir/fhir.md](fhir/fhir.md): generated, searchable index of every resource and field — fastest way to look up "does X have field Y"
+- [fhir/examples](fhir/examples): runnable examples — building a resource, reading/writing extensions, code-system enums, CRUD, converting between releases
+
+## Database ports — FHIR resources as real relational tables
+
+- [spec/databases/index.md](spec/databases/index.md): normative core shared by all six ports, sections 0–16
+- [spec/databases/conformance-matrix.md](spec/databases/conformance-matrix.md): what is actually verified per port today — trust this over any README if they disagree
+- [spec/databases/audit.md](spec/databases/audit.md): tracked findings; a change may already be a known issue here
+- [spec/databases/15-portability-and-dialects.md](spec/databases/15-portability-and-dialects.md): how the shared Rust core and per-engine dialect annexes relate
+- [fhir-postgresql](fhir-postgresql/): PostgreSQL 18 — Reference level, full store, full test suite
+- [fhir-sqlite](fhir-sqlite/): SQLite 3 — Store level, embeddable, no server
+- [fhir-mysql](fhir-mysql/): MySQL 8.4 — Store level
+- [fhir-mariadb](fhir-mariadb/): MariaDB 11.4 — Store level
+- [fhir-mssql](fhir-mssql/): SQL Server — Store level, live-verified against `azure-sql-edge`
+- [fhir-oracle](fhir-oracle/): Oracle Database — Store level, live-verified against `gvenzl/oracle-free`
+
+## Persistence core
+
+- [fhir-store/README.md](fhir-store/README.md): the engine-agnostic half of storage — audit chain, attribution, shared result types. A small library, not the HTTP surface, despite a past name collision (see CLAUDE.md)
+
+## HTTP surface
+
+- [fhir-loco/README.md](fhir-loco/README.md): a FHIR RESTful API server (Loco/Axum/Tokio/Hyper) mounted over `fhir-sqlite` — the only crate in the repo that speaks HTTP
+- [fhir-loco/spec/index.md](fhir-loco/spec/index.md): server specification, ids `SV1.x`–`SV4.x`
+
+## Documentation and tutorials
+
+- [doc/index.md](doc/index.md): tutorials index for the database ports
+- [doc/tutorial-01-getting-started.md](doc/tutorial-01-getting-started.md): install a schema, write and read a resource, no server required
+- [doc/tutorial-02-storage-model.md](doc/tutorial-02-storage-model.md): what a resource becomes — base tables, child tables, references
+- [doc/tutorial-03-querying-sql.md](doc/tutorial-03-querying-sql.md): treat the store as the relational schema it is
+- [doc/tutorial-04-search.md](doc/tutorial-04-search.md): FHIR® search parameters, modifiers, paging
+- [doc/tutorial-05-history-and-audit.md](doc/tutorial-05-history-and-audit.md): versions, attribution, the tamper-evident chain, erasure
+- [doc/tutorial-06-porting.md](doc/tutorial-06-porting.md): porting the core to a new database engine
+- [doc/choosing-an-engine.md](doc/choosing-an-engine.md): the six ports compared — status, type bindings, costs
+- [doc/storage-model.md](doc/storage-model.md): conceptual reference for the storage model, for lookup rather than reading through
+- [doc/trust-boundary.md](doc/trust-boundary.md): what these libraries guarantee about PHI, and what a deployment must provide
+- [doc/faq.md](doc/faq.md): frequently asked questions
+- [doc/examples.md](doc/examples.md): worked examples
+
+## Agent skills
+
+- [fhir-skill/SKILL.md](fhir-skill/SKILL.md): general-purpose skill for end users — FHIR® concepts, terminology, and repo-grounded examples
+- [fhir-rust-maintainer-skill/SKILL.md](fhir-rust-maintainer-skill/SKILL.md): technical skill for maintainers — checklists and commands for shared-core changes, spec changes, and verification before claiming something works
+
+## Optional
+
+- [CHANGELOG.md](CHANGELOG.md): what changed in the software, per release
+- [NEWS.md](NEWS.md): what happened to the project, in reverse order
+- [CONTRIBUTING.md](CONTRIBUTING.md): how to contribute
+- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md): community standards
+- [SECURITY.md](SECURITY.md): reporting a vulnerability
+- [PHI.md](PHI.md): plain-language PHI/privacy answers for a reviewer or vendor questionnaire
+- [GOVERNANCE.md](GOVERNANCE.md): decision-making and project governance
+- [MAINTAINERS.md](MAINTAINERS.md): who maintains what
+- [BENCHMARKS.md](BENCHMARKS.md): performance numbers, with the caveats to read first
+- [COMPARISONS.md](COMPARISONS.md): how this project compares to other FHIR implementations
+- [RFC.md](RFC.md): open questions the project wants feedback on
+- [AI_STATEMENT.md](AI_STATEMENT.md): how AI assistance is used and disclosed in this project
+- [plan.md](plan.md): the professionalization plan and its rationale
+- [tasks.md](tasks.md): repository-level checklist — verified work only, per its own rule
+- [LICENSE.md](LICENSE.md): license
+- [CITATION.cff](CITATION.cff): how to cite this project
