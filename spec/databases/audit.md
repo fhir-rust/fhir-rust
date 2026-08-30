@@ -5174,6 +5174,79 @@ known-failure examples now fail **deserialization** (the honest outcome)
 instead of silently losing their `timing[x]`, and remain allowlisted
 under F-86 until the representation gap closes.
 
+## F-88
+
+**The consolidated port workflows (F-49) left three per-job settings
+unrooted, and the first hosted runs exposed all three at once.** Severity:
+**High**. Family: databases, all six ports (CI only — no source defect).
+
+Consolidating every family's CI to the repository root (`F-49`) moved
+`working-directory` from implicit (each port's own workflow file, checked
+out at its own root) to explicit (`defaults.run.working-directory` per
+job) — and three settings depended on the old implicit rooting in ways
+nobody had re-checked against the new explicit one:
+
+1. **`cargo deny` ran at the repository root** rather than the port's own
+   `deny.toml`, so it errored outright instead of checking the manifest
+   that actually matters.
+2. **The spec/corpus environment paths pointed at the repository root**
+   while the fetch steps that populate them wrote under the port
+   directory — so every spec-dependent live test found nothing at the
+   path it looked for and self-skipped. This is `T11.12`'s failure mode
+   at workflow scale: the "live gate" reported green while testing
+   nothing, on every port, on the first hosted run.
+3. **The plaintext PostgreSQL job carried no explicit `PGSSLMODE`**, so
+   the store's secure-by-default `require` (`O10.7`, **F-17**) correctly
+   refused a plaintext connection it was never told to accept — surfaced
+   only because the two new `history_page` tests happened to be the sole
+   live tests that actually connected that run; everything else had
+   already gone silent under defect 2.
+
+**Fixed 2026-08-10.** Paths re-rooted to each port's own directory and
+`cargo deny` given its manifest explicitly, in all six workflows; the
+plaintext job now says `PGSSLMODE=disable` explicitly, with the TLS-only
+job carrying `require`; and a vacuity guard added to the PostgreSQL live
+step fails the build outright if anything self-skipped, so defect 2's
+exact failure mode — a green run that tested nothing — cannot recur
+unnoticed.
+
+*Found investigating why the first hosted run of the consolidated
+workflows looked green everywhere and proved almost nothing — three
+independent settings, each individually plausible, compounding into one
+gate that passed without exercising the thing it existed to check.*
+
+## F-89
+
+**The MySQL/MariaDB DDL test harness was unportable, and its failure mode
+was to mask the real error rather than report it.** Severity: **Medium**.
+Family: `fhir-mysql`, `fhir-mariadb`.
+
+Three independent portability assumptions, each wrong on at least one
+runner:
+
+- It passed MariaDB's `--skip-ssl-verify-server-cert` flag to whichever
+  `mysql` client happened to be on `PATH` — Oracle's own MySQL 8 client
+  rejects a flag that is specifically MariaDB's, so the harness failed
+  before it reached the schema it was meant to test.
+- It assumed a `utf8mb4` default client charset. A runner whose client
+  defaults to `utf8mb3` failed the collation probe with `ERROR 1253`, a
+  message about a comparison the harness never intended to make.
+- On any early client exit, it reported the shell pipeline's own `Broken
+  pipe` (from writing SQL into a process that had already exited) instead
+  of reading the client's own `stderr` — so whichever of the two defects
+  above actually fired, the error a maintainer saw named neither.
+
+**Fixed 2026-08-10.** The TLS flag is now gated on which client flavor is
+actually present; the client is invoked with an explicit
+`--default-character-set=utf8mb4`; and an early client exit falls through
+to collect and report `stderr` instead of the pipe error, so the next
+failure — whatever it turns out to be — names itself instead of hiding
+behind a shell artifact.
+
+*Found the same pass as F-88, running the newly consolidated workflows
+for the first time on a runner whose defaults differed from the machine
+the harness was originally written against.*
+
 ## F-90
 
 **The full R3/R4/R5 schemas do not install on stock MySQL 8.4 / MariaDB
