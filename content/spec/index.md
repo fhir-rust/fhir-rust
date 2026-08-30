@@ -1,13 +1,17 @@
 # The fhir-rust monorepo specification
 
 This directory is the **root of every normative specification in the
-repository**. It does not itself state requirements. It says which
-specification governs which code, how their requirement numbers relate, and
-where a citation resolves — so that a number written in a commit message, a
-test name, or an auditor's workpaper has exactly one meaning.
+repository**. It says which specification governs which code, how their
+requirement numbers relate, and where a citation resolves — so that a number
+written in a commit message, a test name, or an auditor's workpaper has exactly
+one meaning. It states requirements of its own only where they bind every
+family at once: today that is the [agents directory
+name](agents-directory-name-is-lowercase/index.md) (`AG1.x`), the [MSRV
+rule](rust-msrv-n-minus-2/index.md) (`RV1.x`), and [what a git tag
+names](git-tags-name-published-versions/index.md) (`TG1.x`).
 
 Operational guidance for contributors lives in [`AGENTS.md`](../AGENTS.md) and
-[`AGENTS/`](../AGENTS/index.md). Those say **how to work**; the specifications
+[`agents/`](../agents/index.md). Those say **how to work**; the specifications
 below say **what must be true**. When they conflict, the specification wins.
 
 ## The four families
@@ -68,12 +72,38 @@ Every id is `<prefix><section>.<n>`, optionally with a letter suffix for a
 requirement split after the fact. **Ids are permanent** (`C0.5`): never
 renumbered, never reused, including across a file move.
 
+### Cross-family — `spec/`
+
+| Prefix | Document | Subject |
+| --- | --- | --- |
+| `AG1` | [The AI agents directory is named `agents`](agents-directory-name-is-lowercase/index.md) | the lowercase directory name, and what it does not bind |
+| `RV1` | [Rust MSRV — current minus two](rust-msrv-n-minus-2/index.md) | the MSRV rule, where it is declared, how it is verified |
+| `TG1` | [Git tags name published versions](git-tags-name-published-versions/index.md) | what a tag names, what it points at, and why six crates have none |
+
+The only normative ids that bind **every** family. They live here rather than in
+a family's specification because the toolchain floor is a property of the
+release surface as a whole, as is the layout it is released from; precedence
+rule 4 above is about family-to-family bindings and does not exempt a family
+from `AG1.x` or `RV1.x`.
+
+Four further documents at this level bind the repository as a process rather
+than any family's code, and carry prose rules instead of requirement ids:
+[`professionalization/`](professionalization/index.md) (what "professional"
+means here — plans, special files, CI-enforced claims, trademark discipline,
+PHI candour, conduct, family harmonization, gated outreach),
+[`hl7-trademarks-fair-use/`](hl7-trademarks-fair-use/index.md) (the HL7®
+word-mark terms and the check that enforces them),
+[`special-files-for-public-repos/`](special-files-for-public-repos/index.md)
+(the canonical root-document list), and
+[`dependabot/`](dependabot/index.md) (repo-level Dependabot security
+updates and `.github/dependabot.yml`'s scheduled-PR posture).
+
 ### Databases — `spec/databases/`
 
 | Prefix | Section | Subject |
 | --- | --- | --- |
 | `C0` | [0](databases/00-conformance.md) | normative language, id grammar, conformance levels |
-| `S1` | [1](databases/01-scope.md) | FHIR versions, resource coverage, engine floors |
+| `S1` | [1](databases/01-scope.md) | FHIR® versions, resource coverage, engine floors |
 | `G2` | [2](databases/02-schema-generation.md) | determinism, identifiers, install |
 | `M3` | [3](databases/03-storage-model.md) | tables, types, extensions, audit, hash chain |
 | `R4` | [4](databases/04-shredding-and-reconstruction.md) | lossless round-trip, snapshot reads |
@@ -153,7 +183,8 @@ These record reality rather than intent, and are non-normative:
 | [databases conformance matrix](databases/conformance-matrix.md) | which port satisfies which core requirement **today** |
 | [databases audit](databases/audit.md) | every known divergence between spec, docs, and code, with evidence |
 | [`fhir/spec/13-assurance.md`](../fhir/spec/13-assurance.md) | what must hold before the model crate is depended on clinically |
-| [publishing readiness](publishing.md) | what stands between all 33 crates and crates.io — **cross-family** |
+| [publishing readiness](publishing.md) | how all 34 crates reach crates.io today, and the record of what stood between them before 2026-08-22 — **cross-family** |
+| [trusted publishing](trusted-publishing/index.md) | why this repository does not use it yet, reconciled against the family-wide statement of intent — **cross-family** |
 
 The conformance matrix is the document to trust for port status. A README, a
 `book/` chapter, and a `tasks.md` checkbox are all weaker evidence than it, and
@@ -198,3 +229,9 @@ oversight a reader has to infer:
 | auditing compliance | [§13 compliance mapping](databases/13-compliance-mapping.md) |
 | releasing to crates.io | [publishing readiness](publishing.md) first, then [§16](databases/16-repository-and-release.md) `W16.x` |
 | contributing at all | [`AGENTS.md`](../AGENTS.md) |
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

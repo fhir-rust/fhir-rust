@@ -19,6 +19,7 @@ cargo features — the page says which).
 - [`search_response`](search_response.md) — Consume a FHIR search response: typed entries, the total, and paging
 - [`transaction_bundle`](transaction_bundle.md) — Build a FHIR transaction `Bundle` and read resources back out of one
 - [`tutorial`](tutorial.md) — The guide's end-to-end tutorial, as a runnable program
+- [`typed_references`](typed_references.md) — Typed references: what the compiler knows about where a reference points
 - [`validate_resource`](validate_resource.md) — Validate FHIR R5 values with the [`Validate`] trait
 
 The database family’s worked examples are a guide of their own:

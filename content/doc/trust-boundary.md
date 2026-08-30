@@ -10,7 +10,7 @@ ports.
 | --- | --- | --- |
 | **Authentication** — who is this | — | ✔ |
 | **Authorization** — may they see it | — | ✔ |
-| SMART on FHIR scopes, compartments | — | ✔ |
+| SMART on FHIR® scopes, compartments | — | ✔ |
 | Consent evaluation | — | ✔ |
 | `meta.security` label enforcement | — | ✔ |
 | Rate limiting per identity | — | ✔ |
@@ -122,8 +122,12 @@ The table above describes what the specification requires. What each port has
   Four ports carry `?` on those rows.
 - `fhir-postgresql` still derives its chain pre-image in SQL, so its chains are
   not portable (**F-07**).
-- `fhir-mssql` and `fhir-oracle` have no store, so none of this applies to them
-  yet.
+- ~~`fhir-mssql` and `fhir-oracle` have no store, so none of this applies to
+  them yet.~~ **Obsolete, corrected 2026-08-26.** Both reached Store level
+  (**F-65**, **F-68**) and this list had not been updated. What is actually
+  narrower for them is in the matrix: `fhir-oracle` has no concurrency or
+  redaction test and `R4.5` snapshot reads remain an open gap; `fhir-mssql`'s
+  **F-67** TLS advisories closed 2026-08-29 (driver switched to `mssql`).
 
 ## Where authentication actually happens
 
@@ -149,3 +153,9 @@ header be honoured only from a configured trusted proxy; `fhir-loco` never
 implemented that check, so under `PR12.2` its header should have been ignored
 rather than trusted. A signature it can verify itself is a property of the
 request, not an assumption about the topology.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

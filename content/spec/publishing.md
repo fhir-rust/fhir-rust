@@ -5,11 +5,73 @@ state and the stated goal of publishing every crate to crates.io. It is a status
 document like the [conformance matrix](databases/conformance-matrix.md), not a
 requirement: the requirements it measures against are `O10.10`, `O10.11`,
 `W16.11`–`W16.15`, and `C0.11`, and the working procedure is
-[`AGENTS/release.md`](../AGENTS/release.md).
+[`agents/release.md`](../agents/release.md).
 
 It is **cross-family** — the one document in `spec/` that is, because publishing
 is the one activity that treats the whole repository as a single release
 surface. Family-specific findings still belong in that family's own register.
+
+**Superseded by events, 2026-08-22: every crate is published.** All 34 packages
+the gate enumerates now exist on crates.io at the version their source claims,
+and `scripts/check-published-match.sh` reports `34 matched, 0 mismatched, 0
+skipped`. The 21 that had never been published at their current numbers went out
+in one pass — the 18 port crates at 0.5.0, `fhir-store` 0.2.0, `fhir-loco`
+0.2.0, `fhir` 4.1.0 — together with the seven that a `serde_json/float_roundtrip`
+change had just made diverge from immutable artifacts (`fhir-core` 3.2.0 and
+`fhir-r2`/`r3`/`r4`/`r4b`/`r5`/`r6` 4.1.0, bumped rather than edited, `O10.11`).
+
+That closes this document's stated goal and changes what it is for. What follows
+was written while the goal was ahead of the repository; it is kept as the record
+of what the obstacles were and how each was resolved, not as a description of
+today. **The live gate, not this file, is the thing to trust** — it runs against
+crates.io and this paragraph does not.
+
+**Republished in full, 2026-08-26.** All 34 crates went out again the same
+day in one pass at their bumped versions (ports 0.5.1, store/loco 0.2.1,
+model 4.1.1/3.2.1/1.5.1, reservations 0.0.2), and the gate reports
+`34 matched, 0 mismatched` — the first publication whose hosted CI was green
+at the moment of upload, closing the "green laptop is weaker evidence" note
+below for this release.
+
+**Republished again, 2026-08-26, second pass.** The trademark directive put
+the fair-use disclaimer into every publishable `description`, a manifest is
+packaged source, and `O10.11` does not distinguish small changes — so all 34
+went out once more (ports 0.5.2, store/loco 0.2.2, model 4.1.2/3.2.2/1.5.2,
+reservations 0.0.3) and the gate again reports `34 matched, 0 mismatched`.
+The description rule is enforced by `scripts/check-trademarks.sh` from this
+pass on.
+
+**The publish path is decided, 2026-08-26: a documented laptop step,
+permanently.** The owner ruled out crates.io Trusted Publishing from CI on
+reliability grounds — GitHub is not dependable enough to hold the publish
+path, a judgment made hours after an Actions major outage swallowed push
+events and stalled every hosted run. This is a repository-specific decision,
+not a statement that Trusted Publishing itself is unready: crates.io support
+for it is generally available on GitHub Actions and on GitLab.com CI (not
+self-hosted), and only Codeberg/Forgejo — one of this repository's three
+mirrors — has no support yet upstream. Both facts and their reconciliation
+are recorded in [`spec/trusted-publishing/index.md`](trusted-publishing/index.md).
+Consequences executed the same day: the
+six inert per-port `publish.yml` workflows are deleted; the only registry
+credential is the maintainer machine's `~/.cargo/credentials.toml` (verified:
+GitHub stores no secret and no `crates-io` environment exists); and this
+document plus the "Before any release" list in
+[`agents/release.md`](../agents/release.md) are the whole of the process. The
+accepted residual — one machine, one person, an unsigned upload path — is
+recorded in [`MAINTAINERS.md`](../MAINTAINERS.md) and stands until evidence
+reopens the question (RFC.md §10 still solicits it).
+
+Two things the publication does *not* establish, and which no crates.io upload
+could:
+
+- **The `O10.4c` re-shred shipped in the port crates was verified on one
+  developer machine, not in CI.** Every port's live suite was run against a
+  local container on 2026-08-21/22 and was green; the hosted live jobs had not
+  run at the moment of publication. A green laptop is weaker evidence than a
+  green pipeline (`C0.9`, `T11.13`).
+- **Publication is not a conformance claim.** The [conformance
+  matrix](databases/conformance-matrix.md) remains the document that says what
+  each port has been shown to do, and it is unchanged by any of this.
 
 **Assessed:** 2026-08-01, against the tree as it then stood; **P-1 restated
 2026-08-06** after both former scaffolds reached Store level (**F-65**,
@@ -31,23 +93,56 @@ name is **`fhir-loco`**. Both names were checked and are unregistered.
 
 | Family | Crates | Names on crates.io |
 | --- | --- | --- |
-| Model (`fhir/`) | 13 | **all 13 already registered by this author** |
-| Databases (`fhir-<engine>/`) | 18 | all 18 available |
-| Persistence core (`fhir-store/`) | 1 | available |
-| HTTP surface (`fhir-loco/`) | 1 | available |
+| Model (`fhir/`) | 14 | all under current names since 2026-08-10 (the 11 renamed release crates re-registered; old `fhir-release-*` versions remain, immutable) |
+| Databases (`fhir-<engine>/`) | 18 | **all 18 published at 0.4.0** — measured live 2026-08-10; an earlier revision of this table said "available", which had gone stale |
+| Persistence core (`fhir-store/`) | 1 | **published at 0.1.0** (same correction) |
+| HTTP surface (`fhir-loco/`) | 1 | **published at 0.1.0** (same correction) |
 
-The model family is therefore a **version bump**, not a first registration:
-`fhir` 2.1.0, `fhir-core` 2.2.0, `fhir-derive-macros` 1.1.0, `fhir-release-2`
-through `-6` at 2.1.0, and `fhir-release-1`, `-7`, `-8`, `-9`, `-10` reserved at
-0.0.0. The database family, `fhir-store` and `fhir-loco` are unregistered, so
-their names are free but also unclaimed by anyone else.
+The database-family correction was found the hard way: the first hosted CI
+runs (2026-08-10) ran each port's published-divergence gate (`O10.11`,
+**F-35**'s script as a workflow step) and it failed on every crate this
+session touched — the shared-core `path_bound` change alone diverged all six
+`-map` and `-gen` crates from their published 0.4.0. The tree now clears
+every published number again: the eighteen port crates at **0.5.0** in
+lockstep (a public map-model field was added — breaking at 0.x),
+`fhir-store` **0.1.1**, `fhir-loco` **0.2.0**. Publishing those versions
+remains owner-gated; the gate only requires that a *published* version match
+its source, which a bump satisfies.
 
-Local versions against those, after the bumps this pass made: `fhir` and
-`fhir-core` at `3.0.0`, `fhir-release-2`…`-6` at `3.0.0`, `fhir-derive-macros`
-at `1.2.0` (**P-4**), and the five reservations at `0.0.1` (**P-4a**). Every one
-now clears its published number, which
+**The 2026-08-10 rename changed this table's meaning** (owner-directed:
+`fhir-release-N` → `fhir-rN`, matching the module names). Measured live
+against crates.io the same day:
+
+- Registered and published under **unchanged** names: `fhir` 3.0.0,
+  `fhir-core` 3.0.0, `fhir-derive-macros` 1.2.0. All three now carry local
+  changes, so all three were bumped — `fhir` 3.1.0 (the `r4b` feature),
+  `fhir-core` 3.0.1, `fhir-derive-macros` 1.3.0 (the `r4b` version token) —
+  keeping **P-4**/`O10.11` (an immutable published version must match the
+  source that claims it).
+- Registered and published under the **old** names only: `fhir-release-2`
+  …`-6` at 3.0.0 and the reservations `fhir-release-1`, `-7`…`-10` at
+  0.0.1. Those published versions are immutable and stay up; whether to
+  publish a deprecation notice on them is an owner decision.
+- **Published under the new names the same day** (owner-directed), in
+  dependency order and verified against the live registry: `fhir-r2`…`-6`
+  and `fhir-r4b` first registered at 3.0.0, the five reservations at
+  0.0.1 (the last four through crates.io's new-crate rate limit), the
+  facade at 3.1.0. The F-87 fix followed the same afternoon: the six
+  release crates republished at **3.0.1** and `fhir-derive-macros` at
+  **1.4.0**, so no published version silently loses a choice element.
+  The F-86 fix closed the day: the six release crates and the facade at
+  **4.0.0** together (breaking — `0..*` primitives are now
+  `fhir_core::PrimVec<T>`, R6.7a), `fhir-core` **3.1.0**,
+  `fhir-derive-macros` **1.5.0**. Publishing the chain surfaced a real
+  ordering knot: `fhir-core`'s dev-dependency on the facade carried a
+  version, which a published crate must resolve from the registry — a
+  cycle, since the facade depends on `fhir-core`. It is now path-only,
+  like the release crates' equivalent, which cargo strips at publish.
+
 [`scripts/check-published-match.sh`](../scripts/check-published-match.sh)
-enforces from here on.
+still enforces the invariant: a crate whose current name+version is on
+crates.io must match it byte for byte; the renamed crates are reported as
+not-yet-published skips, never silently.
 
 ## Blockers
 
@@ -91,7 +186,7 @@ Four sources said `0.4.0` and one said `0.1.0`:
 | all six `Cargo.toml` | `version = "0.1.0"` |
 | all six `Cargo.lock` | `0.4.0`, for all three crates of each port |
 | all six `CHANGELOG.md`, top entry | `## 0.4.0 — tamper evidence that survives the database (2026-07-27)` |
-| [`AGENTS/release.md`](../AGENTS/release.md#versioning) | "All six currently sit at `0.4.0`" |
+| [`agents/release.md`](../agents/release.md#versioning) | "All six currently sit at `0.4.0`" |
 
 **Owner chose `0.4.0`** (2026-08-01). Applied to all six
 `[workspace.package]` blocks and to the eighteen `[workspace.dependencies]`
@@ -151,10 +246,11 @@ That is publication *order*, not a manifest defect: `fhir-sqlite-map` and
 `fhir-sqlite-store` have to reach the registry first. The manifest itself is
 clean.
 
-No `rust-version` was added. The six ports promise `1.90` and CI builds on
-exactly that toolchain; this crate's floor against loco-rs and axum has never
-been measured, and [`AGENTS/release.md`](../AGENTS/release.md#msrv) is explicit
-that an unverified MSRV is a guess. Measure it before promising one.
+No `rust-version` was added at the time. That gap (`RV1.4` unmet) closed
+2026-08-29: this crate now declares `rust-version = "1.96"`, measured against
+loco-rs and axum with `cargo +1.96 check --all-targets --locked` before being
+written down, per [`agents/release.md`](../agents/release.md#msrv) and
+`RV1.5`. See `spec/rust-msrv-n-minus-2/`.
 
 ### P-4 — `fhir-derive-macros` has diverged from its published 1.1.0
 
@@ -177,14 +273,14 @@ field-matching helpers around it. `Cargo.toml.orig` is byte-identical between
 the two, so nothing signals the divergence in the metadata.
 
 This is precisely the failure
-[`AGENTS/release.md`](../AGENTS/release.md#the-gate-that-matters-most) describes,
+[`agents/release.md`](../agents/release.md#the-gate-that-matters-most) describes,
 already happening: every local build resolves the **path** dependency and never
 fetches the registry copy, so this workspace is green against 758 lines while
 anyone writing `fhir-derive-macros = "1.1.0"` gets 554. The tree and the artifact
 of the same name are different code, and nothing in CI checks it.
 
 **Fixed: bumped to `1.2.0`**, along with its six dependency pins in `fhir` and
-`fhir-release-2` … `-6`. `1.2.0` is the honest number — the change adds
+`fhir-r2` … `-6`. `1.2.0` is the honest number — the change adds
 validation behaviour rather than altering existing behaviour.
 
 And the gate that would have caught it now exists:
@@ -199,7 +295,7 @@ on comparing `src/` trees and manifests-minus-the-license-line — a narrower
 check than the claim implied. Running the new `O10.11` gate, which compares
 *every* packaged file, found two things that comparison had missed:
 
-- **`fhir-release-1`'s `README.md`** had gained a "What is actually available"
+- **`fhir-r1`'s `README.md`** had gained a "What is actually available"
   section describing which releases are modelled. Not in the published `0.0.0`.
   Pre-existing, unrelated to any change made during this audit.
 - **All five manifests** carry a `license` line changed by the P-7
@@ -260,7 +356,7 @@ undercuts precisely that. It was also already live: the published `fhir` 2.1.0,
 exist, and will keep doing so until each is republished.
 
 **The same fossil in the documentation, also fixed.** All six
-`doc/containers.md` files told a reader to find the FHIR packages at
+`doc/containers.md` files told a reader to find the FHIR® packages at
 `../fhir-rust-crate/…` or under a specific developer's home directory. Both are
 the paths that made every spec-dependent test skip while reporting success
 (**F-39**, **F-42**). They now name `../fhir/doc/fhir-specifications`, which is
@@ -300,7 +396,7 @@ naming question is **P-1**'s, which is decided.
 ### P-7 — Split licensing inside the model family — **RESOLVED**
 
 **Severity: Medium.** Was: `fhir` and `fhir-derive-macros` declared the
-five-license form while `fhir-core` and `fhir-release-1` … `-10` declared bare
+five-license form while `fhir-core` and `fhir-r1` … `-10` declared bare
 `MIT`, and the HTTP crate declared none at all. The facade's declaration did not
 describe the set it pulls in.
 
@@ -311,7 +407,7 @@ declare, identically:
 MIT OR Apache-2.0 OR BSD-3-Clause OR GPL-2.0-only OR GPL-3.0-only
 ```
 
-Twelve manifests changed — `fhir-core`, the ten `fhir-release-*`, and
+Twelve manifests changed — `fhir-core`, the ten `fhir-r*`, and
 `fhir-store`. Verified by resolving `cargo metadata` across every
 workspace: 32 packages, one distinct licence string. `cargo deny check
 licenses` re-run on `fhir/` and `fhir-sqlite/` — **ok** in both; the `OR`
@@ -325,7 +421,7 @@ Two things it deliberately does **not** do:
 
 - **It does not relicense what is already published.** A crates.io version is
   immutable, metadata included, so the releases of `fhir`, `fhir-core`,
-  `fhir-derive-macros`, and `fhir-release-1` … `-10` that predate this stay
+  `fhir-derive-macros`, and `fhir-r1` … `-10` that predate this stay
   under the terms they shipped with. The quintuple applies from each crate's
   next version.
 - **It does not add licence texts to the crate packages.** See P-9.
@@ -340,7 +436,7 @@ the five licences it names.
 
 **Fixed.** `LICENSE.md` — the repository's canonical statement of the quintuple
 — now sits in every crate directory. The eleven crates in `fhir/` that declare
-an explicit `include` list (`fhir-core`, `fhir-release-1` … `-10`) had it added
+an explicit `include` list (`fhir-core`, `fhir-r1` … `-10`) had it added
 there too, since an `include` list means nothing is packaged by default.
 
 Verified across **all 32**, not sampled: each `cargo package --list` contains
@@ -443,7 +539,7 @@ one crate a hard prerequisite for eighteen others.
 1. **`fhir-store`** — the persistence core. Nothing in the database family can
    publish until it is on the registry: all eighteen port crates now depend on
    it by version, so this is no longer convenient ordering but a gate.
-2. **Model** — `fhir-core` and `fhir-derive-macros`, then `fhir-release-2` … `-6`
+2. **Model** — `fhir-core` and `fhir-derive-macros`, then `fhir-r2` … `-6`
    (each depends on both), then `fhir` (depends on all). The five reserved
    `0.0.0` crates need nothing. Independent of step 1.
 3. **Databases**, per port and independently of the others (`W16.11`) —
@@ -509,3 +605,9 @@ absence of one class of packaging defect, not as readiness.
 (advisories, licenses, bans, sources) across all eight workspaces, `cargo
 audit`, and a CycloneDX SBOM for every crate. All workspaces are green on all
 four categories, `fhir-loco` included since the loco-rs 1.0.1 upgrade (**P-3a**).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

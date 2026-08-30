@@ -133,7 +133,7 @@ still means what it meant. Several retired ids are still cited from §11 and §1
 | [`fhir-mysql`](../../fhir-mysql/spec/index.md) | MySQL 8.4 | native store |
 | [`fhir-mariadb`](../../fhir-mariadb/spec/index.md) | MariaDB 11.4 | native store |
 | [`fhir-mssql`](../../fhir-mssql/spec/index.md) | SQL Server | native store (**F-65**) |
-| [`fhir-oracle`](../../fhir-oracle/spec/index.md) | Oracle Database | native store (**F-68**); no `upgrade`, `R4.5` open |
+| [`fhir-oracle`](../../fhir-oracle/spec/index.md) | Oracle Database | native store (**F-68**), `upgrade`/backfill since 2026-08-09 (**F-15**); `R4.5` open |
 
 The [conformance matrix](conformance-matrix.md) is the detailed version of that
 last column, and is the one to trust.

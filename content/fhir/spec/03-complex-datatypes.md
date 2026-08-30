@@ -1,6 +1,6 @@
 # 03 — Complex datatypes
 
-Defines how the FHIR complex datatypes are represented in Rust.
+Defines how the FHIR® complex datatypes are represented in Rust.
 
 Applies to every modelled release.
 
@@ -26,7 +26,7 @@ FHIR.
   `#[serde_with::skip_serializing_none]`, and
   `#[serde(rename_all = "camelCase")]`.
 - **R3.2** Fields MUST use the cardinality mapping of spec 06
-  (`0..1`→`Option<T>`, `1..1`→`T`, `0..*`→`Vec<T>`, `1..*`→`vec1::Vec1<T>`).
+  (`0..1`→`Option<T>`, `1..1`→`T`, `0..*`→`Vec<T>` — `PrimVec<T>` for primitives, R6.7a —, `1..*`→`vec1::Vec1<T>`).
 - **R3.3** Field types MUST reference `types::X` (another datatype or a
   primitive), a nested backbone struct in the same file, or
   `::serde_json::Value` where the FHIR type is `Resource`/`DomainResource`.
@@ -37,8 +37,8 @@ FHIR.
   Nesting recurses to any depth. Each nested struct carries the full derive set
   and serde attributes.
 - **R3.5** Choice elements `[x]` MUST expand per spec 06 and spec 11.
-- **R3.6** Each datatype lives in `fhir-release-N/src/types/<snake>.rs`, declared
-  in `fhir-release-N/src/types.rs` (`pub mod` + `pub use <Pascal>`).
+- **R3.6** Each datatype lives in `fhir-rN/src/types/<snake>.rs`, declared
+  in `fhir-rN/src/types.rs` (`pub mod` + `pub use <Pascal>`).
 - **R3.7** A datatype that constrains another (a *profile*) MUST be named for
   itself, not for the type it constrains. `MoneyQuantity`, `SimpleQuantity`,
   `Age`, `Distance`, `Count` and `Duration` are all `type: "Quantity"` in the
@@ -95,3 +95,9 @@ may differ: `Extension.url` is a `uri` in R3 and a `string` afterwards.
 4. Every datatype derives `Validate` and participates in recursive validation
    (spec 07).
 5. Build, tests, doctests, and pedantic clippy are clean for every release.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

@@ -6,7 +6,7 @@ first, then implemented and verified. When code and spec disagree, reconcile
 them — do not let them drift.
 
 Operational guidance for agents (commands, conventions, how-to) lives in
-[`../AGENTS.md`](../AGENTS.md) and [`../AGENTS/`](../AGENTS/architecture.md);
+[`../AGENTS.md`](../AGENTS.md) and [`../agents/`](../agents/architecture.md);
 this directory defines **what must be true**, not how to work.
 
 ## How to read these specs
@@ -29,7 +29,7 @@ this directory defines **what must be true**, not how to work.
 | # | Spec | Scope |
 | --- | --- | --- |
 | 01 | [Overview](01-overview.md) | Purpose, scope, crate identity, goals |
-| 02 | [Primitive types](02-primitive-types.md) | The FHIR primitive datatypes as newtypes |
+| 02 | [Primitive types](02-primitive-types.md) | The FHIR® primitive datatypes as newtypes |
 | 03 | [Complex datatypes](03-complex-datatypes.md) | The complex datatypes as structs |
 | 04 | [Resources](04-resources.md) | The resources + the `Resource` enum |
 | 05 | [Code systems](05-code-systems.md) | `CodeSystem`s as enums, and `Coded<E>` |
@@ -104,5 +104,12 @@ exactly — `0..1`→`Option<T>`, `1..1`→`T`, `0..*`→`Vec<T>`,
 
 Open improvements are recorded as **Future work** sections within the relevant
 spec. The largest of them are a FHIRPath evaluator (unlocking most of spec 10),
-typed `Reference<T>` rollout (spec 04), an R4B model (spec 12), and semantic
-cross-version remapping driven by HL7's extension maps (spec 14).
+semantic cross-version remapping driven by HL7®'s
+extension maps (spec 14). (The typed `Reference<T>` rollout completed
+2026-08-09 — spec 04, T11.)
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

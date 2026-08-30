@@ -1,6 +1,6 @@
 # 1. Scope
 
-- **S1.1** Every port MUST support FHIR R5 (5.0.0), R4 (4.0.1), and R3 (3.0.2).
+- **S1.1** Every port MUST support FHIR® R5 (5.0.0), R4 (4.0.1), and R3 (3.0.2).
   R5 is the default everywhere a version is optional.
 - **S1.2** Each FHIR version's data lives in its own **namespace**: `r5`, `r4`,
   `r3`. Versions are independent; a database MAY host any subset. The namespace
@@ -55,3 +55,9 @@ Stated here so that "not implemented" and "not intended" are distinguishable:
 ---
 
 Part of the [fhir-databases specification](index.md).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

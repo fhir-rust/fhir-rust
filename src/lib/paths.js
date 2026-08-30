@@ -37,6 +37,31 @@ export function routeFor(path) {
 			return '/specs/';
 		case 'spec/publishing.md':
 			return '/specs/publishing/';
+		// The ten single-topic cross-family specs spec/index.md itself links
+		// to. Same /specs/<slug>/ shape as spec/publishing.md above, added
+		// once the sync script started vendoring them (they'd accumulated for
+		// weeks with no route here, so spec/index.md's own links fell back to
+		// a GitHub URL instead of staying on this site).
+		case 'spec/agents-directory-name-is-lowercase/index.md':
+			return '/specs/agents-directory-name-is-lowercase/';
+		case 'spec/dependabot/index.md':
+			return '/specs/dependabot/';
+		case 'spec/free-open-source-funding/index.md':
+			return '/specs/free-open-source-funding/';
+		case 'spec/git-tags-name-published-versions/index.md':
+			return '/specs/git-tags-name-published-versions/';
+		case 'spec/hl7-trademarks-fair-use/index.md':
+			return '/specs/hl7-trademarks-fair-use/';
+		case 'spec/professionalization/index.md':
+			return '/specs/professionalization/';
+		case 'spec/rust-msrv-n-minus-2/index.md':
+			return '/specs/rust-msrv-n-minus-2/';
+		case 'spec/serde-json-float-roundtrip-arbitrary-precision/index.md':
+			return '/specs/serde-json-float-roundtrip-arbitrary-precision/';
+		case 'spec/special-files-for-public-repos/index.md':
+			return '/specs/special-files-for-public-repos/';
+		case 'spec/trusted-publishing/index.md':
+			return '/specs/trusted-publishing/';
 		// The database core keeps the routes it always had: /spec/… predates
 		// the monorepo merge and is linked from outside this site.
 		case 'spec/databases/index.md':

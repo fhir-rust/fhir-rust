@@ -2,7 +2,7 @@
 
 ## What this crate is
 
-- **SV1.1** `fhir-loco` is a **FHIR RESTful API server** over one of the
+- **SV1.1** `fhir-loco` is a **FHIR® RESTful API server** over one of the
   database ports. It translates HTTP to store calls and store outcomes to HTTP.
   It MUST NOT implement storage semantics of its own.
 
@@ -71,6 +71,24 @@
   its own id. A summary of gaps kept somewhere else goes stale; the id is what a
   reader cites and therefore where the truth has to live.
 
+- **SV1.10** *(added 2026-08-10, with the second backend)* The storage
+  backend is selected by **configuration at boot** — `FHIR_LOCO_BACKEND`,
+  `sqlite` (default) or `postgresql` (with `FHIR_LOCO_PG_DSN`; TLS policy
+  from `PGSSLMODE`, the store's own `O10.7` mechanism) — never by Cargo
+  feature, so a deployment changes engine without a rebuild. One backend
+  per process; every mounted FHIR version is served by that backend. The
+  HTTP surface MUST be backend-agnostic: the same requirements in this
+  spec, the same status codes, the same distinctions (410/404, conflict,
+  refusal-by-name), whichever engine is configured — verified end to end
+  against live PostgreSQL by `tests/pg_backend.rs`, a separate binary
+  because the choice is per process.
+
 ---
 
 Part of the [fhir-loco specification](index.md).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

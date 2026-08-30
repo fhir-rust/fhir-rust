@@ -3,7 +3,7 @@
 About 15 minutes. No database server required: we use `fhir-sqlite`, which
 bundles its engine.
 
-By the end you will have installed a full FHIR R5 relational schema, written a
+By the end you will have installed a full FHIR® R5 relational schema, written a
 resource, read it back byte-for-byte, and found it by an accent-insensitive
 search.
 
@@ -200,3 +200,9 @@ Those are ordinary tables with ordinary columns. That is the product.
 - [Tutorial 3 — querying with SQL](tutorial-03-querying-sql.md).
 - Using PostgreSQL instead? The API differs only at the constructor —
   `Store::connect(cfg, map)` — and everything above applies unchanged.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

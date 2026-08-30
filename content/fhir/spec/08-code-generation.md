@@ -2,11 +2,11 @@
 
 Defines the spec-JSON → Rust generator: the engine that makes this project
 spec-driven. Operational how-to is in
-[`../AGENTS/code-generation.md`](../AGENTS/code-generation.md).
+[`../agents/code-generation.md`](../agents/code-generation.md).
 
 ## Background
 
-Every FHIR release is published as StructureDefinition JSON bundles. The
+Every FHIR® release is published as StructureDefinition JSON bundles. The
 generator reads those bundles and emits Rust source, so a model can be
 (re)derived from the upstream truth rather than hand-maintained.
 
@@ -37,7 +37,7 @@ generator able to produce them all.
   siblings, builders, and per-module tests — not an intermediate that needs
   hand-finishing.
 - **R8.5** The generator MUST refuse to overwrite a hand-documented release
-  tree. `fhir-release-5/src` is such a tree; writing it requires an explicit output
+  tree. `fhir-r5/src` is such a tree; writing it requires an explicit output
   directory.
 
 ## Element → field mapping
@@ -105,12 +105,12 @@ generators are still how R5 is edited in bulk. New work goes in `codegen`.
 - Retire the legacy `r5::parse` layer once R5's prose can be carried across a
   regeneration — for example by holding the hand-written documentation outside
   the generated files.
-- Generate typed `Reference<T>` fields from each element's `targetProfile`
-  (spec 04, Future work).
+- ~~Generate typed `Reference<T>` fields from each element's
+  `targetProfile`~~ — done 2026-08-09 (T11; spec 04).
 
 ## Acceptance criteria
 
-1. `cargo run -- r4` regenerates `fhir-release-4/src` without error, and a second run
+1. `cargo run -- r4` regenerates `fhir-r4/src` without error, and a second run
    produces no diff.
 2. `cargo run -- r5` without `--out` exits non-zero and writes nothing.
 3. Generated field types, cardinalities, choice expansions, keyword escaping and
@@ -118,3 +118,9 @@ generators are still how R5 is edited in bulk. New work goes in `codegen`.
 4. Generated backbone elements are named nested structs, never flattened.
 5. The generated model passes the green gate, and the official examples
    round-trip (spec 12, acceptance 7).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

@@ -1,6 +1,6 @@
 # 09 — Primitive extensions (`_field`)
 
-Defines how the crate represents FHIR *primitive extensions* — the `_field`
+Defines how the crate represents FHIR® *primitive extensions* — the `_field`
 siblings that carry `id` and `extension` for a primitive value.
 
 Applies to every modelled release, identically.
@@ -43,7 +43,7 @@ Rules any representation must honour:
 - **R9.1** For every primitive-typed element `x` — including primitive `value[x]`
   choice variants such as `deceasedBoolean` — the owning struct MUST have a
   sibling field `x_ext` typed by that release's
-  [`Element`](../fhir-release-5/src/types/element.rs) (`{ id, extension }`):
+  [`Element`](../fhir-r5/src/types/element.rs) (`{ id, extension }`):
 
   ```rust
   pub birth_date: Option<types::Date>,
@@ -55,6 +55,13 @@ Rules any representation must honour:
   #[serde(default, skip_serializing_if = "Vec::is_empty")]
   pub given_ext: Vec<Option<types::Element>>,          // repeating (null-aligned)
   ```
+
+- **R9.1a** *(added 2026-08-10, audit **F-86**)* The **value array** of a
+  repeating primitive is `::fhir_core::PrimVec<T>` (R6.7a): a `null`
+  position is an extension-only placeholder whose `Element` lives at the
+  same index of the `_x` sibling. Constructing a placeholder with no
+  matching sibling entry is representable but meaningless; the serializer
+  writes the `null` faithfully rather than guessing.
 
 - **R9.2** Scalar primitives use `Option<Element>`; repeating primitives use
   `Vec<Option<Element>>` — an empty `Vec` means "no `_field` at all", and the
@@ -112,3 +119,9 @@ cost — a separate `<field>_ext` field — is small, and is smoothed by the
 3. Official example resources carrying `_birthDate`, `_family`, `_given`,
    `_profile` and similar round-trip without loss.
 4. An element typed `http://hl7.org/fhirpath/System.String` has no sibling.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

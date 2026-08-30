@@ -20,10 +20,10 @@ not, so the report has something to say.
 
 ```rust
 use fhir::convert;
-use fhir::r4::types::String as R4String;
 use fhir::r4::R4;
-use fhir::r5::types::String as R5String;
+use fhir::r4::types::String as R4String;
 use fhir::r5::R5;
+use fhir::r5::types::String as R5String;
 
 fn main() {
     // An R4 Patient, as it might arrive from an R4 server.

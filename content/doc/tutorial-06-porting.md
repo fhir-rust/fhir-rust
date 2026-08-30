@@ -182,7 +182,7 @@ is indistinguishable from one that works.
 Not substitute it (`W16.8`).
 
 > **What skipping this looks like.** Every port's README carries the PostgreSQL
-> reference's paragraph — "all 7,399 official FHIR example resources round-trip
+> reference's paragraph — "all 7,399 official FHIR® example resources round-trip
 > losslessly", "94.8% of R5 search parameters compile", "`fhir-<engine> serve`
 > mounts every installed version" — with the engine name swapped. Two of those
 > ports have no store. None has a CLI crate. That is a claim about clinical
@@ -218,3 +218,9 @@ proves it".
 The two lines that decide whether the port is trustworthy are the annex and the
 documentation. They are also the two with no compiler behind them, which is why
 they are the two that get skipped.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

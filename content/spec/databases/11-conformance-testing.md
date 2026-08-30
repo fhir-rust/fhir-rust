@@ -1,7 +1,7 @@
 # 11. Conformance testing
 
 - **T11.1** Round-trip property tests (`R4.2`) over every example resource
-  shipped with each FHIR specification, plus generated resources.
+  shipped with each FHIR® specification, plus generated resources.
 - **T11.2** Live-database integration tests exercise every store operation
   against the port's target engine in CI, at the version its annex declares
   (`O10.12`). *This requirement historically read "every REST interaction in
@@ -103,3 +103,9 @@
 ---
 
 Part of the [fhir-databases specification](index.md).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

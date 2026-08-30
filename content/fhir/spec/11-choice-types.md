@@ -1,6 +1,6 @@
 # 11 — Choice types (`value[x]`)
 
-Defines how FHIR `value[x]` *choice* elements are represented as Rust enums.
+Defines how FHIR® `value[x]` *choice* elements are represented as Rust enums.
 
 Applies to every modelled release, identically.
 
@@ -110,3 +110,9 @@ accepted.
    exactly one value key.
 5. `tests/choice_type_prototype.rs` is green, and every release's choice enums
    compile with zero clippy warnings.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

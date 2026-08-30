@@ -69,19 +69,24 @@ crate, no `serve` binary, no REST suite. The first look found the MySQL
 contamination because that is what `fhir-mssql` was contaminated *with*; it took
 reading the clean port to notice that the fiction was older and shared.
 
-**F-15 is closed everywhere it can be**, and so is **F-07**. SQLite, MySQL,
-MariaDB, and now MSSQL all have `upgrade` and `backfill_norm`, each verified
-against a live engine; `fhir-oracle` has a store (**F-68**) but no `upgrade`
-built on it yet, so that arrives with the next pass on that port. Closing F-07
+**F-15 is closed on all six ports** (as of 2026-08-09), and so is **F-07**.
+Every port has `upgrade` and `backfill_norm`, each verified against a live
+engine; `fhir-oracle` was the last, built as **F-47**'s step 1. Closing F-07
 also emptied the shared-core gate's exemption list — **100 files identical
 across all six ports, nothing excused** (75→100 when the gate widened under
 **F-48**; an earlier revision of this paragraph said 65).
 
-What is left open, as of 2026-08-06: **F-47** (a physical-schema migration),
-**F-49**'s second half (the per-family workflows are inert until consolidated
-into root ones), **F-51** (narrowed by **F-68**), **F-58** (`fhir-loco`'s five
-`SV` gaps), and **F-67** (the TLS advisory exposure in `fhir-mssql-store`,
-which is a risk-acceptance decision, not a code fix).
+What is left open, as of 2026-08-10: **F-51** (narrowed by **F-68**, closed
+2026-08-29) and **F-67** (the TLS advisory exposure in `fhir-mssql-store`,
+which was a risk-acceptance decision, then closed by a driver swap
+2026-08-29). **F-47** left this list
+2026-08-10: its six-step physical-schema migration ran to completion (the
+entry has the step-by-step account), and step 5 surfaced and fixed **F-85**
+on the way. (An earlier revision of this list also carried **F-58**, which
+had already closed 2026-08-09 — `fhir-loco`'s remaining feature work,
+`_include`/`_revinclude` since served (`SV2.16`), transaction Bundles,
+type-/system-level history, multi-port wiring, is tracked in that crate's
+`tasks.md`, not by this register.)
 
 ## Severity
 
@@ -109,7 +114,7 @@ which is a risk-acceptance decision, not a code fix).
 | [F-12](#f-12) | Medium | `spec/index.md` referenced `AGENTS.md` in every port; no such file existed | **fixed** |
 | [F-13](#f-13) | Medium | Sections 1–13 were duplicated across six ports | **fixed** |
 | [F-14](#f-14) | Low | `fhir-postgresql` had no dialect annex while the other five did | **fixed** |
-| [F-15](#f-15) | Low | `_norm` backfill is unavailable on four ports after a fold change | **fixed** in sqlite, mysql, mariadb, mssql (all live); oracle has a store now but no `upgrade` built on it yet |
+| [F-15](#f-15) | Low | `_norm` backfill is unavailable on four ports after a fold change | **fixed** on all six ports, each live-verified; oracle last, 2026-08-09 (**F-47** step 1) |
 | [F-16](#f-16) | **High** | The MSSQL and Oracle dialect annexes were the MySQL annex, unedited | **fixed** |
 | [F-17](#f-17) | Medium | `fhir-postgresql` TLS defaulted to unverified, violating `O10.7` | **fixed** 2026-08-03 — default is `Require`; the "breaking" premise was false, the crates are unpublished |
 | [F-18](#f-18) | Low | `fhir-postgresql` carried a SQL folding function nothing calls (never emitted — wording corrected) | **fixed** |
@@ -141,27 +146,27 @@ which is a risk-acceptance decision, not a code fix).
 | [F-44](#f-44) | Medium | `check-shared-core.sh` aborted under `set -u` on the empty `EXEMPT` array — only reachable once a file diverged | **fixed** |
 | [F-45](#f-45) | Medium | The shared-core gate stopped at the store; `chain.rs` was 618 identical lines duplicated six times, unwatched | **fixed** — extracted to `fhir-store`, all six rewired |
 | [F-46](#f-46) | Medium | `U11` cannot reach the extension and deep tables: they have no columns in the map, and the cheaper workaround contradicts `U2b` | **fixed** 2026-08-02, verified live |
-| [F-47](#f-47) | Low | `path` and `v_kind` are bounded in practice but bound to unbounded types on mssql and oracle, so `U12` is unsatisfied; fixing it is a physical-schema migration for all six | open |
+| [F-47](#f-47) | Low | `path` is bound to unbounded types on mssql and oracle, so `U12` is unsatisfied; fixing it is a physical-schema migration for all six (the `v_kind` half proved moot, 2026-08-10) | **fixed** 2026-08-10 — the six-step migration ran to completion (2026-08-09/10): `U12a`'s `path_bound` recorded in every asset and enforced at shred; mssql and oracle bounded on fresh installs and live-verified converting existing ones; matrix `U12` row `•` across all six. Step 5 also surfaced and fixed **F-85** |
 | [F-48](#f-48) | Low | the shared-core gate did not watch `gen/tests/`, and could not while its normalization was line-based — rustfmt wraps by crate-name *length* | **fixed** 2026-08-02 — token-based verdict, 75→100 files |
-| [F-49](#f-49) | **High** | No workflow in this repository runs: all 20-odd sit under `<family>/.github/workflows/`, which GitHub does not read. Every "gated in CI" claim is unverified | **half-fixed** — `scripts/` committed and the root gates run (`gates.yml`: shared-core + doc-examples); the eight families' own workflows remain inert, an owner decision |
+| [F-49](#f-49) | **High** | No workflow in this repository runs: all 20-odd sit under `<family>/.github/workflows/`, which GitHub does not read. Every "gated in CI" claim is unverified | **fixed** 2026-08-06 — root gates first (`gates.yml`), then every family's CI consolidated to root files with paths filters and working-directory defaults; first hosted run pending a push |
 | [F-50](#f-50) | Medium | The `U2a` reference rule attached an adjunct to `c_url`, which no index uses, while every port indexes `(c_type, c_id)` — 453 of R5's 1,947 search targets unindexable on Oracle | **fixed** 2026-08-02 — all six; gaps now 0 |
-| [F-51](#f-51) | Medium | `fhir-oracle`'s DDL was executed by hand, not by a test, so `C0.9` keeps the port at Scaffold; a live test needs an Oracle driver decision | open |
+| [F-51](#f-51) | Medium | `fhir-oracle`'s DDL was executed by hand, not by a test, so `C0.9` keeps the port at Scaffold; a live test needs an Oracle driver decision | **fixed** 2026-08-29 — the "driver decision" turned out to already be decided by precedent: `fhir-oracle-store` (F-68) already proves the `oracle` crate + Instant Client works live, so no architectural choice remained, only mechanical work. `tests/oracle_ddl.rs` (`fhir-oracle-map`) installs a sampled schema live, verified against `gvenzl/oracle-free`, wired into `fhir-oracle-ci.yml` |
 | [F-52](#f-52) | **High** | The repository's only live database test was flaky — its cleanup dropped tables before foreign keys and discarded the error, so failures were misattributed to a correct `CREATE TABLE` | **fixed** 2026-08-03 — 5/5 runs green |
 | [F-53](#f-53) | Medium | Every store crate's module doc called itself "the PostgreSQL layer" and described operations the two scaffolds do not have — F-01 in `src/` | **fixed** 2026-08-03 — all six |
 | [F-54](#f-54) | **High** | `fhir-mysql` and `fhir-mariadb` carried PHI over an unencrypted database link with no way to encrypt it — the `minimal` Cargo feature excluded TLS entirely | **fixed** 2026-08-03 — `SslMode`, verifying default, live-verified on both engines |
-| [F-55](#f-55) | **High** | `scripts/db.sh` resolved the FHIR packages through the ancestor project's path and one developer's home directory in all six ports, so the live corpus suite could never find its inputs | **fixed** 2026-08-03 — 1,200 live round-trips now green on PostgreSQL 18 |
+| [F-55](#f-55) | **High** | `scripts/db.sh` resolved the FHIR® packages through the ancestor project's path and one developer's home directory in all six ports, so the live corpus suite could never find its inputs | **fixed** 2026-08-03 — 1,200 live round-trips now green on PostgreSQL 18 |
 | [F-56](#f-56) | **High** | Every port's `book/` describes PostgreSQL and a REST server — F-01 in the long-form documentation, incl. telling a SQLite operator to back up with `pg_dump` | **fixed** 2026-08-03 — engine substitution corrected throughout; REST text now attributed to `fhir-loco` in all six banners |
 | [F-57](#f-57) | Medium | `fhir-loco`'s CapabilityStatement declared a read-only server while the router served `POST`/`PUT`/`DELETE`, and named its software `fhir-store` | **fixed** 2026-08-03 — mutation-verified agreement test added |
-| [F-58](#f-58) | Medium | `fhir-loco` is the service §10/§12 specify; five obligations remain unmet, incl. no stated requirement for the listener's own TLS | open — spec question **closed** (`fhir-loco/spec/`); the five gaps are `SV2.14`, `SV2.15`, `SV3.11`, `SV4.2`, `SV4.3` |
+| [F-58](#f-58) | Medium | `fhir-loco` is the service §10/§12 specify; five obligations remained unmet, incl. no stated requirement for the listener's own TLS | **closed** 2026-08-09 — every named gap served or resolved: `SV2.14` conditional create and `SV4.3` admin plane (2026-08-07), `SV3.11` posture stated and enforced (2026-08-07), `SV2.15` system-level async Bulk Data `$export` (2026-08-09, owner-directed). `SV4.2`'s two missing halves remain a recorded Loco 1.0.1 framework limit, tracked in that crate's spec rather than here |
 | [F-59](#f-59) | **High** | `fhir-loco/config/production.yaml` was an empty file, so `LOCO_ENV=production` refused to boot — the only environment it exists to run in | **fixed** 2026-08-03 — real config, 3 mutation-verified tests |
 | [F-60](#f-60) | Medium | No example in `doc/` or `README.md` is compiled by anything; one calls a `fhir-postgresql`-only API from a SQLite tutorial | **fixed** 2026-08-03 — `scripts/check-doc-examples.sh` added; it found six real defects incl. an unparseable block, all 24 now compile |
 | [F-61](#f-61) | Medium | All six `plan.md` describe PostgreSQL, a CLI, and a `-server` crate; three of the five crates they list have never existed | **fixed** 2026-08-03 — all six corrected, banners added |
 | [F-62](#f-62) | **High** | Every port's `CHANGELOG.md` is `fhir-postgresql`'s; the two scaffolds announce a TLS security fix for a connector they do not have | **partly fixed** 2026-08-03 — banners + the security entry annotated in place; per-port history is an owner decision |
-| [F-63](#f-63) | Medium | Status text in `doc/faq.md`, `doc/choosing-an-engine.md` and `AGENTS/release.md` had decayed — incl. "is this a FHIR server? No" and a fixed finding cited as blocking | **fixed** 2026-08-03 |
+| [F-63](#f-63) | Medium | Status text in `doc/faq.md`, `doc/choosing-an-engine.md` and `agents/release.md` had decayed — incl. "is this a FHIR server? No" and a fixed finding cited as blocking | **fixed** 2026-08-03 |
 | [F-64](#f-64) | **High** | Every non-PostgreSQL `doc/benchmarks.md` presented `fhir-postgresql`'s measured numbers as its own, incl. a live round trip and bulk-load benchmark for the two ports with no store at all | **fixed** 2026-08-03 — corrected in all five; real harness for sqlite/mysql/mariadb is a recorded gap |
 | [F-65](#f-65) | **High** | `fhir-mssql` gained a real store, live-verified; running it found five real defects, incl. a torn read (`R4.5`) and `verify_audit` never checking the keyed tag | **fixed** 2026-08-04 — all five; the port is Store level, 33 live tests, 0 ignored |
 | [F-66](#f-66) | — | Scope note: `fhir-oracle`'s store was written with no Instant Client on the host and had never connected to a database | **superseded** by **F-68** — the store has now run live |
-| [F-67](#f-67) | **High** | Four TLS advisories `deny.toml` excused as dev-dependency-only now reach the shipping `fhir-mssql-store`; `native-tls` fails the handshake on this host | **open** — a standing risk needing an owner decision |
+| [F-67](#f-67) | **High** | Four TLS advisories `deny.toml` excused as dev-dependency-only now reach the shipping `fhir-mssql-store`; `native-tls` fails the handshake on this host | **fixed** 2026-08-29 — owner accepted the risk formally 2026-08-28 (keep shipping on upstream `tiberius`, document loudly, do not chase a replacement, after pricing three alternatives — `M14.34`), then closed it outright the next day by switching the driver to `mssql`, a `tiberius` fork the owner publishes to carry security fixes forward. `cargo tree` confirms none of the four advisory packages remain; `deny.toml`'s ignore list is empty; full live suite (41 tests) re-verified against `azure-sql-edge` |
 | [F-68](#f-68) | — | `fhir-oracle` connected live and reached Store level; four real defects found and fixed doing it; `R4.5` regressed from "believed addressable" to a confirmed open gap | **recorded** 2026-08-04 — defects fixed; `R4.5` remains open (`M14.19` needs a new answer) |
 | [F-69](#f-69) | Medium | `scripts/db.sh up` silently exited 1 with zero output on a fresh checkout, in all six ports | **fixed** 2026-08-04 |
 | [F-70](#f-70) | Medium | `fhir-store`'s `ChainKey`/`KeyRing::from_env` hardcoded `FHIR_SQLITE_*` names, so five ports' documented chain-key variables silently did nothing | **fixed** 2026-08-04 — `from_env(prefix)`, live-verified on PostgreSQL 18; docs corrected in all six |
@@ -178,7 +183,21 @@ which is a risk-acceptance decision, not a code fix).
 | [F-81](#f-81) | Medium | Six ports' `plan.md` decision entries are status-bearing and wrong — worst: `fhir-oracle` D18 asserts `R4.5` is handled by a mechanism Oracle rejects (`ORA-01466`), and D20 asserts TLS neither former scaffold has | **fixed** 2026-08-06 |
 | [F-82](#f-82) | Medium | `fhir-loco/tasks.md` predated the crate's own spec: zero `SV` ids, shipped features omitted, three provably-obsolete open items (git remotes, shared history, the fixed T70 fold) | **fixed** 2026-08-06 — replaced |
 | [F-83](#f-83) | Low | `fhir-oracle`'s book lacks the F-56 banner that root `CLAUDE.md` says all six books carry | **fixed** 2026-08-06 |
-| [F-84](#f-84) | Medium | `fhir-mssql`/`fhir-oracle` `publish.yml`/`release.yml` iterate a `fhir-<engine>-server` crate and build a `fhir-<engine>` binary — neither exists; the workflows are inert (F-49) but assert the F-27 fiction in CI config | open — resolve with F-49's consolidation |
+| [F-84](#f-84) | Medium | **All six** ports' `publish.yml` iterate a `fhir-<engine>-server` crate and a CLI crate, and all six `release.yml` build a `fhir-<engine>` binary — none of which has ever existed (wider than first recorded: not just the two former scaffolds) | **fixed** 2026-08-06 — publish loops corrected in all six; the six binary-release workflows deleted outright |
+| [F-85](#f-85) | Medium | `fhir-oracle` refused every root-level extension outright (`ORA-01400`): the empty attach path binds as NULL (`''` is NULL) against `"path" CLOB NOT NULL` — a US-Core-style Patient could not be stored at all | **fixed** 2026-08-10 — bounded `"path"` is nullable (`M14.39`), NULL means the empty path; fresh installs via `create_table`, existing ones via F-47 step 5's conversion; live-verified both ways |
+| [F-86](#f-86) | Medium | The `fhir/` model family (every release, R2–R6 and R4B) rejects FHIR JSON's null-padded primitive arrays (`"event": [null]` beside `_event`): repeating primitives are `Vec<T>` and cannot hold a placeholder position | **fixed** 2026-08-10 (owner-directed: a dedicated container) — `0..*` primitives are now `fhir_core::PrimVec<T>` (`R6.7a`), a transparent `Vec<Option<T>>` whose `None` is the extension-only placeholder; the nine R4B corpus examples round-trip and left the allowlist at the gate's own demand. Stated residual: `1..*` primitives keep `Vec1` and its type-level non-emptiness, so an ext-only position there stays unrepresentable (loudly refused, F-87; no corpus example uses it) |
+| [F-87](#f-87) | **High** | A choice element (`timing[x]` and kin) whose content fails to parse is **silently dropped** — the resource deserializes "successfully" minus the element, data loss masquerading as success | **fixed** 2026-08-10, same day — every choice-bearing struct now deserializes through a generated shadow whose choice fields are non-`Option` `choice::Slot`s, so a present-but-invalid element errors loudly; all six release crates, five corpora green |
+| [F-88](#f-88) | **High** | The consolidated port workflows (F-49) left three per-job settings unrooted, and the first hosted runs exposed all three: `cargo-deny` ran at the repo root and errored; the spec/corpus env paths pointed at the root while the fetch steps wrote under the port directory, so **every spec-dependent live test silently skipped and the "live gate" was green while testing nothing** (T11.12's nightmare at workflow scale); and the plaintext pg job lacked an explicit `PGSSLMODE`, so the store's secure-by-default `require` (O10.7) correctly refused it — surfaced only by the two new `history_page` tests, the sole live tests that actually connected | **fixed** 2026-08-10 — paths re-rooted and deny given its manifest in all six workflows; the plaintext job says `disable` explicitly with the TLS-only job carrying `require`; and a vacuity guard now fails the pg live step if anything skipped on CI |
+| [F-90](#f-90) | **High** | The full R3/R4/R5 schemas **do not install** on stock MySQL 8.4 / MariaDB 11.4: InnoDB's create-time row-size check (`ERROR 1118`, > 8126 bytes) charges ~41 bytes per `TEXT` column (measured by bisection: 195 fit, 196 fail) and the widest generated tables carry up to 232–257 columns with ~190–211 `TEXT`s — the open-typed `value[x]` splats (`parameters_parameter_value`, `task_input_value`, the `StructureDefinition` element `defaultValue`/`fixed`/`pattern`/`example` tables) and `explanation_of_benefit`'s base | **fixed** — closed in full 2026-08-12, as this row's own narrative records (an earlier revision of this cell still began "open", contradicting its ending — the F-73 failure mode, corrected 2026-08-26). Found by the first full-schema CI install (`DDL_FULL=1` is CI-only; local suites sample and the 2026-08-03 "green against live MySQL 8.4" predates the widest tables' exercise). Unmasked by F-89's harness fix. The dialect cannot fix it alone (tables are map-shaped and the stores write by table name); the recommended fix is a byte-aware force-split in the shared generator (`SPLIT_WIDTH` is column-count only), budgeted for the tightest engine (~7,500 conservative bytes), which changes table shapes in all six ports — owner-directed 2026-08-11: the byte-aware force-split landed at the shared generator (`G2.6a`), trigger 6,600 / budget 7,900 charged bytes, widest resulting table 6,611; all assets and fixtures regenerated, `row_budget.rs` gates the artifacts. **Live-verified 2026-08-11**: full R3/R4/R5 installs green on MySQL 8.4 and MariaDB 11.4, and both workflows fully green for the first time (unmasking F-91 on the way). **Closed in full 2026-08-12**: the `O10.4b` moved-column guard landed in all six stores and is live-verified on **all six engines** — oracle's included, on its live job's first hosted run (2026-08-12, the F-06 gate restored with a real engine) |
+| [F-91](#f-91) | Medium | The mysql/mariadb **store suites never ran in CI**: the DDL step ahead of them failed (F-90) and cargo stops at the first failing test binary, while the step still called itself "expected to skip until T64" — stale twice over, since the stores have spoken their own engines for weeks. Their first real execution (2026-08-11, the moment F-90's fix let the DDL step pass) refused the service container's self-signed certificate under the verifying default (`UnknownIssuer`) — the store keeping exactly the promise F-54 measures, against a job that had never declared its TLS intent | **fixed** 2026-08-11 — both live jobs declare `FHIR_*_SSL_MODE: DISABLED` (plaintext by design, mirroring the pg job's explicit `PGSSLMODE: disable`, F-88), the step is named honestly, and the stale T64 rationale for the missing TLS-only job is rewritten: what is actually missing is a `require_secure_transport=ON` server for the plaintext-refusal half |
+| [F-92](#f-92) | Medium | F-91's genre, two more members, found by checking that the O10.4b tests actually *ran* in the green jobs: **mariadb's main store suite** (`mariadb_store.rs`, 13 tests) gated on `FHIR_MYSQL_TEST_DSN` — the mysql port's variable — so it skip-passed silently in CI while the header even said "skips silently"; and **mssql's live job had no store-suite step at all** — the workflow predates the store (F-65) and still said "cannot be written honestly until there is a store", so the store suite including F-47's 12 upgrade tests had never run hosted | **fixed** 2026-08-12 — the env var renamed to `FHIR_MARIADB_TEST_DSN` (14 sites, one file), the mssql step added with TLS intent already declared in the DSN (`TrustServerCertificate=true`, the F-91 lesson), and both stale rationales rewritten. **Verified** the same day: mariadb's 13-test suite ran green in its first genuine CI execution, and mssql's store suite ran green including the O10.4b tests |
+| [F-93](#f-93) | Medium | `fhir-oracle`'s `O10.4c` re-shred **never passed a hosted run**, despite landing in a commit whose message said "live-verified" (2026-08-22) — that commit's own CI run was red, and every run since failed the two re-shred tests the same way. Root cause: `recon_with_map` ended with a hygiene `rollback()`, and the re-shred's byte-identical verify calls it *inside* the per-resource write transaction — the verify read the uncommitted new-shape rows, the rollback then silently discarded the delete and both re-inserts, the `commit()` committed nothing, and the leftover guard correctly reported the old data still in place ("re-shred left data behind"). Fixing that unmasked a second defect the rollback had been hiding: `drop_schema` was **map-scoped** — unlike `fhir-mssql`'s catalog-driven `sys.tables` sweep — so a table the connected map did not name (a relocated-column table from an earlier run) survived with its rows but without its FKs, and the next re-shred collided with the residue (ORA-00001 on `(rid, ords)`) | **fixed** 2026-08-26 — both rollbacks removed from `recon_with_map` (callers own their transactions; the function's doc now states why it must never end the caller's transaction), and `drop_schema` sweeps `user_tables` (`M14.5` makes the connecting user exactly this store's world). **Live-verified** on Oracle Database Free 23: the upgrade suite 16/16 **twice consecutively** — the second pass is the point, it exercises the residue class — plus the store suite 7/7 and `root_extension`; the first passing runs these two tests have ever had, hosted or local |
+| [F-94](#f-94) | Low | Dependabot alerts on `main` surfaced `GHSA-rhfx-m35p-ff5j` (`lru` `IterMut` violates Stacked Borrows, an internal-pointer soundness defect) reaching `fhir-mysql-store` and `fhir-mariadb-store` as normal dependencies via `mysql_async 0.34.2`'s pinned `lru = "^0.12"`. Separately, `fhir-mysql/deny.toml` and `fhir-mariadb/deny.toml` carried an `ignore` for `RUSTSEC-2025-0134` (`rustls-pemfile` unmaintained) that `cargo deny` was silently no longer able to match — the crate it excused had already left the dependency tree, unnoticed, so the exception was dead and nobody knew | **fixed** 2026-08-27 — `mysql_async` bumped `0.34` → `0.37` in both ports (the minimal version whose own manifest requires `lru ^0.18`, clearing the advisory; `0.35`/`0.36` still required `^0.12`/`^0.14` and would not have). Verified with `cargo check --all-targets --locked` and the offline unit suite (50 tests, both ports) before the bump was accepted, not after; `cargo deny check advisories` reports clean with no `advisory-not-detected` warning. The dead `RUSTSEC-2025-0134` ignore was removed rather than left stale, with a dated comment explaining why the entry disappeared rather than leaving future silence. Unrelated to **F-67**: that finding is `fhir-mssql`'s `rustls-webpki` chain via `tiberius`, a different port and a different dependency — accepted formally 2026-08-28, then closed 2026-08-29 by switching the driver |
+| [F-95](#f-95) | **High** | **F-94's own fix broke hosted CI on both ports it touched, and the verification that shipped it did not catch it.** The `mysql_async 0.34 -> 0.37` bump was verified with `cargo check --all-targets --locked` and `cargo test --locked --lib --bins` — unit tests only. `--lib --bins` excludes everything under `tests/`, which is exactly where `ssl_live.rs` lives, and that file only runs at all inside the live-database CI job (it self-skips without a DSN). The first hosted run after the push found it: `tls_is_configurable_and_verification_is_not_a_no_op` panicked in both `fhir-mysql-store` and `fhir-mariadb-store` — `rustls::crypto::CryptoProvider::get_default()` finding none installed, because `mysql_async 0.37` split its `rustls-tls` feature from its crypto backend (`aws-lc-rs` or `ring`), where `0.34`'s did not need the split | **fixed** 2026-08-28 — `ring` added to both ports' `mysql_async` feature list (pure Rust, no C/cmake toolchain, matching the existing comment's stated reason for choosing rustls over native-tls in the first place). Verified by reproducing the exact panic live against each port's own dev container before the fix, and its disappearance after — not inferred from the diff. Then the full store suite re-run for both, all binaries, no truncation: `mysql_store`/`concurrency`/`redaction`/`roundtrip_types`/`ssl_default`/`ssl_live`/`upgrade`, 44 tests, 0 failed. `cargo deny check advisories` still clean. **The verification-scope lesson, stated for next time:** a dependency bump's own tests are not enough evidence when the crate ships integration tests that need infrastructure the bump's own CI job doesn't provide — `cargo test --workspace` unit-only is what F-90/F-91/F-92's "does it actually run" lesson was already about, applied here to a different kind of change and missed anyway |
+| [F-96](#f-96) | Medium | **Unrelated to F-94/F-95, found the same audit pass**: `fhir-postgresql` and `fhir-loco` (which depends on it) both failed hosted `cargo deny` with `error[yanked]: detected yanked crate` on `chacha20 0.10.1` — pulled in via `rand 0.10.2 -> postgres-protocol -> tokio-postgres`, a chain neither this session nor **F-94** touched. crates.io yanked `0.10.1` upstream after both lockfiles had already pinned it; `yanked = "deny"` in each port's `deny.toml` (the same policy line **F-94** relies on) is what caught it | **fixed** 2026-08-28 — `cargo update -p chacha20` in both workspaces (`0.10.1` → `0.10.2`, the fix `cargo deny`'s own error message named). Verified: `cargo deny check advisories` clean in both, `cargo check --all-targets --locked` green in both |
+| [F-97](#f-97) | Medium | Surfaced closing **F-51**: the append-only trigger's `M3.17`/`M3.18` enforcement (`M14.29`, already known to have failed open once — `M14.29a`) and the `Bool` CHECK's `M14.8` enforcement were verified only by SQL-text unit tests, never against a live server. A CHECK clause that parses but never fires would pass the existing unit test the same way the trigger's `M14.29a` bug passed a read-through | **fixed** 2026-08-29 — `tests/oracle_constraints.rs` (`fhir-oracle-map`): a live `UPDATE`/undeclared `DELETE` against a seeded row, asserting the exact `ORA-20001`/`ORA-20002` errors (not merely `is_err()`, which is the distinction `M14.29a`'s own bug hid), the declared-erasure escape hatch confirmed to still work, and a live `INSERT` of `2` into a `NUMBER(1) CHECK (... IN (0,1))` column asserting `ORA-02290`. **Found and fixed in the same pass, not shipped and left flaky:** libtest runs a binary's `#[test]` functions concurrently by default, and the first version had both tests provision the same throwaway user — reproduced 3 of 3 failures before splitting each test onto its own user (`TRIGTEST`, `BOOLTEST`), 0 of many after. Wired into `fhir-oracle-ci.yml` beside **F-51**'s DDL-install step |
+| [F-98](#f-98) | Medium | `scripts/check-published-match.sh` reports "ok" for a crate whose source has genuinely diverged from what it published, when the divergence is a workspace-inherited dependency requirement (`sha2.workspace = true` etc.) — its `--exclude Cargo.toml` comparison relies on `Cargo.toml.orig`, which preserves the unresolved `.workspace = true` reference rather than the literal version crates.io actually receives | **open** — found 2026-08-29 bumping `sha2`/`sha3` in `fhir-postgresql`/`fhir-sqlite`: the gate said "34 matched, 0 mismatched" while the crates.io API confirmed `fhir-postgresql-map` 0.6.0's published manifest declares `sha2 ^0.10`, which the tree's new `sha2 = "0.11"` workspace requirement no longer matches. Worked around by bumping the affected crates to a patch version regardless of what the gate reported (commit `ca34cdf`), not by trusting it. Not fixed: a correct fix needs to compare the crate's *normalized*, packaged `Cargo.toml` (which does resolve `.workspace = true` to a literal) rather than `Cargo.toml.orig`, without reintroducing the cosmetic-reordering false positives `Cargo.toml.orig` was chosen to avoid |
+| [F-89](#f-89) | Medium | The mysql/mariadb DDL test harness was unportable and **masked real errors**: it passed MariaDB's `--skip-ssl-verify-server-cert` to whatever client exists (Oracle's mysql 8 client rejects it), assumed a utf8mb4 default charset (the runner's client defaults utf8mb3 → ERROR 1253 on the collation probe), and on any early client exit reported the stdin `Broken pipe` instead of reading the client's stderr — hiding whatever the real failure was | **fixed** 2026-08-10 — client-flavor-gated TLS flag, explicit `--default-character-set=utf8mb4`, and EPIPE falls through to collect stderr, so the next failure names itself |
 
 ## What remains, and why
 
@@ -188,11 +207,11 @@ own closures — every one of them contradicted the summary table above.*
 
 | Finding | Why it is not fixed here |
 | --- | --- |
-| **F-47** | `path` and `v_kind` bounded-type fix is a physical-schema migration for all six ports — sequenced work, not a one-pass edit. |
-| **F-49** | The root gates (`gates.yml`) now run — `scripts/` is committed and the shared-core and doc-example checks execute on push. What remains is the other half: the eight families' workflows still sit under `<family>/.github/workflows/`, which GitHub does not read, so every per-port "CI provisions the engine" claim describes an inert file. Consolidating those into root workflows is an owner decision about CI cost and layout. |
-| **F-51** | `fhir-oracle`'s store tests now install and exercise a schema live (**F-68**), which narrows this finding; what has not been re-run test-driven is the full-R5 install the finding originally concerned. |
-| **F-58** | `fhir-loco`'s five named gaps (`SV2.14`, `SV2.15`, `SV3.11`, `SV4.2`, `SV4.3`) are feature work in a crate with its own spec. |
-| **F-67** | The TLS advisory exposure in `fhir-mssql-store` has no good fix available on this host — `native-tls` fails the handshake — so it is a standing risk only the owner can accept, mitigate, or re-platform away. |
+| ~~F-47~~ | Closed 2026-08-10: the six-step migration ran to completion — oracle's `upgrade` (step 1, closing F-15), the `U12a` bound decision (step 2, corrected by measurement), the six-port shared-core `path_bound` (step 3), mssql's transactional conversion (step 4), oracle's resumable add-copy-drop-rename conversion (step 5, surfacing and fixing **F-85**), and the matrix flip (step 6). |
+| ~~F-49~~ | Closed 2026-08-06: every family's CI now lives at the repository root — `fhir-ci.yml`, `fhir-security.yml`, one `<port>-ci.yml` per port, `fhir-loco-ci.yml` (rewritten: the old file was loco-rs template boilerplate provisioning Redis/PostgreSQL this app never used), and a new `fhir-store-ci.yml` for the one family that never had CI anywhere. Each carries a paths filter and a `working-directory` default; artifact paths were re-rooted. The inert per-family CI files are deleted. Deliberately **not** consolidated: the six ports' `publish.yml` (publishing is owner-gated; their fictional crate lists are fixed, F-84) and `fhir/release.yml` (cargo-dist manages it; moot until a release is cut). Honesty note: no hosted run has executed yet — this host cannot run GitHub Actions — so the matrix keeps `~` until the first push turns them green. |
+| ~~F-51~~ | Closed 2026-08-29: `tests/oracle_ddl.rs` now installs and verifies a sampled schema live on every run, not just by hand; the full-R5 install remains verified only by **F-08**'s hand-run transcript, a separate, narrower gap the entry names. |
+| ~~F-58~~ | Closed 2026-08-09: `SV2.14`, `SV3.11`, `SV4.3` (2026-08-07) and `SV2.15` `$export` (2026-08-09) are all served; `SV4.2`'s concurrency-limit halves stay recorded in `fhir-loco/spec/04` as a framework limit, which is a constraint, not a gap this register tracks. |
+| ~~F-67~~ | Closed 2026-08-29: the driver switched from `tiberius` to `mssql`, a fork maintained to carry the TLS fixes forward — none of the four advisory packages remain in the dependency tree. This table has no open row left. |
 
 ---
 
@@ -789,7 +808,7 @@ it.
 
 Every port's `spec/index.md` contained "Operational guidance for contributors
 lives in `AGENTS.md`". No `AGENTS.md` existed anywhere in the tree. The
-monorepo now has [`AGENTS.md`](../../AGENTS.md) with [`AGENTS/`](../../AGENTS/) topic
+monorepo now has [`AGENTS.md`](../../AGENTS.md) with [`agents/`](../../agents/) topic
 files, and each port has one pointing at it.
 
 ## F-13
@@ -838,8 +857,8 @@ Oracle have no `upgrade` at all, so for them the migration is a full reload.
 Deploying the corrected fold against an existing database without backfilling
 leaves searches matching neither the old spelling nor the new — silently.
 
-**Disposition: fixed in `fhir-sqlite`, `fhir-mysql`, `fhir-mariadb`, and
-`fhir-mssql`; open for `fhir-oracle`.**
+**Disposition: fixed on all six ports.** `fhir-oracle`, the last, closed
+2026-08-09 (**F-47** step 1) — see the end of this entry.
 
 `fhir-sqlite` now has `upgrade` and `backfill_norm`, and `init` records the map
 asset that makes a diff possible at all (`M14.30`). Three things are SQLite's
@@ -926,9 +945,27 @@ going forward, not retroactively.
 patient unfindable by their own name, the same class of check as the other
 three ports.
 
-What remains is `fhir-oracle`, which has a store (**F-68**) but no `upgrade`
-built on it yet. That arrives with the next pass on that port; there is no
-separate upgrade task to schedule for it beyond that.
+**`fhir-oracle` now has it too** — the last port, closing this finding
+everywhere (2026-08-09, **F-47** step 1). Nine tests in
+`crates/fhir-oracle-store/tests/upgrade.rs`, the same suite shape as mssql's
+including `destructive_changes_succeed_with_the_flag`, green against live
+`gvenzl/oracle-free:23-slim-faststart` (run `--test-threads=1`: every test
+shares the one uppercase `R5` schema, `M14.5`). Three things are this
+engine's own, now normative in its annex (`spec/14-oracle-dialect.md`):
+
+| | |
+|---|---|
+| `M14.35` | **The upgrade is resumable, not transactional.** Oracle DDL implicitly commits, so a failed upgrade half-applies and that cannot be prevented — instead every statement the upgrade emits is wrapped in a PL/SQL block that swallows exactly the already-applied codes (`ORA-00955` name in use, `ORA-01430` column exists, `ORA-01408` already indexed; `ORA-00942`/`ORA-00904` for drops) and re-raises everything else, so the recovery for a partial upgrade is rerunning `upgrade`. The third answer to one problem: mssql's `M14.35` is one transaction, mysql's `M14.35` is reported-partial. |
+| `M14.36` | **The map asset cannot bind as one string.** ~1 MB of hex fails with `ORA-01461` even though the target column is a `CLOB` — the bind is what overflows — so meta values past the limit are stored as ≤3,000-char `<key>.<i>` chunk rows under a `chunks:N` sentinel and reassembled on read. Found live: `init` hit this the moment it first tried to store the asset. |
+| `M14.37` | **The backfill pages by ROWID keyset.** The fold source column is a `CLOB`, which can be neither `DISTINCT`ed nor `=`-compared (`ORA-00932`/`ORA-22848`), so the values-based loop the other five ports share is illegal here. Batches select `WHERE dst IS NULL` ordered by `ROWID`, update by `ROWID`, and commit per batch; an empty fold result is skipped because `''` is NULL on this engine (`M14.29a`) and writing one would leave the row eligible forever. |
+
+**Mutation-verified** (`T11.10`): with the backfill call inside `upgrade`
+disabled, `rows_written_before_the_folded_column_are_backfilled` fails — the
+seeded patient "Ámélie" becomes unfindable by `amelie`, which is literally
+this finding — and the suite is green again with it restored. As on every
+other port, an install predating the stored map asset is refused by name
+rather than guessed at: the finding is closed going forward, not
+retroactively.
 
 ## F-16
 
@@ -1873,7 +1910,7 @@ publish readiness.*
 
 All six `Cargo.toml` files declare `version = "0.1.0"`. All six `CHANGELOG.md`
 files open with `## 0.4.0 — tamper evidence that survives the database
-(2026-07-27)`, and [`AGENTS/release.md`](../../AGENTS/release.md) asserted "All
+(2026-07-27)`, and [`agents/release.md`](../../agents/release.md) asserted "All
 six currently sit at `0.4.0`".
 
 **The committed lock files settle which way it went.** All six `Cargo.lock`
@@ -1939,9 +1976,9 @@ gaps let the same defect through again:
 
 1. **They compare `src/` only** — `diff -rq .../src "$dir/src"`. A changed
    `README.md`, `Cargo.toml`, or `LICENSE` is invisible to them, which is
-   exactly how `fhir-release-1`'s README drift and five changed `license` lines
+   exactly how `fhir-r1`'s README drift and five changed `license` lines
    survived.
-2. **`fhir/`'s job omits five published crates** — `fhir-release-1`, `-7`,
+2. **`fhir/`'s job omits five published crates** — `fhir-r1`, `-7`,
    `-8`, `-9`, `-10`, all registered at `0.0.0` and none of them checked.
 3. **None of them has ever run.** Nothing in this tree has been pushed
    (**F-11**), so every one of these jobs is unexecuted. A gate that has never
@@ -1958,7 +1995,7 @@ it was not hypothetical:
 | | **206 added, 2 removed** — the `qty-3` invariant support |
 
 `Cargo.toml.orig` was byte-identical, so nothing in the metadata hinted at it.
-The reason it survived is the one `AGENTS/release.md` names: every local build
+The reason it survived is the one `agents/release.md` names: every local build
 resolves the **path** dependency and never fetches the registry copy, so the
 workspace stayed green against 758 lines while `fhir-derive-macros = "1.1.0"`
 resolves to 554 for everyone else. It surfaces only when a third party packages
@@ -1985,14 +2022,14 @@ silently passed, and a run that compares zero crates says so explicitly rather
 than reporting a green it did not earn (`T11.12`).
 
 Running it found two more divergences beyond `fhir-derive-macros`, both at
-`0.0.0`: `fhir-release-1`'s `README.md` had gained a "What is actually
+`0.0.0`: `fhir-r1`'s `README.md` had gained a "What is actually
 available" section not in the published copy, and all five reservation crates
 had a `license` line changed by the quintuple harmonization earlier the same
 day. Every one is the same defect — a changed tree on a published number.
 
 Versions bumped so the tree stops claiming numbers it no longer matches:
 `fhir-derive-macros` to `1.2.0` (behaviour added, nothing altered) with its six
-dependency pins, and `fhir-release-1`, `-7`, `-8`, `-9`, `-10` to `0.0.1`. The
+dependency pins, and `fhir-r1`, `-7`, `-8`, `-9`, `-10` to `0.0.1`. The
 gate is green afterwards, and reports that it is green *vacuously*.
 
 ## F-36
@@ -2732,6 +2769,28 @@ Two columns of the extension and deep tables fail that on `fhir-mssql` and
 | `path` | `NVARCHAR(MAX)` / `CLOB` | the longest FHIR element path, which the generator knows at build time |
 | `v_kind` | `CHAR(1)` on mssql | already bounded — the defect is oracle's, where it is a `CLOB` |
 
+**Corrections (2026-08-10, found preparing step 3 by reading the emitted DDL
+and shredder rather than this table).** Three claims above and in the schedule
+are stale or wrong:
+
+- **`v_kind` is bounded everywhere already** — `char(1)`/`CHAR(1)` on
+  postgresql/mysql/mariadb/mssql, `CHAR(1 CHAR)` on oracle (fixed by
+  **F-08**'s rebuild after this table was written), `TEXT` on sqlite where
+  `TEXT` indexes fine. The `v_kind` half of this finding is moot; no port
+  converts anything.
+- **`path` has no adjunct columns on any port** (the ext/deep adjunct set is
+  `url`/`v_text`/`leaf`), so step 4's "drop `path`'s adjunct columns" has
+  nothing to drop.
+- **`path` is not statically bounded.** The attach path accumulates through
+  cyclic contentReference recursion — measured: shredding a
+  `QuestionnaireResponse` with items nested five deep stores an ext row with
+  `path = "item.item.item.item.item"`, one segment per level, no FHIR depth
+  limit. `U12a` was amended same day: `path_bound` is a **declared capacity
+  limit** (computed with each cycle traversed at most eight times, enforced
+  loudly at shred time), precedented by the model's own 32,767-entry `ords`
+  limit and oracle's `RAW(255)` ords image (`M14.13`). The finding's real
+  surface is exactly `path` on mssql and oracle.
+
 `create_table` hardcodes them, so fixing this means making those arms map-driven
 — and **that changes the physical schema**: `path` from unbounded to bounded is
 a data migration under `L12`/`O10.4a`, which the four ports with stores would
@@ -2746,7 +2805,113 @@ therefore cannot claim.
 Resolving it needs the migration story first — specifically, what
 `fhir-postgresql` does with an existing `patient_ext` when `path` narrows, and
 whether the generator's known maximum path length is a *bound* or merely the
-longest one seen in R3–R5.
+longest one seen in R3–R5. (The second question is answered as of step 2:
+it is the longest seen, made a bound by `U12a` — recorded in the asset with
+64-char-step headroom, enforced at shred time, never narrowed by `upgrade`.)
+
+**Migration schedule (2026-08-09, owner-directed).** Sequenced; each step is
+one session-sized commit, and nothing later starts before the step before it
+is live-verified:
+
+1. **Prerequisite: `fhir-oracle` gains `upgrade`/`backfill_norm`** — the
+   F-15 remainder. Every later step assumes a working upgrade path on all
+   six ports, and oracle is the port with the harder half of this migration.
+   **Done 2026-08-09**: 9 live tests, mutation-checked, three new annex
+   requirements (`M14.35`–`M14.37`) — the account is in F-15's entry.
+2. **The bound decision, as spec text.** The generator's maximum path length
+   is the longest seen in R3–R6, not a bound; the migration needs a *bound*.
+   Amend `U12` (and `M14` annexes where the type is named): `path` binds to
+   a map-level `path_bound` — the longest path in that release's map,
+   rounded up with headroom and **recorded in the map asset**, so `G2.2`
+   determinism holds and a future release cannot silently shrink it.
+   `v_kind` binds to one character everywhere (only oracle's `CLOB` is
+   wrong today).
+   **Done 2026-08-09**: `U12a` defines `path_bound` — longest attach path
+   in the release map, rounded up to the next multiple of 64, floor 128,
+   recorded in the asset; widening additive, narrowing refused, an
+   over-bound shred fails loudly — and fixes `v_kind` at one character
+   (`z`/`b`/`n`/`s` are the only values the core writes). Target bindings:
+   `M14.37` (mssql, one transactional conversion) and `M14.38` (oracle,
+   add-copy-drop-rename with the half-applied story stated). Grounding:
+   the longest fully qualified element path measured across the bundled
+   maps is 131 chars (R4/R5), 121 (R3).
+   **Amended 2026-08-10** (see the corrections block above): the bound is
+   a declared capacity limit — cyclic contentReference recursion grows
+   `path` per nesting level, so `U12a` now computes with cycles capped at
+   eight traversals and shred refuses past the bound; `v_kind` is out of
+   the migration entirely (bounded everywhere already); there are no
+   `path` adjuncts to drop in step 4.
+3. **The shared-core change, all six ports in one commit** (`X15.1`):
+   `model.rs` carries the bound, `gen` computes it, `create_table`'s
+   hardcoded `path`/`v_kind` arms become map-driven; assets regenerated in
+   all six (`regen-assets`, content-compared per F-41). Physical DDL
+   changes only on mssql (`NVARCHAR(MAX)` → `NVARCHAR(bound)`) and oracle
+   (`CLOB` → `VARCHAR2(bound CHAR)`; the `v_kind` conversion listed here
+   earlier is moot, 2026-08-10 correction); the other four keep `TEXT`
+   and carry only the asset-version diff through `upgrade`.
+   **Done 2026-08-10**: `ResourceMap.path_bound` (serde-defaulted, so old
+   stored assets decode as `0` = legacy), `record_path_bound` in the
+   shared gen (cycle cap 8, round-to-64, floor 128), shred refuses an
+   over-bound attach path by name ("declared capacity"), and mssql/oracle
+   `create_table` emit `NVARCHAR(path_bound)`/`VARCHAR2(path_bound CHAR)`
+   when the asset records a bound, the legacy types when it does not
+   (`G2.2`: the schema follows the asset). Assets regenerated in all six:
+   the recorded bounds are **192 (R3), 192 (R4), 384 (R5)** — R5's deeper
+   cyclic structures cost the extra step. Verified: shared core identical
+   (105 files), every port's workspace green including the full 7,399-
+   example corpus round-trips (no real example is refused), the new shared
+   `path_bound.rs` suite in all six (bound shape + eight-levels-fit +
+   loud over-bound refusal), oracle's live suite 80/80 with fresh installs
+   now `VARCHAR2(384 CHAR)`, and `fhir-loco` green over the new sqlite
+   asset. Fresh installs on mssql/oracle are bounded as of this step;
+   converting *existing* installs is exactly steps 4–5.
+4. **`fhir-mssql` upgrade path, live-verified**: pre-check
+   `MAX(LEN(path))` against the bound, `ALTER COLUMN` inside the
+   transactional upgrade (`M14.35`). (The "add the index / drop the
+   adjuncts" tail this step first carried is amended, 2026-08-10: no
+   search filters `path` yet so the index MAY wait, and `path` never had
+   adjuncts to drop.)
+   **Done 2026-08-10**: `convert_path_columns`, catalog-driven (what the
+   deployment actually has, not what the asset says), inside the upgrade
+   transaction. `MAX`→bound converts after a data pre-check that refuses,
+   naming rows and longest length, if anything stored exceeds the bound;
+   widening a bounded column is additive; narrowing one refuses (`U12a`:
+   a recorded bound never shrinks in place); conversions count in
+   `UpgradeReport.additive`. Live-verified against `azure-sql-edge`:
+   `tests/upgrade.rs` grew 9→12 (pre-U12a install converted with data
+   surviving and a second pass converting zero — which doubles as the
+   proof the first pass was real; over-bound row refuses, rolls the whole
+   upgrade back, and succeeds after cleanup; narrowing refuses), full
+   port live suite 36/36 serial, mutation-checked (`T11.10`: disabling
+   the conversion call fails the pre-U12a test).
+5. **`fhir-oracle` conversion path, live-verified**: Oracle cannot alter
+   `CLOB` to `VARCHAR2` in place — add-column, copy, drop, rename, each
+   statement autocommitting (no transactional DDL, `M14`), with the
+   half-applied-upgrade story the annex must state before the code exists.
+   **Done 2026-08-10**: `convert_path_columns`, a catalog-driven state
+   machine per table (`user_tab_columns` says which prefix of the sequence
+   already ran; a rerun finishes the rest) — data pre-check refusing named
+   over-bound rows, add, resumable copy, drop, rename; widening additive,
+   narrowing refused; the replacement column nullable (`M14.39` — designing
+   this step surfaced **F-85**, root-level extensions refused outright,
+   fixed the same day). Live-verified: `tests/upgrade.rs` 9→12 including a
+   real partial-failure rerun (the refusal leaves earlier tables
+   converted, autocommitted, and the retry completes the rest — the
+   resumability the annex promised), plus `tests/root_extension.rs`; full
+   port live suite 84/84 serial; mutation-checked (`T11.10`: stubbing the
+   conversion call fails the pre-U12a test).
+6. **Close**: `U12` cells flip in the matrix, per-port `tasks.md` entries
+   tick with their live evidence, this finding closes.
+   **Done 2026-08-10.** The matrix carries a `U12`/`U12a` row, `•` on all
+   six: the four `TEXT` ports satisfy it natively, mssql and oracle by the
+   step 3–5 work, every claim live-verified. Both port `tasks.md` entries
+   are ticked with their evidence. **The finding is closed** — the whole
+   schedule ran 2026-08-09 → 2026-08-10, and its one unplanned dividend is
+   **F-85**, found and fixed inside step 5.
+
+Steps 1, 4 and 5 need live engines; 2 and 3 do not. The four stores that
+never had the defect carry only step 3's asset bump — the price `X15.1`
+sets for moving all six together.
 
 ---
 
@@ -3007,6 +3172,55 @@ Two behaviours are additionally verified only by hand and would be lost the same
 way: the append-only trigger refusing `UPDATE`/`DELETE` and permitting a
 declared erasure (`M14.29`), and the `Bool` CHECK rejecting `2` (`M14.8`). The
 first is the one that already failed open once (`M14.29a`).
+
+**Fixed 2026-08-29.** The "real decision" this finding described turned out
+to already be decided, by evidence this repository had produced itself and
+not connected to this finding: **F-68**, four items later in this same
+register, already proved `fhir-oracle-store` connecting live via the `oracle`
+crate and Oracle Instant Client — option (a) above, chosen and working,
+months before this finding was revisited. There was no remaining
+architectural question, only the mechanical work of giving the *map* crate
+(which had never depended on a driver, unlike the store) its own copy of
+that same proven dependency.
+
+Added `oracle` as a dev-dependency of `fhir-oracle-map` and
+`tests/oracle_ddl.rs`, on the model `mssql_ddl.rs` set: install a sampled
+schema (`Patient`, `Observation`), assert the statement count, apply every
+statement, and count `USER_TABLES`/`USER_TRIGGERS` afterward rather than
+trust a lack of errors. **One genuine Oracle-specific complication the SQL
+Server model does not have:** Oracle unifies user and schema (`M14.5`), so
+"install into a fresh schema" means "create a fresh database user" — a
+SYSTEM-level privilege no regular test login holds. The test therefore
+connects twice, as SYSTEM to provision a throwaway `DDLTEST` user and then
+as that user to install and verify, mirroring in Rust exactly what this
+port's own `scripts/db.sh` (`post_ready`) and `fhir-oracle-ci.yml` ("Create
+the version users") already do in shell for the `R3`/`R4`/`R5` users the
+*store's* tests use — a different, dedicated user, so this test cannot
+collide with those.
+
+**Live-verified before being trusted, not after:** run twice consecutively
+against a real `gvenzl/oracle-free` container to confirm the drop-and-recreate
+cleanup is not flaky the way `mssql_ddl.rs`'s own history warns it can be (166
+statements, 105 tables, 2 triggers, identically, both times); the skip path
+confirmed silent without `FHIR_ORACLE_REQUIRE_DB`; the fail-loud path
+confirmed to panic rather than skip with it set, against a genuinely
+unreachable connect string; `--release` and `cargo clippy -- -D warnings`
+both clean. Wired into `fhir-oracle-ci.yml`'s existing live-database job,
+ahead of the version-user creation it does not depend on.
+
+**What this does and does not establish.** The port's Schema-level claim
+(`C0.8`, `C0.9`) is now justified by a test that runs, not a transcript —
+that is what this finding asked for, and it is done. **Not established:**
+the full ~9,636-statement R5 install remains verified only by the hand-run
+transcript **F-08** left behind (this test samples two resource types, the
+same trade-off `mssql_ddl.rs` makes, for speed rather than exhaustiveness);
+and the two hand-only behaviours named above — the append-only trigger
+actually *refusing* a forbidden `UPDATE`/`DELETE` (`M14.29`), and the `Bool`
+CHECK actually *rejecting* `2` (`M14.8`) — are untouched by this fix. This
+test counts that triggers exist; it does not exercise what they do. Checked,
+not assumed: neither behaviour appears anywhere in `fhir-oracle-store`'s own
+live suite either — `grep -rl "M14.29\|M14.8" fhir-oracle-store/tests/`
+finds nothing. **Filed and fixed the same day as F-97.**
 
 ---
 
@@ -3629,7 +3843,7 @@ reader to paste it.
 ### The gate was built, and it found six more defects
 
 Deferring it was wrong. `scripts/check-shared-core.sh` already establishes that
-a **local** gate is useful here without CI — `AGENTS/release.md` step 0c invokes
+a **local** gate is useful here without CI — `agents/release.md` step 0c invokes
 one — so "worth little until F-49" was an excuse rather than a reason.
 
 `scripts/check-doc-examples.sh` extracts every ```` ```rust ```` block from
@@ -3776,7 +3990,7 @@ family of question as **F-58**, and it is the owner's.
 
 ## F-63
 
-**Status text across `doc/` and `AGENTS/` had decayed past the point of being
+**Status text across `doc/` and `agents/` had decayed past the point of being
 wrong.** Severity: Medium. *Found sweeping the root-level documentation after
 the per-port files (**F-62**).*
 
@@ -3790,7 +4004,7 @@ that cause is the same as the stale test counts in **F-55**.
 | `doc/faq.md` | "**Is this a FHIR server?** No." | The ports are not; the repository has one — `fhir-loco`. A reader asking the title question about the repo got the wrong answer |
 | `doc/choosing-an-engine.md` | sqlite/mysql/mariadb have "no concurrency, redaction, or audit test" | All three carry `concurrency.rs`, `redaction.rs`, `roundtrip_types.rs` and `upgrade.rs`; 102–105 tests each, green live |
 | `doc/choosing-an-engine.md` (×2) | the hash-chain pre-image "is still derived in SQL" (**F-07**) | **F-07** is fixed; `canon.rs` is shared and identical in all six |
-| `AGENTS/release.md` | "one port blocked on a High finding: `fhir-oracle` has **F-08**" | **F-08** is fixed. No port has an open High finding of its own — but **every** port is blocked by **F-49**, which that paragraph did not mention |
+| `agents/release.md` | "one port blocked on a High finding: `fhir-oracle` has **F-08**" | **F-08** is fixed. No port has an open High finding of its own — but **every** port is blocked by **F-49**, which that paragraph did not mention |
 
 The last is the most misleading, because it understates: it named one blocked
 port when all six are, for a reason discovered later and never folded back in.
@@ -3819,7 +4033,7 @@ since none has the `bench.rs` it would compare against. *Found checking whether
 six ports.*
 
 `W16.10` is worth pausing on: it names this exact failure and was already in
-the specification. `AGENTS/testing.md` even quotes it verbatim. The requirement
+the specification. `agents/testing.md` even quotes it verbatim. The requirement
 being written down did not stop it from happening, because nothing checked
 `doc/benchmarks.md` against it — the same gap **F-60** found in the doc
 examples one document over.
@@ -4155,19 +4369,56 @@ investigating `O10.7` for this finding, shows `rustls-webpki 0.101.7` and
    there is no available fix (confirmed: `tiberius 0.12.3` is still the
    newest release, checked against the crates.io index the same day), not
    because the exposure is now understood to be small.
-4. **Open: this is a standing residual risk requiring an owner decision,**
-   not a research question with an obvious next experiment — accept it
-   formally with the corrected scope on record, find or fund a different TDS
-   driver, or state that this port's TLS story is unresolved and must not be
-   relied on for its own sake. `M14.24`/`M14.34` in
-   `fhir-mssql/spec/14-mssql-dialect.md` carry the full account.
+4. **Decided, 2026-08-28: accept the risk formally, corrected scope on
+   record, keep shipping.** Not a placeholder — reached after investigating
+   two alternatives first (a from-scratch driver, and a fork of the one
+   upstream fix that exists, `prisma/tiberius#419`), both priced and both
+   set aside; the full account, with real numbers, is in `M14.34` in
+   `fhir-mssql/spec/14-mssql-dialect.md`. What was **not** chosen: finding or
+   funding a different TDS driver (priced at 1–2 weeks for a fork plus an
+   open-ended maintenance tail, or 3–4.5 months from scratch — and neither
+   comes out ahead of the flawed-but-battle-tested incumbent on the trust
+   axis), or stating the TLS story unresolved (rejected because the
+   trust/no-trust *mechanism* is proven correct, and a blanket "unresolved"
+   would understate that).
 
 `O10.7` therefore stays unclaimed for this port, but the claim is now
 precisely diagnosed rather than an open question: the trust/no-trust logic is
 proven correct, and the certificate-parsing code underneath it is proven to
 carry unpatched CVEs — two independent facts, both true at once, and
 conflating them (as "just say verification works" would) is exactly the kind
-of half-true claim this project's audit process exists to catch.
+of half-true claim this project's audit process exists to catch. What
+changed today is that the residual risk this diagnosis leaves behind is now
+an owned decision rather than an open one.
+
+**5. Closed, 2026-08-29 — resolved outright, one day after point 4's risk
+acceptance, by an option that did not exist when the acceptance was made.**
+The owner published `mssql` (github.com/joelparkerhenderson/mssql-rust), a
+fork of `tiberius` maintained specifically to carry forward the security
+fixes tiberius itself never shipped past 0.12.3. This is, in substance, the
+"fork carrying #419's fix" option `M14.34` priced and set aside — but as
+this project's own crate rather than a private or third-party fork, the
+open-ended maintenance tail that made that option unattractive is simply
+this project's ongoing maintenance surface, not a new liability, and the
+"zero maintainer review" problem that disqualified `#419` itself does not
+apply to work reviewed as this project's own.
+
+`fhir-mssql`'s `Cargo.toml` now depends on `mssql` (aliased `mssql-driver`,
+since `fhir-mssql-store` already has a local module named `mssql`) instead
+of `tiberius`, with no other source change needed — the fork kept
+`tiberius`'s public API. The resolved chain is `tokio-rustls 0.26.4` →
+`rustls 0.23.43` → `rustls-webpki 0.103.15`; `cargo tree` confirms none of
+`rustls-webpki 0.101.7`, `rustls-pemfile`, or any of the four advisory
+packages remain anywhere in the workspace. `deny.toml`'s ignore list is
+empty; `cargo deny check` passes clean. The full live suite —
+`mssql_store.rs` (13), `concurrency.rs` (2), `redaction.rs` (2),
+`roundtrip_types.rs` (6), `ssl_live.rs` (1), `upgrade.rs` (16),
+`mssql_ddl.rs` (1), 41 in all — passes against `azure-sql-edge` under the
+new driver (`upgrade.rs` needs `--test-threads=1`; the schema it shares
+across tests deadlocks under default parallelism, a pre-existing test-suite
+property unrelated to the driver). `O10.7` is now claimed, not merely
+diagnosed. **This closes the audit register's last open finding — as of
+this entry, no row in this table is open.**
 
 *Found investigating `O10.7` this pass, triggered by writing
 `tests/ssl_live.rs` and then checking what the store's own dependency tree
@@ -4767,16 +5018,780 @@ sibling books' wording.
 
 ## F-84
 
-**`fhir-mssql`'s and `fhir-oracle`'s `publish.yml` iterate a
-`fhir-<engine>-server` crate, and their `release.yml` build a `fhir-<engine>`
-binary — neither of which exists, as each port's own `tasks.md` and `plan.md`
-correctly state.** Severity: **Medium**, tempered by the fact that these
-workflows are inert (F-49: GitHub does not read `<family>/.github/workflows/`)
-— the fiction cannot currently execute, but the F-27 class-1 cleanup missed
-CI config, and the moment F-49's consolidation copies these files rootward,
-publishing would fail on a nonexistent crate. **Open** — fold into F-49's
-consolidation rather than patching inert files piecemeal.
+**All six ports' `publish.yml` iterate a `fhir-<engine>-server` crate and a
+`fhir-<engine>` CLI crate, and all six `release.yml` build a `fhir-<engine>`
+binary — none of which has ever existed, as each port's own `tasks.md` and
+`plan.md` correctly state.** Severity: **Medium**, tempered by the fact that
+these workflows were inert (F-49) — the fiction could not execute — but the
+F-27 class-1 cleanup missed CI config, and any consolidation or future
+publish would have failed on a nonexistent crate. *(As first recorded this
+named only the two former scaffolds; executing the F-49 consolidation showed
+the same lines in all six — the file was copied per port, like everything
+F-27 catalogued.)* **Fixed** 2026-08-06 with F-49's consolidation: the six
+publish loops now name only the three real crates, each with a comment citing
+this finding, and the six binary-release workflows are deleted outright — a
+release pipeline for a binary that violates `C0.18` by existing is not
+machinery worth keeping inert.
+
+## F-85
+
+**`fhir-oracle` refused every root-level extension.** Severity: Medium.
+Violates `db:R4.1` (any valid resource stores losslessly). Found 2026-08-10,
+by measurement, while designing **F-47** step 5's `path` conversion — not by
+any of the port's seven live store tests, none of which stored a root-level
+extension.
+
+A root-level extension — `{"resourceType": "Patient", "extension": […]}`,
+the shape every US Core profile uses — shreds to an ext row whose attach
+path is `""`. This engine binds `''` as NULL (`M14.29a`'s root cause), and
+the `"path"` column was `CLOB NOT NULL`, so the insert failed outright:
+
+```text
+ORA-01400: cannot insert NULL into ("R5"."patient_ext"."path")
+```
+
+The read side had already half-anticipated the answer: it maps a NULL
+`path` back to `""` (`unwrap_or_default`). What was missing was the write
+side's half — the column must be **nullable on this engine**, because
+`NOT NULL` here forbids a value every other port stores routinely. That is
+now `M14.39`: NULL is the empty attach path's stored form; the columns
+(`ext` and `deep` both, for one rule) are nullable where every other
+port's annex says `NOT NULL`.
+
+**Fixed both ways, live-verified (`tests/root_extension.rs`,
+`tests/upgrade.rs`):** a fresh install gets the nullable bounded column
+from `create_table` (F-47 step 3's arm, corrected); an existing install
+gets it from F-47 step 5's conversion, whose replacement column is
+nullable — and the step-5 test's sharpest assertion is exactly this
+finding's payoff: after upgrading a legacy schema, the root-level
+extension that ORA-01400'd before now round-trips. The legacy DDL arm
+(`path_bound = 0`) deliberately keeps `CLOB NOT NULL`: it reproduces the
+historical schema *including this defect*, because `G2.2` says an old
+asset reinstalls the schema it always made — the upgrade, not the
+emitter, is what fixes deployments.
+
+`leaf` was checked for the same exposure and does not have it: an empty
+leaf arises only from a spilled scalar, and every spilled FHIR datatype
+is an object.
+
+## F-86
+
+**The model family rejects null-padded primitive arrays.** Severity: Medium.
+Family: `fhir/` (every release crate — verified on R5 and R4B; the
+representation is shared). Violates the losslessness the model claims for
+valid FHIR JSON. Found 2026-08-10, by `fhir-r4b`'s full-corpus gate — the
+first corpus to exercise the form.
+
+FHIR JSON represents a repeating primitive with extensions as two parallel
+arrays, and a position that carries only an extension is a **null** in the
+value array: `"event": [null]` beside `"_event": [{…}]`. That is valid —
+HL7®'s own R4B examples use it (nine of them). The model's repeating
+primitives are `Vec<T>`, so the null cannot deserialize (`invalid type:
+null, expected a string`) and, worse, cannot be *represented*: there is no
+way to hold "no value at index 0" in a `Vec<types::DateTime>`. The R3/R4/R5
+corpora pass only because HL7's copies of the same examples omit the value
+array entirely (`"_event"` alone), which the parallel-`Vec` layout happens
+to accept.
+
+Fixing this is a representation decision — `Vec<Option<T>>` for repeating
+primitives, or a dedicated container — that changes the generated API in
+all six release crates at once. Recorded, not rushed: the R4B corpus gate
+carries the nine affected examples as named known failures citing this
+finding ("a bug with a note attached, not an exemption", R13.2).
+
+Since F-87's same-day fix, the failure mode is honest: such a document is
+**refused with a loud error** rather than parsed minus its element. The
+ext-only primitive-choice form (`_valueX` with no `valueX`) is likewise
+refused by name — it is this finding's other unrepresentable shape.
+
+**Fixed 2026-08-10, the same day, owner-directed: a dedicated container.**
+`fhir_core::PrimVec<T>` (spec `R6.7a`, `R9.1a`) is the value array as the
+wire defines it — transparently `Vec<Option<T>>`, `None` the
+extension-only placeholder, serialized back as the same `null` so the wire
+form round-trips exactly. Every `0..*` primitive field in all six release
+crates now uses it: the emitter switches on the repeating-extension
+sibling, the `Builder`/emptiness derives treat `PrimVec` like `Vec`, and
+construction stays ergonomic (`vec![…].into()`, `.values()` skips
+placeholders). Five trees regenerated; R5's hand tree converted
+field-by-field with the drift gate as referee — it caught the first splice
+being wrong in *both* directions (missed `Coded<…>` repeating codes;
+over-converted same-named complex fields in `TestScript`, `ValueSet`,
+`DeviceDefinition`) and the comparator learned that rustfmt's trailing
+comma in a wrapped generic is formatting, not drift. The gate then
+demanded the R4B allowlist shrink: all nine null-padded examples
+round-trip, so `KNOWN_FAILURES` is empty again.
+
+**Stated residual** (also in `R6.7a`): `1..*` repeating primitives keep
+`vec1::Vec1<T>` and its compile-time non-emptiness, so an extension-only
+position in a *required* repeating primitive remains unrepresentable. No
+example in any official corpus uses that shape; if one ever arrives it is
+refused loudly (F-87), never silently dropped.
+
+## F-87
+
+**A choice element that fails to parse is silently dropped.** Severity:
+**High** — this is data loss masquerading as success, in a clinical data
+model. Family: `fhir/` (the choice machinery is shared by every release).
+Found 2026-08-10, in the same nine examples as F-86.
+
+The probe that proves it, run against `fhir-r4b`: a `Timing` whose `event`
+is null-padded fails to deserialize **as a type** (`invalid type: null` —
+F-86), but the *resource* containing it in `timing[x]` deserializes
+without error and simply lacks the element; re-serialization then emits
+the resource minus its `timingTiming`. A round-trip that quietly deletes
+a dosing schedule is the exact failure mode a health-data model exists to
+prevent — worse than refusing the document outright, because nothing
+tells the caller anything happened.
+
+The fix is behavioural, not representational, and is independent of
+F-86's: the generated choice deserialization must propagate an inner
+parse error instead of treating it as "variant not present". F-86 decides
+what parses; F-87 decides that what does not parse **errors**.
+
+**Fixed 2026-08-10, the same day.** The root cause was pinned by a layered
+probe: the choice enum's own `Deserialize` propagates errors correctly;
+serde's flatten machinery is what turns any error inside a flattened
+`Option<T>` into `None` — and the swallow is `Option`-specific (a
+flattened non-`Option` field propagates). So the fix removes `Option` from
+the deserialization path without touching the public API: each release
+crate gains `choice::Slot<T>(pub Option<T>)`; `#[derive(FhirChoice)]` now
+emits a `Deserialize` for `Slot<Enum>` alongside the enum's own — absence
+of every variant key is the one legitimate `None`, a present-but-invalid
+payload propagates its error, and a consumed-but-unbuildable element (a
+`_valueX` extension without its value, previously also dropped silently)
+refuses by name. The generator emits, for every choice-bearing struct, a
+private shadow struct (same fields, choice fields as bare `Slot`s) and
+routes the real struct's derive through it with `#[serde(from = "…De")]` —
+public field types unchanged. Applied to all six release crates: five
+trees regenerated; R5's hand-documented tree spliced from its **own
+committed** field types (a first splice from the generated tree
+miscompiled exactly where R5's drift is sanctioned — `Coded<E>` versus
+plain codes — which is the drift gate's point). Verified: the probe that
+found the bug now errors loudly while the valid form round-trips
+unchanged; default and all-features suites green; the R2 spec suite and
+the full R3, R4, R5 and R4B corpora re-run green — the nine R4B
+known-failure examples now fail **deserialization** (the honest outcome)
+instead of silently losing their `timing[x]`, and remain allowlisted
+under F-86 until the representation gap closes.
+
+## F-88
+
+**The consolidated port workflows (F-49) left three per-job settings
+unrooted, and the first hosted runs exposed all three at once.** Severity:
+**High**. Family: databases, all six ports (CI only — no source defect).
+
+Consolidating every family's CI to the repository root (`F-49`) moved
+`working-directory` from implicit (each port's own workflow file, checked
+out at its own root) to explicit (`defaults.run.working-directory` per
+job) — and three settings depended on the old implicit rooting in ways
+nobody had re-checked against the new explicit one:
+
+1. **`cargo deny` ran at the repository root** rather than the port's own
+   `deny.toml`, so it errored outright instead of checking the manifest
+   that actually matters.
+2. **The spec/corpus environment paths pointed at the repository root**
+   while the fetch steps that populate them wrote under the port
+   directory — so every spec-dependent live test found nothing at the
+   path it looked for and self-skipped. This is `T11.12`'s failure mode
+   at workflow scale: the "live gate" reported green while testing
+   nothing, on every port, on the first hosted run.
+3. **The plaintext PostgreSQL job carried no explicit `PGSSLMODE`**, so
+   the store's secure-by-default `require` (`O10.7`, **F-17**) correctly
+   refused a plaintext connection it was never told to accept — surfaced
+   only because the two new `history_page` tests happened to be the sole
+   live tests that actually connected that run; everything else had
+   already gone silent under defect 2.
+
+**Fixed 2026-08-10.** Paths re-rooted to each port's own directory and
+`cargo deny` given its manifest explicitly, in all six workflows; the
+plaintext job now says `PGSSLMODE=disable` explicitly, with the TLS-only
+job carrying `require`; and a vacuity guard added to the PostgreSQL live
+step fails the build outright if anything self-skipped, so defect 2's
+exact failure mode — a green run that tested nothing — cannot recur
+unnoticed.
+
+*Found investigating why the first hosted run of the consolidated
+workflows looked green everywhere and proved almost nothing — three
+independent settings, each individually plausible, compounding into one
+gate that passed without exercising the thing it existed to check.*
+
+## F-89
+
+**The MySQL/MariaDB DDL test harness was unportable, and its failure mode
+was to mask the real error rather than report it.** Severity: **Medium**.
+Family: `fhir-mysql`, `fhir-mariadb`.
+
+Three independent portability assumptions, each wrong on at least one
+runner:
+
+- It passed MariaDB's `--skip-ssl-verify-server-cert` flag to whichever
+  `mysql` client happened to be on `PATH` — Oracle's own MySQL 8 client
+  rejects a flag that is specifically MariaDB's, so the harness failed
+  before it reached the schema it was meant to test.
+- It assumed a `utf8mb4` default client charset. A runner whose client
+  defaults to `utf8mb3` failed the collation probe with `ERROR 1253`, a
+  message about a comparison the harness never intended to make.
+- On any early client exit, it reported the shell pipeline's own `Broken
+  pipe` (from writing SQL into a process that had already exited) instead
+  of reading the client's own `stderr` — so whichever of the two defects
+  above actually fired, the error a maintainer saw named neither.
+
+**Fixed 2026-08-10.** The TLS flag is now gated on which client flavor is
+actually present; the client is invoked with an explicit
+`--default-character-set=utf8mb4`; and an early client exit falls through
+to collect and report `stderr` instead of the pipe error, so the next
+failure — whatever it turns out to be — names itself instead of hiding
+behind a shell artifact.
+
+*Found the same pass as F-88, running the newly consolidated workflows
+for the first time on a runner whose defaults differed from the machine
+the harness was originally written against.*
+
+## F-90
+
+**The full R3/R4/R5 schemas do not install on stock MySQL 8.4 / MariaDB
+11.4.** Severity: **High**. Family: databases, all six ports (the split
+structure is shared shape). Found 2026-08-10 by the first full-schema CI
+install — `DDL_FULL=1` is CI-only, local suites sample the first 25
+resources alphabetically, and the 2026-08-03 "green against live MySQL
+8.4" predates the widest tables' exercise. Unmasked by F-89's harness
+fix, which let the client's stderr through.
+
+InnoDB refuses a table at CREATE time (`ERROR 1118`) once its charged
+row size passes 8126 bytes, charging ~41 bytes per TEXT-family column —
+measured by bisection against a live server: 195 TEXT columns install,
+196 do not. The generator's only width bound was `G2.6`'s column count
+(`SPLIT_WIDTH = 150`), which two shapes defeat: sibling expansions each
+under the threshold sum without limit (`explanation_of_benefit`'s base,
+232 columns), and a split-out choice table carries every variant's
+columns inline (the open-typed `value[x]` splats —
+`parameters_parameter_value`, `task_input_value`, the
+`StructureDefinition` element `defaultValue`/`fixed`/`pattern`/`example`
+tables — ~190–211 TEXTs each). The dialect cannot fix it alone: the
+tables are map-shaped and the stores write by table name.
+
+**Fix landed 2026-08-11, at the shared generator (`G2.6a`).** The
+builder now carries a per-column byte model of the tightest engine
+(TEXT-family 41, integers/dates at their charge, adjunct-only types 0
+since InnoDB ports never render them) and a running-accumulation
+force-split: once a table's charge would pass the 6,600-byte trigger,
+every further expansion that can own a table is forced into one —
+threaded through backbone, contentReference, choice (whole and
+per-variant), and typed builds. The finished map, after the search
+phase adds its fold columns, is asserted under a 7,900-byte budget:
+generation fails loudly, the install never does. The widest resulting
+table charges 6,611 bytes (r5 `explanation_of_benefit`). All 18 map
+assets and the six fuzz fixtures were regenerated; `gen/tests/
+row_budget.rs` re-checks the bundled artifacts in every port, and the
+shared-core gate covers the new file (110 files identical).
+
+**Sequenced residual, F-47-style:**
+
+1. ~~Generator fix + regenerated artifacts~~ — live-verified
+   2026-08-11: full R3/R4/R5 installs green on MySQL 8.4 (397s of
+   CREATEs) and MariaDB 11.4, and the mysql/mariadb workflows fully
+   green for the first time in the project's history. The first real
+   store-suite execution the fix unmasked is **F-91**.
+2. ~~Upgrade guard~~ — landed 2026-08-12 as **`O10.4b`** (a moved
+   column is not a drop), in all six stores: `moved_columns` detects a
+   dropped column — or a column of a dropped table — whose element
+   path reappears in a different table, the store checks the source
+   for data in its own dialect, and a data-bearing move refuses by
+   name **independent of `allow_destructive`**, naming the
+   disposition (re-put the affected resource types, or reload); an
+   empty source proceeds through the ordinary destructive gate. The
+   guard runs before that gate, because "rerun with
+   --allow-destructive" is exactly the wrong advice for a relocation.
+   Two live tests per port (refusal despite the flag; empty source
+   proceeds); sqlite's ran green locally, the server ports' run in
+   their CI live jobs. A resource-level re-shred migration
+   (reconstruct under the stored old map, shred under the new)
+   was owner-directed 2026-08-12 and is being landed F-47-style, one
+   port per verified step, as **`O10.4c`**:
+
+   1. ~~`fhir-sqlite`~~ — landed 2026-08-12: `upgrade_with` +
+      `UpgradeOpts.reshred_moved` (plain `upgrade` unchanged);
+      `fetch_recon_input` factored from `get` so reconstruction can run
+      under the stored old map; the re-shred sits inside the single
+      upgrade transaction between adds and drops, preserves
+      `version_id`/`last_updated`, writes no history entry, verifies
+      each resource byte-identical, and re-runs the moved-data check
+      before the drops. Tested against the *real* pre-G2.6a r5 map
+      (committed as a fixture from `fb8f27e`): 331 relocated columns,
+      a `valueReference` carried across, refusal still fires without
+      the opt-in, rerun re-shreds nothing. `UpgradeReport.reshredded`
+      and `UpgradeOpts` live in `fhir-store` (0.2.0 — the new field is
+      semver-breaking; six dependents bumped).
+   2. ~~`fhir-postgresql`~~ — landed and **live-verified** 2026-08-21
+      against PostgreSQL 18 in the `scripts/db.sh` podman container: `upgrade_with` + `UpgradeOpts.reshred_moved`
+      (plain `upgrade` unchanged); `get_in_map` factored from `get_in`
+      so reconstruction can run under the stored old map;
+      `insert_shredded` gained an explicit `last_updated` so a carried
+      resource keeps its timestamp. The dialect story is **`M14.29`**:
+      one transaction per resource, resumable rather than atomic,
+      because this port chunks its DDL to stay inside a lock budget.
+      Its cost is stated rather than buried — between the additive DDL
+      and the last resource carried, an un-carried resource
+      under-returns the moved element, a window SQLite's single
+      transaction does not have. Two tests added on the synthetic
+      relocation the two `O10.4b` tests already use; PostgreSQL has no
+      real pre-G2.6a fixture, because that force-split was driven by
+      InnoDB's row limit and relocated nothing here.
+
+      Both new tests **failed on their first real run**, and the cause
+      is worth recording because it invalidated an assumption the two
+      existing `O10.4b` tests had been carrying since they were
+      written. `with_multiple_birth_moved` moved one column between
+      tables in the map — enough for the DDL diff to report a
+      relocation, and so enough for a test that only checks that the
+      upgrade refuses. It was **not** a map anything could be written
+      through: `shred` routes an element by `Elem.table` in the node
+      arena, not by which table lists the column, so it kept sending
+      `multipleBirthBoolean` at the base table and the insert panicked
+      on a column no longer there. `O10.4c` is the first caller that
+      shreds through a moved map, which is why it was the first to
+      notice. The helper now moves every variant of the choice — a
+      force-split choice owns its table for all of them — and repoints
+      the element. The full store suite is green against the container:
+      29 tests, 11 binaries.
+
+      **The same latent defect was in `fhir-mysql` and `fhir-mariadb`,
+      and their copies of the helper said so out loud**: "the map is
+      deliberately not shred-consistent afterwards — `upgrade` only
+      reads table shapes, and nothing is written through it". True when
+      it was written, and false the moment `O10.4c` wrote through it.
+      Both are fixed the same way. No other caller shreds through a
+      hand-modified map, so those three ports' `O10.4b` tests were the
+      whole blast radius.
+   3. ~~`fhir-mysql` and `fhir-mariadb`~~ — landed and
+      **live-verified** 2026-08-21 against MySQL 8.4 and MariaDB in
+      their `scripts/db.sh` podman containers, 44 tests green in each.
+      One logical change across the pair: `write_shredded` and
+      `recon_with_map` factored out of `put` and `get` so the migration
+      writes and reads through the same paths every other operation
+      uses, then `upgrade_with` between the additive and destructive
+      DDL. The dialect story is **`M14.38`** in both — reported-partial,
+      because `M14.22` already is: these engines commit DDL implicitly,
+      so the *schema* change cannot be transactional. What InnoDB can
+      still give is that no single resource is half-carried, and
+      `M14.38` states that alongside the read window it shares with
+      PostgreSQL.
+
+      One live-only defect, found on the first run: the port reads
+      `last_updated` back in order to preserve it, and the driver hands
+      back a temporal value rather than text, so the tuple conversion
+      panicked. Every other reader of that column in the file already
+      wrapped it in `DATE_FORMAT`; this one now does too. Compiling
+      could not have found it.
+   4. ~~`fhir-mssql`~~ — landed and **live-verified** 2026-08-22
+      against SQL Server in its `scripts/db.sh` podman container, 38
+      tests green. It is the one server port whose story is
+      **all-or-nothing** (`M14.39`): T-SQL's DDL is transactional and
+      the upgrade already ran as a single transaction, so the re-shred
+      goes inside it and there is no window in which an un-carried
+      resource under-returns the moved element. Its read path needed no
+      surgery — `read_resource_rows` already took a map explicitly.
+   5. ~~`fhir-oracle`~~ — landed and **live-verified** 2026-08-22
+      against `gvenzl/oracle-free`, 16-test upgrade suite green on the
+      first run. Story is **resumable** (`M14.40`), matching what this
+      port's upgrade already was: every DDL statement commits
+      implicitly and tolerates "already applied", so the re-shred
+      commits per resource to match.
+
+   **F-90's O10.4c migration is complete across all six ports.** The
+   four failure stories are genuinely different and each is written
+   down at the port's own id rather than generalised: sqlite
+   all-or-nothing (`M14.31`), mssql all-or-nothing (`M14.39`),
+   postgresql resumable-with-a-read-window (`M14.29`), mysql/mariadb
+   reported-partial (`M14.38` in each), oracle resumable (`M14.40`).
+   Every one of them states the read window where it exists, because
+   `O10.4` asks for a failure story and a story with only the
+   reassuring half satisfies that on paper and not in fact.
+
+   A defect in step 1 was found while starting step 2 and is fixed
+   here: the `fhir-store` 0.2.0 bump reached all six ports'
+   manifests but only `fhir-sqlite`'s `Cargo.lock`. The other five
+   still pinned 0.1.1, so `cargo check --locked` — what every port's
+   `msrv` job runs — would have failed on all five. Regenerated.
+
+## F-91
+
+**The mysql/mariadb store suites never ran in CI, and their first run
+found the job's TLS story missing.** Severity: Medium (test coverage —
+the store itself behaved correctly). Found 2026-08-11, by F-90's fix:
+the DDL step ahead of the store step had failed on every hosted run, and
+cargo stops at the first failing test binary, so `concurrency.rs` (first
+alphabetically) and everything after it had never executed here. The
+step's own name still said "expected to skip until T64", which had been
+false since the stores were ported to their native drivers — the
+2026-08-03 "green against live MySQL 8.4 / MariaDB 11.4, 102 tests" was
+measured locally and stayed unexamined in CI behind the mask.
+
+The failure itself was the store working: `connect` verifies TLS by
+default (F-54), the service containers present auto-generated
+self-signed certificates, and the suite refused them with
+`UnknownIssuer`. The job, unlike the pg one after F-88, had never
+declared whether its link is plaintext-by-design.
+
+**Fixed 2026-08-11**: both live jobs set `FHIR_MYSQL_SSL_MODE` /
+`FHIR_MARIADB_SSL_MODE: DISABLED` with the same comment discipline as
+pg's `PGSSLMODE: disable`; `ssl_live.rs` is unaffected — it constructs
+its modes programmatically and still proves verification fails against
+the same self-signed server. The step is renamed to what it does, and
+the workflow's rationale for the still-missing TLS-only job no longer
+cites T64: the honest gap is a `require_secure_transport=ON` server, so
+the plaintext-refusal half of `O10.7` gets exercised on these engines
+too.
+
+## F-92
+
+**Two more suites that were never really running.** Severity: Medium
+(test coverage). Found 2026-08-12 by the discipline F-91 taught: after
+a green run, check the tests you care about actually executed. The
+O10.4b moved-column tests were confirmed running on pg and mysql — and
+the same check exposed two ports where they could not have:
+
+- **fhir-mariadb**: the main store suite, `mariadb_store.rs` (13
+  tests), read `FHIR_MYSQL_TEST_DSN` — the *mysql* port's variable, a
+  copy-substitution miss of the F-01 genre — while the CI job sets
+  `FHIR_MARIADB_TEST_DSN`. Every test printed "skipping" and passed.
+  The file's own header said "Skips silently", which was truer than
+  intended. The port's other suites (concurrency, upgrade, redaction,
+  ssl_live) used the right variable and did run.
+- **fhir-mssql**: the live job had no store-suite step at all. The
+  workflow was written when the port had no store and still said
+  "cannot be written honestly until there is a store" — stale since
+  **F-65** built one and F-47 gave it 12 live upgrade tests, all of
+  which had only ever run locally.
+
+**Fixed 2026-08-12**: the variable renamed (14 sites, one file); the
+step added, with TLS intent already declared in the job's DSN
+(`TrustServerCertificate=true` — the F-91 lesson applied rather than
+relearned); both stale workflow rationales rewritten to name their real
+remaining gaps. Verification is the next push executing both suites in
+CI for the first time — and whatever that first execution unmasks is
+the next finding, not a regression of this one.
+
+---
+
+## F-93
+
+**Medium.** Found 2026-08-26 by the CI-watch loop, working backward from the
+run history: `fhir-oracle CI` had not been green since 2026-08-22 04:22, and
+the first red was the run for the commit that *added* the `O10.4c` re-shred —
+a commit whose message claimed it live-verified. The claim was true of a
+local run and false of every hosted one, which is this register's oldest
+genre (F-27, F-92): verification asserted, never re-checked where it counts.
+
+**The first defect.** `recon_with_map` — the read path the re-shred uses both
+to reconstruct under the old map and to verify the rewrite under the new
+one — ended with `let _ = conn.rollback();` (and carried a second one on its
+not-found early return): hygiene, so a pooled connection went back clean.
+Under `get` that is harmless; the reads lock nothing. But the re-shred's
+verify runs **inside the per-resource write transaction**, so the sequence
+was: `DELETE` the base row, re-insert base and children under the new shape,
+read it all back (visible — same transaction), compare canonically (equal),
+*rollback everything*, then `commit()` a transaction that no longer had
+anything in it. The old row's data was still in place, and the leftover
+guard — checked before any column is dropped, exactly as designed — refused
+with "re-shred left data behind … rerun to resume". Diagnosed by bracketing
+the commit with probes: the moved-table row was visible to the verify and
+already gone one statement later, on the same connection, before the commit.
+
+**The second defect, unmasked by fixing the first.** With commits real, the
+suite failed differently on its second consecutive run: `ORA-00001` on
+`patient_multiple_birth_moved (rid, ords)`. `drop_schema` iterated the
+*connected map's* tables — and a relocated-column table belongs to no
+original map, so it survived the drop with its rows but not its FKs (those
+died with the parent's `CASCADE CONSTRAINTS`), and the next run's re-shred
+collided with the residue. `fhir-mssql`'s `drop_schema` had always been
+catalog-driven (`sys.tables` for the schema); the oracle port now matches,
+sweeping `user_tables` — `M14.5` puts each FHIR version in its own Oracle
+user, so the connecting user's tables are exactly this store's world.
+
+**Verification (2026-08-26, Oracle Database Free 23):** the upgrade suite
+16/16 **twice consecutively** — the second pass is the point; it exercises
+the residue class the first defect had been hiding — plus `oracle_store`
+7/7 and `root_extension`, `fmt` and `clippy -D warnings` clean.
+
+**Identified during analysis, not yet exercised, left open deliberately:**
+resuming a re-shred that died mid-run looks wedged for already-carried
+resources. On a rerun, the stored map is still the old one, so a carried
+resource is reconstructed through the old map — which reads the base column
+the carry emptied — while the verify reads the moved table that holds the
+value; the two cannot match, and the per-resource rollback (correctly)
+refuses forever. No data is lost — that guard is doing its job — but "rerun
+to resume" would then be a promise the carried rows break. Untested; whoever
+next touches the re-shred should write the kill-mid-run test before
+believing either outcome.
+
+**One more thing this diagnosis re-learned, recorded because it will happen
+again:** part of an earlier session's investigation ran the suite without
+the `FHIR_ORACLE_TEST_*` variables set and read six consecutive "ok" results
+as passes. They were skips — the suites self-skip without credentials, and a
+skipping test is indistinguishable from a passing one in the summary line
+(T11.12, F-91's lesson, relearned live during the very finding that cites
+them).
+
+## F-94
+
+GitHub's push output on `ecfe339` reported "5 vulnerabilities (1 high, 4
+low)". `gh api repos/fhir-rust/fhir-rust/dependabot/alerts` gave the exact
+five: three were `rustls-webpki` in `fhir-mssql/Cargo.lock` — **F-67**,
+already tracked, already open, already awaiting the owner's decision, and
+correctly left untouched here. The other two named a crate this register had
+not seen before: `lru`, `GHSA-rhfx-m35p-ff5j`, one alert each in
+`fhir-mysql/Cargo.lock` and `fhir-mariadb/Cargo.lock`.
+
+`cargo tree -i lru` in both ports showed the same shape: `lru 0.12.5`, a
+normal (not dev) dependency of `mysql_async 0.34.2`, which is a normal
+dependency of the store crate itself. `mysql_async`'s own manifest pins
+`lru = "^0.12"`, so `cargo update -p lru` alone cannot move it — confirmed by
+trying: `cargo update -p lru --precise 0.16.3` (the first patched version)
+fails with "candidate versions found which didn't match: 0.16.3 ... required
+by ... mysql_async v0.34.2". The advisory can only close by moving
+`mysql_async` itself.
+
+Checked before choosing a target rather than jumping to latest: `mysql_async`
+0.35.0 and 0.35.1 still require `lru ^0.12`; 0.36.0 moved to `^0.14`, still
+short of the `0.16.3` fix; 0.37.0 requires `^0.18`, clearing it. `0.37.0` is
+also `mysql_async`'s current latest release, so this is not settling for an
+intermediate — it is the only version in the 0.35–0.37 line that fixes
+anything, and it happens to be the newest.
+
+Applied identically to both ports (`mysql_async = "0.37"` in each workspace
+manifest, `cargo update -p mysql_async --precise 0.37.0`), then verified
+before being trusted rather than after: `cargo check --all-targets --locked`
+green in both, the offline unit suite green in `fhir-mysql-store` (50 tests
+across `fold`, `value`, `ssl`, `mysql` — no database needed, per `T11.12`'s
+discipline about tests that require nothing to pass vacuously), and
+`cargo deny --all-features check advisories` reporting `advisories ok` with
+no warning in either port.
+
+**A second, smaller thing the bump exposed.** Each port's `deny.toml` carried
+an `ignore` for `RUSTSEC-2025-0134` (`rustls-pemfile`, unmaintained), reasoned
+at length when it was written. Running `cargo deny` after the bump printed
+`warning[advisory-not-detected]: advisory was not encountered ... no crate
+matched advisory criteria` — `rustls-pemfile` had already dropped out of the
+dependency tree as a side effect of the `mysql_async` update (confirmed:
+`grep -c 'name = "rustls-pemfile"'` returns `0` in both lockfiles), and the
+ignore rule had gone silently dead. `cargo deny` warns rather than fails on
+this, so nothing would have caught it without a human reading the warning
+line. Removed the entry in both `deny.toml` files with a dated comment
+recording why the exception disappeared, rather than leaving the drop silent
+or the stale reasoning in place.
+
+**A process finding worth generalizing, not just this instance:** an unmatched
+`ignore` entry is evidence in the *opposite* direction from an unpatched
+advisory — it means a stated risk acceptance no longer describes anything
+real — and `cargo deny`'s default posture (warn, not fail) means it can sit
+unnoticed indefinitely. Nothing in this repository's CI currently fails a
+build on `advisory-not-detected`; whether it should is a smaller, separate
+question from this finding, noted rather than decided here.
+
+## F-95
+
+The push that fixed F-94 (`259e209`, an unrelated CI workflow change layered
+on top) turned four hosted jobs red: `fhir-mysql CI`'s and `fhir-mariadb
+CI`'s live-database jobs, both failing at the same step, `Store live suite`.
+`gh run view --json jobs` narrowed it to one test each:
+`tls_is_configurable_and_verification_is_not_a_no_op`, in `tests/ssl_live.rs`
+in both ports.
+
+The panic named its own cause: `rustls::crypto::CryptoProvider::get_default()`
+found nothing installed. `mysql_async 0.34`'s `rustls-tls` feature apparently
+selected a crypto backend implicitly; `0.37`'s manifest, fetched and read
+rather than guessed at, shows the split explicitly —
+`default-rustls-ring = ["default-rustls-no-provider", "ring"]` and the
+`aws-lc-rs` equivalent both layer on top of a `default-rustls-no-provider`
+base that `rustls-tls` alone resolves to. Enabling `rustls-tls` without also
+naming a provider feature is valid to cargo and broken at first real use — the
+exact shape of defect a compiler cannot catch and only an exercised code path
+finds.
+
+**Why this got past the F-94 verification that immediately preceded it.**
+That entry's own text says what was run: `cargo check --all-targets --locked`
+and `cargo test --locked --lib --bins`. `--lib --bins` is precise about what
+it excludes — everything under `tests/`, which is where integration tests
+live in a cargo package, and `ssl_live.rs` is one. It cannot fail an
+invocation that never compiles it. Worse, even `cargo test` without `--lib
+--bins` would not have caught this in an ordinary developer run: `ssl_live.rs`
+self-skips without `FHIR_MYSQL_TEST_DSN`/`FHIR_MARIADB_TEST_DSN` set, so it
+only ever executes inside the live-database CI job, against a real service
+container. No unit test, and no offline integration test, exercises this
+path — by design, since it is inherently about a live TLS handshake. The
+hosted live job was always the first and only place this could be caught, and
+it was not consulted before the push.
+
+**Fixed** by reproducing before trusting the fix, not the reverse. Brought up
+each port's own dev container (`fhir-mariadb`'s and `fhir-mysql`'s
+`scripts/db.sh up`, already running from earlier work), ran
+`cargo test --release -p fhir-<port>-store --test ssl_live` against it with
+the pre-fix manifest, and got the identical panic locally, live, before
+changing anything — confirming the local containers reproduce what hosted CI
+saw rather than assuming they would. Added the `ring` feature (both
+manifests): pure Rust, no C compiler or cmake, chosen over `aws-lc-rs` to keep
+faith with the adjacent comment's existing reason for preferring rustls over
+native-tls at all. Re-ran the same command against the same running
+containers: both tests green. Then, because a fix verified only on the test
+that caught it is exactly F-91/F-92's failure shape one level up, ran every
+test binary in both stores with no output truncation this time —
+`mysql_store`, `concurrency`, `redaction`, `roundtrip_types`, `ssl_default`,
+`ssl_live`, `upgrade` — 44 tests, 0 failed, and re-checked
+`cargo deny --all-features check advisories` clean in both.
+
+**The lesson, stated so the next dependency bump does not relearn it:** a
+crate that ships integration tests gated on live infrastructure has coverage
+its own default `cargo test` cannot demonstrate, and a change to that crate's
+dependency graph is not verified until the gated tests have actually run
+against the infrastructure they need — this repository's own container
+scripts make that a two-command check (`scripts/db.sh up`, then the live test
+target), and the excuse of "unit tests were clean" was not good enough here.
+
+## F-96
+
+Found in the same pass, unrelated to F-94/F-95: `fhir Security Audit`'s
+`cargo-deny` matrix also failed on `fhir-postgresql` and `fhir-loco` (which
+depends on it), with `error[yanked]: detected yanked crate (try `cargo update
+-p chacha20`)`. `chacha20 0.10.1` reaches both through
+`rand 0.10.2 -> postgres-protocol -> tokio-postgres -> fhir-postgresql-store`,
+a chain neither this session's mysql/mariadb work nor **F-94** touched at
+all — crates.io yanked the version out from under two lockfiles that had
+already pinned it, and `yanked = "deny"` (the same `deny.toml` line that makes
+**F-94**'s dead-ignore detection possible) is what caught it on the next push
+rather than the one that actually introduced the pin.
+
+**Fixed** by doing exactly what `cargo deny`'s own error message named:
+`cargo update -p chacha20` in both `fhir-postgresql` and `fhir-loco`
+(`0.10.1` → `0.10.2`). Verified `cargo deny --all-features check advisories`
+clean in both afterward, and `cargo check --all-targets --locked` green in
+both.
+
+## F-97
+
+**F-51**'s own closure said it plainly rather than leaving it implicit: two
+behaviours this port relies on were verified only by hand, or only by a
+unit test checking the *shape* of generated SQL text, never by exercising
+the real engine. Both are exactly the class of defect a text-shape check
+cannot catch — `M14.29a` already lived through this once: the trigger's
+first version "was written, installed, and observed letting an ordinary
+DELETE through with no error," because `NVL(x, '') != 'y'` evaluates to
+NULL rather than TRUE when Oracle folds the empty string to NULL, and the
+`ELSIF` simply never fired. It read as correct. A `CHECK` clause that
+parses but never actually constrains anything would pass `ddl.rs`'s own
+unit test (which asserts the clause's text is present) the identical way.
+
+Checked before writing a test, not assumed: neither behaviour appeared
+anywhere in `fhir-oracle-store`'s live suite either (`grep -rl
+"M14.29\|M14.8" fhir-oracle-store/tests/` — nothing). Both were genuinely,
+completely untested against a real server.
+
+**Fixed** with `crates/fhir-oracle-map/tests/oracle_constraints.rs`, live
+against `gvenzl/oracle-free`, reusing `oracle_ddl.rs`'s admin-connection
+pattern (`M14.5`: provisioning a fresh schema means provisioning a fresh
+user). Both constraints are generic enough not to need the full generated
+Patient schema — `append_only_triggers` takes only a schema and table name,
+and the boolean CHECK only needs one `Bool` column — so each test builds a
+minimal synthetic table and applies the exact PL/SQL or DDL the generator
+emits, isolated from shredding concerns this finding was never about.
+
+- **The trigger test** seeds one row, then asserts an `UPDATE` is rejected
+  with exactly `ORA-20001` and an undeclared `DELETE` with exactly
+  `ORA-20002` — not merely `is_err()`, which is precisely the distinction
+  `M14.29a`'s bug hid: a silently-succeeding forbidden DELETE and a
+  correctly-rejected one both "work" if only the boolean is checked.
+  Confirms the row survives the rejected DELETE, then confirms the
+  declared-erasure escape hatch (`DBMS_APPLICATION_INFO.SET_CLIENT_INFO`,
+  set and cleared in the same transaction as `M14.29` requires) still
+  removes it.
+- **The CHECK test** inserts `0` and `1` (must succeed), then `2` (must fail
+  with exactly `ORA-02290`, Oracle's constraint-violation code) into a
+  column built with the same `CHECK ("col" IN (0, 1))` clause
+  `create_table` emits.
+
+**Found and fixed in the same pass, not shipped with a known flaw:** the
+first version of this test file gave both `#[test]` functions the same
+throwaway user, on the assumption tests in one binary run one at a time.
+They do not — libtest parallelizes within a binary by default — and both
+tests provisioning (drop-then-create) the same Oracle user at once is
+exactly the "flaky live gate is worse than a failing one" trap
+`mssql_ddl.rs`'s own history already warns about. Reproduced deterministically,
+3 of 3 runs failing the same way, before splitting each test onto its own
+user (`TRIGTEST`, `BOOLTEST`); 0 failures in 5 repeated runs after, plus the
+skip and fail-loud paths both re-confirmed against a genuinely unreachable
+connect string, `--release`, and `cargo clippy -- -D warnings` clean.
+Wired into `fhir-oracle-ci.yml` beside **F-51**'s DDL-install step.
+
+## F-98
+
+**`scripts/check-published-match.sh` can report "ok" for a crate whose
+source has genuinely diverged from what crates.io received, when the
+divergence is a workspace-inherited dependency version.** Severity:
+**Medium** — this is the exact gate `agents/release.md` calls "the gate
+that matters most" (`O10.11`), and it has a real blind spot, not a
+hypothetical one.
+
+The script's own header comment explains why it excludes `Cargo.toml` from
+its packaged-file diff: "cargo normalizes this; the verbatim manifest is
+preserved beside it as `Cargo.toml.orig`, which IS compared, so manifest
+changes are still caught." That reasoning holds for a dependency declared
+directly in a member crate's own `Cargo.toml` — but not for one declared
+`sha2.workspace = true`, whose *resolved* version lives only in the
+workspace root's `[workspace.dependencies]` table, a file that is never
+itself part of any member crate's published tarball. `Cargo.toml.orig`
+preserves the member's own manifest exactly as written — still
+`sha2.workspace = true` — regardless of what the workspace root's
+requirement says today or said at publish time. The normalized `Cargo.toml`
+that `cargo package` actually generates (and that crates.io serves to
+consumers) *does* flatten `.workspace = true` to a literal version, but
+that file is precisely the one the script excludes.
+
+**Found while bumping `sha2` and `sha3` in `fhir-postgresql` and
+`fhir-sqlite`** (closing the underlying dependency-update work Dependabot
+had proposed as three overlapping PRs). After changing the workspace-root
+requirement from `sha2 = "0.10"` to `sha2 = "0.11"`,
+`scripts/check-published-match.sh` reported `34 matched, 0 mismatched` —
+vacuously true only in the sense that it compared the wrong file. The
+crates.io API, queried directly, told a different story:
+`GET /api/v1/crates/fhir-postgresql-map/0.6.0/dependencies` returns
+`sha2 ^0.10` for the version already published — a requirement the local
+tree's new `sha2 = "0.11"` no longer satisfies. Confirmed for all six
+affected member crates (`fhir-postgresql-map`/`-gen`/`-store`,
+`fhir-sqlite-map`/`-gen`/`-store`) the same way, all published at `0.6.0`
+per the API's `max_version`, none of them flagged by the script.
+
+**What this means in practice: the script's "ok" is not proof for any
+crate whose dependency versions are declared via workspace inheritance —
+which, in this repository, is all of them** (every port's `map`/`gen`/
+`store` crates declare their crates.io dependencies as `foo.workspace =
+true`, per `X15.1`'s shared-core convention). A change to a workspace-root
+`[workspace.dependencies]` version can silently pass this gate while
+genuinely violating `O10.11`.
+
+**Not fixed here, worked around instead:** the six affected crates plus
+`fhir-loco` (whose `Cargo.lock` also needed regenerating as a companion,
+for an unrelated but compounding reason — see the commit) were bumped to a
+patch version (`0.6.1`/`0.3.1`) regardless of what the gate reported,
+restoring genuine compliance without relying on the tool to confirm it
+(commit `ca34cdf`). A correct fix needs the script to additionally compare
+each crate's *normalized* `Cargo.toml` — the one `cargo package` actually
+produces, with `.workspace = true` resolved — while still tolerating
+cargo's own cosmetic normalization (key reordering, quoting) so the fix
+doesn't reintroduce the false positives `Cargo.toml.orig` was chosen to
+avoid in the first place. That is real design work, not a one-line patch,
+and is left open rather than attempted under time pressure.
+
+*Found investigating a routine dependency bump, by cross-checking the
+gate's "ok" against the crates.io API directly rather than trusting it —
+exactly the discipline `agents/release.md` asks for and this finding
+exists because, this once, it was actually applied.*
 
 ---
 
 Part of the [fhir-databases specification](index.md).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

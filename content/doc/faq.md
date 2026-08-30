@@ -1,6 +1,6 @@
 # FAQ
 
-## Why not just store FHIR as JSONB?
+## Why not just store FHIR® as JSONB?
 
 Because JSON storage makes writing easy and querying painful, and a clinical
 system does far more querying than writing.
@@ -76,8 +76,8 @@ those suites found five real defects, **F-20**–**F-24**). The remaining `?`
 cells are narrower — see the
 [conformance matrix](../spec/databases/conformance-matrix.md).
 
-`fhir-mssql`: a working store, live-verified (**F-65**) — weigh the TLS
-advisory risk (**F-67**) first. `fhir-oracle`: a working store (**F-68**),
+`fhir-mssql`: a working store, live-verified (**F-65**), with `O10.7`
+satisfied (**F-67** closed). `fhir-oracle`: a working store (**F-68**),
 but `R4.5` snapshot reads are a confirmed open gap and it has no concurrency
 or redaction tests — not yet, for patient data.
 
@@ -214,8 +214,14 @@ remaining substituted documentation.
 
 ## How do I contribute?
 
-[`AGENTS.md`](../AGENTS.md), then the relevant [topic guide](../AGENTS/index.md).
+[`AGENTS.md`](../AGENTS.md), then the relevant [topic guide](../agents/index.md).
 
 The rule that catches everyone: the shared Rust core must be changed in **all
 six ports in one commit** (`W16.7`). Check with `./scripts/check-shared-core.sh`
 before and after; CI runs it too (**F-10** fixed).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

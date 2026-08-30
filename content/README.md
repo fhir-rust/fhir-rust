@@ -1,11 +1,14 @@
 # fhir-rust
 
-A Rust monorepo for [FHIR](https://hl7.org/fhir/): the data model, six
-relational database ports, and an HTTP surface over them.
+A Rust monorepo for the [HL7® FHIR® standard](https://hl7.org/fhir/): the data
+model, six relational database ports, and an HTTP surface over them.
+
+*HL7® and FHIR® are registered trademarks of Health Level Seven
+International — see [Trademarks](#trademarks) below.*
 
 | Family | What it is | Where |
 | --- | --- | --- |
-| **Model** | FHIR R3/R4/R5 (and R2/R6 in spec) as serde-serializable Rust types, generated from the official specification packages | [`fhir/`](fhir/) |
+| **Model** | FHIR® R2/R3/R4/R4B/R5/R6 as serde-serializable Rust types, generated from the official specification packages, one cargo feature per release | [`fhir/`](fhir/) |
 | **Persistence core** | the engine-agnostic half of storage: audit chain, attribution, result types | [`fhir-store/`](fhir-store/) |
 | **Databases** | those resources stored as **real relational tables**, six SQL engines | [`fhir-postgresql/`](fhir-postgresql/) + 5 siblings |
 | **HTTP surface** | a FHIR RESTful API server over one of those stores | [`fhir-loco/`](fhir-loco/) |
@@ -30,7 +33,7 @@ Six ports, one specification, one engine.
 | [`fhir-mysql`](fhir-mysql/) | MySQL 8.4 | **Store** |
 | [`fhir-mariadb`](fhir-mariadb/) | MariaDB 11.4 | **Store** |
 | [`fhir-mssql`](fhir-mssql/) | SQL Server | **Store** — live-verified against `azure-sql-edge`, incl. `upgrade` (**F-65**) |
-| [`fhir-oracle`](fhir-oracle/) | Oracle Database | **Store** — live-verified against `gvenzl/oracle-free` (**F-68**); no `upgrade`, `R4.5` open |
+| [`fhir-oracle`](fhir-oracle/) | Oracle Database | **Store** — live-verified against `gvenzl/oracle-free` (**F-68**), `upgrade`/backfill included (**F-15**, 2026-08-09); `R4.5` open |
 
 Those are conformance levels, defined in
 [`spec/00-conformance.md`](spec/databases/00-conformance.md). They are the honest version:
@@ -60,8 +63,9 @@ types. The two families share a domain and a discipline, not code.
 
 | | |
 | --- | --- |
-| Releases modelled in code | R5 (5.0.0), R4 (4.0.1), R3 (3.0.2) |
-| Releases modelled in its spec | additionally R2 (1.0.2) and R6 (ballot, `publish = false`) |
+| Releases modelled in code | R5 (5.0.0), R4B (4.3.0), R4 (4.0.1), R3 (3.0.2), R2 (DSTU2, 1.0.2), and R6 (6.0.0-ballot3) |
+| Off by default | `r6` — generated from a **draft** specification that can change between ballots. `r5` is the default; every other release is an opt-in feature |
+| Name reservations, containing no types | `fhir-r1` (DSTU1) and `fhir-r7`–`fhir-r10` |
 | Shape | one crate per release behind a cargo feature, ~135k generated lines each |
 | Specification | [`fhir/spec/index.md`](fhir/spec/index.md) — 14 sections, ids `R1.x`–`R14.x` |
 
@@ -244,11 +248,33 @@ requirement and to the test that evidences it.
 | [`spec/databases/index.md`](spec/databases/index.md) | the normative core, shared by all six ports |
 | [`spec/databases/conformance-matrix.md`](spec/databases/conformance-matrix.md) | what each port actually satisfies |
 | [`spec/databases/audit.md`](spec/databases/audit.md) | every known divergence, with evidence |
-| [`spec/publishing.md`](spec/publishing.md) | what blocks these crates from crates.io |
+| [`spec/publishing.md`](spec/publishing.md) | how these crates reach crates.io — a documented laptop step, by decision, since all 34 already have |
+| [`spec/trusted-publishing/index.md`](spec/trusted-publishing/index.md) | why that decision means no Trusted Publishing here yet, checked against each forge's actual support |
 | [`fhir/spec/index.md`](fhir/spec/index.md) | the model crate's specification |
 | [`AGENTS.md`](AGENTS.md) | contributing — human or agent |
 | `fhir-<engine>/book/` | that port's user guide |
 | `fhir-<engine>/plan.md` | that port's design decisions |
+
+## Project documents
+
+| | |
+| --- | --- |
+| [INSTALL.md](INSTALL.md) | requirements, which port to pick, and how to add it to a project |
+| [PHI.md](PHI.md) | what this does and does not do with patient data, in plain language |
+| [SECURITY.md](SECURITY.md) | how to report a vulnerability, what is in scope, what is open |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | ways to help — data, expertise, review, code, money — then the five rules and the green gate |
+| [RFC.md](RFC.md) | the open questions this project most wants answered, and what feedback helps |
+| [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Contributor Covenant 2.1, plus one addition specific to this project |
+| [COMPARISONS.md](COMPARISONS.md) | how this relates to HAPI, Firely, Medplum, Aidbox, SQL on FHIR, and the other Rust FHIR crates |
+| [BENCHMARKS.md](BENCHMARKS.md) | what has been measured, on what, and what has not |
+| [CHANGELOG.md](CHANGELOG.md) | what changed, repository-wide |
+| [NEWS.md](NEWS.md) | project news, how to follow, and press contacts |
+| [MAINTAINERS.md](MAINTAINERS.md) | who maintains this, and what happens if they cannot |
+| [GOVERNANCE.md](GOVERNANCE.md) | how decisions get made, what binds them, and how to disagree |
+| [AI_STATEMENT.md](AI_STATEMENT.md) | how AI tooling is used here, and the failure mode it has already caused |
+| [CITATION.cff](CITATION.cff) | how to cite this work |
+| [LICENSE.md](LICENSE.md) | the five-way licence choice, with SPDX |
+| [help/outreach/index.md](help/outreach/index.md) | who this is for, what may be claimed about it, and what is missing |
 
 ## Specification-driven
 
@@ -277,3 +303,9 @@ means you choose; no obligation from one option carries into another.
 
 Full statement: [`LICENSE.md`](LICENSE.md). Versions already on crates.io keep
 the terms they were published under, since a published version is immutable.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

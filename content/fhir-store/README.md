@@ -1,6 +1,6 @@
 # fhir-store
 
-The **engine-agnostic half of FHIR persistence**: everything about storing FHIR
+The **engine-agnostic half of FHIR® persistence**: everything about storing FHIR
 that is not specific to one SQL engine.
 
 It opens no sockets, speaks no HTTP, and links no database driver. What it holds
@@ -69,3 +69,9 @@ The RESTful surface is [`fhir-loco`](https://crates.io/crates/fhir-loco).
 ## License
 
 `MIT OR Apache-2.0 OR BSD-3-Clause OR GPL-2.0-only OR GPL-3.0-only` — you choose.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

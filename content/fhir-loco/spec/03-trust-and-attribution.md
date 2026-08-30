@@ -70,15 +70,21 @@ terminates a request, so it is the only one that can turn a credential into an
   is invisible from outside: a deployment that authenticates every request and
   authorizes none looks secure and lets any valid token read any patient.
 
-- **SV3.11** **No transport security of its own.** This service speaks plain
-  HTTP and expects a TLS-terminating proxy. `O10.7` governs the *database* link,
-  not this listener, and **no requirement currently states an obligation for the
-  listener's own TLS** — a gap in §10 rather than in this crate, recorded as
-  **F-58**.
+- **SV3.11** **The listener's transport posture must be a decision, not a
+  default.** This service speaks plain HTTP; `O10.7` governs the *database*
+  link, not this listener. A deployment MUST either keep the bind loopback or
+  terminate TLS in front of it — and a **non-loopback bind MUST refuse to
+  boot** unless the deployment acknowledges, via
+  `FHIR_LOCO_TLS_TERMINATED_UPSTREAM=true`, that TLS terminates upstream.
+  The refusal names this requirement and both ways out. PHI in the clear
+  must be a choice someone made, not a config nobody read; the same shape as
+  `O10.7`'s database-side refusal and `SV4.4`'s loopback default.
 
-  Until one exists, a deployment that exposes this port directly is carrying PHI
-  in the clear and nothing in this repository will tell it so. `SV4.4`'s
-  loopback default is the mitigation, and it is a weak one.
+  *Stated and enforced since 2026-08-07 (`auth::listener_posture`, checked in
+  `before_run` before anything is served). Until then this requirement
+  recorded its own absence — "a gap in §10 rather than in this crate"
+  (**F-58**) — but service obligations have lived in this specification since
+  the `SV` restatement (`C0.16`), so the obligation lands here, not in §10.*
 
 ---
 

@@ -7,7 +7,7 @@
 
   ```
   spec/databases/            the normative core (§0–§16)          ← shared
-  AGENTS.md  AGENTS/         contributor and agent guidance       ← shared
+  AGENTS.md  agents/         contributor and agent guidance       ← shared
   CLAUDE.md                  pointer to AGENTS.md                 ← shared
   doc/                       tutorials, examples, comparisons     ← shared
   README.md  index.md        entry points                         ← shared

@@ -43,7 +43,9 @@ fn main() {
             issue.severity,
             Coded::Known(fhir::r5::codes::IssueSeverity::Error)
         );
-        let path = &issue.expression[0].0;
+        let Some(path) = issue.expression.first_value().map(|p| &p.0) else {
+            continue;
+        };
         let msg = issue.diagnostics.as_ref().unwrap();
         println!("- {path}: {}", msg.0);
     }

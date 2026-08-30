@@ -50,7 +50,33 @@ const files = [
 ];
 
 // Directory -> same directory inside content/. Only *.md is copied.
-const dirs = ['doc', 'spec/databases', 'fhir/spec', 'fhir-loco/spec'];
+//
+// The ten single-topic specs below are the cross-family documents
+// spec/index.md itself links to (agents directory casing, Dependabot,
+// funding, git tags, HL7 trademark fair use, professionalization, the MSRV
+// policy, the serde_json float-roundtrip decision, the special-files list,
+// and Trusted Publishing) — added here after they'd accumulated for weeks
+// with no sync-script update, so spec/index.md's own links 404'd on this
+// site while resolving fine in the repository. Each is a single `index.md`
+// (one also carries a template file, `special-files-for-public-repos/
+// AI_STATEMENT.md`) — flat, matching every other entry in this list, not
+// nested further.
+const dirs = [
+	'doc',
+	'spec/databases',
+	'spec/agents-directory-name-is-lowercase',
+	'spec/dependabot',
+	'spec/free-open-source-funding',
+	'spec/git-tags-name-published-versions',
+	'spec/hl7-trademarks-fair-use',
+	'spec/professionalization',
+	'spec/rust-msrv-n-minus-2',
+	'spec/serde-json-float-roundtrip-arbitrary-precision',
+	'spec/special-files-for-public-repos',
+	'spec/trusted-publishing',
+	'fhir/spec',
+	'fhir-loco/spec'
+];
 
 const contentDir = join(siteRoot, 'content');
 await rm(contentDir, { recursive: true, force: true });

@@ -6,7 +6,7 @@ whatever service is eventually built, and a port is not non-conformant for
 lacking them.
 
 - **O10.1** **[service]** A service exposes liveness and readiness endpoints off
-  the FHIR base paths, and Prometheus metrics on a separate configurable port
+  the FHIR® base paths, and Prometheus metrics on a separate configurable port
   (request counts/latencies by route, pool stats, per-resource-type row counts).
 - **O10.2** Structured logging via `tracing` (JSON in production); every
   operation gets a correlation id. **Logs MUST NOT contain resource content
@@ -30,6 +30,36 @@ lacking them.
   spelling nor the new, so searches that worked before the fix stop working
   after it. Deploying such a change without backfilling is worse than not
   fixing the bug.
+- **O10.4b** *Extends `O10.4`.* A **moved column is not a drop.** When a
+  map change relocates an element between tables (`G2.6a`'s force-split is
+  the live case — **F-90**), the generic diff expresses the move as an ADD
+  in the new table plus a DROP in the old, and `O10.4`'s acknowledgement
+  flag was defined for *abandoning* data, not for relocating it. `upgrade`
+  MUST therefore detect a dropped column — or a column of a dropped table —
+  whose element path reappears in another table, check whether the source
+  holds data, and refuse a data-bearing move by name **independent of the
+  destructive acknowledgement**; the refusal names the disposition
+  (re-put the affected resource types through the new artifact, or
+  reload). A move whose source is empty proceeds: that drop abandons
+  nothing.
+- **O10.4c** *Extends `O10.4b`.* The migration that carries data across a
+  relocation is **resource-level re-shred**, never hand-written per-column
+  SQL: for each resource of an affected type, reconstruct under the
+  *stored* old map (`G2.5`'s asset is what makes this possible), delete
+  its rows, shred under the new map, and verify the new-shape
+  reconstruction is byte-identical to the old before anything is dropped —
+  a per-resource proof built from the same round-trip machinery the whole
+  conformance suite already exercises, not new code trusted with data.
+  `version_id` and `last_updated` are preserved and **no history entry is
+  written**: a representation change is not a new version, and the hash
+  chain commits to canonical resource bytes, which do not change. The
+  re-shred requires explicit opt-in separate from the destructive
+  acknowledgement; it runs after additive DDL (the new tables must exist)
+  and before destructive DDL (the old columns must still be readable), and
+  the `O10.4b` data check re-runs after it, inside the same failure
+  domain, so a miss aborts rather than drops. Each dialect states its
+  failure story the way `O10.4` already demands: one transaction where
+  the engine allows it, resumable or reported-partial where it does not.
 - **O10.5** **[service]** TLS: production deployments terminate TLS at a
   fronting proxy, or in-process behind a `tls` feature (rustls). A service binds
   localhost by default; binding non-loopback requires explicit acknowledgement.
@@ -85,10 +115,17 @@ lacking them.
   provision the **engine that port targets**, at the version its annex declares.
   A pipeline that starts a substitute engine produces green builds and no
   evidence (`C0.10`), and is worse than having no live gate, because the summary
-  says the gate passed. Originating defect **F-06**, fixed; note the per-family
-  workflows are currently inert in the monorepo regardless (**F-49**), which
-  the [conformance matrix](conformance-matrix.md) `O10.12` row records.
+  says the gate passed. Originating defect **F-06**, fixed; the per-family
+  workflows were also inert in the monorepo until consolidated to the root
+  (**F-49**, 2026-08-06) — the [conformance matrix](conformance-matrix.md)
+  `O10.12` row records the current state.
 
 ---
 
 Part of the [fhir-databases specification](index.md).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

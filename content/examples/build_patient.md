@@ -30,7 +30,8 @@ fn main() {
             given: vec![
                 FhirString("Peter".to_string()),
                 FhirString("James".to_string()),
-            ],
+            ]
+            .into(),
             ..Default::default()
         }])
         .telecom(vec![

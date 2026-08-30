@@ -1,6 +1,6 @@
 # 10 — Invariant coverage
 
-FHIR states many rules as `ElementDefinition.constraint` **invariants** —
+FHIR® states many rules as `ElementDefinition.constraint` **invariants** —
 FHIRPath expressions such as "an extension must have a value or children, not
 both". This spec records which of them the crate enforces, and enumerates the
 rest so that unenforced rules are visible rather than silently dropped.
@@ -164,3 +164,9 @@ alone, which is why the sentence above the previous table says what it says.
 4. Unrecognized constraints are enumerated here rather than dropped.
 5. The counts above match the shipped specification JSON, and are produced by
    `bin/invariant-counts`.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

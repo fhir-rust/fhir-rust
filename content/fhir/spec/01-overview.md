@@ -2,7 +2,7 @@
 
 ## Purpose
 
-`fhir` is a Rust crate that provides the **FHIR** data model as strongly-typed,
+`fhir` is a Rust crate that provides the **FHIR®** data model as strongly-typed,
 `serde`-serializable Rust, together with a spec-driven code generator that
 derives that model from the official FHIR specification JSON.
 
@@ -14,7 +14,7 @@ why they are separate types rather than one — is defined in
 [spec 12](12-fhir-releases.md). Every other spec in this directory applies to
 each release in turn; where they say "R5" for concreteness, read "the release".
 
-FHIR (Fast Healthcare Interoperability Resources) is the HL7 standard for
+FHIR (Fast Healthcare Interoperability Resources) is the HL7® standard for
 representing and exchanging electronic health records.
 
 ## Scope
@@ -36,9 +36,8 @@ Out of scope (for now; see each spec's Future work):
 - A running FHIR REST server. (A client is supported behind the `client`
   feature.)
 - FHIRPath evaluation and full invariant (constraint) checking.
-- FHIR releases other than R2 through R6 — notably R4B, which the release table
-  would accommodate without structural change, and DSTU1, which was a trial
-  nothing shipped against and is not modelled.
+- FHIR releases other than R2 through R6 and R4B (modelled 2026-08-10), and
+  DSTU1, which was a trial nothing shipped against and is not modelled.
 - *Automatic* conversion between releases. Conversion is available, but only
   as an explicit call that hands back a report of everything it changed or
   discarded (spec 14); it is deliberately not something the compiler will do
@@ -73,9 +72,9 @@ Out of scope (for now; see each spec's Future work):
 
 - Package and crate name: **`fhir`**. Import as `use fhir::…`.
 - Cargo **workspace**: the `fhir` facade, `fhir-core` (release-independent
-  machinery), one `fhir-release-N` crate per modelled release (2–6),
+  machinery), one `fhir-rN` crate per modelled release (2–6),
   `fhir-derive-macros` (proc-macros), and the name-reservation crates
-  (`fhir-release-1`, `fhir-release-7` … `fhir-release-10`). See spec 12,
+  (`fhir-r1`, `fhir-r7` … `fhir-r10`). See spec 12,
   R12.1a.
 - Library **and** binary: the library is the model + generator API; the binary
   runs the generator. A library target is required so doctests execute.
@@ -99,3 +98,9 @@ The crate meets this overview when:
 3. `cargo test` and `cargo clippy --all-targets` are clean, for the default
    features and with every release enabled.
 4. Each downstream spec (02–12) has its own acceptance criteria met.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

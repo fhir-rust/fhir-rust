@@ -1,6 +1,6 @@
 # fhir-loco specification
 
-Normative requirements for the **HTTP surface**: a FHIR RESTful API over one of
+Normative requirements for the **HTTP surface**: a FHIR® RESTful API over one of
 the database ports, built on Loco.rs, Axum, Tokio and Hyper.
 
 This is the fourth family's specification, and it is new — created 2026-08-03,
@@ -83,3 +83,9 @@ conditional create are not.
 ---
 
 Part of the [fhir-rust monorepo specification](../../spec/index.md).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

@@ -1,6 +1,6 @@
 # 02 — Primitive types
 
-Defines how the FHIR primitive datatypes are represented in Rust.
+Defines how the FHIR® primitive datatypes are represented in Rust.
 
 Applies to every modelled release. Where a release differs, the difference is
 stated here rather than in the code.
@@ -97,8 +97,8 @@ FHIR JSON they serialize as bare scalars — a JSON string, number, or boolean �
   numbers are 64-bit floats). Implemented with `serde_with`'s `DisplayFromStr`.
 - **R2.4** Every primitive MUST derive `Debug, Default, Clone, PartialEq, Eq`
   and be `serde` (de)serializable. No primitive may contain `f64`/`f32`.
-- **R2.5** Each primitive lives in `fhir-release-N/src/types/<snake>.rs` and is
-  re-exported from `fhir-release-N/src/types.rs` as `pub use <snake>::<Pascal>;`.
+- **R2.5** Each primitive lives in `fhir-rN/src/types/<snake>.rs` and is
+  re-exported from `fhir-rN/src/types.rs` as `pub use <snake>::<Pascal>;`.
 - **R2.6** Each primitive MUST implement `Validate` (spec 07) with its FHIR
   format constraint where one exists (`code`, `id`, `oid`, `uuid`, `uri`,
   `canonical`, `url`); the rest are structurally valid by construction.
@@ -142,3 +142,9 @@ the wire form is identical to the bare scalar.
    `"9007199254740993"`.
 4. `Code("bad  code")` and `Id("bad id!")` are reported invalid by `Validate`.
 5. Every primitive module passes its generated round-trip test.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

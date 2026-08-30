@@ -31,11 +31,20 @@
   recorded here rather than assumed covered.
 
 - **SV4.3** Metrics and health endpoints MUST be servable on a **separate bind
-  address** from the FHIR API, so operational endpoints are not exposed to the
+  address** from the FHIR® API, so operational endpoints are not exposed to the
   same network as clinical data. Latency MUST be reported as a histogram, not a
   running total, so p99 is answerable. Restates `O10.9`.
 
-  **Unmet.** There is one listener, and no `/metrics` at all.
+  **Met** (served since 2026-08-07; until then there was one listener and no
+  `/metrics` at all — **F-58**). `FHIR_LOCO_ADMIN_BIND` names the admin
+  socket; unset, no second listener exists, which is the same
+  deliberate-exposure posture as `SV4.4`. It serves `/health` (liveness),
+  `/ready` (readiness — a mounted store; the two are separate endpoints
+  because liveness green over a dead store was this crate's original boot
+  bug), and `/metrics` (Prometheus text: request counts by status class, and
+  request duration as a fixed-bucket histogram). The admin router carries no
+  FHIR route and MUST never grow one: nothing on this listener reads a
+  resource.
 
 ## Binding
 
@@ -81,3 +90,9 @@
 ---
 
 Part of the [fhir-loco specification](index.md).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

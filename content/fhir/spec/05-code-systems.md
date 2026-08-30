@@ -15,7 +15,7 @@ Applies to every modelled release.
 
 The counts do not track release age: they follow how many `complete` code
 systems each release's `valuesets.json` happens to publish. R5 moved several to
-external terminologies that no FHIR element binds to with `required` strength.
+external terminologies that no FHIR® element binds to with `required` strength.
 
 ## Background
 
@@ -112,3 +112,9 @@ where an enum mapping turns out to be wrong: the value simply lands in
    `Coded::Unknown` and is reported by `Validate`.
 4. Generation is deterministic and the module compiles with zero clippy
    warnings.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

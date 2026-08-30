@@ -35,7 +35,7 @@ fn main() {
         .birth_date(Date("1974-12-25".to_string()))
         .name(vec![HumanName {
             family: Some(FhirString("Chalmers".to_string())),
-            given: vec![FhirString("Jane".to_string())],
+            given: vec![FhirString("Jane".to_string())].into(),
             ..Default::default()
         }])
         .telecom(vec![ContactPoint {

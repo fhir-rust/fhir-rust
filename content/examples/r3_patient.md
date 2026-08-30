@@ -32,7 +32,7 @@ fn main() {
         .gender(Coded::Known(AdministrativeGender::Female))
         .name(vec![HumanName {
             family: Some(FhirString("Chalmers".to_string())),
-            given: vec![FhirString("Jane".to_string())],
+            given: vec![FhirString("Jane".to_string())].into(),
             ..Default::default()
         }])
         .telecom(vec![ContactPoint {
