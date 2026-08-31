@@ -24,6 +24,7 @@
 	"dependencies": {
 		"github-slugger": "^2.0.0",
 		"lily-design-system-svelte-headless": "^0.3.1",
+		"lily-design-system-svelte-share-picker": "^0.1.1",
 		"lily-design-system-svelte-text-size-picker": "^0.1.1",
 		"lily-design-system-svelte-theme-picker": "^0.1.1",
 		"marked": "^18.0.10"

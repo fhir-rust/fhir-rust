@@ -3,7 +3,15 @@
 	import { SkipLink, Header, Footer } from 'lily-design-system-svelte-headless';
 	import { ThemePicker } from 'lily-design-system-svelte-theme-picker';
 	import { TextSizePicker } from 'lily-design-system-svelte-text-size-picker';
-	import { REPOSITORY, SITE_NAME, THEMES, THEME_LABELS } from '$lib/site.js';
+	import { SharePicker } from 'lily-design-system-svelte-share-picker';
+	import {
+		REPOSITORY,
+		SITE_NAME,
+		SITE_TAGLINE,
+		THEMES,
+		THEME_LABELS,
+		SHARE_TARGETS
+	} from '$lib/site.js';
 	import '../styles/site.css';
 
 	let { children } = $props();
@@ -47,6 +55,15 @@
 				themeLabels={THEME_LABELS}
 				storageKey="fhir-rust-theme"
 				detectFromSystem
+			/>
+			<SharePicker
+				label="Share this page"
+				title={SITE_NAME}
+				text={SITE_TAGLINE}
+				targets={SHARE_TARGETS}
+				copyLabel="Copy link"
+				copiedLabel="Link copied"
+				copyFailedLabel="Could not copy — copy it from the address bar"
 			/>
 		</div>
 	</div>

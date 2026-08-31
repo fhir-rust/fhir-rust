@@ -51,3 +51,35 @@ export const THEME_LABELS = {
 	lofi: 'Lo-fi',
 	night: 'Night'
 };
+
+/**
+ * SharePicker destinations. The package ships no third-party endpoints by
+ * design (each consumer's choice of network is editorial), so this site
+ * supplies its own — technical/OSS-audience networks plus email.
+ */
+export const SHARE_TARGETS = [
+	{
+		id: 'mastodon',
+		label: 'Mastodon',
+		href: (url, title) =>
+			`https://mastodonshare.com/?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`
+	},
+	{
+		id: 'bluesky',
+		label: 'Bluesky',
+		href: (url, title) =>
+			`https://bsky.app/intent/compose?text=${encodeURIComponent(`${title} ${url}`)}`
+	},
+	{
+		id: 'linkedin',
+		label: 'LinkedIn',
+		href: (url) => `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`
+	},
+	{
+		id: 'email',
+		label: 'Email',
+		href: (url, title) =>
+			`mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(url)}`,
+		newTab: false
+	}
+];
