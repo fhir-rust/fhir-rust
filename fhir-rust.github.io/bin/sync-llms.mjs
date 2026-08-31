@@ -14,7 +14,8 @@
 //
 // Per spec/llms-json-and-llms-txt/index.md, "Publishing a copy on a site".
 //
-// Source: $WORKSPACE if set, else the sibling checkout ../fhir-rust.
+// Source: $WORKSPACE if set, else this site's own parent directory — see
+// bin/sync-content.mjs for why it is no longer a sibling checkout.
 // Run after either workspace file changes:  npm run sync:llms
 
 import { readFile, writeFile } from 'node:fs/promises';
@@ -26,7 +27,7 @@ import { routeFor, sourceUrl } from '../src/lib/paths.js';
 import { REPOSITORY, SITE_URL } from '../src/lib/site.js';
 
 const siteRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const workspace = resolve(process.env.WORKSPACE ?? join(siteRoot, '..', 'fhir-rust'));
+const workspace = resolve(process.env.WORKSPACE ?? join(siteRoot, '..'));
 
 if (!existsSync(join(workspace, 'llms.txt'))) {
 	console.error(`No monorepo at ${workspace}. Set WORKSPACE=/path/to/fhir-rust.`);

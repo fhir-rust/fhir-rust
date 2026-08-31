@@ -22,7 +22,10 @@
 // Markdown page — its `//!` header as prose, the program as a fenced block —
 // plus a generated examples/index.md. Everything else is copied verbatim.
 //
-// Source: $WORKSPACE if set, else the sibling checkout ../fhir-rust.
+// Source: $WORKSPACE if set, else this site's own parent directory —
+// spec/monorepo-github-pages/ (fhir-rust) moved this site to live inside the
+// monorepo, at fhir-rust.github.io/, so the monorepo root is one level up,
+// not a sibling checkout.
 // Run after the prose changes:  npm run sync:content
 
 import { cp, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
@@ -31,7 +34,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const siteRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const workspace = resolve(process.env.WORKSPACE ?? join(siteRoot, '..', 'fhir-rust'));
+const workspace = resolve(process.env.WORKSPACE ?? join(siteRoot, '..'));
 
 if (!existsSync(join(workspace, 'index.md'))) {
 	console.error(`No monorepo at ${workspace}. Set WORKSPACE=/path/to/fhir-rust.`);

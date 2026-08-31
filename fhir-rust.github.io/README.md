@@ -6,6 +6,20 @@ A SvelteKit site, prerendered to static files by `@sveltejs/adapter-static` and
 served by GitHub Pages. It renders the monorepo's own Markdown — it does not
 restate it. The repository is the source of truth; this site is a view of it.
 
+**This directory is the live source — maintained inside the `fhir-rust`
+monorepo, at `fhir-rust.github.io/`.** The standalone GitHub repository of
+the same name (`fhir-rust/fhir-rust.github.io`) is a **read-only export**,
+produced by `git subtree push` from here; GitHub Pages still deploys from
+it (its own `.github/workflows/deploy.yml`, unchanged), but it is never
+edited directly. See `spec/monorepo-github-pages/` in the monorepo for why,
+and the two commands below for how.
+
+```sh
+# from the monorepo root, after editing files under fhir-rust.github.io/
+git subtree push --prefix=fhir-rust.github.io site-pages main
+# (site-pages: git remote add site-pages git@github.com:fhir-rust/fhir-rust.github.io.git)
+```
+
 ## What it publishes
 
 The source is the fhir-rust **monorepo** (four families in one repository):
@@ -71,8 +85,8 @@ re-run the script.
 environment variable when the default location is wrong:
 
 ```sh
-WORKSPACE=/path/to/fhir-rust npm run sync:content        # default: ../fhir-rust
-WORKSPACE=/path/to/fhir-rust npm run sync:llms            # default: ../fhir-rust
+WORKSPACE=/path/to/fhir-rust npm run sync:content        # default: .. (this site's own parent — the monorepo)
+WORKSPACE=/path/to/fhir-rust npm run sync:llms            # default: ..
 LILY=/path/to/lily-design-system npm run sync:lily-themes
 ```
 
