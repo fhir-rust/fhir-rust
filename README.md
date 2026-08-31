@@ -41,6 +41,11 @@ Everything else is copied verbatim.
 
 ## Building it
 
+Requires **Node 26+** (`package.json`'s `engines`, enforced —
+`.npmrc`'s `engine-strict=true` fails `npm install`/`npm ci` rather than
+warning on an older one). `.nvmrc` and `.tool-versions` both pin the exact
+version this repo is developed against, for `nvm`/`mise`/etc.
+
 ```sh
 npm install
 npm run dev        # http://localhost:5173

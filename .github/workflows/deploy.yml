@@ -22,7 +22,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 26
           cache: npm
       # No sync step: content/ and static/themes/ are committed, and Lily's
       # Svelte components/helpers are npm dependencies (package-lock.json),
