@@ -23,8 +23,8 @@ dialect annex for what works. Nothing here speaks for a port.
 - [x] Outreach plan exists (`help/outreach/index.md`, with claims register
       and prerequisites `PM-70`–`PM-75`) and correctly gates promotion on
       supply-chain work.
-- [x] 34 crates published to crates.io (2026-08-22); audit register at 98
-      findings with reproducible evidence per finding (one open: F-98).
+- [x] 34 crates published to crates.io (2026-08-22); audit register at 99
+      findings with reproducible evidence per finding (two open: F-98, F-99).
 
 ## Next up
 

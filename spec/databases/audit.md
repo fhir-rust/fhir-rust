@@ -197,6 +197,7 @@ type-/system-level history, multi-port wiring, is tracked in that crate's
 | [F-96](#f-96) | Medium | **Unrelated to F-94/F-95, found the same audit pass**: `fhir-postgresql` and `fhir-loco` (which depends on it) both failed hosted `cargo deny` with `error[yanked]: detected yanked crate` on `chacha20 0.10.1` — pulled in via `rand 0.10.2 -> postgres-protocol -> tokio-postgres`, a chain neither this session nor **F-94** touched. crates.io yanked `0.10.1` upstream after both lockfiles had already pinned it; `yanked = "deny"` in each port's `deny.toml` (the same policy line **F-94** relies on) is what caught it | **fixed** 2026-08-28 — `cargo update -p chacha20` in both workspaces (`0.10.1` → `0.10.2`, the fix `cargo deny`'s own error message named). Verified: `cargo deny check advisories` clean in both, `cargo check --all-targets --locked` green in both |
 | [F-97](#f-97) | Medium | Surfaced closing **F-51**: the append-only trigger's `M3.17`/`M3.18` enforcement (`M14.29`, already known to have failed open once — `M14.29a`) and the `Bool` CHECK's `M14.8` enforcement were verified only by SQL-text unit tests, never against a live server. A CHECK clause that parses but never fires would pass the existing unit test the same way the trigger's `M14.29a` bug passed a read-through | **fixed** 2026-08-29 — `tests/oracle_constraints.rs` (`fhir-oracle-map`): a live `UPDATE`/undeclared `DELETE` against a seeded row, asserting the exact `ORA-20001`/`ORA-20002` errors (not merely `is_err()`, which is the distinction `M14.29a`'s own bug hid), the declared-erasure escape hatch confirmed to still work, and a live `INSERT` of `2` into a `NUMBER(1) CHECK (... IN (0,1))` column asserting `ORA-02290`. **Found and fixed in the same pass, not shipped and left flaky:** libtest runs a binary's `#[test]` functions concurrently by default, and the first version had both tests provision the same throwaway user — reproduced 3 of 3 failures before splitting each test onto its own user (`TRIGTEST`, `BOOLTEST`), 0 of many after. Wired into `fhir-oracle-ci.yml` beside **F-51**'s DDL-install step |
 | [F-98](#f-98) | Medium | `scripts/check-published-match.sh` reports "ok" for a crate whose source has genuinely diverged from what it published, when the divergence is a workspace-inherited dependency requirement (`sha2.workspace = true` etc.) — its `--exclude Cargo.toml` comparison relies on `Cargo.toml.orig`, which preserves the unresolved `.workspace = true` reference rather than the literal version crates.io actually receives | **open** — found 2026-08-29 bumping `sha2`/`sha3` in `fhir-postgresql`/`fhir-sqlite`: the gate said "34 matched, 0 mismatched" while the crates.io API confirmed `fhir-postgresql-map` 0.6.0's published manifest declares `sha2 ^0.10`, which the tree's new `sha2 = "0.11"` workspace requirement no longer matches. Worked around by bumping the affected crates to a patch version regardless of what the gate reported (commit `ca34cdf`), not by trusting it. Not fixed: a correct fix needs to compare the crate's *normalized*, packaged `Cargo.toml` (which does resolve `.workspace = true` to a literal) rather than `Cargo.toml.orig`, without reintroducing the cosmetic-reordering false positives `Cargo.toml.orig` was chosen to avoid |
+| [F-99](#f-99) | Medium | `fhir-postgresql-store`'s `checkpoints_are_logged_on_their_own_target_without_phi` test (`tests/audit.rs`) fails reproducibly — 2/2 hosted runs — on the Dependabot PR bumping `deadpool-postgres` 0.14.1 → 0.14.2 (PR #59), while `main`'s own last five hosted runs of the same job are all green | **open** — found 2026-08-31 triaging Dependabot PRs. The test captures `tracing` output via a thread-local `set_default` subscriber around `store.emit_checkpoint("test").await`, then asserts the capture contains `"audit_checkpoint"`; both runs it failed with an *empty* capture (`chain_witness()` itself still succeeds — only the 4 other tests in the same binary are unaffected, ruling out a general connectivity break). Leading hypothesis, not confirmed at the mechanism level: `deadpool-postgres` 0.14.2's changelog headline is "Coalesce concurrent statement preparations… tasks racing to prepare the same query now share a single `PREPARE`" — new inter-task coordination on exactly the code path `chain_witness()` calls, a plausible way for the actual query (and whatever thread ends up running it) to fall outside the test's thread-local subscriber scope. Each test in the file opens its own `Store`/pool (`test_store()`, no cross-test sharing), which rules out the simplest version of that theory and is why the mechanism is not fully pinned down. Not fixed: needs either confirming/ruling out the coalescing path by reading `deadpool-postgres` 0.14.2's source directly, or rewriting the test to capture via a global (non-thread-local) subscriber so it survives whichever task the emission runs on. The PR is not merged pending this. |
 | [F-89](#f-89) | Medium | The mysql/mariadb DDL test harness was unportable and **masked real errors**: it passed MariaDB's `--skip-ssl-verify-server-cert` to whatever client exists (Oracle's mysql 8 client rejects it), assumed a utf8mb4 default charset (the runner's client defaults utf8mb3 → ERROR 1253 on the collation probe), and on any early client exit reported the stdin `Broken pipe` instead of reading the client's stderr — hiding whatever the real failure was | **fixed** 2026-08-10 — client-flavor-gated TLS flag, explicit `--default-character-set=utf8mb4`, and EPIPE falls through to collect stderr, so the next failure names itself |
 
 ## What remains, and why
@@ -5786,6 +5787,67 @@ and is left open rather than attempted under time pressure.
 gate's "ok" against the crates.io API directly rather than trusting it —
 exactly the discipline `agents/release.md` asks for and this finding
 exists because, this once, it was actually applied.*
+
+---
+
+## F-99
+
+**`fhir-postgresql-store`'s `checkpoints_are_logged_on_their_own_target_without_phi`
+test fails reproducibly against `deadpool-postgres` 0.14.2, and the PR
+proposing that bump is held pending it.** Severity: **Medium** — the test
+itself is sound (it is the one guarding that a checkpoint's audit-log line
+never carries PHI, `M3.17`-adjacent), but it now fails to observe *any*
+output at all, which is a test-technique fragility, not evidence the
+guarantee itself broke.
+
+Found triaging Dependabot PR #59 (`deadpool-postgres` 0.14.1 → 0.14.2 in
+`fhir-postgresql`). Two independent hosted runs of that PR's `Live-database
+tests (PostgreSQL 18)` job both failed the same way:
+
+```
+thread 'checkpoints_are_logged_on_their_own_target_without_phi' panicked at
+crates/fhir-postgresql-store/tests/audit.rs:425:5:
+checkpoint must land on its own target:
+```
+
+The empty string after the colon is the captured log itself — the
+assertion's own `{logged}` interpolation. The test captures `tracing`
+output by installing a custom writer as the thread's default subscriber
+(`tracing::subscriber::set_default`, scoped to the calling thread only) for
+the duration of `store.emit_checkpoint("test").await`, then asserts the
+capture contains `"audit_checkpoint"` (the event's `target`). Both runs
+captured nothing, yet `chain_witness()` — the fallible call inside
+`emit_checkpoint` — did not itself error (a `chain_witness()` failure
+would emit via `tracing::error!` instead, still inside the same capture
+window, still absent either way). The other four tests in the same binary,
+sharing the same connection style, passed both times — ruling out a
+general PostgreSQL-18-job or connectivity regression and pointing at this
+one test's capture technique specifically.
+
+**Leading hypothesis, not confirmed at the mechanism level:**
+`deadpool-postgres` 0.14.2's own changelog headline is directly on point:
+"Coalesce concurrent statement preparations. Tasks racing to prepare the
+same query now share a single `PREPARE` instead of each sending their own."
+That is new inter-task coordination sitting exactly on the code path
+`chain_witness()` exercises — a plausible way for the query that actually
+runs (and whatever polls it to completion) to end up outside the calling
+task, and therefore outside a thread-local subscriber's scope, in a way
+0.14.1 did not. Checked and ruled out the simplest version of that theory:
+each test in `tests/audit.rs` opens its own `Store` via `test_store()`,
+so there is no connection pool shared *across* tests for a coalesced
+prepare to race against — if the hypothesis holds, the coalescing must be
+happening within this one test's own single call, which is not yet
+confirmed by reading `deadpool-postgres` 0.14.2's source directly.
+
+**Not fixed here.** Two honest paths forward, neither attempted under time
+pressure: (1) read the `deadpool-postgres` 0.14.2 diff far enough to
+confirm or rule out the coalescing path for a single caller with no
+concurrent racer, or (2) stop relying on a thread-local subscriber for
+this test — capture via a process-global subscriber (installed once, e.g.
+with `tracing_subscriber`'s reload layer) so the assertion survives
+regardless of which task or thread ends up running the pooled query. PR
+#59 is left open rather than merged past a failure that was reproduced,
+not merely observed once.
 
 ---
 
