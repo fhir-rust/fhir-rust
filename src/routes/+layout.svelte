@@ -26,6 +26,15 @@
 	];
 
 	const current = (href) => (page.url.pathname === href ? 'page' : undefined);
+
+	// page.data.title convention: every route's load() returns `title`, the
+	// exact text its own <svelte:head><title> uses (src/routes/+page.server.js,
+	// src/routes/[...path]/+page.server.js) — one definition per page instead
+	// of the <title> tag and this share control disagreeing. A route whose
+	// load never returns data has no page.data.title; the only case today is
+	// +error.svelte, since its nearest load (in [...path]) throws before
+	// returning — falls back to the site title.
+	const shareTitle = $derived(page.data.title ?? `${SITE_NAME} — ${SITE_TAGLINE}`);
 </script>
 
 <SkipLink href="#main" label="Skip to main content" />
@@ -58,7 +67,7 @@
 			/>
 			<SharePicker
 				label="Share this page"
-				title={SITE_NAME}
+				title={shareTitle}
 				text={SITE_TAGLINE}
 				targets={SHARE_TARGETS}
 				copyLabel="Copy link"

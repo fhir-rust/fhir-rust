@@ -1,6 +1,6 @@
 <script>
 	import { Card, SectionHeading } from 'lily-design-system-svelte-headless';
-	import { REPOSITORY, SITE_NAME, SITE_TAGLINE, SITE_URL } from '$lib/site.js';
+	import { REPOSITORY, SITE_URL } from '$lib/site.js';
 
 	let { data } = $props();
 
@@ -48,10 +48,10 @@
 </script>
 
 <svelte:head>
-	<title>{SITE_NAME} — {SITE_TAGLINE}</title>
+	<title>{data.title}</title>
 	<meta name="description" content={description} />
 	<link rel="canonical" href={`${SITE_URL}/`} />
-	<meta property="og:title" content={`${SITE_NAME} — ${SITE_TAGLINE}`} />
+	<meta property="og:title" content={data.title} />
 	<meta property="og:description" content={description} />
 	<meta property="og:type" content="website" />
 	<meta property="og:url" content={`${SITE_URL}/`} />
