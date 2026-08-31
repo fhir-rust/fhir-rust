@@ -1,0 +1,25 @@
+#!/bin/sh
+# Publish <name>.github.io/ -- a monorepo subtree, spec/monorepo-github-pages/
+# -- to the standalone, read-only GitHub Pages export repo of the same name.
+# This pushes a subdirectory of the current repo out to a different branch
+# (here `main`) on the remote named `github-pages`, using git's subtree
+# mechanism -- the only route from a monorepo commit to the live site.
+#
+# <name> is this repository's own directory name, read at run time rather
+# than hardcoded, so this script works unmodified if copied into any sibling
+# monorepo with the same <repo>/<repo>.github.io layout and the same
+# org-name-equals-repo-name GitHub convention this family uses
+# (github.com/fhir-rust/fhir-rust, github.com/fhir-rust/fhir-rust.github.io).
+#
+# Invoked via `make github-pages` (Makefile); runnable directly too.
+set -eu
+
+repo_root=$(git rev-parse --show-toplevel)
+name=$(basename "$repo_root")
+
+cd "$repo_root"
+
+git remote get-url github-pages >/dev/null 2>&1 \
+	|| git remote add github-pages "git@github.com:${name}/${name}.github.io.git"
+
+git subtree push --prefix="${name}.github.io" github-pages main
