@@ -50,6 +50,27 @@ was lost.
 - `r5` — Release 5 (5.0.0) — **on by default**
 - `r6` — Release 6 ballot draft (6.0.0-ballot3) — not final, no semver promise
 
+## Modules
+
+Per-release (under `r2`…`r6`, shape identical across releases): `resources`
+(the release's FHIR resources as structs, plus the polymorphic `Resource`
+enum), `codes` (CodeSystems as type-safe enums), `validate` (the `Validate`
+trait, `#[derive(Validate)]`, pathed `ValidationIssue`s), `meta` (per-element
+cardinality/bindings/`value[x]`/reference-target metadata), `coded` (the
+`Coded<E>` wrapper for required-binding fields), `builder` (`BuilderError`
+for generated `Type::builder()`s), `bundle_util` (Bundle iteration, paging,
+the transaction/batch builder), `extension_ext` (`ExtensionExt`/
+`ModifierExtensionExt`: `extension(url)`, `set_extension`, …), `summary`
+(the `_summary=true` view), `temporal` (date/time parsing and
+precision-aware comparison), `xml` (feature `xml`: `to_xml`/`from_xml`),
+`parse`/`codegen`/`abstract_types`/`properties`/`todo` (the spec-JSON to
+Rust generator and its internals).
+
+Release-independent, at the crate root: `prelude` (re-exports the
+most-used resources, datatypes, `Validate`, `Coded`, `ExtensionExt`),
+`convert` (cross-release conversion with a `LossReport`), `client`
+(feature `client`: the async REST client), `choice`/`types`/`codegen`.
+
 ## Machine-readable
 
 - [llms.json](llms.json): the same map as structured JSON — module list, key types, cardinality mapping, per-release counts
