@@ -1,4 +1,4 @@
-# `validate_resource` — Validate FHIR R5 values with the [`Validate`] trait
+# `validate_resource` — Validate FHIR® R5 values with the [`Validate`] trait
 
 Run with:
 
@@ -66,3 +66,7 @@ fn report(patient: &Patient) {
 ```
 
 *Source: [`fhir/examples/validate_resource.rs`](../fhir/examples/validate_resource.rs) in the repository.*
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven International and their use of these trademarks does not constitute an endorsement by HL7.

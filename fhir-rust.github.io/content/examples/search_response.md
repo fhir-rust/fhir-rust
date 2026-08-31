@@ -1,4 +1,4 @@
-# `search_response` — Consume a FHIR search response: typed entries, the total, and paging
+# `search_response` — Consume a FHIR® search response: typed entries, the total, and paging
 
 Run with:
 
@@ -101,3 +101,7 @@ fn main() {
 ```
 
 *Source: [`fhir/examples/search_response.rs`](../fhir/examples/search_response.rs) in the repository.*
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven International and their use of these trademarks does not constitute an endorsement by HL7.

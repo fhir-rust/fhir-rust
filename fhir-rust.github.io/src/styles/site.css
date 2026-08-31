@@ -600,3 +600,14 @@ body {
 	gap: var(--lily-space-md, 1rem);
 	margin-inline-start: auto;
 }
+
+/* HL7 fair use requires this disclaimer on every published page that uses
+   the marks. This footer renders on all of them, so it lives here once
+   rather than per page — spec/hl7-trademarks-fair-use/ (fhir-rust). */
+.site-footer-trademarks {
+	flex-basis: 100%;
+	max-width: none !important;
+	font-size: 0.8125rem;
+	color: var(--color-base-content, currentColor);
+	opacity: 0.7;
+}

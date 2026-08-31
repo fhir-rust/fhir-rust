@@ -1,1 +1,1 @@
-/Users/jph/git/fhir-rust/fhir-rust/spec/hl7-trademarks-fair-use/index.md
+index.md

@@ -28,7 +28,7 @@
 // not a sibling checkout.
 // Run after the prose changes:  npm run sync:content
 
-import { cp, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { cp, lstat, mkdir, readdir, readFile, readlink, rm, symlink, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -57,17 +57,21 @@ const files = [
 // The single-topic specs below are the cross-family documents spec/index.md
 // itself links to (agent skills, agents directory casing, Dependabot,
 // funding, git tags, HL7 trademark fair use, the AI-guidance llms.txt/
-// llms.json files, professionalization, the MSRV policy, the serde_json
+// llms.json files, the monorepo/GitHub-Pages structure, the current Node
+// version, professionalization, the MSRV policy, the serde_json
 // float-roundtrip decision, the special-files list, and Trusted Publishing)
 // — added here after they'd accumulated for weeks with no sync-script
 // update, so spec/index.md's own links 404'd on this site while resolving
 // fine in the repository. `agent-skills` and `llms-json-and-llms-txt` hit
 // the same gap a second time (added to spec/index.md 2026-08-30, missed
-// here until the next day) -- both are named in the array below AND in
-// routeFor()'s switch in src/lib/paths.js; a spec dir needs both or its
-// links resolve nowhere. Each is a single `index.md` (one also carries a
-// template file, `special-files-for-public-repos/AI_STATEMENT.md`) — flat,
-// matching every other entry in this list, not nested further.
+// here until the next day); `monorepo-github-pages` and
+// `node-current-version` a third (added 2026-08-31, caught only once this
+// site itself moved inside the monorepo and its own gate ran against its
+// own content) -- both are named in the array below AND in routeFor()'s
+// switch in src/lib/paths.js; a spec dir needs both or its links resolve
+// nowhere. Each is a single `index.md` (one also carries a template file,
+// `special-files-for-public-repos/AI_STATEMENT.md`) — flat, matching every
+// other entry in this list, not nested further.
 const dirs = [
 	'doc',
 	'spec/databases',
@@ -78,6 +82,8 @@ const dirs = [
 	'spec/git-tags-name-published-versions',
 	'spec/hl7-trademarks-fair-use',
 	'spec/llms-json-and-llms-txt',
+	'spec/monorepo-github-pages',
+	'spec/node-current-version',
 	'spec/professionalization',
 	'spec/rust-msrv-n-minus-2',
 	'spec/serde-json-float-roundtrip-arbitrary-precision',
@@ -86,6 +92,21 @@ const dirs = [
 	'fhir/spec',
 	'fhir-loco/spec'
 ];
+
+// node:fs/promises' cp() resolves a symlink's target to an absolute path
+// when it recreates it at the destination (verified directly against this
+// Node version, not assumed) -- fine for a build artifact nobody commits,
+// wrong for one that is: every "README.md -> index.md" symlink in spec/*
+// synced this way baked in this machine's own home directory path, which
+// broke the moment a different machine (hosted CI) tried to read it. Copy
+// a symlink by hand instead, preserving its relative target verbatim.
+async function copyPreservingSymlinks(from, to) {
+	if ((await lstat(from)).isSymbolicLink()) {
+		await symlink(await readlink(from), to);
+	} else {
+		await cp(from, to);
+	}
+}
 
 const contentDir = join(siteRoot, 'content');
 await rm(contentDir, { recursive: true, force: true });
@@ -113,7 +134,7 @@ for (const dir of dirs) {
 	await mkdir(join(contentDir, dir), { recursive: true });
 	for (const name of await readdir(source)) {
 		if (!name.endsWith('.md')) continue;
-		await cp(join(source, name), join(contentDir, dir, name));
+		await copyPreservingSymlinks(join(source, name), join(contentDir, dir, name));
 		count += 1;
 	}
 }
@@ -124,6 +145,39 @@ for (const dir of dirs) {
 // style, checked in the crate's own CI), so the page writes itself: the
 // comment becomes the prose, the rest becomes the listing. The first line of
 // the comment is the title.
+//
+// These pages are committed, git-tracked files under fhir-rust.github.io/ --
+// as directly readable on GitHub as any other Markdown in the repository,
+// not merely a build intermediate the live site's own footer disclaimer
+// covers. scripts/check-trademarks.sh holds every .md file in the repo to
+// the same rule (spec/hl7-trademarks-fair-use/), generated or not, so the
+// generator carries it: mark the first prose use of each HL7 word mark and
+// append the disclaimer, exactly what a human author would do by hand.
+// Never applied to the fenced Rust listing below the prose -- inserting a
+// ® into copy-pasted source would corrupt it, not just be non-compliant.
+
+const WORD_MARKS = ['HL7', 'FHIR', 'CDA'];
+const TRADEMARK_DISCLAIMER =
+	'HL7®, and FHIR® are the registered trademarks of Health Level Seven ' +
+	'International and their use of these trademarks does not constitute ' +
+	'an endorsement by HL7.';
+
+function markWordMarks(text) {
+	let out = text;
+	for (const mark of WORD_MARKS) {
+		const m = new RegExp(`\\b${mark}\\b(?!®)`).exec(out);
+		if (m) out = out.slice(0, m.index + mark.length) + '®' + out.slice(m.index + mark.length);
+	}
+	return out;
+}
+
+function usesAnyWordMark(text) {
+	return WORD_MARKS.some((mark) => new RegExp(`\\b${mark}\\b`).test(text));
+}
+
+function trademarkSection() {
+	return ['## Trademarks', '', TRADEMARK_DISCLAIMER, ''].join('\n');
+}
 
 const examplesDir = join(workspace, 'fhir', 'examples');
 const outExamples = join(contentDir, 'examples');
@@ -167,10 +221,10 @@ if (existsSync(examplesDir)) {
 			.join('\n')
 			.replace(/\[([^\]]+)\](?!\()/g, '$1');
 
+		const pageProse = markWordMarks(`# \`${stem}\` — ${title}\n\n${body.trim()}`);
+
 		const markdown = [
-			`# \`${stem}\` — ${title}`,
-			'',
-			body.trim(),
+			pageProse,
 			'',
 			'## The program',
 			'',
@@ -179,7 +233,8 @@ if (existsSync(examplesDir)) {
 			'```',
 			'',
 			`*Source: [\`fhir/examples/${name}\`](../fhir/examples/${name}) in the repository.*`,
-			''
+			'',
+			...(usesAnyWordMark(pageProse) ? [trademarkSection()] : [])
 		].join('\n');
 
 		await writeFile(join(outExamples, `${stem}.md`), markdown);
@@ -187,20 +242,25 @@ if (existsSync(examplesDir)) {
 		count += 1;
 	}
 
-	const index = [
-		'# Examples',
-		'',
-		'Runnable programs from the model crate’s `examples/` directory. Each is',
-		'a tutorial in its header comment and a complete program below it; run',
-		'one from a checkout with `cargo run --example <name>` (some need extra',
-		'cargo features — the page says which).',
-		'',
-		...exampleIndex.map(({ stem, title }) => `- [\`${stem}\`](${stem}.md) — ${title}`),
-		'',
-		'The database family’s worked examples are a guide of their own:',
-		'[Examples](../doc/examples.md).',
-		''
-	].join('\n');
+	const indexProse = markWordMarks(
+		[
+			'# Examples',
+			'',
+			'Runnable programs from the model crate’s `examples/` directory. Each is',
+			'a tutorial in its header comment and a complete program below it; run',
+			'one from a checkout with `cargo run --example <name>` (some need extra',
+			'cargo features — the page says which).',
+			'',
+			...exampleIndex.map(({ stem, title }) => `- [\`${stem}\`](${stem}.md) — ${title}`),
+			'',
+			'The database family’s worked examples are a guide of their own:',
+			'[Examples](../doc/examples.md).',
+			''
+		].join('\n')
+	);
+	const index = [indexProse, ...(usesAnyWordMark(indexProse) ? [trademarkSection()] : [])].join(
+		'\n'
+	);
 	await writeFile(join(outExamples, 'index.md'), index);
 	count += 1;
 }

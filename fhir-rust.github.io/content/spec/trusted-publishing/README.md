@@ -1,1 +1,1 @@
-/Users/jph/git/fhir-rust/fhir-rust/spec/trusted-publishing/index.md
+index.md

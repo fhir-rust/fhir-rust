@@ -1,4 +1,4 @@
-# `r4_patient` — Build a FHIR R4 `Patient`, serialize it, validate it, and read it back
+# `r4_patient` — Build a FHIR® R4 `Patient`, serialize it, validate it, and read it back
 
 Run with:
 
@@ -54,3 +54,7 @@ fn main() {
 ```
 
 *Source: [`fhir/examples/r4_patient.rs`](../fhir/examples/r4_patient.rs) in the repository.*
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven International and their use of these trademarks does not constitute an endorsement by HL7.

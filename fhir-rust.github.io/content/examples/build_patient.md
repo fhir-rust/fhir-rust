@@ -1,4 +1,4 @@
-# `build_patient` — Build a FHIR R5 `Patient` with the generated builder and serialize it
+# `build_patient` — Build a FHIR® R5 `Patient` with the generated builder and serialize it
 
 Run with:
 
@@ -51,3 +51,7 @@ fn main() {
 ```
 
 *Source: [`fhir/examples/build_patient.rs`](../fhir/examples/build_patient.rs) in the repository.*
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven International and their use of these trademarks does not constitute an endorsement by HL7.

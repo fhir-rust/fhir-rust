@@ -1,4 +1,4 @@
-# `code_systems` — Use FHIR R5 code systems as type-safe Rust enums
+# `code_systems` — Use FHIR® R5 code systems as type-safe Rust enums
 
 Run with:
 
@@ -36,3 +36,7 @@ fn main() {
 ```
 
 *Source: [`fhir/examples/code_systems.rs`](../fhir/examples/code_systems.rs) in the repository.*
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven International and their use of these trademarks does not constitute an endorsement by HL7.

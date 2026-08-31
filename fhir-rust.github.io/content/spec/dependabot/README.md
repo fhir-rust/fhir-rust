@@ -1,1 +1,1 @@
-/Users/jph/git/fhir-rust/fhir-rust/spec/dependabot/index.md
+index.md

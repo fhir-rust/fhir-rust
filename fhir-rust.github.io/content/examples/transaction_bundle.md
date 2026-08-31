@@ -1,4 +1,4 @@
-# `transaction_bundle` — Build a FHIR transaction `Bundle` and read resources back out of one
+# `transaction_bundle` — Build a FHIR® transaction `Bundle` and read resources back out of one
 
 Run with:
 
@@ -56,3 +56,7 @@ fn main() {
 ```
 
 *Source: [`fhir/examples/transaction_bundle.rs`](../fhir/examples/transaction_bundle.rs) in the repository.*
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven International and their use of these trademarks does not constitute an endorsement by HL7.

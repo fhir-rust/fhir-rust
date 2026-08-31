@@ -37,7 +37,7 @@ export function routeFor(path) {
 			return '/specs/';
 		case 'spec/publishing.md':
 			return '/specs/publishing/';
-		// The ten single-topic cross-family specs spec/index.md itself links
+		// The fourteen single-topic cross-family specs spec/index.md itself links
 		// to. Same /specs/<slug>/ shape as spec/publishing.md above, added
 		// once the sync script started vendoring them (they'd accumulated for
 		// weeks with no route here, so spec/index.md's own links fell back to
@@ -56,6 +56,10 @@ export function routeFor(path) {
 			return '/specs/hl7-trademarks-fair-use/';
 		case 'spec/llms-json-and-llms-txt/index.md':
 			return '/specs/llms-json-and-llms-txt/';
+		case 'spec/monorepo-github-pages/index.md':
+			return '/specs/monorepo-github-pages/';
+		case 'spec/node-current-version/index.md':
+			return '/specs/node-current-version/';
 		case 'spec/professionalization/index.md':
 			return '/specs/professionalization/';
 		case 'spec/rust-msrv-n-minus-2/index.md':

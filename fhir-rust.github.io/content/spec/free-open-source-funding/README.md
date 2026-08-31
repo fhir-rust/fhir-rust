@@ -1,1 +1,1 @@
-/Users/jph/git/fhir-rust/fhir-rust/spec/free-open-source-funding/index.md
+index.md

@@ -1,1 +1,1 @@
-/Users/jph/git/fhir-rust/fhir-rust/spec/agent-skills/index.md
+index.md

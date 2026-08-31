@@ -1,4 +1,4 @@
-# `extensions` — Read and write FHIR extensions ergonomically with `ExtensionExt`
+# `extensions` — Read and write FHIR® extensions ergonomically with `ExtensionExt`
 
 Run with:
 
@@ -57,3 +57,7 @@ fn main() {
 ```
 
 *Source: [`fhir/examples/extensions.rs`](../fhir/examples/extensions.rs) in the repository.*
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven International and their use of these trademarks does not constitute an endorsement by HL7.

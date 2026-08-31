@@ -1,4 +1,4 @@
-# `primitive_extensions` — Read and write FHIR *primitive extensions* — the `_field` siblings
+# `primitive_extensions` — Read and write FHIR® *primitive extensions* — the `_field` siblings
 
 Run with:
 
@@ -95,3 +95,7 @@ fn main() {
 ```
 
 *Source: [`fhir/examples/primitive_extensions.rs`](../fhir/examples/primitive_extensions.rs) in the repository.*
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven International and their use of these trademarks does not constitute an endorsement by HL7.

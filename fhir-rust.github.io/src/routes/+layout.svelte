@@ -117,7 +117,7 @@
 <Footer label="Site footer" class="site-footer">
 	<div class="site-footer-inner">
 		<p>
-			<strong>fhir-rust</strong> — FHIR resources stored in a SQL database as real relational
+			<strong>fhir-rust</strong> — FHIR® resources stored in a SQL database as real relational
 			tables, and given back losslessly. Pre-release: the
 			<a href="/conformance/">conformance matrix</a> is the status document to trust. Built with the
 			<a href="https://github.com/LilyDesignSystem">Lily Design System</a>.
@@ -128,5 +128,10 @@
 			<a href="/spec/audit/">Audit findings</a>
 			<a href="/sitemap.xml">Sitemap</a>
 		</div>
+		<p class="site-footer-trademarks">
+			HL7®, and FHIR® are the registered trademarks of Health Level Seven
+			International and their use of these trademarks does not constitute
+			an endorsement by HL7.
+		</p>
 	</div>
 </Footer>

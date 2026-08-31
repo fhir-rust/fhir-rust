@@ -1,4 +1,4 @@
-# `operation_outcome` — Turn validation results into a FHIR `OperationOutcome`
+# `operation_outcome` — Turn validation results into a FHIR® `OperationOutcome`
 
 Run with:
 
@@ -53,3 +53,7 @@ fn main() {
 ```
 
 *Source: [`fhir/examples/operation_outcome.rs`](../fhir/examples/operation_outcome.rs) in the repository.*
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven International and their use of these trademarks does not constitute an endorsement by HL7.

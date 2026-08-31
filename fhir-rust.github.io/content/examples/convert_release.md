@@ -1,4 +1,4 @@
-# `convert_release` — Convert a resource between FHIR releases, and read the loss report
+# `convert_release` — Convert a resource between FHIR® releases, and read the loss report
 
 Run with:
 
@@ -75,3 +75,7 @@ fn main() {
 ```
 
 *Source: [`fhir/examples/convert_release.rs`](../fhir/examples/convert_release.rs) in the repository.*
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven International and their use of these trademarks does not constitute an endorsement by HL7.

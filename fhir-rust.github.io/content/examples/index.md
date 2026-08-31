@@ -5,7 +5,7 @@ a tutorial in its header comment and a complete program below it; run
 one from a checkout with `cargo run --example <name>` (some need extra
 cargo features — the page says which).
 
-- [`build_patient`](build_patient.md) — Build a FHIR R5 `Patient` with the generated builder and serialize it
+- [`build_patient`](build_patient.md) — Build a FHIR® R5 `Patient` with the generated builder and serialize it
 - [`client_crud`](client_crud.md) — FHIR REST client CRUD against the public HAPI test server (feature `client`)
 - [`code_systems`](code_systems.md) — Use FHIR R5 code systems as type-safe Rust enums
 - [`convert_release`](convert_release.md) — Convert a resource between FHIR releases, and read the loss report
@@ -24,3 +24,7 @@ cargo features — the page says which).
 
 The database family’s worked examples are a guide of their own:
 [Examples](../doc/examples.md).
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven International and their use of these trademarks does not constitute an endorsement by HL7.

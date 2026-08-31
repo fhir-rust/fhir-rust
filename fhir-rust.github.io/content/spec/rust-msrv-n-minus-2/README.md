@@ -1,1 +1,1 @@
-/Users/jph/git/fhir-rust/fhir-rust/spec/rust-msrv-n-minus-2/index.md
+index.md

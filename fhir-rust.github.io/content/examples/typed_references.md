@@ -6,7 +6,7 @@ Run with:
 cargo run --example typed_references
 ```
 
-Where the FHIR specification says a reference targets exactly one resource
+Where the FHIR® specification says a reference targets exactly one resource
 type, the generated field says so too: `AllergyIntolerance.patient` is
 `Reference<Patient>`, not a stringly-typed link. Where the specification
 allows several targets — `Observation.subject` may be a Patient, Group,
@@ -87,3 +87,7 @@ fn main() {
 ```
 
 *Source: [`fhir/examples/typed_references.rs`](../fhir/examples/typed_references.rs) in the repository.*
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven International and their use of these trademarks does not constitute an endorsement by HL7.

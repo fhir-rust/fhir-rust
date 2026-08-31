@@ -1,4 +1,4 @@
-# `client_crud` — FHIR REST client CRUD against the public HAPI test server (feature `client`)
+# `client_crud` — FHIR® REST client CRUD against the public HAPI test server (feature `client`)
 
 Run with:
 
@@ -65,3 +65,7 @@ fn main() {
 ```
 
 *Source: [`fhir/examples/client_crud.rs`](../fhir/examples/client_crud.rs) in the repository.*
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven International and their use of these trademarks does not constitute an endorsement by HL7.

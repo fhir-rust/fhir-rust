@@ -1,4 +1,4 @@
-# `read_bundle` — Read a FHIR R5 `Bundle` and dispatch on each entry's resource type
+# `read_bundle` — Read a FHIR® R5 `Bundle` and dispatch on each entry's resource type
 
 Run with:
 
@@ -61,3 +61,7 @@ fn main() {
 ```
 
 *Source: [`fhir/examples/read_bundle.rs`](../fhir/examples/read_bundle.rs) in the repository.*
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven International and their use of these trademarks does not constitute an endorsement by HL7.
