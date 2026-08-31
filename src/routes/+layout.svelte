@@ -35,7 +35,38 @@
 	// +error.svelte, since its nearest load (in [...path]) throws before
 	// returning — falls back to the site title.
 	const shareTitle = $derived(page.data.title ?? `${SITE_NAME} — ${SITE_TAGLINE}`);
+
+	// Attribute-based, multi-stylesheet theming: every theme's CSS is loaded
+	// (the <link data-theme-stylesheet> block below), not just the active
+	// one, so switching never re-fetches or waits on the network — the
+	// previous approach let ThemePicker swap the href of one dynamically
+	// managed <link>, which fetched a fresh stylesheet on every switch.
+	// Only one is ever enabled: ThemePicker already sets `data-theme` on
+	// <html> as its single source of truth (every static/themes/*.css file
+	// self-documents this — `:root[data-theme="…"]`), so this reads that
+	// attribute back rather than trusting onChange's own argument to agree
+	// with it. ThemePicker still creates one extra managed <link> of its
+	// own (unconditional in the package, no prop disables it); harmless —
+	// same cached URL as one of the links below, so no extra fetch.
+	function applyStylesheet() {
+		if (typeof document === 'undefined') return;
+		const theme = document.documentElement.getAttribute('data-theme');
+		for (const link of document.querySelectorAll('link[data-theme-stylesheet]')) {
+			link.disabled = link.dataset.themeStylesheet !== theme;
+		}
+	}
 </script>
+
+<svelte:head>
+	{#each THEMES as theme (theme)}
+		<link
+			rel="stylesheet"
+			href={`/themes/${theme}.css`}
+			data-theme-stylesheet={theme}
+			disabled={theme !== 'light'}
+		/>
+	{/each}
+</svelte:head>
 
 <SkipLink href="#main" label="Skip to main content" />
 
@@ -64,6 +95,7 @@
 				themeLabels={THEME_LABELS}
 				storageKey="fhir-rust-theme"
 				detectFromSystem
+				onChange={applyStylesheet}
 			/>
 			<SharePicker
 				label="Share this page"

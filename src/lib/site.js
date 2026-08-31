@@ -54,10 +54,15 @@ export const THEME_LABELS = {
 
 /**
  * SharePicker destinations. The package ships no third-party endpoints by
- * design (each consumer's choice of network is editorial), so this site
- * supplies its own — technical/OSS-audience networks plus email.
+ * design (each consumer's choice of network is editorial) — this site's
+ * choice: LinkedIn, Mastodon, Bluesky, Reddit.
  */
 export const SHARE_TARGETS = [
+	{
+		id: 'linkedin',
+		label: 'LinkedIn',
+		href: (url) => `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`
+	},
 	{
 		id: 'mastodon',
 		label: 'Mastodon',
@@ -71,15 +76,9 @@ export const SHARE_TARGETS = [
 			`https://bsky.app/intent/compose?text=${encodeURIComponent(`${title} ${url}`)}`
 	},
 	{
-		id: 'linkedin',
-		label: 'LinkedIn',
-		href: (url) => `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`
-	},
-	{
-		id: 'email',
-		label: 'Email',
+		id: 'reddit',
+		label: 'Reddit',
 		href: (url, title) =>
-			`mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(url)}`,
-		newTab: false
+			`https://www.reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}`
 	}
 ];
