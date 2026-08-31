@@ -5,7 +5,7 @@
 	"type": "module",
 	"private": "true",
 	"engines": {
-		"node": ">=26"
+		"node": "=26"
 	},
 	"scripts": {
 		"sync": "node bin/sync-content.mjs && node bin/sync-lily-themes.mjs && node bin/sync-llms.mjs",
