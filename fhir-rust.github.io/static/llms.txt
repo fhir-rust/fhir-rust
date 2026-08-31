@@ -1,0 +1,95 @@
+# fhir-rust
+
+> A Rust monorepo for the HL7® FHIR® standard: the data model, six relational
+> database ports, and an HTTP surface over them.
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7. Canonical repository:
+https://github.com/fhir-rust/fhir-rust — all links below are paths relative to
+its root.
+
+Four families, composing one way only (model → persistence core → database
+ports → HTTP surface); no family is normative for another, and `spec/index.md`
+is the one place that says which specification governs which code. A stated
+trap for readers, human or automated: `R4.x` is used by two unrelated
+requirement sets (`fhir/spec/04-resources.md` and
+`spec/databases/04-shredding-and-reconstruction.md`) — resolve a bare citation
+by the file it appears in.
+
+## Start here
+
+- [AGENTS.md](https://github.com/fhir-rust/fhir-rust/blob/main/AGENTS.md): operational guidance shared by every contributor and agent; its five rules are the ones that get broken
+- [CLAUDE.md](https://github.com/fhir-rust/fhir-rust/blob/main/CLAUDE.md): repo-specific orientation and documented traps (stale claims, name collisions, the shared-core rule)
+- [README.md](https://fhir-rust.github.io/overview/): project overview, the four families, status table
+- [spec/index.md](https://fhir-rust.github.io/specs/): root of every normative specification; the `R4.x` collision note; precedence rules
+- [INSTALL.md](https://github.com/fhir-rust/fhir-rust/blob/main/INSTALL.md): these are libraries, not a CLI or server — how to add one to a Rust project
+
+## Model — FHIR® resources and datatypes as Rust types
+
+- [fhir/README.md](https://fhir-rust.github.io/model/): every resource and datatype for releases R2–R6 plus R4B, generated from HL7's own spec packages
+- [fhir/spec/index.md](https://fhir-rust.github.io/model/spec/): model specification, ids `R1.x`–`R14.x`
+- [fhir/AGENTS.md](https://github.com/fhir-rust/fhir-rust/blob/main/fhir/AGENTS.md): agent guidance specific to the model crate
+- [fhir/fhir.md](https://github.com/fhir-rust/fhir-rust/blob/main/fhir/fhir.md): generated, searchable index of every resource and field — fastest way to look up "does X have field Y"
+- [fhir/examples](https://fhir-rust.github.io/examples/): runnable examples — building a resource, reading/writing extensions, code-system enums, CRUD, converting between releases
+
+## Database ports — FHIR resources as real relational tables
+
+- [spec/databases/index.md](https://fhir-rust.github.io/spec/): normative core shared by all six ports, sections 0–16
+- [spec/databases/conformance-matrix.md](https://fhir-rust.github.io/conformance/): what is actually verified per port today — trust this over any README if they disagree
+- [spec/databases/audit.md](https://fhir-rust.github.io/spec/audit/): tracked findings; a change may already be a known issue here
+- [spec/databases/15-portability-and-dialects.md](https://fhir-rust.github.io/spec/15-portability-and-dialects/): how the shared Rust core and per-engine dialect annexes relate
+- [fhir-postgresql](https://github.com/fhir-rust/fhir-rust/tree/main/fhir-postgresql): PostgreSQL 18 — Reference level, full store, full test suite
+- [fhir-sqlite](https://github.com/fhir-rust/fhir-rust/tree/main/fhir-sqlite): SQLite 3 — Store level, embeddable, no server
+- [fhir-mysql](https://github.com/fhir-rust/fhir-rust/tree/main/fhir-mysql): MySQL 8.4 — Store level
+- [fhir-mariadb](https://github.com/fhir-rust/fhir-rust/tree/main/fhir-mariadb): MariaDB 11.4 — Store level
+- [fhir-mssql](https://github.com/fhir-rust/fhir-rust/tree/main/fhir-mssql): SQL Server — Store level, live-verified against `azure-sql-edge`
+- [fhir-oracle](https://github.com/fhir-rust/fhir-rust/tree/main/fhir-oracle): Oracle Database — Store level, live-verified against `gvenzl/oracle-free`
+
+## Persistence core
+
+- [fhir-store/README.md](https://fhir-rust.github.io/store/): the engine-agnostic half of storage — audit chain, attribution, shared result types. A small library, not the HTTP surface, despite a past name collision (see CLAUDE.md)
+
+## HTTP surface
+
+- [fhir-loco/README.md](https://fhir-rust.github.io/server/): a FHIR RESTful API server (Loco/Axum/Tokio/Hyper) mounted over `fhir-sqlite` — the only crate in the repo that speaks HTTP
+- [fhir-loco/spec/index.md](https://fhir-rust.github.io/server/spec/): server specification, ids `SV1.x`–`SV4.x`
+
+## Documentation and tutorials
+
+- [doc/index.md](https://fhir-rust.github.io/docs/guides/): tutorials index for the database ports
+- [doc/tutorial-01-getting-started.md](https://fhir-rust.github.io/docs/tutorial-01-getting-started/): install a schema, write and read a resource, no server required
+- [doc/tutorial-02-storage-model.md](https://fhir-rust.github.io/docs/tutorial-02-storage-model/): what a resource becomes — base tables, child tables, references
+- [doc/tutorial-03-querying-sql.md](https://fhir-rust.github.io/docs/tutorial-03-querying-sql/): treat the store as the relational schema it is
+- [doc/tutorial-04-search.md](https://fhir-rust.github.io/docs/tutorial-04-search/): FHIR® search parameters, modifiers, paging
+- [doc/tutorial-05-history-and-audit.md](https://fhir-rust.github.io/docs/tutorial-05-history-and-audit/): versions, attribution, the tamper-evident chain, erasure
+- [doc/tutorial-06-porting.md](https://fhir-rust.github.io/docs/tutorial-06-porting/): porting the core to a new database engine
+- [doc/choosing-an-engine.md](https://fhir-rust.github.io/docs/choosing-an-engine/): the six ports compared — status, type bindings, costs
+- [doc/storage-model.md](https://fhir-rust.github.io/docs/storage-model/): conceptual reference for the storage model, for lookup rather than reading through
+- [doc/trust-boundary.md](https://fhir-rust.github.io/docs/trust-boundary/): what these libraries guarantee about PHI, and what a deployment must provide
+- [doc/faq.md](https://fhir-rust.github.io/docs/faq/): frequently asked questions
+- [doc/examples.md](https://fhir-rust.github.io/docs/examples/): worked examples
+
+## Agent skills
+
+- [fhir-skill/SKILL.md](https://github.com/fhir-rust/fhir-rust/blob/main/fhir-skill/SKILL.md): general-purpose skill for end users — FHIR® concepts, terminology, and repo-grounded examples
+- [fhir-rust-maintainer-skill/SKILL.md](https://github.com/fhir-rust/fhir-rust/blob/main/fhir-rust-maintainer-skill/SKILL.md): technical skill for maintainers — checklists and commands for shared-core changes, spec changes, and verification before claiming something works
+
+## Optional
+
+- [CHANGELOG.md](https://github.com/fhir-rust/fhir-rust/blob/main/CHANGELOG.md): what changed in the software, per release
+- [NEWS.md](https://github.com/fhir-rust/fhir-rust/blob/main/NEWS.md): what happened to the project, in reverse order
+- [CONTRIBUTING.md](https://github.com/fhir-rust/fhir-rust/blob/main/CONTRIBUTING.md): how to contribute
+- [CODE_OF_CONDUCT.md](https://github.com/fhir-rust/fhir-rust/blob/main/CODE_OF_CONDUCT.md): community standards
+- [SECURITY.md](https://github.com/fhir-rust/fhir-rust/blob/main/SECURITY.md): reporting a vulnerability
+- [PHI.md](https://github.com/fhir-rust/fhir-rust/blob/main/PHI.md): plain-language PHI/privacy answers for a reviewer or vendor questionnaire
+- [GOVERNANCE.md](https://github.com/fhir-rust/fhir-rust/blob/main/GOVERNANCE.md): decision-making and project governance
+- [MAINTAINERS.md](https://github.com/fhir-rust/fhir-rust/blob/main/MAINTAINERS.md): who maintains what
+- [BENCHMARKS.md](https://github.com/fhir-rust/fhir-rust/blob/main/BENCHMARKS.md): performance numbers, with the caveats to read first
+- [COMPARISONS.md](https://github.com/fhir-rust/fhir-rust/blob/main/COMPARISONS.md): how this project compares to other FHIR implementations
+- [RFC.md](https://github.com/fhir-rust/fhir-rust/blob/main/RFC.md): open questions the project wants feedback on
+- [AI_STATEMENT.md](https://github.com/fhir-rust/fhir-rust/blob/main/AI_STATEMENT.md): how AI assistance is used and disclosed in this project
+- [plan.md](https://github.com/fhir-rust/fhir-rust/blob/main/plan.md): the professionalization plan and its rationale
+- [tasks.md](https://github.com/fhir-rust/fhir-rust/blob/main/tasks.md): repository-level checklist — verified work only, per its own rule
+- [LICENSE.md](https://github.com/fhir-rust/fhir-rust/blob/main/LICENSE.md): license
+- [CITATION.cff](https://github.com/fhir-rust/fhir-rust/blob/main/CITATION.cff): how to cite this project

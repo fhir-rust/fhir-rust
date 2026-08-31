@@ -1,0 +1,35 @@
+{
+	"name": "fhir-rust.github.io",
+	"version": "0.1.0",
+	"description": "The fhir-rust website: FHIR in Rust, stored as real relational tables.",
+	"type": "module",
+	"private": "true",
+	"engines": {
+		"node": "=26"
+	},
+	"scripts": {
+		"sync": "node bin/sync-content.mjs && node bin/sync-lily-themes.mjs && node bin/sync-llms.mjs",
+		"sync:content": "node bin/sync-content.mjs",
+		"sync:lily-themes": "node bin/sync-lily-themes.mjs",
+		"sync:llms": "node bin/sync-llms.mjs",
+		"dev": "vite dev",
+		"build": "vite build",
+		"preview": "vite preview",
+		"check": "svelte-kit sync"
+	},
+	"devDependencies": {
+		"@sveltejs/adapter-static": "^3.0.10",
+		"@sveltejs/kit": "^2.70.2",
+		"@sveltejs/vite-plugin-svelte": "^7.3.0",
+		"svelte": "^5.56.9",
+		"vite": "^8.2.1"
+	},
+	"dependencies": {
+		"github-slugger": "^2.0.0",
+		"lily-design-system-svelte-headless": "^0.3.1",
+		"lily-design-system-svelte-share-picker": "^0.1.1",
+		"lily-design-system-svelte-text-size-picker": "^0.1.1",
+		"lily-design-system-svelte-theme-picker": "^0.1.1",
+		"marked": "^18.0.10"
+	}
+}
