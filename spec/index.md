@@ -86,7 +86,7 @@ release surface as a whole, as is the layout it is released from; precedence
 rule 4 above is about family-to-family bindings and does not exempt a family
 from `AG1.x` or `RV1.x`.
 
-Eight further documents at this level bind the repository as a process
+Nine further documents at this level bind the repository as a process
 rather than any family's code, and carry prose rules instead of requirement
 ids:
 [`professionalization/`](professionalization/index.md) (what "professional"
@@ -107,10 +107,14 @@ maintainers), and
 copy must do differently — repository-relative links don't resolve off a git
 checkout),
 [`free-open-source-funding/`](free-open-source-funding/index.md) (GitHub
-Sponsors, Open Collective, and `.github/FUNDING.yml`), and
+Sponsors, Open Collective, and `.github/FUNDING.yml`),
 [`serde-json-float-roundtrip-arbitrary-precision/`](serde-json-float-roundtrip-arbitrary-precision/index.md)
 (the `serde_json` feature flags that keep floats and arbitrary-precision
-numbers round-tripping losslessly through JSON).
+numbers round-tripping losslessly through JSON), and
+[`node-current-version/`](node-current-version/index.md) (the Node.js®
+version this repository's own family carries no code for, but a sibling
+site repository does — `fhir-rust.github.io`'s `deploy.yml`, `package.json`,
+`.npmrc`, `.nvmrc`, `.tool-versions`).
 
 ### Databases — `spec/databases/`
 
