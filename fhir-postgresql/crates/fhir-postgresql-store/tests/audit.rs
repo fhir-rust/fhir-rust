@@ -6,7 +6,7 @@
 //! itself refuses to let history be rewritten (M3.17).
 
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, OnceLock};
 
 use fhir_postgresql_store::{AccessRecord, Audit, Store};
 use serde_json::{Value, json};
@@ -26,7 +26,63 @@ fn spec_defs() -> Option<PathBuf> {
     defs.exists().then_some(defs)
 }
 
+/// A `tracing` writer that appends to a shared, cloneable buffer.
+#[derive(Clone, Default)]
+struct Capture(Arc<Mutex<Vec<u8>>>);
+impl std::io::Write for Capture {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        self.0.lock().expect("lock").extend_from_slice(buf);
+        Ok(buf.len())
+    }
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
+}
+
+/// Arms a process-wide `tracing` subscriber, once, and hands back the buffer
+/// it writes into.
+///
+/// This is a *global* default (`set_global_default`), not a thread-local
+/// `tracing::subscriber::set_default` scoped to one test — and it is called
+/// from every test's first real step in [`test_store`], not only from
+/// `checkpoints_are_logged_on_their_own_target_without_phi`. Both choices
+/// exist because of F-99: `tracing`'s per-callsite interest cache is decided
+/// the *first* time a callsite fires anywhere in the process, and a
+/// thread-local override does not trigger the rebuild that installing a
+/// global default does. `emit_checkpoint`'s single callsite (`src/lib.rs`)
+/// is also reached internally by `resigning_refuses_tampered_history_...`
+/// and by the erasure path, and cargo runs this binary's tests in parallel —
+/// so whichever of those hit the callsite first, with no subscriber active,
+/// would otherwise wedge its interest at "nobody cares" for the rest of the
+/// process, silently starving every later call including this file's own
+/// checkpoint test. That is what actually happened when the
+/// `deadpool-postgres` 0.14.2 bump shifted this binary's scheduling enough
+/// to let the race go the wrong way — confirmed by reading both that crate's
+/// and its `deadpool`/`deadpool-runtime` dependencies' diffs directly rather
+/// than assumed: neither introduces a `tokio::spawn`/`spawn_blocking` on the
+/// path this test exercises, which rules out the thread-hop the original
+/// hypothesis proposed and leaves the interest-cache race as the only
+/// mechanism consistent with the evidence. Arming this before any test does
+/// real work fixes the race regardless of which test wins it.
+fn arm_test_tracing() -> Capture {
+    static SINK: OnceLock<Capture> = OnceLock::new();
+    SINK.get_or_init(|| {
+        let sink = Capture::default();
+        let made = sink.clone();
+        let subscriber = tracing_subscriber::fmt()
+            .with_writer(move || made.clone())
+            .with_ansi(false)
+            .with_target(true)
+            .finish();
+        tracing::subscriber::set_global_default(subscriber)
+            .expect("install process-wide test subscriber");
+        sink
+    })
+    .clone()
+}
+
 async fn test_store(schema: &str) -> Option<Arc<Store>> {
+    let _ = arm_test_tracing();
     let _db = common::test_db()?;
     let defs = spec_defs()?;
     let map = Arc::new(fhir_postgresql_gen::generate(&defs, schema).expect("generate"));
@@ -382,20 +438,6 @@ async fn a_rotated_key_still_verifies_history_it_signed() {
 /// must not.
 #[tokio::test]
 async fn checkpoints_are_logged_on_their_own_target_without_phi() {
-    use std::sync::{Arc as StdArc, Mutex};
-
-    #[derive(Clone, Default)]
-    struct Capture(StdArc<Mutex<Vec<u8>>>);
-    impl std::io::Write for Capture {
-        fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-            self.0.lock().expect("lock").extend_from_slice(buf);
-            Ok(buf.len())
-        }
-        fn flush(&mut self) -> std::io::Result<()> {
-            Ok(())
-        }
-    }
-
     let Some(store) = test_store("checkpoint").await else {
         eprintln!("skipping: FHIR_POSTGRESQL_TEST_DB not set or spec missing");
         return;
@@ -407,19 +449,16 @@ async fn checkpoints_are_logged_on_their_own_target_without_phi() {
         .await
         .expect("create");
 
-    let sink = Capture::default();
-    let made = sink.clone();
-    let subscriber = tracing_subscriber::fmt()
-        .with_writer(move || made.clone())
-        .with_ansi(false)
-        .with_target(true)
-        .finish();
-    // `set_default` rather than `with_default`: the emission is async, and a
-    // closure cannot await. `#[tokio::test]` runs on a current-thread
-    // runtime, so the await stays on the thread this guard applies to.
-    let guard = tracing::subscriber::set_default(subscriber);
+    // `arm_test_tracing()` was already called (from `test_store`, above) —
+    // calling it again just clones the same shared sink rather than
+    // installing a second global subscriber (see F-99 for why this must be
+    // process-global rather than a thread-local `set_default` guard around
+    // this one call). Cleared here so setup noise, and anything a
+    // concurrently running test happens to log, does not obscure a genuine
+    // failure's `{logged}` printout below.
+    let sink = arm_test_tracing();
+    sink.0.lock().expect("lock").clear();
     store.emit_checkpoint("test").await;
-    drop(guard);
 
     let logged = String::from_utf8(sink.0.lock().expect("lock").clone()).expect("utf8");
     assert!(

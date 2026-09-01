@@ -5849,6 +5849,66 @@ regardless of which task or thread ends up running the pooled query. PR
 #59 is left open rather than merged past a failure that was reproduced,
 not merely observed once.
 
+**Update, closed while continuing the CI-watch backlog:** path (1) is now
+settled, and it clears `deadpool-postgres` rather than convicting it. Both
+`deadpool-postgres-0.14.1` and `-0.14.2`, and their `deadpool` (0.12.3 →
+0.13.1) and `deadpool-runtime` (0.1.4 → 0.3.1) companions that the bump also
+carries, were diffed directly from the local registry cache rather than
+inferred from a changelog headline. The `statement_cache.rs` extraction that
+motivated the leading hypothesis replaces a `RwLock<HashMap<Key, Statement>>`
+with a `RwLock<HashMap<Key, Arc<OnceCell<Statement>>>>`: for a single caller
+with no concurrent racer for the same key — which every test in
+`tests/audit.rs` is, since each opens its own fresh `Store` and pool via
+`test_store()` — `OnceCell::get_or_try_init` runs its `init` closure inline,
+on the calling task, exactly as the old code's direct
+`client.prepare_typed(...).await` did. Nothing in the diff of any of the
+three crates spawns a task or a blocking thread on this path (the one
+`spawn_blocking` added to `deadpool-runtime` 0.3.1 is unused by `deadpool`'s
+and `deadpool-postgres`'s own source, confirmed by `grep`, not assumed). The
+coalescing theory is therefore ruled out on direct evidence, not just
+"checked and ruled out the simplest version" as the entry above left it.
+
+**What the evidence does point to.** `emit_checkpoint`'s `tracing::info!` is
+one physical callsite, and it is reached from three places: this test's
+direct call, and internally from both `resign_history` (exercised by
+`resigning_refuses_tampered_history_and_frees_the_old_key`) and the erasure
+path (exercised via `audit_trail_is_complete_and_tamper_evident`) — all five
+tests in this binary run in parallel, in the same process, on separate OS
+threads. `tracing`'s per-callsite interest cache is decided globally the
+first time a callsite fires anywhere in the process; a thread-local
+`tracing::subscriber::set_default` guard — which is what this test used —
+does not trigger the cache rebuild that installing a global default does.
+Whichever of those three call paths reached the callsite *first* in a given
+process, with no subscriber active, would cache "nobody's interested" for
+the rest of that run, starving every later call on any thread including one
+with an active `set_default` guard — the exact "captured nothing" signature
+both hosted runs showed, on a callsite none of the other four tests'
+assertions depend on. This is consistent with everything observed but was
+not reproduced locally: 8 runs of the live suite at `--test-threads=2`
+against the exact `-0.14.2`/`0.13.1`/`0.3.1` trio, and 3 more against the
+original `-0.14.1`/`0.12.3`/`0.1.4` trio, all passed — the race evidently
+needs scheduling characteristics this 16-core laptop's container did not
+reproduce, most likely GitHub's runner having far fewer cores. Recorded as
+the leading mechanism, not a certainty, for the same reason this entry
+already models: state what was checked and what remains inferred.
+
+**Fixed regardless of which mechanism is the true one**, per path (2):
+`tests/audit.rs` now arms a single process-wide `tracing_subscriber::fmt`
+default via `tracing::subscriber::set_global_default`, behind a `OnceLock`,
+called from `test_store()` — every test's first real step — rather than
+scoped with `set_default` around one call in one test. This is
+mechanism-agnostic: it removes the thread-local/interest-cache hazard
+outright rather than resolving which of this test's three callers would
+have raced. Verified: `cargo fmt --check` and `cargo clippy --tests -D
+warnings` clean; the full `fhir-postgresql-store` live suite (26 tests
+across `audit`, `concurrency`, `history_page`, `live`, `m2_semantics`,
+`redaction`, `search_semantics`, `ssl_default`, `upgrade`) green against a
+local PostgreSQL 18 container, both with the original lockfile and with
+`deadpool-postgres` bumped to `0.14.2` locally to match PR #59 exactly; the
+targeted `audit` suite alone re-run 9 times total under the `-0.14.2` trio
+with no failure. PR #59 is unblocked once this fix lands on `main` and its
+next hosted run picks it up.
+
 ---
 
 Part of the [fhir-databases specification](index.md).
