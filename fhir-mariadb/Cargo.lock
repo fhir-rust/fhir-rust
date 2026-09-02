@@ -249,7 +249,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-mariadb-gen"
-version = "0.6.0"
+version = "0.6.1"
 dependencies = [
  "fhir-mariadb-map",
  "flate2",
@@ -261,7 +261,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-mariadb-map"
-version = "0.6.0"
+version = "0.6.1"
 dependencies = [
  "flate2",
  "serde",
@@ -273,7 +273,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-mariadb-store"
-version = "0.6.0"
+version = "0.6.1"
 dependencies = [
  "fhir-mariadb-gen",
  "fhir-mariadb-map",

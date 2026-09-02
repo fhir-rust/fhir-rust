@@ -12,6 +12,20 @@
 > releases, and because a changelog is a historical record. What is specific to
 > this port is stated where it differs.
 
+## 0.6.1 — 2026-09-02
+
+`hmac` 0.12 → 0.13 (workspace-inherited) and `mysql_async` 0.37.0 → 0.37.1
+(F-101: `0.37.0` was yanked from crates.io after 0.6.0 published; `0.37.1`'s
+own manifest still requires `lru ^0.18`, so F-94's advisory fix holds).
+Released as a patch because 0.6.0 was already published and both changes
+landed after that publish: `O10.11` requires the published version to
+match its source, and this is exactly the gap `check-published-match.sh`
+closed the same day (F-98/F-102) — this release is verified against the
+*fixed* gate, not the one that missed it. `cargo fmt`/`clippy -D warnings`
+clean; the full live suite (27 tests, including `ssl_live.rs`'s two TLS
+tests actually executing, not self-skipping) re-run against a real
+MariaDB 11.4 container.
+
 ## 0.6.0 — 2026-08-29
 
 **MSRV raised 1.90 → 1.96** (spec `spec/rust-msrv-n-minus-2/`, `RV1.1`

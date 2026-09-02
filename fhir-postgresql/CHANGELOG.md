@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.6.2 — 2026-09-02
+
+`getrandom` 0.3 → 0.4 (transitive, via `deadpool-postgres` 0.14.1 → 0.14.2)
+and a `fhir-postgresql-store` test-only fix (`tests/audit.rs`,
+`checkpoints_are_logged_on_their_own_target_without_phi`: the capture is
+now a process-wide `tracing` subscriber instead of a thread-local one, so
+a race between this binary's own tests over a shared `tracing` callsite
+cache cannot starve it — no library behavior changed). Released as a
+patch because 0.6.1 was already published and both changes landed after
+that publish: `O10.11` requires the published version to match its
+source, and this is exactly the gap `check-published-match.sh` closed the
+same day (F-98/F-102) — this release is verified against the *fixed*
+gate, not the one that missed it. `cargo fmt`/`clippy -D warnings` clean;
+the full live suite (26 tests) re-run against a real PostgreSQL 18
+container, all green, including the previously-flaky checkpoint test run
+9 times with no failure under the exact `deadpool-postgres` version this
+release carries.
+
 ## 0.6.1 — 2026-08-29
 
 `sha2` 0.10 → 0.11, `sha3` 0.10 → 0.12 (dependencies of the audit hash
