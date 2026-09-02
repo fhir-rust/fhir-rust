@@ -5956,6 +5956,31 @@ alone; only comparing it against the tree, as this repository's own culture
 insists on doing for every other claim, surfaced it here. The document
 survives that comparison now; it did not before this finding.
 
+## F-101
+
+**The exact `mysql_async` version F-94 bumped to was yanked from crates.io
+after that bump landed.** Same class as F-96 (`chacha20`, also yanked
+post-pin): `cargo deny`'s `yanked = "deny"` caught it on the merge commit for
+PR #59 (an unrelated `deadpool-postgres` bump), failing `fhir-mysql` and
+`fhir-mariadb`'s security-audit jobs on `main` — `mysql_async 0.37.0`, pinned
+by F-94 2026-08-31, shows `yanked=true` via the crates.io API as of this
+finding.
+
+**Fixed** the same way as F-96: `cargo update -p mysql_async --precise
+0.37.1` in both ports (manifest requirement `"0.37"` already covers it, no
+`Cargo.toml` change needed). Checked before bumping rather than assumed:
+`0.37.1`'s own dependency manifest still requires `lru ^0.18`
+(crates.io `/dependencies` API), so F-94's advisory fix is not undone.
+Verified in both ports: `cargo deny --all-features check advisories` →
+`advisories ok`; `cargo check --all-targets --locked` clean; offline
+`--lib --bins` suites green (44 + 6 tests each); and — because F-95's own
+lesson is that a `mysql_async` bump's TLS behaviour is only proven live, not
+by `--lib --bins` — the full live suite against local containers (MySQL 8.4,
+MariaDB 11.4), `--test-threads=1`, including `ssl_live.rs`'s two tests
+actually executing (not self-skipping) and passing: 27 tests in
+`fhir-mysql-store`, 27 in `fhir-mariadb-store`, 0 failed. `fmt`/`clippy -D
+warnings` clean in both.
+
 ---
 
 Part of the [fhir-databases specification](index.md).
