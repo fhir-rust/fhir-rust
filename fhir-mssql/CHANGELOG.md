@@ -24,6 +24,19 @@
 > matrix](../spec/databases/conformance-matrix.md) and this port's own
 > `tasks.md` — not in any entry below, including *Unreleased*.
 
+## 0.6.1 — 2026-09-02
+
+`hmac` 0.12 → 0.13 and `sha3` 0.10 → 0.12 (both workspace-inherited).
+Released as a patch because 0.6.0 was already published and both moved
+after that publish: `O10.11` requires the published version to match its
+source, and this is exactly the gap `check-published-match.sh` closed the
+same day (F-98/F-102) — this release is verified against the *fixed*
+gate, not the one that missed it. `cargo fmt`/`clippy -D warnings` clean;
+`cargo deny` advisories ok; the full live suite (40 tests, including
+`ssl_live.rs`) re-run against `azure-sql-edge` (this host's arm64
+substitute for `mcr.microsoft.com/mssql/server`, which segfaults under
+emulation here — `scripts/db.sh`'s own documented workaround), all green.
+
 ## 0.6.0 — 2026-08-29
 
 **Security — the SQL Server driver changed from `tiberius` to `mssql`,
