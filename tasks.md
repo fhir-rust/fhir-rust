@@ -24,7 +24,7 @@ dialect annex for what works. Nothing here speaks for a port.
       and prerequisites `PM-70`–`PM-75`) and correctly gates promotion on
       supply-chain work.
 - [x] 34 crates published to crates.io (2026-08-22); audit register at 102
-      findings with reproducible evidence per finding (one open: F-102).
+      findings with reproducible evidence per finding (none currently open).
 
 ## Next up
 

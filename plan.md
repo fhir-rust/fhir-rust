@@ -83,12 +83,14 @@ posture. Open items for each are in `tasks.md`.
 
 6. **Audit and harmonization.** The audit register's F-73 hygiene defect
    (a summary-table cell whose own text contradicted itself) was fixed
-   2026-08-26. One row is genuinely open again as of 2026-08-29: **F-98**
-   (`check-published-match.sh` compares the wrong manifest for
-   workspace-inherited dependencies). This repository also holds the
-   canonical special-files list and trademark spec that the siblings have
-   drifted from; harmonization means the siblings re-sync from here, and
-   this repo keeps its canon accurate.
+   2026-08-26. **F-98** (`check-published-match.sh` compared the wrong
+   manifest for workspace-inherited dependencies) and **F-102** (nothing in
+   CI ever called that script, and twelve already-published crates had
+   drifted as a result) both closed 2026-09-02 — the register currently has
+   no open findings. This repository also holds the canonical special-files
+   list and trademark spec that the siblings have drifted from;
+   harmonization means the siblings re-sync from here, and this repo keeps
+   its canon accurate.
 
 ## Open decisions (awaiting a call, not code)
 

@@ -20,9 +20,10 @@ actual upload.
 
 Versions keep moving independently per port (`W16.11`), so "current" is a
 moving target — read it from source rather than this file:
-`grep '^version' fhir-<engine>/Cargo.toml` (five ports sit at `0.6.0`,
-`fhir-postgresql` and `fhir-sqlite` at `0.6.1` as of 2026-08-29;
-`fhir-store` `0.3.0`, `fhir-loco` `0.3.1`). The question for a release is no
+`grep '^version' fhir-<engine>/Cargo.toml` (as of 2026-09-02, after F-102:
+`fhir-postgresql` `0.6.2`; `fhir-mysql`/`fhir-mariadb`/`fhir-mssql` `0.6.1`;
+`fhir-sqlite`/`fhir-oracle` `0.6.0`; `fhir-store` `0.3.1`, `fhir-loco`
+`0.3.2`). The question for a release is no
 longer "has this ever been published" — it has — but whether the tree's
 version has moved past what crates.io already holds for that crate, which is
 exactly what `check-published-match.sh` (below) answers.

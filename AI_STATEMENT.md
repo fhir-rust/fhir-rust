@@ -229,10 +229,10 @@ This section exists because a disclosure without one is marketing.
   every merged change" is the honest claim; "every line was independently
   re-derived" would not be.
 - **The §8 history is a sample, not a bound.** Those findings are the ones that
-  were found. The audit register is open and one finding is open in it today
-  (F-102) — a count this bullet will always be catching up to, since the
-  register changes more often than this document does; the register itself is
-  the thing to check, not this sentence.
+  were found. The audit register is open, currently with none outstanding — a
+  count this bullet will always be catching up to, since the register changes
+  more often than this document does; the register itself is the thing to
+  check, not this sentence.
 - **Retroactivity.** Commits predating this statement's first issue already
   carried the same `Co-Authored-By`/`Claude-Session` trailers §4 now describes
   — this document is catching up to a practice, not dating its start.

@@ -214,7 +214,7 @@ own closures — every one of them contradicted the summary table above.*
 | ~~F-58~~ | Closed 2026-08-09: `SV2.14`, `SV3.11`, `SV4.3` (2026-08-07) and `SV2.15` `$export` (2026-08-09) are all served; `SV4.2`'s concurrency-limit halves stay recorded in `fhir-loco/spec/04` as a framework limit, which is a constraint, not a gap this register tracks. |
 | ~~F-67~~ | Closed 2026-08-29: the driver switched from `tiberius` to `mssql`, a fork maintained to carry the TLS fixes forward — none of the four advisory packages remain in the dependency tree. |
 | ~~F-98~~ | Closed by **F-102**: the normalized-`Cargo.toml` comparison is implemented, and running it found the predicted blind spot was real — twelve currently-published crates, not a hypothetical. |
-| F-102 | **Open, not struck through.** The script and CI-wiring fix is done; remediating the twelve already-published crates it found (bump each, republish) is tracked in the finding itself and not yet complete as of this row. |
+| ~~F-102~~ | Closed 2026-09-02: all twelve live violations remediated and republished; `check-published-match.sh` unscoped reports `34 matched, 0 mismatched`. |
 
 ---
 
@@ -6101,8 +6101,27 @@ and `fhir-oracle` needed no version bump of their own, since only
 `check-published-match.sh` already and correctly excludes from
 comparison, not source drift.
 
-Publishing (§5) follows once hosted CI confirms this final state green —
-tracked as the next step, not yet done as of this text.
+**CLOSED IN FULL, 2026-09-02.** Hosted CI confirmed green on the final
+state (every port's own CI, `repository gates`, both security-audit
+workflows, and `fhir CI`'s `Publish dry-run` job all passed on the commit
+carrying the lockfile fix). All eighteen affected crates then published to
+crates.io in dependency order (`fhir-store`; `fhir-core` → `fhir-r5`,
+`fhir-r6` → `fhir`; each port's `map` → `gen` → `store`; `fhir-loco` last),
+under the 2026-09-02 release-readiness delegation. `check-published-match.sh`
+re-run against the live registry immediately after, with no filter — the
+whole tree, not a scoped subset — reports:
+
+```
+34 matched, 0 mismatched, 0 skipped.
+OK: every published version matches its source (34 compared).
+```
+
+Ten annotated, signed tags pushed (`fhir-store-v0.3.1`, `fhir-core-v3.3.1`,
+`fhir-r5-v4.2.1`, `fhir-r6-v4.2.1`, `fhir-v4.2.1`, `fhir-postgresql-v0.6.2`,
+`fhir-mysql-v0.6.1`, `fhir-mariadb-v0.6.1`, `fhir-mssql-v0.6.1`,
+`fhir-loco-v0.3.2`) with matching GitHub Releases. Do not reopen for a new
+divergence found later — that is a new finding, per this register's own
+convention (F-90's close-out already establishes it).
 
 ---
 
