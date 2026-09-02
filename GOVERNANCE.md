@@ -33,9 +33,24 @@ added without moving the repository. It has not been.
 | Whether a port meets a requirement | evidence, then the maintainer | the [conformance matrix](spec/databases/conformance-matrix.md) |
 | That a port may differ from the core | the maintainer | an `M14.x` departure in that port's dialect annex, **naming the requirement it amends** |
 | That the code diverges from the spec | anyone who finds it | the [audit register](spec/databases/audit.md), as a numbered finding with evidence |
-| What ships, and when | the maintainer | [`CHANGELOG.md`](CHANGELOG.md), and crates.io |
+| What ships, and when | the maintainer, or an authorized Claude Code session judging readiness against [`agents/release.md`](agents/release.md)'s gates (delegated 2026-09-02) | [`CHANGELOG.md`](CHANGELOG.md), and crates.io |
 | Whether a change is merged | the maintainer, per [`CODEOWNERS`](CODEOWNERS) | the pull request |
 | Conduct | the maintainer | [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) |
+
+**Release readiness is a delegation, not an abdication.** Until 2026-09-02,
+only the maintainer could judge a specific release ready; the maintainer has
+since authorized an agentic Claude Code session to make that call too,
+against the same checklist ([`agents/release.md`](agents/release.md):
+published-artefact match, live suite, changelog, conformance matrix, no open
+High finding) that bound the maintainer's own judgment — not a looser one
+invented for the occasion. This is delegation of a specific, checkable
+decision, not a general grant: the maintainer remains accountable for every
+release regardless of who judged it ready
+([`AI_STATEMENT.md`](AI_STATEMENT.md) §4), can revoke the delegation at any
+time, and the "decisions are recorded" rule below applies to this decision
+exactly as to any other — a release a session judged ready is recorded in
+`CHANGELOG.md` and a commit citing which gates passed, not asserted from
+inside the session alone.
 
 ## The rules that bind the decision-maker
 

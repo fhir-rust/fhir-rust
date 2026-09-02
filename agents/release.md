@@ -127,6 +127,20 @@ minor-version event, not a patch.
 
 ## Before any release
 
+**An agent working in this repository may work through §§1–4 below, decide
+the release meets them, and carry out §5 itself** — the maintainer no longer
+has to tick every box personally before `cargo publish` runs (delegated
+2026-09-02; see [`GOVERNANCE.md`](../GOVERNANCE.md#what-is-decided-where) and
+[`AI_STATEMENT.md`](../AI_STATEMENT.md) §5). Delegating *who* runs the
+checklist does not loosen it: §§1–4 are the same gates that bound the
+maintainer's own judgment, unchanged by who is checking them. The judgment
+still has to be recorded, exactly as any other decision in this project is
+(`GOVERNANCE.md`'s "Where decisions are recorded") — a `CHANGELOG.md` entry
+and a commit or release note citing which of §§1–4 passed, not a conclusion
+that exists only inside a session.
+
+### §1. Source and artifact integrity
+
 0. `scripts/check-published-match.sh` — nothing claims a published number it no
    longer matches (`O10.11`)
 0b. `cargo run -p fhir-<engine>-gen --bin regen-assets -- --check` — the
@@ -141,9 +155,18 @@ minor-version event, not a patch.
    `README.md` compiles. It found six real defects on its first run, including a
    block that could not parse (**F-60**). A block that cannot compile must be
    marked ```` ```rust,ignore ```` **with a reason**, not silently.
+
+### §2. Build, lint, and tests
+
 1. `cargo fmt --all --check`, `cargo clippy --all-targets -- -D warnings`
 2. Live suite green **against the port's own engine**
+
+### §3. Supply chain
+
 3. `cargo deny check`, `cargo audit`
+
+### §4. Claims match reality
+
 4. `CHANGELOG.md` describes changes to **this port** (`W16.12`) — an entry
    inherited from another port's history describes work that was not done here.
    All five non-PostgreSQL changelogs are still `fhir-postgresql`'s and now
@@ -158,6 +181,17 @@ minor-version event, not a patch.
 8. [`spec/publishing.md`](../spec/publishing.md) — no open **P-** blocker
    against this crate. That register covers all **four** families and is the one
    place the crates.io view is assembled.
+
+### §5. Publish
+
+Once §§1–4 pass: `cargo publish` per crate, in the dependency order
+[`spec/publishing.md`](../spec/publishing.md#order-of-publication) fixes
+(`fhir-store` before any port; a port's `map` before its `gen` before its
+`store`; `fhir-loco` last) — then tag and, per
+[`MAINTAINERS.md`](../MAINTAINERS.md), sign both, from the machine holding
+`~/.cargo/credentials.toml`. This is still the laptop step
+[`spec/publishing.md`](../spec/publishing.md) documents, not a CI job; §5
+changes who may run it, not where it runs.
 
 Step 6 no longer blocks every port. **F-49** — no workflow in this repository
 ran, because they all sat under `<family>/.github/workflows/` and GitHub reads

@@ -1,6 +1,6 @@
 # AI statement
 
-**Version 1.1.0 — effective 2026-09-02.**
+**Version 1.2.0 — effective 2026-09-02.**
 
 ## 1. Scope
 
@@ -86,8 +86,8 @@ measuring one.
 | Tests and fixtures | ai-generated | held to the same authority as the code they test; `T11.10` requires mutation-verified tests, so a test that cannot fail is a defect |
 | Specifications in `spec/` and `fhir/spec/` | ai-generated | the normative text itself; adjudications about what it should *say* are the maintainer's (below) |
 | Documentation, books, and this statement | ai-generated | held to [`agents/documentation.md`](agents/documentation.md) |
-| Requirement adjudications, conformance-level rulings, what/when/whether to release | none | the maintainer's, recorded in the specification or the audit register with reasoning |
-| Executing a release the maintainer has already decided on (`cargo publish`, tagging) | ai-assisted | authorized 2026-09-02; the tool runs the laptop publish step in a directed session, against [`agents/release.md`](agents/release.md)'s gates — deciding what, when, and whether stays the maintainer's, in the row above |
+| Requirement adjudications, conformance-level rulings | none | the maintainer's, recorded in the specification or the audit register with reasoning |
+| Judging a specific release ready, and executing it (`cargo publish`, tagging) | ai-assisted | authorized 2026-09-02; a session works through [`agents/release.md`](agents/release.md) §§1–4 (artifact integrity, build/lint/test, supply chain, claims-match-reality), judges whether they pass, and carries out §5 itself — the same gates that bound the maintainer's own judgment, not a looser one. Delegated, revocable, and recorded per §6 below |
 | Review verdicts on others' contributions | none | prohibited use; see §11 |
 
 **autonomous** appears in no row, and that is the point of the next section.
@@ -95,13 +95,26 @@ measuring one.
 ## 6. Human oversight
 
 The maintainer directs the work, reads the result, and merges every change;
-nothing lands on its own authority. Where the tools run multi-step sessions, the
-decisions with consequences — what a specification silence means, whether a port
-has reached a conformance level, what may be claimed publicly, what gets
-released and when — are the maintainer's. A decision that exists only inside a
-tool session is not a decision this project made. Authorizing the tool to run
-the mechanical publish command (§5) does not change this: the maintainer still
-decides a release is ready before any session executes it.
+nothing lands on its own authority. Where the tools run multi-step sessions,
+the decisions with consequences — what a specification silence means, whether
+a port has reached a conformance level, what may be claimed publicly — are the
+maintainer's. A decision that exists only inside a tool session is not a
+decision this project made.
+
+**Release readiness is the one exception, and it is a delegation, not a
+lapse.** Until 2026-09-02, "is this release ready" was the maintainer's call
+alone; the maintainer has since authorized a Claude Code session to make that
+call too, against [`agents/release.md`](agents/release.md)'s own checklist —
+the same gates that bound the maintainer's judgment, not a lighter one written
+for the occasion. Three things keep this from being an autonomous exception to
+everything above: it is **specific** (one checkable question, not a general
+license to decide what ships); it is **revocable** (the maintainer can take it
+back at any time, per [`GOVERNANCE.md`](GOVERNANCE.md)); and it is **recorded**
+— a release a session judged ready still needs a `CHANGELOG.md` entry and a
+commit or release note citing which gates passed, exactly as this section's
+"a decision that exists only inside a tool session is not a decision this
+project made" rule requires of every other decision. Accountability for the
+release does not move with the decision: §4 still applies.
 
 ## 7. Quality controls, and what each one proves
 
@@ -216,7 +229,10 @@ This section exists because a disclosure without one is marketing.
   every merged change" is the honest claim; "every line was independently
   re-derived" would not be.
 - **The §8 history is a sample, not a bound.** Those findings are the ones that
-  were found. The audit register is open and two findings are open in it today.
+  were found. The audit register is open and one finding is open in it today
+  (F-98) — a count this bullet will always be catching up to, since the
+  register changes more often than this document does; the register itself is
+  the thing to check, not this sentence.
 - **Retroactivity.** Commits predating this statement's first issue already
   carried the same `Co-Authored-By`/`Claude-Session` trailers §4 now describes
   — this document is catching up to a practice, not dating its start.
@@ -227,6 +243,13 @@ This section exists because a disclosure without one is marketing.
 - **Provenance uncertainty survives.** Whether any generated fragment echoes
   unlicensed training material is not fully knowable with current tools; §9
   states the handling, not a guarantee.
+- **A session judging release readiness could be wrong about it.**
+  `agents/release.md` §§1–4 are checkable, but a session concluding they pass
+  is still a judgment, not a proof; nothing currently re-verifies that
+  judgment independently before `cargo publish` runs. The mitigation is §6's
+  three conditions (specific, revocable, recorded) plus `O10.11`'s own
+  published-artefact gate catching a divergence after the fact — not a claim
+  that misjudgment cannot happen.
 - **Signing covers the git identity, not tool involvement.** Commits and tags
   have been SSH-signed with the maintainer's own key since 2026-08-27
   (`git log --show-signature` shows a good signature; `git config
@@ -273,6 +296,7 @@ risk this project adopted rather than reinvented.
 
 | Version | Date | Change |
 | --- | --- | --- |
+| 1.2.0 | 2026-09-02 | §5/§6: judging a specific release *ready*, not only executing it, is now ai-assisted and maintainer-delegated (`GOVERNANCE.md`, `agents/release.md` §§1–5). Narrower than it sounds: one checkable question against an unchanged checklist, revocable, still recorded outside the session — §4's accountability is unmoved. |
 | 1.1.0 | 2026-09-02 | §4 corrected: 1.0.0's ban on naming a tool as co-author did not match the repository's own commit trailers, before or after 1.0.0's issue; now describes that disclosure practice instead of denying it. §5/§6: added `cargo publish`/tagging execution as a maintainer-authorized, ai-assisted activity, distinct from the release *decision*, which stays `none`. §12: "Nothing is signed" corrected — commits and tags have been SSH-signed since 2026-08-27, a fact this document had not caught up to; two further limitations added (retroactivity restated accurately; disclosure trailers are session-asserted, not verified). |
 | 1.0.0 | 2026-08-26 | First issue. |
 
@@ -283,7 +307,7 @@ authoritative where the two could ever disagree.
 
 ```yaml
 ai-statement:
-  version: 1.1.0
+  version: 1.2.0
   last-updated: 2026-09-02
   vocabulary: w3c-ai-content-disclosure
   disclosure-default: ai-generated
@@ -302,7 +326,7 @@ ai-statement:
     documentation: ai-generated
     review: none
     adjudication: none
-    release-decisions: none
+    release-readiness: ai-assisted
     release-execution: ai-assisted
   ships-ai-system: false
   autonomous-use: none
