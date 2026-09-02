@@ -5909,6 +5909,53 @@ targeted `audit` suite alone re-run 9 times total under the `-0.14.2` trio
 with no failure. PR #59 is unblocked once this fix lands on `main` and its
 next hosted run picks it up.
 
+## F-100
+
+**`AI_STATEMENT.md` — the document §8 of itself holds up as the record of
+this project's "confident prose that nothing substantiates" failure mode —
+had two instances of exactly that failure mode inside it.** Found while
+reconciling the document against a governance change (2026-09-02: the owner
+authorized Claude to execute `cargo publish`), not while looking for this
+specifically; both predate that change and are unrelated to it.
+
+1. **§4 banned naming a tool as co-author of anything in this repository,
+   flatly, since version 1.0.0 (2026-08-26).** `git log --all -i --grep
+   "co-authored-by" --oneline | wc -l` returns 185 — commits both before and
+   after 1.0.0's issue date carry a `Co-Authored-By: Claude Sonnet 5` (or
+   `dependabot[bot]`) trailer. Git's author/committer field was never a
+   tool — verified on several commits directly (`git show -s --format="author:
+   %an <%ae>%ncommitter: %cn <%ce>"`) — but the trailer itself does name a
+   tool as co-author, in commit messages, in this repository, which is the
+   exact thing the sentence said does not happen.
+2. **§12 claimed "Nothing is signed. No commit or tag signature exists."**
+   `git config commit.gpgsign` is `true`; `git log --show-signature` reports
+   "Good git signature" (SSH, ED25519, the maintainer's key) on commits and
+   tags alike. Signing has been active since 2026-08-27 — a date this
+   document's own §13 ("revised off-cycle when ... a claim in this document
+   stops being true") should have caught, and did not for six days.
+
+**Fixed, not merely noted**, in the same pass: `AI_STATEMENT.md` bumped to
+1.1.0 (2026-09-02). §4 now describes the trailer as disclosure rather than
+authorship (git author/committer, and accountability, are unmoved by it) and
+explains why the 1.0.0 wording was wrong rather than silently dropping it.
+§12's signing bullet corrected to state what signing actually verifies (the
+git identity) and what it does not (tool involvement, which is what the
+trailer is for). §5/§6 gained the `cargo publish`-execution row the
+governance change itself required, kept explicitly distinct from the release
+*decision*, which stays the maintainer's alone. `CONTRIBUTING.md`'s "Using AI
+tools" section, which told contributors to put AI disclosure "in the
+description, not in commit trailers" — the same claim in a second document —
+was corrected in the same pass rather than left to contradict the just-fixed
+`AI_STATEMENT.md` §4.
+
+**Why this is worth its own finding rather than a quiet edit:** a governance
+document that misdescribes the practice it governs is a worse failure than
+having no such document, because a reader — a downstream integrator, an
+auditor, a contributor — has no way to detect the gap from the document
+alone; only comparing it against the tree, as this repository's own culture
+insists on doing for every other claim, surfaced it here. The document
+survives that comparison now; it did not before this finding.
+
 ---
 
 Part of the [fhir-databases specification](index.md).

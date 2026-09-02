@@ -1,6 +1,6 @@
 # AI statement
 
-**Version 1.0.0 — effective 2026-08-26.**
+**Version 1.1.0 — effective 2026-09-02.**
 
 ## 1. Scope
 
@@ -51,10 +51,23 @@ human's direction, as opposed to inline completion.
 
 One named human — the maintainer, in [`MAINTAINERS.md`](MAINTAINERS.md) — is the
 author of and accountable for every change in this repository, whatever tool
-produced the bytes. Every commit in the history carries that person as author
-and committer. A tool **shall not** be named as an author, co-author, or signer
-of anything here, because a tool cannot be responsible for accuracy, integrity,
-or originality, and responsibility that cannot be borne cannot be assigned.
+produced the bytes. Every commit in the history carries that person, and only
+that person, as git **author and committer** — the field this section's
+accountability actually rests on. A tool **shall not** hold that field or sign
+a commit or tag; a signature is a claim of responsibility a tool cannot make.
+
+A commit produced in an agentic Claude Code session also carries a
+`Co-Authored-By:` trailer naming the tool, and a `Claude-Session:` link to the
+session transcript. This is **disclosure, not authorship**: it moves neither
+the author/committer field above nor accountability under this section — it
+records which tool assisted and where that session's record lives, nothing
+more. Version 1.0.0 of this document banned naming a tool as co-author of
+anything here, full stop, with no such distinction — while the repository's
+own commits, both before that version was written and after, already carried
+exactly this trailer. That was §8's own failure mode, found inside the
+document meant to prevent it: prose asserting a practice the tree did not
+follow. This revision describes the practice as it has actually run, rather
+than continuing to assert one that was never true.
 
 ## 5. Where AI is used, and at what level
 
@@ -73,7 +86,8 @@ measuring one.
 | Tests and fixtures | ai-generated | held to the same authority as the code they test; `T11.10` requires mutation-verified tests, so a test that cannot fail is a defect |
 | Specifications in `spec/` and `fhir/spec/` | ai-generated | the normative text itself; adjudications about what it should *say* are the maintainer's (below) |
 | Documentation, books, and this statement | ai-generated | held to [`agents/documentation.md`](agents/documentation.md) |
-| Requirement adjudications, conformance-level rulings, release decisions | none | the maintainer's, recorded in the specification or the audit register with reasoning |
+| Requirement adjudications, conformance-level rulings, what/when/whether to release | none | the maintainer's, recorded in the specification or the audit register with reasoning |
+| Executing a release the maintainer has already decided on (`cargo publish`, tagging) | ai-assisted | authorized 2026-09-02; the tool runs the laptop publish step in a directed session, against [`agents/release.md`](agents/release.md)'s gates — deciding what, when, and whether stays the maintainer's, in the row above |
 | Review verdicts on others' contributions | none | prohibited use; see §11 |
 
 **autonomous** appears in no row, and that is the point of the next section.
@@ -83,9 +97,11 @@ measuring one.
 The maintainer directs the work, reads the result, and merges every change;
 nothing lands on its own authority. Where the tools run multi-step sessions, the
 decisions with consequences — what a specification silence means, whether a port
-has reached a conformance level, what may be claimed publicly — are the
-maintainer's. A decision that exists only inside a tool session is not a
-decision this project made.
+has reached a conformance level, what may be claimed publicly, what gets
+released and when — are the maintainer's. A decision that exists only inside a
+tool session is not a decision this project made. Authorizing the tool to run
+the mechanical publish command (§5) does not change this: the maintainer still
+decides a release is ready before any session executes it.
 
 ## 7. Quality controls, and what each one proves
 
@@ -201,13 +217,25 @@ This section exists because a disclosure without one is marketing.
   re-derived" would not be.
 - **The §8 history is a sample, not a bound.** Those findings are the ones that
   were found. The audit register is open and two findings are open in it today.
-- **Retroactivity.** Commits predating this statement carry no disclosure
-  markers; this document describes the practice, not a per-commit audit trail.
+- **Retroactivity.** Commits predating this statement's first issue already
+  carried the same `Co-Authored-By`/`Claude-Session` trailers §4 now describes
+  — this document is catching up to a practice, not dating its start.
+- **Disclosure trailers are session-asserted, not independently verified.** A
+  `Co-Authored-By`/`Claude-Session` trailer records what a session was
+  instructed to attach, not an audited fact; nothing in this repository checks
+  that one is present, accurate, or omitted correctly for a human-only commit.
 - **Provenance uncertainty survives.** Whether any generated fragment echoes
   unlicensed training material is not fully knowable with current tools; §9
   states the handling, not a guarantee.
-- **Nothing is signed.** No commit or tag signature exists, so the provenance of
-  a given change cannot be cryptographically verified by a third party.
+- **Signing covers the git identity, not tool involvement.** Commits and tags
+  have been SSH-signed with the maintainer's own key since 2026-08-27
+  (`git log --show-signature` shows a good signature; `git config
+  commit.gpgsign` is `true`, local to this repository). That verifies the
+  named human authored and committed the change — it says nothing about
+  whether a tool assisted, which is what §4's disclosure trailer is for
+  instead. This corrects an earlier version of this bullet, which claimed no
+  signature existed at all; that stopped being true 2026-08-27 and the claim
+  was not updated until now.
 - **This is a self-declaration.** No third party has audited it. The checkable
   artifacts in §7 are the counterweight: they can disagree with this document,
   and if they do, the document is wrong.
@@ -245,6 +273,7 @@ risk this project adopted rather than reinvented.
 
 | Version | Date | Change |
 | --- | --- | --- |
+| 1.1.0 | 2026-09-02 | §4 corrected: 1.0.0's ban on naming a tool as co-author did not match the repository's own commit trailers, before or after 1.0.0's issue; now describes that disclosure practice instead of denying it. §5/§6: added `cargo publish`/tagging execution as a maintainer-authorized, ai-assisted activity, distinct from the release *decision*, which stays `none`. §12: "Nothing is signed" corrected — commits and tags have been SSH-signed since 2026-08-27, a fact this document had not caught up to; two further limitations added (retroactivity restated accurately; disclosure trailers are session-asserted, not verified). |
 | 1.0.0 | 2026-08-26 | First issue. |
 
 ## Annex B. Machine-readable summary
@@ -254,13 +283,17 @@ authoritative where the two could ever disagree.
 
 ```yaml
 ai-statement:
-  version: 1.0.0
-  last-updated: 2026-08-26
+  version: 1.1.0
+  last-updated: 2026-09-02
   vocabulary: w3c-ai-content-disclosure
   disclosure-default: ai-generated
   tools:
     - name: Claude Code
       provider: Anthropic
+  commit-disclosure:
+    mechanism: "Co-Authored-By and Claude-Session trailers"
+    changes-git-author-committer: false
+    changes-accountability: false
   processes:
     design: ai-assisted
     implementation: ai-generated
@@ -270,6 +303,7 @@ ai-statement:
     review: none
     adjudication: none
     release-decisions: none
+    release-execution: ai-assisted
   ships-ai-system: false
   autonomous-use: none
 ```

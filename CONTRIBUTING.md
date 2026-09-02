@@ -241,9 +241,13 @@ You may. This repository is largely built with them and says so in
 
 If a contribution contains **ai-generated** content (that document's §3
 vocabulary), say so in the pull-request description — which tool, and what it
-did. Put it in the description, not in commit trailers. You remain fully
-responsible for the submission: understood, explained on request, tested, and
-honest, exactly as if you had typed every character.
+did. An agentic Claude Code session's own commits already carry that
+disclosure as a `Co-Authored-By`/`Claude-Session` trailer, per
+`AI_STATEMENT.md` §4 — that trailer is fine as it stands; for any other tool,
+put the disclosure in the description rather than inventing a one-off trailer
+format for it. You remain fully responsible for the submission: understood,
+explained on request, tested, and honest, exactly as if you had typed every
+character.
 
 The prohibited uses in `AI_STATEMENT.md` §11 apply to contributors too. The one
 that matters most: **never weaken a test, an expectation, or a gate to make

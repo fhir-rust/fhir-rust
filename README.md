@@ -50,7 +50,7 @@ requirement, and it is the document to read before choosing one.
 > own engine and attributes every `serve`/endpoint to `fhir-loco`
 > (**F-56**). The [conformance matrix](spec/databases/conformance-matrix.md) is
 > the status document to trust, and [`spec/audit.md`](spec/databases/audit.md)
-> lists two findings still open (F-98, F-99).
+> lists one finding still open (F-98).
 
 ## Also here: the model crate
 
