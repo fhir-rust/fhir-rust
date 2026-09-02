@@ -6066,11 +6066,43 @@ anticipated:
   full run found. `python3 -c "import yaml; yaml.safe_load(...)"` on every
   edited workflow file.
 
-**Remediation of the twelve live violations:** tracked below as this finding
-is updated, per `agents/release.md` §5 and the 2026-09-02 release-readiness
-delegation (`GOVERNANCE.md`, `AI_STATEMENT.md` §§5–6) — bump each affected
-crate's version and republish, restoring what F-98's own fix already
-established as the correct remedy for this exact class of defect.
+**Remediation of the twelve live violations — versions bumped, per
+`agents/release.md` §§1–4, under the 2026-09-02 release-readiness
+delegation (`GOVERNANCE.md`, `AI_STATEMENT.md` §§5–6):**
+
+| Crate(s) | New version | Verified |
+| --- | --- | --- |
+| `fhir-postgresql-map`/`-gen`/`-store` | 0.6.2 | fmt/clippy/deny clean; full live suite (26 tests) re-run against PostgreSQL 18 |
+| `fhir-mysql-map`/`-gen`/`-store` | 0.6.1 | same, live suite (27 tests) against MySQL 8.4, TLS tests executing |
+| `fhir-mariadb-map`/`-gen`/`-store` | 0.6.1 | same, live suite (27 tests) against MariaDB 11.4, TLS tests executing |
+| `fhir-mssql-map`/`-gen`/`-store` | 0.6.1 | same, live suite (40 tests) freshly re-run against `azure-sql-edge` (this host's arm64 substitute — `mcr.microsoft.com/mssql/server` segfaults under emulation here) |
+| `fhir-loco` | 0.3.2 | fmt/clippy clean, full test suite (41 tests) |
+| `fhir-store` | 0.3.1 | fmt/clippy/deny clean, full test suite (14 tests) |
+| `fhir-core` | 3.3.1 | fmt/clippy clean, 45 unit + 13 doctests |
+| `fhir-r5`, `fhir-r6` | 4.2.1 | fmt/clippy clean, 816 and 861 tests respectively |
+| `fhir` | 4.2.1 | fmt/clippy clean, full suite with `r2 r3 r4 r4b r5 r6` features |
+
+`check-published-match.sh` re-run after each bump: correct vacuous OK
+(ahead of the published version, nothing to compare yet) in every case.
+
+**A thirteenth thing found finishing this, not part of the original
+twelve:** bumping `fhir-store` broke `cargo check --locked` in every one of
+the six ports plus `fhir-loco` — each embeds `fhir-store` as a path
+dependency and their own `Cargo.lock` still pointed at 0.3.0. Caught live
+on hosted CI (`fhir-mssql`/`fhir-oracle`/`fhir-sqlite`/`fhir-loco`/
+`fhir-postgresql` CI all failed "cannot update the lock file ... because
+--locked was passed"), not locally first — the same class of gap
+`fhir-loco`'s own 0.3.1 changelog entry had already named ("a sibling
+workspace's lockfile also needs regenerating" — dependabot cannot see it,
+and neither, this time, did the session that made the change, until CI
+said so). Fixed by regenerating all seven `Cargo.lock` files; `fhir-sqlite`
+and `fhir-oracle` needed no version bump of their own, since only
+`Cargo.lock` moved — dependency-resolution drift, which
+`check-published-match.sh` already and correctly excludes from
+comparison, not source drift.
+
+Publishing (§5) follows once hosted CI confirms this final state green —
+tracked as the next step, not yet done as of this text.
 
 ---
 
