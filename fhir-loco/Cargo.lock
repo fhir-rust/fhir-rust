@@ -1373,7 +1373,7 @@ checksum = "da7c62ceae207dd37ea5b845da6a0696c799f85e97da1ab5b7910be3c1c80223"
 
 [[package]]
 name = "fhir-loco"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "async-trait",
  "axum",
@@ -1402,7 +1402,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-postgresql-map"
-version = "0.6.1"
+version = "0.6.2"
 dependencies = [
  "flate2",
  "serde",
@@ -1414,7 +1414,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-postgresql-store"
-version = "0.6.1"
+version = "0.6.2"
 dependencies = [
  "deadpool-postgres",
  "fhir-postgresql-map",
