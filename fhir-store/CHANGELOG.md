@@ -11,6 +11,17 @@ had a changelog of its own. It starts here rather than being backfilled,
 since the extraction predates this file and reconstructing that history
 would be guessing at dates this crate itself has no record of.
 
+## 0.3.1 — 2026-09-02
+
+`AGENTS.md` and `CLAUDE.md` added since 0.3.0 published; `README.md`'s own
+dependency example was already corrected to `fhir-store = "0.3.0"`
+locally but never republished. Released as a patch: `O10.11` requires
+the published version to match its source, and this is exactly the gap
+`check-published-match.sh` closed the same day (F-98/F-102) — this
+release is verified against the *fixed* gate, not the one that missed
+it. `cargo fmt`/`clippy -D warnings` clean; `cargo deny` advisories ok;
+full test suite (14 tests, the audit hash chain) green.
+
 ## 0.3.0 — 2026-08-29
 
 **MSRV declared for the first time: 1.96.** `RV1.4` was unmet here until now
