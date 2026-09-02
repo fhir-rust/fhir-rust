@@ -9,7 +9,7 @@ worldwide, in settings where a wrong claim has clinical cost.
 
 Method: **specification-driven development, with an adversarial audit
 culture.** Normative behavior lives in `spec/` and `fhir/spec/`; the findings
-register (`spec/databases/audit.md`, 101 findings and counting) exists because
+register (`spec/databases/audit.md`, 102 findings and counting) exists because
 this repository's main failure mode has been confident text that nothing
 substantiates. Engineering status is read from the
 [conformance matrix](spec/databases/conformance-matrix.md) and the dialect

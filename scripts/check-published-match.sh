@@ -31,8 +31,18 @@
 # (agents/release.md), and O10.10's SBOM describes an artifact that is worth
 # nothing if the artifact is not the source.
 #
-#   scripts/check-published-match.sh          check, print a summary
-#   scripts/check-published-match.sh --diff   also print the offending diffs
+#   scripts/check-published-match.sh                    every crate, print a summary
+#   scripts/check-published-match.sh --diff             also print the offending diffs
+#   scripts/check-published-match.sh [--diff] <name>... only these crates, named exactly
+#                                                        (e.g. fhir-postgresql-map
+#                                                        fhir-postgresql-gen
+#                                                        fhir-postgresql-store) — for one
+#                                                        family's own CI job, so it checks
+#                                                        only its own crates. Exact names,
+#                                                        not prefixes: "fhir" would silently
+#                                                        also match "fhir-postgresql" et al.
+#                                                        otherwise, since every crate in this
+#                                                        repository is named "fhir-something".
 #
 # Crates whose current version is NOT on crates.io are skipped and reported as
 # such: there is nothing immutable to contradict yet. A skip is printed, never
@@ -45,7 +55,25 @@ cd "$(dirname "$0")/.."
 ROOT="$PWD"
 
 SHOW_DIFF=0
-[ "${1:-}" = "--diff" ] && SHOW_DIFF=1
+NAMES=()
+for arg in "$@"; do
+  case "$arg" in
+    --diff) SHOW_DIFF=1 ;;
+    *) NAMES+=("$arg") ;;
+  esac
+done
+
+# Does $1 exactly equal one of NAMES? True (0) if NAMES is empty — no filter
+# means every crate. Exact, not a prefix: a prefix match would make "fhir"
+# also match "fhir-postgresql" and every other crate here, since all of them
+# are named "fhir-something".
+name_matches() {
+  [ "${#NAMES[@]}" -eq 0 ] && return 0
+  for n in "${NAMES[@]}"; do
+    [ "$1" = "$n" ] && return 0
+  done
+  return 1
+}
 
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
@@ -98,6 +126,7 @@ print(re.search(r'^name\s*=\s*"([^"]+)"',b.group(1),re.M).group(1) if b else '')
 PY
 )
   [ -n "$name" ] || continue
+  name_matches "$name" || continue
 
   dir=$(dirname "$m")
   ver=$(cd "$dir" && cargo metadata --no-deps --format-version 1 2>/dev/null \
@@ -152,14 +181,66 @@ EOF
   loc_dir="$WORK/loc-$name"; mkdir -p "$loc_dir"
   tar xzf "$loc_crate" -C "$loc_dir" --strip-components=1
 
-  if diff -r "${IGNORE[@]}" "$pub_dir" "$loc_dir" >/dev/null 2>&1; then
+  files_ok=1
+  diff -r "${IGNORE[@]}" "$pub_dir" "$loc_dir" >/dev/null 2>&1 || files_ok=0
+
+  # F-98: Cargo.toml is excluded above because cargo normalizes it and the
+  # verbatim source is preserved in Cargo.toml.orig, which IS compared — but
+  # Cargo.toml.orig still reads "foo.workspace = true" regardless of what the
+  # workspace root's [workspace.dependencies] table says today or said at
+  # publish time, so a workspace-inherited dependency version divergence is
+  # invisible to that comparison. Every port's map/gen/store crate declares
+  # its crates.io dependencies this way (X15.1), so this was not a corner
+  # case. Compare the *normalized* Cargo.toml too — the one cargo package
+  # actually produces and crates.io actually serves — parsed as TOML rather
+  # than diffed as text, so cargo's own cosmetic reordering and requoting is
+  # not mistaken for a content difference: it is content we are checking,
+  # not formatting.
+  manifest_ok=1
+  manifest_diff=""
+  if [ -f "$pub_dir/Cargo.toml" ] && [ -f "$loc_dir/Cargo.toml" ]; then
+    if ! manifest_diff=$(python3 - "$pub_dir/Cargo.toml" "$loc_dir/Cargo.toml" <<'PY' 2>&1
+import difflib
+import json
+import sys
+import tomllib
+
+
+def load(path):
+    with open(path, "rb") as f:
+        return tomllib.load(f)
+
+
+pub, loc = load(sys.argv[1]), load(sys.argv[2])
+if pub == loc:
+    sys.exit(0)
+pub_s = json.dumps(pub, indent=2, sort_keys=True).splitlines()
+loc_s = json.dumps(loc, indent=2, sort_keys=True).splitlines()
+diff = difflib.unified_diff(
+    pub_s, loc_s, fromfile="published (normalized)", tofile="local (normalized)", lineterm=""
+)
+print("\n".join(diff))
+sys.exit(1)
+PY
+    ); then
+      manifest_ok=0
+    fi
+  fi
+
+  if [ "$files_ok" -eq 1 ] && [ "$manifest_ok" -eq 1 ]; then
     printf '  %-24s %-10s ok\n' "$name" "$ver"
     matched=$((matched+1))
   else
     n=$(diff -r "${IGNORE[@]}" "$pub_dir" "$loc_dir" 2>/dev/null | grep -c '^[<>]' || true)
-    printf '  %-24s %-10s MISMATCH  (%s differing lines)\n' "$name" "$ver" "$n"
+    reason="packaged files"
+    [ "$files_ok" -eq 1 ] && reason="resolved Cargo.toml"
+    [ "$files_ok" -eq 0 ] && [ "$manifest_ok" -eq 0 ] && reason="packaged files + resolved Cargo.toml"
+    printf '  %-24s %-10s MISMATCH  (%s differing lines; %s)\n' "$name" "$ver" "$n" "$reason"
     mismatched=$((mismatched+1)); fail=1
-    [ "$SHOW_DIFF" -eq 1 ] && diff -r -u "${IGNORE[@]}" "$pub_dir" "$loc_dir" 2>/dev/null | sed 's/^/      /' || true
+    if [ "$SHOW_DIFF" -eq 1 ]; then
+      [ "$files_ok" -eq 0 ] && diff -r -u "${IGNORE[@]}" "$pub_dir" "$loc_dir" 2>/dev/null | sed 's/^/      /'
+      [ "$manifest_ok" -eq 0 ] && printf '%s\n' "$manifest_diff" | sed 's/^/      /'
+    fi || true
   fi
 done
 

@@ -230,7 +230,7 @@ This section exists because a disclosure without one is marketing.
   re-derived" would not be.
 - **The §8 history is a sample, not a bound.** Those findings are the ones that
   were found. The audit register is open and one finding is open in it today
-  (F-98) — a count this bullet will always be catching up to, since the
+  (F-102) — a count this bullet will always be catching up to, since the
   register changes more often than this document does; the register itself is
   the thing to check, not this sentence.
 - **Retroactivity.** Commits predating this statement's first issue already

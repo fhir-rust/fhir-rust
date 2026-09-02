@@ -246,34 +246,18 @@ jobs:
             /opt/az "$AGENT_TOOLSDIRECTORY" 2>/dev/null || true
           df -h /
       - uses: dtolnay/rust-toolchain@stable
-      # A crates.io version is immutable. If this tree carries a version that
-      # is already published, the two must agree — otherwise the published
-      # artifact and the source disagree while every local build stays green,
-      # because a local build resolves the path dependency and never fetches
-      # the registry copy. The divergence then surfaces only when someone
-      # packages a dependent, as an error about code they did not touch.
+      # O10.11: a published version must match the source that claims it.
+      # scripts/check-published-match.sh is the thorough check: every
+      # packaged file (not just src/), plus the *normalized* Cargo.toml
+      # cargo package actually produces and crates.io actually serves, not
+      # just Cargo.toml.orig. F-98 found Cargo.toml.orig alone misses a
+      # workspace-inherited dependency version drift; F-102 found this job's
+      # own former inline check had an even bigger blind spot -- it never
+      # looked at Cargo.toml at all, only src/, and was never wired to the
+      # more thorough script that already existed for exactly this reason.
+      # Scoped to this port's own three crates.
       - name: Compare each published version against this tree
-        run: |
-          fail=0
-          for crate in fhir-oracle-map fhir-oracle-gen fhir-oracle-store; do
-            version=$(cargo metadata --format-version 1 --no-deps \
-              | python3 -c "import json,sys;print(next(p['version'] for p in json.load(sys.stdin)['packages'] if p['name']=='$crate'))")
-            url="https://static.crates.io/crates/$crate/$crate-$version.crate"
-            if ! curl -sfL "$url" -o /tmp/pub.crate; then
-              echo "$crate $version: unpublished, nothing to compare"
-              continue
-            fi
-            rm -rf /tmp/pubx && mkdir -p /tmp/pubx
-            tar xzf /tmp/pub.crate -C /tmp/pubx
-            if diff -rq "/tmp/pubx/$crate-$version/src" "crates/$crate/src" >/dev/null 2>&1; then
-              echo "$crate $version: matches crates.io"
-            else
-              echo "::error::$crate $version is published but differs from this tree; bump it"
-              diff -rq "/tmp/pubx/$crate-$version/src" "crates/$crate/src" || true
-              fail=1
-            fi
-          done
-          exit "$fail"
+        run: ../scripts/check-published-match.sh --diff fhir-oracle-map fhir-oracle-gen fhir-oracle-store
 
   supply-chain:
     name: Advisories, licenses, SBOM

@@ -79,6 +79,24 @@ jobs:
           key: msrv-${{ steps.msrv.outputs.version }}
       - run: cargo check --workspace --all-targets --locked
 
+  published-versions:
+    name: No version diverges from crates.io
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Free disk space (unused preinstalled runner bloat)
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc \
+            /usr/local/.ghcup /usr/local/share/boost /opt/hostedtoolcache/CodeQL \
+            /opt/az "$AGENT_TOOLSDIRECTORY" 2>/dev/null || true
+          df -h /
+      - uses: dtolnay/rust-toolchain@stable
+      # O10.11: a published version must match the source that claims it.
+      # This crate had no such check at all until F-102 — like fhir-loco, it
+      # never had one, unlike the six database ports.
+      - name: Compare each published version against this tree
+        run: ../scripts/check-published-match.sh --diff fhir-store
+
   supply-chain:
     name: cargo-deny (O10.10)
     runs-on: ubuntu-latest

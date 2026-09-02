@@ -322,37 +322,23 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: fhir
-      # A crates.io version is immutable, so if this tree carries a version
-      # that is already published, the two must agree. When they do not, every
-      # local build still looks fine — it uses the path dependency — and the
-      # divergence only appears when someone packages a dependent.
+      # O10.11: a published version must match the source that claims it.
       #
-      # That is exactly what happened: fhir-derive-macros 1.0.1 knew releases
-      # r2/r6 here and only r3/r4/r5 on crates.io, so packaging a release
-      # crate failed with `unknown FHIR version`. Hence 1.1.0.
+      # That is exactly what this job first existed to catch:
+      # fhir-derive-macros 1.0.1 knew releases r2/r6 here and only r3/r4/r5 on
+      # crates.io, so packaging a release crate failed with `unknown FHIR
+      # version`. Hence 1.1.0.
+      #
+      # scripts/check-published-match.sh is the thorough check: every
+      # packaged file (this job's own inline version only ever diffed
+      # src/), plus the *normalized* Cargo.toml cargo package actually
+      # produces and crates.io actually serves, not just Cargo.toml.orig
+      # (F-98 found Cargo.toml.orig alone misses a workspace-inherited
+      # dependency version drift; F-102 found this job's src/-only check had
+      # an even bigger blind spot, and wired it to the shared script instead
+      # of duplicating a narrower one here).
       - name: A published version must match what is published
-        run: |
-          fail=0
-          for crate in fhir fhir-core fhir-r2 fhir-r3 fhir-r4 fhir-r4b fhir-r5 fhir-r6 fhir-derive-macros; do
-            dir=$crate
-            [ "$crate" = fhir ] && dir=.
-            version=$(cargo metadata --format-version 1 --no-deps \
-              | python3 -c "import json,sys;print(next(p['version'] for p in json.load(sys.stdin)['packages'] if p['name']=='$crate'))")
-            url="https://static.crates.io/crates/$crate/$crate-$version.crate"
-            if ! curl -sfL "$url" -o /tmp/pub.crate; then
-              echo "$crate $version: unpublished, nothing to compare"
-              continue
-            fi
-            rm -rf /tmp/pubx && mkdir -p /tmp/pubx && tar xzf /tmp/pub.crate -C /tmp/pubx
-            if diff -rq "/tmp/pubx/$crate-$version/src" "$dir/src" >/dev/null 2>&1; then
-              echo "$crate $version: matches crates.io"
-            else
-              echo "::error::$crate $version is published but differs from this tree; bump the version"
-              diff -rq "/tmp/pubx/$crate-$version/src" "$dir/src" || true
-              fail=1
-            fi
-          done
-          exit "$fail"
+        run: ../scripts/check-published-match.sh --diff fhir fhir-core fhir-r2 fhir-r3 fhir-r4 fhir-r4b fhir-r5 fhir-r6 fhir-derive-macros
       # The proc-macro crate has no path deps, so its dry-run must be green.
       - run: cargo publish --dry-run -p fhir-derive-macros
       # fhir-core has no unpublished path dependencies, so its dry-run must

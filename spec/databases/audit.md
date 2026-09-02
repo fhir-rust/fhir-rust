@@ -213,7 +213,8 @@ own closures — every one of them contradicted the summary table above.*
 | ~~F-51~~ | Closed 2026-08-29: `tests/oracle_ddl.rs` now installs and verifies a sampled schema live on every run, not just by hand; the full-R5 install remains verified only by **F-08**'s hand-run transcript, a separate, narrower gap the entry names. |
 | ~~F-58~~ | Closed 2026-08-09: `SV2.14`, `SV3.11`, `SV4.3` (2026-08-07) and `SV2.15` `$export` (2026-08-09) are all served; `SV4.2`'s concurrency-limit halves stay recorded in `fhir-loco/spec/04` as a framework limit, which is a constraint, not a gap this register tracks. |
 | ~~F-67~~ | Closed 2026-08-29: the driver switched from `tiberius` to `mssql`, a fork maintained to carry the TLS fixes forward — none of the four advisory packages remain in the dependency tree. |
-| F-98 | **Open, not struck through.** Found the same day F-67 closed, bumping `sha2`/`sha3`: `scripts/check-published-match.sh` reports "ok" for a crate whose workspace-inherited dependency requirement has diverged from what crates.io actually received, because its `Cargo.toml.orig` comparison preserves `foo.workspace = true` rather than the normalized, packaged manifest crates.io serves. A correct fix needs to diff the *normalized* `Cargo.toml` instead, without reintroducing the cosmetic-reordering false positives `Cargo.toml.orig` was chosen to avoid — not done in this pass. |
+| ~~F-98~~ | Closed by **F-102**: the normalized-`Cargo.toml` comparison is implemented, and running it found the predicted blind spot was real — twelve currently-published crates, not a hypothetical. |
+| F-102 | **Open, not struck through.** The script and CI-wiring fix is done; remediating the twelve already-published crates it found (bump each, republish) is tracked in the finding itself and not yet complete as of this row. |
 
 ---
 
@@ -5788,6 +5789,13 @@ gate's "ok" against the crates.io API directly rather than trusting it —
 exactly the discipline `agents/release.md` asks for and this finding
 exists because, this once, it was actually applied.*
 
+**Closed by F-102**: the normalized-`Cargo.toml` comparison this entry
+deferred is implemented, verified against synthetic cosmetic-reorder and
+real-divergence cases before being trusted against crates.io, and running it
+for real found the blind spot was not hypothetical — see F-102 for what it
+found and the deeper, related defect (no CI job called this script at all)
+that let it stand undetected.
+
 ---
 
 ## F-99
@@ -5980,6 +5988,89 @@ MariaDB 11.4), `--test-threads=1`, including `ssl_live.rs`'s two tests
 actually executing (not self-skipping) and passing: 27 tests in
 `fhir-mysql-store`, 27 in `fhir-mariadb-store`, 0 failed. `fmt`/`clippy -D
 warnings` clean in both.
+
+## F-102
+
+**F-98's own predicted consequence — "a workspace-root dependency version
+bump can silently pass the gate while genuinely violating O10.11" — had
+already happened, in twelve currently-published crates, and the reason is
+worse than F-98 alone: no CI job in this repository ever ran the improved
+script F-98 called for.** Severity: **High** — this is the gate
+`agents/release.md` calls "the gate that matters most," found not enforcing
+itself, on crates already on crates.io.
+
+**Found continuing the CI-watch backlog after F-101**, implementing F-98's
+own deferred fix (compare the *normalized* `Cargo.toml`, not just
+`Cargo.toml.orig`, as parsed TOML rather than diffed text so cargo's cosmetic
+reordering/requoting isn't mistaken for content). Two things surfaced
+immediately on running the improved script for real, neither of which F-98
+anticipated:
+
+1. **No workflow in this repository calls `scripts/check-published-match.sh`
+   — not once, anywhere.** `grep -rl check-published-match.sh .github/`
+   returns nothing. Each of the six database ports instead carries its own
+   `published-versions` job with an inline, independently-duplicated
+   ~20-line check — and that inline check diffs `src/` only, never looking
+   at `Cargo.toml` (normalized or `.orig`) at all: a strictly bigger blind
+   spot than F-98's, on the exact same gate, in every port's own hosted CI.
+   `fhir-ci.yml` has an equivalent inline job with the identical `src/`-only
+   defect. `fhir-loco-ci.yml` and `fhir-store-ci.yml` have no such job at
+   all — not a narrower one, none. The thorough script has existed since
+   F-35 and has apparently never been run as part of any push.
+2. **Running it for real found twelve already-published crates whose
+   published version does not match the source that claims it today**,
+   across both families:
+
+   | Crate | Published | What moved since | Caught by |
+   | --- | --- | --- | --- |
+   | `fhir-mariadb-store` | 0.6.0 | `hmac` 0.12→0.13 (workspace) | normalized `Cargo.toml` only (F-98's exact case) |
+   | `fhir-mssql-store` | 0.6.0 | `hmac` 0.12→0.13, `sha3` 0.10→0.12 (workspace) | normalized `Cargo.toml` only |
+   | `fhir-mysql-map`/`-gen`/`-store` | 0.6.0 | `sha2` 0.10→0.11 (workspace) | normalized `Cargo.toml` only |
+   | `fhir-postgresql-store` | 0.6.1 | this session's own F-99 fix (`tests/audit.rs`, packaged) + `getrandom` 0.3→0.4 (workspace, via the F-99/PR#59 `deadpool-postgres` bump) | packaged files **and** manifest — this one predates neither F-98 nor F-102, it is *today's* |
+   | `fhir-loco` | 0.3.1 | `rstest` 0.25→0.26 (direct dependency) + `AGENTS.md`/`CLAUDE.md` added | already visible via `Cargo.toml.orig` — this one only ever needed the existing script *run* |
+   | `fhir-store` | 0.3.0 | `AGENTS.md`/`CLAUDE.md` added, README's own version example left at `"0.1"` | packaged files only |
+   | `fhir-core` | 3.3.0 | `convert_case` 0.11→0.12 (direct dependency) | already visible via `Cargo.toml.orig` |
+   | `fhir-r5`, `fhir-r6` | 4.2.0 | `convert_case` 0.11→0.12 (direct dependency) | already visible via `Cargo.toml.orig` |
+   | `fhir` | 4.2.0 | `convert_case` 0.11→0.12 (direct dependency) | already visible via `Cargo.toml.orig` |
+
+   Five of these (`fhir-loco`, `fhir-core`, `fhir-r5`, `fhir-r6`, `fhir`) were
+   never actually invisible to the *existing* script — `Cargo.toml.orig`
+   already carries a direct (non-workspace) dependency bump. They were
+   invisible to **CI**, because nothing runs the script. The other seven are
+   F-98's exact predicted case: a workspace-inherited version moved and
+   `Cargo.toml.orig` still reads `foo.workspace = true`, unchanged.
+   `fhir-r2`/`r3`/`r4`/`r4b` and the four `-map`/`-gen` crates not listed
+   above were checked and are genuinely unaffected — this is not "everything
+   published is wrong," it is these twelve specifically, with evidence for
+   each.
+
+**Fixed:**
+
+- `scripts/check-published-match.sh`: added the normalized-`Cargo.toml`
+  comparison F-98 deferred (`tomllib`-parsed dict equality, not a text diff —
+  verified against a synthetic cosmetic-reorder case, which correctly reports
+  a match, and a synthetic version-change case, which correctly reports a
+  mismatch, before trusting it against real crates.io data). Also gained a
+  `<name>...` argument so a caller can scope it to one family's own crates
+  by exact name (a plain prefix was tried first and rejected: "fhir" as a
+  prefix would also match "fhir-postgresql" and everything else here, since
+  every crate in this repository is named "fhir-something").
+- All six ports' `published-versions` jobs, `fhir-ci.yml`'s equivalent, and
+  two new jobs in `fhir-loco-ci.yml` and `fhir-store-ci.yml` (which had none)
+  now call the shared script instead of an inline, independently-duplicated,
+  narrower check. Verified locally by simulating each job's exact
+  invocation from its own `working-directory` default before trusting the
+  YAML: `cd fhir-postgresql && ../scripts/check-published-match.sh --diff
+  fhir-postgresql-map fhir-postgresql-gen fhir-postgresql-store` and the
+  equivalent for every other family, each reproducing the same result the
+  full run found. `python3 -c "import yaml; yaml.safe_load(...)"` on every
+  edited workflow file.
+
+**Remediation of the twelve live violations:** tracked below as this finding
+is updated, per `agents/release.md` §5 and the 2026-09-02 release-readiness
+delegation (`GOVERNANCE.md`, `AI_STATEMENT.md` §§5–6) — bump each affected
+crate's version and republish, restoring what F-98's own fix already
+established as the correct remedy for this exact class of defect.
 
 ---
 
