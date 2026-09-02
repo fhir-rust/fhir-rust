@@ -5,6 +5,28 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.2.1 / 3.3.1 — 2026-09-02
+
+`convert_case` 0.11 → 0.12 (direct dependency, shared by `fhir`, `fhir-core`,
+`fhir-r5`, `fhir-r6`; `fhir-r2`/`r3`/`r4`/`r4b` are unaffected and stay at
+4.2.0, since their own `convert_case` requirement was already satisfied and
+they genuinely still match what is published). Released as a patch because
+each affected crate's prior version was already published and the bump
+landed after that publish: `O10.11` requires the published version to
+match its source, and this is exactly the gap `check-published-match.sh`
+closed the same day (F-98/F-102, `spec/databases/audit.md`) — this release
+is verified against the *fixed* gate, not the one that missed it.
+`cargo fmt`/`clippy -D warnings` clean across the workspace; full test
+suites green (`fhir-core` 45 unit + 13 doctests, `fhir-r5` 816, `fhir-r6`
+861, `fhir` with `r2 r3 r4 r4b r5 r6` features).
+
+**Separately noted, not fixed here:** `fhir`'s own `llms.json` carries a
+stale `"version": "3.0.0"` and a five-release self-description omitting
+R4B, unchanged since at least the 3.x line — a documentation-accuracy gap
+distinct from this release's O10.11 compliance question, and one this
+patch does not attempt to resolve; see `spec/databases/audit.md` F-102 for
+where it is tracked.
+
 ## 4.2.0 — 2026-08-29
 
 **MSRV raised 1.88 → 1.96** (spec `spec/rust-msrv-n-minus-2/`, `RV1.1`
