@@ -257,6 +257,8 @@ async fn metadata(Path(version): Path<String>) -> AxumResponse {
                 // If-None-Exist is served (SV2.14); a conformance-driven
                 // client discovers it here rather than by trying it.
                 "conditionalCreate": true,
+                // DELETE /{version}/{rtype}?params is served (SV2.19).
+                "conditionalDelete": "single",
                 "searchInclude": search_include,
             })
         })
@@ -644,6 +646,63 @@ async fn delete_(
     };
     match store.delete_audited(&rtype, &id, &audit).await {
         Ok(_) => StatusCode::NO_CONTENT.into_response(),
+        Err(e) => store_error(e),
+    }
+}
+
+/// `DELETE /{version}/{type}?params` — conditional delete (`SV2.19`).
+///
+/// The query string is search criteria, read the same way a type-level
+/// search's is (`SV2.12`, `SV2.13`). No-match and single-match both answer
+/// `204`: deletion is idempotent, the same rule instance-level `delete_`
+/// rests on, and a criteria set matching nothing has already reached the
+/// end state a matching-and-deleting request would produce.
+#[debug_handler]
+async fn conditional_delete(
+    Path((version, rtype)): Path<(String, String)>,
+    Query(criteria): Query<Vec<(String, String)>>,
+    headers: HeaderMap,
+) -> AxumResponse {
+    let store = match version_of(&version) {
+        Ok(s) => s,
+        Err(r) => return r,
+    };
+    // Empty criteria match every resource of the type. Refusing this rather
+    // than treating it as a search-and-maybe-delete-one is the same
+    // principle SV2.13 states for a dropped filter, aimed at a sharper
+    // failure: silently allowing it turns one missing query parameter into
+    // a request that deletes the whole type the moment it happens to
+    // contain exactly one resource (SV2.19).
+    if criteria.is_empty() {
+        return outcome(
+            StatusCode::BAD_REQUEST,
+            "error",
+            "required",
+            "conditional delete requires at least one search parameter (SV2.19); \
+             DELETE on an id deletes one resource, DELETE with no criteria matches every \
+             resource of the type",
+        );
+    }
+    // Refuse before touching the store: an unattributable write is exactly
+    // what PR12 exists to prevent, so the token is checked first.
+    let audit = match crate::auth::audit_from(&headers) {
+        Ok(a) => a,
+        Err(r) => return r,
+    };
+    match store
+        .conditional_delete_audited(&rtype, &criteria, &audit)
+        .await
+    {
+        Ok(fhir_sqlite_store::CondDelete::NoMatch | fhir_sqlite_store::CondDelete::Deleted) => {
+            StatusCode::NO_CONTENT.into_response()
+        }
+        Ok(fhir_sqlite_store::CondDelete::Multiple) => outcome(
+            StatusCode::PRECONDITION_FAILED,
+            "error",
+            "multiple-matches",
+            "the delete criteria matched more than one resource; the criteria are not \
+             selective enough",
+        ),
         Err(e) => store_error(e),
     }
 }
@@ -1098,7 +1157,10 @@ pub fn routes() -> Routes {
         .add("/{version}/metadata", get(metadata))
         .add("/{version}", post(system_post))
         .add("/{version}/_history", get(system_history))
-        .add("/{version}/{rtype}", get(search).post(create))
+        .add(
+            "/{version}/{rtype}",
+            get(search).post(create).delete(conditional_delete),
+        )
         .add("/{version}/{rtype}/_history", get(type_history))
         .add(
             "/{version}/{rtype}/{id}",

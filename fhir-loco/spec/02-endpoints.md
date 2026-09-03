@@ -8,7 +8,7 @@
   | Route | Methods |
   | --- | --- |
   | `/{version}/metadata` | `GET` |
-  | `/{version}/{rtype}` | `GET` (search), `POST` (create) |
+  | `/{version}/{rtype}` | `GET` (search), `POST` (create), `DELETE` (conditional delete, `SV2.19`) |
   | `/{version}/{rtype}/{id}` | `GET`, `PUT`, `DELETE` |
   | `/{version}/{rtype}/{id}/_history` | `GET` |
   | `/{version}/{rtype}/{id}/_history/{vid}` | `GET` (vread) |
@@ -262,6 +262,51 @@
   This requirement is the "documented refusal" its task entry called for:
   the decision is served to clients instead of living only in a doc
   comment.
+
+## Conditional delete
+
+- **SV2.19** `DELETE /{version}/{rtype}` carrying one or more query
+  parameters MUST be served as FHIR® conditional delete (restates HL7®'s
+  `http.html` "Conditional Delete"). The query string is search criteria,
+  read exactly as a type-level search's would be (`SV2.12`, `SV2.13`) —
+  a parameter the store does not support is refused by name, not
+  silently ignored, for `SV2.13`'s reason. The store's
+  `conditional_delete_audited` makes the search-then-delete indivisible
+  with respect to other writers, the same guarantee `SV2.14`'s
+  conditional create rests on, and each of its three outcomes MUST be
+  preserved:
+
+  | Store outcome | Status | Body |
+  | --- | --- | --- |
+  | no match | `204` | none |
+  | exactly one match | `204` | none |
+  | more than one match | `412` | `OperationOutcome`: the criteria are not selective enough |
+
+  No match is **not an error**: deletion is idempotent (the same rule
+  `SV2.4`'s `204` entry states for instance-level `DELETE` — a client
+  retrying after a dropped response must not see a failure for having
+  already succeeded), and a criteria set matching zero resources has
+  reached the same end state as one that matched and deleted them. The
+  `Multiple` case reuses `SV2.14`'s exact status and reason text
+  deliberately: both are "a search this endpoint will not act on
+  because it is not selective enough," and a client should not have to
+  learn two different shapes for the same idea.
+
+  `DELETE /{version}/{rtype}` with **no query parameters at all** MUST be
+  refused with `400`, naming the reason, rather than treated as
+  criteria-less conditional delete. An empty criteria set matches every
+  resource of that type; silently allowing it turns one missing query
+  parameter into a request that deletes the whole type the moment it
+  happens to contain exactly one resource, or reports `Multiple`
+  otherwise — either way, that class of client bug deserves a refusal,
+  not a search. The CapabilityStatement declares `conditionalDelete`
+  (`SV2.9`).
+
+  *Served since 2026-09-03. Proposed in `tasks.md`'s capability roadmap
+  as a routing-only gap — the store capability already existed on
+  `fhir-postgresql` and `fhir-sqlite` (the two backends this crate can
+  mount) with no route to it, the same shape `conditionalCreate`'s gap
+  had before `SV2.14`.*
 
 ---
 

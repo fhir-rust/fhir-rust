@@ -28,7 +28,8 @@ use std::sync::OnceLock;
 use fhir_sqlite_map::model::RelMap;
 use fhir_sqlite_store::sqlite::SqliteStore;
 use fhir_sqlite_store::{
-    AccessRecord, Audit, CondCreate, HistEntry, PutOutcome, ResourceStatus, SearchOutcome,
+    AccessRecord, Audit, CondCreate, CondDelete, HistEntry, PutOutcome, ResourceStatus,
+    SearchOutcome,
 };
 use serde_json::Value;
 
@@ -248,6 +249,15 @@ impl AnyStore {
             self,
             conditional_create_audited(rtype, criteria, resource, audit)
         )
+    }
+
+    pub async fn conditional_delete_audited(
+        &self,
+        rtype: &str,
+        criteria: &[(String, String)],
+        audit: &Audit,
+    ) -> Result<CondDelete, StoreFailure> {
+        forward!(self, conditional_delete_audited(rtype, criteria, audit))
     }
 
     pub async fn log_access(&self, rec: &AccessRecord) -> Result<(), StoreFailure> {

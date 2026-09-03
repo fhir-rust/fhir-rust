@@ -117,6 +117,35 @@ async fn crud_and_search_round_trip_on_the_postgres_backend() {
         assert_eq!(body["type"], "history");
         assert!(body["entry"].as_array().is_some_and(|e| !e.is_empty()));
 
+        // Conditional delete on the second backend (SV2.19 over pg's
+        // conditional_delete_audited) — a separate resource from pg-1, so
+        // the instance-level delete below is unaffected.
+        let res = request
+            .put("/r5/Patient/pg-2")
+            .add_header("content-type", FHIR_JSON)
+            .add_header("authorization", &bearer("dr-pg"))
+            .text(r#"{"resourceType":"Patient","id":"pg-2","name":[{"family":"ToDelete"}]}"#)
+            .await;
+        assert!(res.status_code().is_success(), "create: {}", res.text());
+        let res = request
+            .delete("/r5/Patient?family=ToDelete")
+            .add_header("authorization", &bearer("dr-pg"))
+            .await;
+        assert_eq!(
+            res.status_code(),
+            204,
+            "conditional delete on the second backend: {}",
+            res.text()
+        );
+        let res = request.get("/r5/Patient/pg-2").await;
+        assert_eq!(res.status_code(), 410, "the match must actually be gone");
+        // No match is idempotent here too, not an error.
+        let res = request
+            .delete("/r5/Patient?family=ToDelete")
+            .add_header("authorization", &bearer("dr-pg"))
+            .await;
+        assert_eq!(res.status_code(), 204);
+
         let res = request
             .delete("/r5/Patient/pg-1")
             .add_header("authorization", &bearer("dr-pg"))

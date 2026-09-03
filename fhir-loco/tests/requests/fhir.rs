@@ -975,6 +975,139 @@ async fn metadata_declares_conditional_create() {
     .await;
 }
 
+/// SV2.19: `DELETE /{version}/{rtype}?params` conditional delete — all three
+/// outcomes the spec table names, plus the no-criteria refusal. No-match and
+/// single-match both answer `204`: deletion is idempotent, the same rule
+/// instance-level delete rests on.
+#[tokio::test]
+#[serial]
+async fn conditional_delete_serves_all_outcomes() {
+    store_ready().await;
+    request::<App, _, _>(|request, _ctx| async move {
+        let patient = |family: &str| {
+            serde_json::json!({
+                "resourceType": "Patient",
+                "identifier": [{ "system": "urn:cd", "value": "one" }],
+                "name": [{ "family": family }]
+            })
+        };
+
+        // No match: still 204, per SV2.19 — a criteria set matching nothing
+        // has already reached the end state a matching delete would produce.
+        let res = request
+            .delete("/r5/Patient?identifier=urn:cd|one")
+            .add_header("authorization", &bearer("dr-who"))
+            .await;
+        assert_eq!(
+            res.status_code(),
+            204,
+            "no match must be idempotent, not an error: {}",
+            res.text()
+        );
+
+        // Exactly one match: deleted, 204, and a subsequent read is 410 —
+        // the delete actually happened, not merely "reported success".
+        let res = request
+            .post("/r5/Patient")
+            .add_header("content-type", FHIR_JSON)
+            .add_header("authorization", &bearer("dr-who"))
+            .json(&patient("First"))
+            .await;
+        assert_eq!(res.status_code(), 201);
+        let id = res
+            .headers()
+            .get("location")
+            .expect("Location header")
+            .to_str()
+            .expect("utf-8")
+            .rsplit('/')
+            .next()
+            .expect("id")
+            .to_string();
+        let res = request
+            .delete("/r5/Patient?identifier=urn:cd|one")
+            .add_header("authorization", &bearer("dr-who"))
+            .await;
+        assert_eq!(
+            res.status_code(),
+            204,
+            "one match must delete it: {}",
+            res.text()
+        );
+        let res = request.get(&format!("/r5/Patient/{id}")).await;
+        assert_eq!(
+            res.status_code(),
+            410,
+            "the match must actually be gone, not just reported deleted"
+        );
+
+        // Two resources sharing the criteria: ambiguous, 412 — the same
+        // status and reason shape SV2.14's conditional create uses for its
+        // own "more than one match" case.
+        for family in ["Second", "Third"] {
+            let res = request
+                .post("/r5/Patient")
+                .add_header("content-type", FHIR_JSON)
+                .add_header("authorization", &bearer("dr-who"))
+                .json(&patient(family))
+                .await;
+            assert_eq!(res.status_code(), 201);
+        }
+        let res = request
+            .delete("/r5/Patient?identifier=urn:cd|one")
+            .add_header("authorization", &bearer("dr-who"))
+            .await;
+        assert_eq!(
+            res.status_code(),
+            412,
+            "more than one match must refuse rather than delete either: {}",
+            res.text()
+        );
+        let body = body_of(&res.text());
+        assert_eq!(body["resourceType"], "OperationOutcome");
+
+        // No criteria at all: refused outright (SV2.19) rather than treated
+        // as "delete the type's one resource, if there happens to be one" —
+        // silently allowing that turns a missing query parameter into a
+        // request that deletes an entire type.
+        let res = request
+            .delete("/r5/Patient")
+            .add_header("authorization", &bearer("dr-who"))
+            .await;
+        assert_eq!(
+            res.status_code(),
+            400,
+            "criteria-less conditional delete must be refused: {}",
+            res.text()
+        );
+    })
+    .await;
+}
+
+/// SV2.9/SV2.19: the CapabilityStatement declares conditional delete, so a
+/// conformance-driven client discovers it rather than trying it.
+#[tokio::test]
+#[serial]
+async fn metadata_declares_conditional_delete() {
+    store_ready().await;
+    request::<App, _, _>(|request, _ctx| async move {
+        let res = request.get("/r5/metadata").await;
+        assert_eq!(res.status_code(), 200);
+        let body = body_of(&res.text());
+        let resources = body["rest"][0]["resource"]
+            .as_array()
+            .expect("rest.resource array");
+        assert!(!resources.is_empty());
+        assert!(
+            resources
+                .iter()
+                .all(|r| r["conditionalDelete"] == serde_json::json!("single")),
+            "every resource type must declare conditionalDelete (SV2.19)"
+        );
+    })
+    .await;
+}
+
 /// SV2.15: the Bulk Data `$export` async slice, end to end — kick-off, poll,
 /// manifest, NDJSON fetch (disclosure-logged), cancel/cleanup.
 #[tokio::test]

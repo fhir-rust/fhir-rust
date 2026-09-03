@@ -235,13 +235,16 @@ out of scope, restated here so nobody re-proposes them without reading why).
 
 ### Tier 1 — small-to-medium effort, no store-layer blocker
 
-- **Surface HTTP conditional delete where the store already has it.**
-  `conditional_delete` is `•` on `fhir-postgresql` and `fhir-sqlite` in the
-  conformance matrix today; `fhir-loco`'s route table (`SV2.1`) has no
-  query-based `DELETE /{version}/{rtype}?params` at all. This is a routing
-  gap on top of an existing capability, not new store work — the same
-  shape as `SV2.14`'s conditional create, which took one route and three
-  status-code rules to serve once written down.
+- [x] **Surface HTTP conditional delete where the store already has it** —
+      done 2026-09-03: `DELETE /{version}/{rtype}?params` (`SV2.19`,
+      `fhir-loco` 0.3.3). No match and single match both answer `204`
+      (idempotent, matching instance-level `DELETE`); multiple matches
+      answer `412` with `SV2.14`'s reason shape; no criteria at all is
+      refused with `400` rather than treated as "delete the type's one
+      resource if it has exactly one". Verified against both mounted
+      backends — SQLite by a dedicated outcome-table test, PostgreSQL by a
+      live-container run (`FHIR_LOCO_TEST_PG=1`), not assumed from the
+      shared code path. `cargo fmt`/`clippy -D warnings` clean.
 - **Conditional read** (`If-Modified-Since` / `If-None-Match` on `GET`,
   answering `304`) — a standard, small RESTful capability with no mention
   in `SV2` today; no store change implied, since it only needs the

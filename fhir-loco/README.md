@@ -164,12 +164,15 @@ values; anything else is logged and answered with a generic 500.
 SQLite by default; PostgreSQL by configuration (`SV1.10`). Read, vread,
 create, update, delete, search (including
 `_include`/`_revinclude`, `SV2.16`), history at instance, type and system
-level (`SV2.17`), conditional create (`SV2.14`), and system-level
-`$export` (`SV2.15`) work and have been exercised end to end against a
-real database. (Until 2026-08-10 this paragraph still listed conditional
-create as unimplemented — stale since 2026-08-07.) Not implemented:
-conditional delete over HTTP, and transaction Bundles — the store refuses
-those explicitly rather than pretending.
+level (`SV2.17`), conditional create (`SV2.14`), conditional delete
+(`SV2.19`), and system-level `$export` (`SV2.15`) work and have been
+exercised end to end against a real database. (Until 2026-08-10 this
+paragraph still listed conditional create as unimplemented — stale since
+2026-08-07; until 2026-09-03 it listed conditional delete as
+unimplemented too — stale the same day it was written, since the store
+capability already existed and only the route was missing.) Not
+implemented: transaction and batch Bundles — the store refuses those
+explicitly rather than pretending.
 
 `FHIR_LOCO_BACKEND=postgresql` (with `FHIR_LOCO_PG_DSN` and the postgres
 relmap assets in `FHIR_LOCO_ASSETS`) mounts `fhir-postgresql` instead —
