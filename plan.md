@@ -49,22 +49,28 @@ posture. Open items for each are in `tasks.md`.
    code-of-conduct makes overstating capability a conduct matter, the
    governance files must survive their own standard.
 
-2. **Compliance — licensing and trademarks.** Root-level compliance is done
-   and gated. Two frontiers remain: scope (the trademark check covers root
-   `*.md` + `help/**` only — `doc/`, `fhir/`, the six ports' READMEs and
-   books, `fhir-store/`, `fhir-loco/` are ungated and non-compliant), and
-   the ports' `LICENSE-APACHE` files, which are header boilerplate rather
-   than the license text — stated as outstanding work inside LICENSE.md
-   itself.
+2. **Compliance — licensing and trademarks.** Both frontiers this item used
+   to name are closed: the trademark gate widened from root `*.md` + `help/**`
+   to every markdown page and the nine crate roots' rustdoc, tree-wide,
+   across two tranches (both done 2026-08-26); the ports' `LICENSE-APACHE`
+   header-boilerplate files were replaced with the actual license text the
+   same day. Remaining work here is maintenance, not scope: keeping the
+   gate green as new pages are added (it runs in `gates.yml` on every push
+   and PR).
 
-3. **Security and supply chain.** `cargo deny` runs weekly and on push — but
-   paths-filtered to `fhir/**`, so the six ports and `fhir-loco` were not
-   scanned on push when **F-67 (High: mssql TLS advisories)** was filed
-   there; F-67 itself closed 2026-08-29 (driver switched from `tiberius` to
-   `mssql`). The publish path is a laptop with a long-lived registry token; the
-   per-port `publish.yml` workflows are inert. No tags, no signing, no SBOM,
-   no Trusted Publishing, no private-vulnerability-reporting config, no
-   dependabot, no issue templates.
+3. **Security and supply chain.** `cargo deny`'s path filter widened from
+   `fhir/**` to a nine-workspace matrix (done 2026-08-26) — the gap that let
+   **F-67 (High: mssql TLS advisories)** go unscanned on push is closed, and
+   F-67 itself closed 2026-08-29 (driver switched from `tiberius` to
+   `mssql`; no advisory package remains in the tree). Tags, GitHub Releases,
+   and commit/tag signing (SSH, local-repo, public key at
+   `.github/jph-code-signing.pub`) all exist, from 2026-08-27 onward. GitHub
+   private vulnerability reporting, Dependabot, and secret scanning are on.
+   The publish path remains, by owner decision (`spec/publishing.md`), a
+   laptop with a long-lived registry token rather than Trusted Publishing or
+   CI-driven `publish.yml` workflows — that is a decision, not a gap; see
+   "Open decisions" below. Issue templates exist (`.github/ISSUE_TEMPLATE/`);
+   no SBOM yet.
 
 4. **Privacy and patient data.** PHI.md exists and is the family's model: a
    privacy-officer Q&A that names its own limits (no certification, no known
@@ -129,14 +135,19 @@ posture. Open items for each are in `tasks.md`.
 
 ## Risks & watch items
 
-- The uncommitted pass is the single biggest risk: a large, coherent body of
-  governance work that currently has zero external effect and could rot
-  against the moving tree.
 - Countable claims (crate counts, coverage lists, status lines) are this
-  repository's known failure mode — every number in the new documents needs
-  the same verification discipline the audit register applies to code.
-- The trademark gate widening (`doc/`, families) multiplies by the shared
-  six-port core: a disclaimer edit in one port's book is six edits (rule 2).
+  repository's known failure mode — every number in a document needs the
+  same verification discipline the audit register applies to code. Found
+  recurring 2026-09-03 auditing `spec/index.md`, `fhir-loco/spec/index.md`,
+  and this file's own now-fixed items 2–3: a status summary that duplicates
+  per-id or per-item text drifts independently of it and goes stale within
+  weeks, silently.
+- `fhir-rust.github.io`'s `content/` and `static/llms.*` are vendored,
+  committed snapshots, not build-time output — the deployed repo is a
+  git-subtree push with no sibling monorepo checkout to sync from. They
+  drift the same way a duplicated summary does, silently, until someone
+  runs `npm run sync` and diffs the result; `scripts/check-site-sync.sh`
+  (added 2026-09-03, wired into `gates.yml`) is the fix.
 
 ## Trademarks
 
