@@ -197,6 +197,7 @@ type-/system-level history, multi-port wiring, is tracked in that crate's
 | [F-96](#f-96) | Medium | **Unrelated to F-94/F-95, found the same audit pass**: `fhir-postgresql` and `fhir-loco` (which depends on it) both failed hosted `cargo deny` with `error[yanked]: detected yanked crate` on `chacha20 0.10.1` — pulled in via `rand 0.10.2 -> postgres-protocol -> tokio-postgres`, a chain neither this session nor **F-94** touched. crates.io yanked `0.10.1` upstream after both lockfiles had already pinned it; `yanked = "deny"` in each port's `deny.toml` (the same policy line **F-94** relies on) is what caught it | **fixed** 2026-08-28 — `cargo update -p chacha20` in both workspaces (`0.10.1` → `0.10.2`, the fix `cargo deny`'s own error message named). Verified: `cargo deny check advisories` clean in both, `cargo check --all-targets --locked` green in both |
 | [F-97](#f-97) | Medium | Surfaced closing **F-51**: the append-only trigger's `M3.17`/`M3.18` enforcement (`M14.29`, already known to have failed open once — `M14.29a`) and the `Bool` CHECK's `M14.8` enforcement were verified only by SQL-text unit tests, never against a live server. A CHECK clause that parses but never fires would pass the existing unit test the same way the trigger's `M14.29a` bug passed a read-through | **fixed** 2026-08-29 — `tests/oracle_constraints.rs` (`fhir-oracle-map`): a live `UPDATE`/undeclared `DELETE` against a seeded row, asserting the exact `ORA-20001`/`ORA-20002` errors (not merely `is_err()`, which is the distinction `M14.29a`'s own bug hid), the declared-erasure escape hatch confirmed to still work, and a live `INSERT` of `2` into a `NUMBER(1) CHECK (... IN (0,1))` column asserting `ORA-02290`. **Found and fixed in the same pass, not shipped and left flaky:** libtest runs a binary's `#[test]` functions concurrently by default, and the first version had both tests provision the same throwaway user — reproduced 3 of 3 failures before splitting each test onto its own user (`TRIGTEST`, `BOOLTEST`), 0 of many after. Wired into `fhir-oracle-ci.yml` beside **F-51**'s DDL-install step |
 | [F-98](#f-98) | Medium | `scripts/check-published-match.sh` reports "ok" for a crate whose source has genuinely diverged from what it published, when the divergence is a workspace-inherited dependency requirement (`sha2.workspace = true` etc.) — its `--exclude Cargo.toml` comparison relies on `Cargo.toml.orig`, which preserves the unresolved `.workspace = true` reference rather than the literal version crates.io actually receives | **open** — found 2026-08-29 bumping `sha2`/`sha3` in `fhir-postgresql`/`fhir-sqlite`: the gate said "34 matched, 0 mismatched" while the crates.io API confirmed `fhir-postgresql-map` 0.6.0's published manifest declares `sha2 ^0.10`, which the tree's new `sha2 = "0.11"` workspace requirement no longer matches. Worked around by bumping the affected crates to a patch version regardless of what the gate reported (commit `ca34cdf`), not by trusting it. Not fixed: a correct fix needs to compare the crate's *normalized*, packaged `Cargo.toml` (which does resolve `.workspace = true` to a literal) rather than `Cargo.toml.orig`, without reintroducing the cosmetic-reordering false positives `Cargo.toml.orig` was chosen to avoid |
+| [F-99](#f-99) | Medium | `fhir-postgresql-store`'s `checkpoints_are_logged_on_their_own_target_without_phi` test (`tests/audit.rs`) fails reproducibly — 2/2 hosted runs — on the Dependabot PR bumping `deadpool-postgres` 0.14.1 → 0.14.2 (PR #59), while `main`'s own last five hosted runs of the same job are all green | **fixed** 2026-09-01 — the leading hypothesis at filing (a `deadpool-postgres` 0.14.2 regression) was directly ruled out by diffing the crate from the registry cache; the real mechanism is `tracing`'s global per-callsite interest cache, decided by whichever of the file's three call paths reaches `emit_checkpoint`'s callsite first with no subscriber active, starving a thread-local `set_default` guard on any later, parallel-running test. Fixed mechanism-agnostically: `tests/audit.rs` now installs one process-wide `tracing_subscriber::fmt` default via `set_global_default` behind a `OnceLock` in `test_store()`, rather than scoping a subscriber around one call in one test. See the full entry for the ruled-out coalescing theory and the verification run |
 | [F-89](#f-89) | Medium | The mysql/mariadb DDL test harness was unportable and **masked real errors**: it passed MariaDB's `--skip-ssl-verify-server-cert` to whatever client exists (Oracle's mysql 8 client rejects it), assumed a utf8mb4 default charset (the runner's client defaults utf8mb3 → ERROR 1253 on the collation probe), and on any early client exit reported the stdin `Broken pipe` instead of reading the client's stderr — hiding whatever the real failure was | **fixed** 2026-08-10 — client-flavor-gated TLS flag, explicit `--default-character-set=utf8mb4`, and EPIPE falls through to collect stderr, so the next failure names itself |
 
 ## What remains, and why
@@ -212,7 +213,9 @@ own closures — every one of them contradicted the summary table above.*
 | ~~F-51~~ | Closed 2026-08-29: `tests/oracle_ddl.rs` now installs and verifies a sampled schema live on every run, not just by hand; the full-R5 install remains verified only by **F-08**'s hand-run transcript, a separate, narrower gap the entry names. |
 | ~~F-58~~ | Closed 2026-08-09: `SV2.14`, `SV3.11`, `SV4.3` (2026-08-07) and `SV2.15` `$export` (2026-08-09) are all served; `SV4.2`'s concurrency-limit halves stay recorded in `fhir-loco/spec/04` as a framework limit, which is a constraint, not a gap this register tracks. |
 | ~~F-67~~ | Closed 2026-08-29: the driver switched from `tiberius` to `mssql`, a fork maintained to carry the TLS fixes forward — none of the four advisory packages remain in the dependency tree. |
-| F-98 | **Open, not struck through.** Found the same day F-67 closed, bumping `sha2`/`sha3`: `scripts/check-published-match.sh` reports "ok" for a crate whose workspace-inherited dependency requirement has diverged from what crates.io actually received, because its `Cargo.toml.orig` comparison preserves `foo.workspace = true` rather than the normalized, packaged manifest crates.io serves. A correct fix needs to diff the *normalized* `Cargo.toml` instead, without reintroducing the cosmetic-reordering false positives `Cargo.toml.orig` was chosen to avoid — not done in this pass. |
+| ~~F-98~~ | Closed by **F-102**: the normalized-`Cargo.toml` comparison is implemented, and running it found the predicted blind spot was real — twelve currently-published crates, not a hypothetical. |
+| ~~F-99~~ | Closed 2026-09-01: `tracing`'s global per-callsite interest cache, not `deadpool-postgres` 0.14.2, was starving the test's thread-local subscriber; `tests/audit.rs` now arms one process-wide subscriber instead. |
+| ~~F-102~~ | Closed 2026-09-02: all twelve live violations remediated and republished; `check-published-match.sh` unscoped reports `34 matched, 0 mismatched`. |
 
 ---
 
@@ -5786,6 +5789,340 @@ and is left open rather than attempted under time pressure.
 gate's "ok" against the crates.io API directly rather than trusting it —
 exactly the discipline `agents/release.md` asks for and this finding
 exists because, this once, it was actually applied.*
+
+**Closed by F-102**: the normalized-`Cargo.toml` comparison this entry
+deferred is implemented, verified against synthetic cosmetic-reorder and
+real-divergence cases before being trusted against crates.io, and running it
+for real found the blind spot was not hypothetical — see F-102 for what it
+found and the deeper, related defect (no CI job called this script at all)
+that let it stand undetected.
+
+---
+
+## F-99
+
+**`fhir-postgresql-store`'s `checkpoints_are_logged_on_their_own_target_without_phi`
+test fails reproducibly against `deadpool-postgres` 0.14.2, and the PR
+proposing that bump is held pending it.** Severity: **Medium** — the test
+itself is sound (it is the one guarding that a checkpoint's audit-log line
+never carries PHI, `M3.17`-adjacent), but it now fails to observe *any*
+output at all, which is a test-technique fragility, not evidence the
+guarantee itself broke.
+
+Found triaging Dependabot PR #59 (`deadpool-postgres` 0.14.1 → 0.14.2 in
+`fhir-postgresql`). Two independent hosted runs of that PR's `Live-database
+tests (PostgreSQL 18)` job both failed the same way:
+
+```
+thread 'checkpoints_are_logged_on_their_own_target_without_phi' panicked at
+crates/fhir-postgresql-store/tests/audit.rs:425:5:
+checkpoint must land on its own target:
+```
+
+The empty string after the colon is the captured log itself — the
+assertion's own `{logged}` interpolation. The test captures `tracing`
+output by installing a custom writer as the thread's default subscriber
+(`tracing::subscriber::set_default`, scoped to the calling thread only) for
+the duration of `store.emit_checkpoint("test").await`, then asserts the
+capture contains `"audit_checkpoint"` (the event's `target`). Both runs
+captured nothing, yet `chain_witness()` — the fallible call inside
+`emit_checkpoint` — did not itself error (a `chain_witness()` failure
+would emit via `tracing::error!` instead, still inside the same capture
+window, still absent either way). The other four tests in the same binary,
+sharing the same connection style, passed both times — ruling out a
+general PostgreSQL-18-job or connectivity regression and pointing at this
+one test's capture technique specifically.
+
+**Leading hypothesis, not confirmed at the mechanism level:**
+`deadpool-postgres` 0.14.2's own changelog headline is directly on point:
+"Coalesce concurrent statement preparations. Tasks racing to prepare the
+same query now share a single `PREPARE` instead of each sending their own."
+That is new inter-task coordination sitting exactly on the code path
+`chain_witness()` exercises — a plausible way for the query that actually
+runs (and whatever polls it to completion) to end up outside the calling
+task, and therefore outside a thread-local subscriber's scope, in a way
+0.14.1 did not. Checked and ruled out the simplest version of that theory:
+each test in `tests/audit.rs` opens its own `Store` via `test_store()`,
+so there is no connection pool shared *across* tests for a coalesced
+prepare to race against — if the hypothesis holds, the coalescing must be
+happening within this one test's own single call, which is not yet
+confirmed by reading `deadpool-postgres` 0.14.2's source directly.
+
+**Not fixed here.** Two honest paths forward, neither attempted under time
+pressure: (1) read the `deadpool-postgres` 0.14.2 diff far enough to
+confirm or rule out the coalescing path for a single caller with no
+concurrent racer, or (2) stop relying on a thread-local subscriber for
+this test — capture via a process-global subscriber (installed once, e.g.
+with `tracing_subscriber`'s reload layer) so the assertion survives
+regardless of which task or thread ends up running the pooled query. PR
+#59 is left open rather than merged past a failure that was reproduced,
+not merely observed once.
+
+**Update, closed while continuing the CI-watch backlog:** path (1) is now
+settled, and it clears `deadpool-postgres` rather than convicting it. Both
+`deadpool-postgres-0.14.1` and `-0.14.2`, and their `deadpool` (0.12.3 →
+0.13.1) and `deadpool-runtime` (0.1.4 → 0.3.1) companions that the bump also
+carries, were diffed directly from the local registry cache rather than
+inferred from a changelog headline. The `statement_cache.rs` extraction that
+motivated the leading hypothesis replaces a `RwLock<HashMap<Key, Statement>>`
+with a `RwLock<HashMap<Key, Arc<OnceCell<Statement>>>>`: for a single caller
+with no concurrent racer for the same key — which every test in
+`tests/audit.rs` is, since each opens its own fresh `Store` and pool via
+`test_store()` — `OnceCell::get_or_try_init` runs its `init` closure inline,
+on the calling task, exactly as the old code's direct
+`client.prepare_typed(...).await` did. Nothing in the diff of any of the
+three crates spawns a task or a blocking thread on this path (the one
+`spawn_blocking` added to `deadpool-runtime` 0.3.1 is unused by `deadpool`'s
+and `deadpool-postgres`'s own source, confirmed by `grep`, not assumed). The
+coalescing theory is therefore ruled out on direct evidence, not just
+"checked and ruled out the simplest version" as the entry above left it.
+
+**What the evidence does point to.** `emit_checkpoint`'s `tracing::info!` is
+one physical callsite, and it is reached from three places: this test's
+direct call, and internally from both `resign_history` (exercised by
+`resigning_refuses_tampered_history_and_frees_the_old_key`) and the erasure
+path (exercised via `audit_trail_is_complete_and_tamper_evident`) — all five
+tests in this binary run in parallel, in the same process, on separate OS
+threads. `tracing`'s per-callsite interest cache is decided globally the
+first time a callsite fires anywhere in the process; a thread-local
+`tracing::subscriber::set_default` guard — which is what this test used —
+does not trigger the cache rebuild that installing a global default does.
+Whichever of those three call paths reached the callsite *first* in a given
+process, with no subscriber active, would cache "nobody's interested" for
+the rest of that run, starving every later call on any thread including one
+with an active `set_default` guard — the exact "captured nothing" signature
+both hosted runs showed, on a callsite none of the other four tests'
+assertions depend on. This is consistent with everything observed but was
+not reproduced locally: 8 runs of the live suite at `--test-threads=2`
+against the exact `-0.14.2`/`0.13.1`/`0.3.1` trio, and 3 more against the
+original `-0.14.1`/`0.12.3`/`0.1.4` trio, all passed — the race evidently
+needs scheduling characteristics this 16-core laptop's container did not
+reproduce, most likely GitHub's runner having far fewer cores. Recorded as
+the leading mechanism, not a certainty, for the same reason this entry
+already models: state what was checked and what remains inferred.
+
+**Fixed regardless of which mechanism is the true one**, per path (2):
+`tests/audit.rs` now arms a single process-wide `tracing_subscriber::fmt`
+default via `tracing::subscriber::set_global_default`, behind a `OnceLock`,
+called from `test_store()` — every test's first real step — rather than
+scoped with `set_default` around one call in one test. This is
+mechanism-agnostic: it removes the thread-local/interest-cache hazard
+outright rather than resolving which of this test's three callers would
+have raced. Verified: `cargo fmt --check` and `cargo clippy --tests -D
+warnings` clean; the full `fhir-postgresql-store` live suite (26 tests
+across `audit`, `concurrency`, `history_page`, `live`, `m2_semantics`,
+`redaction`, `search_semantics`, `ssl_default`, `upgrade`) green against a
+local PostgreSQL 18 container, both with the original lockfile and with
+`deadpool-postgres` bumped to `0.14.2` locally to match PR #59 exactly; the
+targeted `audit` suite alone re-run 9 times total under the `-0.14.2` trio
+with no failure. PR #59 is unblocked once this fix lands on `main` and its
+next hosted run picks it up.
+
+## F-100
+
+**`AI_STATEMENT.md` — the document §8 of itself holds up as the record of
+this project's "confident prose that nothing substantiates" failure mode —
+had two instances of exactly that failure mode inside it.** Found while
+reconciling the document against a governance change (2026-09-02: the owner
+authorized Claude to execute `cargo publish`), not while looking for this
+specifically; both predate that change and are unrelated to it.
+
+1. **§4 banned naming a tool as co-author of anything in this repository,
+   flatly, since version 1.0.0 (2026-08-26).** `git log --all -i --grep
+   "co-authored-by" --oneline | wc -l` returns 185 — commits both before and
+   after 1.0.0's issue date carry a `Co-Authored-By: Claude Sonnet 5` (or
+   `dependabot[bot]`) trailer. Git's author/committer field was never a
+   tool — verified on several commits directly (`git show -s --format="author:
+   %an <%ae>%ncommitter: %cn <%ce>"`) — but the trailer itself does name a
+   tool as co-author, in commit messages, in this repository, which is the
+   exact thing the sentence said does not happen.
+2. **§12 claimed "Nothing is signed. No commit or tag signature exists."**
+   `git config commit.gpgsign` is `true`; `git log --show-signature` reports
+   "Good git signature" (SSH, ED25519, the maintainer's key) on commits and
+   tags alike. Signing has been active since 2026-08-27 — a date this
+   document's own §13 ("revised off-cycle when ... a claim in this document
+   stops being true") should have caught, and did not for six days.
+
+**Fixed, not merely noted**, in the same pass: `AI_STATEMENT.md` bumped to
+1.1.0 (2026-09-02). §4 now describes the trailer as disclosure rather than
+authorship (git author/committer, and accountability, are unmoved by it) and
+explains why the 1.0.0 wording was wrong rather than silently dropping it.
+§12's signing bullet corrected to state what signing actually verifies (the
+git identity) and what it does not (tool involvement, which is what the
+trailer is for). §5/§6 gained the `cargo publish`-execution row the
+governance change itself required, kept explicitly distinct from the release
+*decision*, which stays the maintainer's alone. `CONTRIBUTING.md`'s "Using AI
+tools" section, which told contributors to put AI disclosure "in the
+description, not in commit trailers" — the same claim in a second document —
+was corrected in the same pass rather than left to contradict the just-fixed
+`AI_STATEMENT.md` §4.
+
+**Why this is worth its own finding rather than a quiet edit:** a governance
+document that misdescribes the practice it governs is a worse failure than
+having no such document, because a reader — a downstream integrator, an
+auditor, a contributor — has no way to detect the gap from the document
+alone; only comparing it against the tree, as this repository's own culture
+insists on doing for every other claim, surfaced it here. The document
+survives that comparison now; it did not before this finding.
+
+## F-101
+
+**The exact `mysql_async` version F-94 bumped to was yanked from crates.io
+after that bump landed.** Same class as F-96 (`chacha20`, also yanked
+post-pin): `cargo deny`'s `yanked = "deny"` caught it on the merge commit for
+PR #59 (an unrelated `deadpool-postgres` bump), failing `fhir-mysql` and
+`fhir-mariadb`'s security-audit jobs on `main` — `mysql_async 0.37.0`, pinned
+by F-94 2026-08-31, shows `yanked=true` via the crates.io API as of this
+finding.
+
+**Fixed** the same way as F-96: `cargo update -p mysql_async --precise
+0.37.1` in both ports (manifest requirement `"0.37"` already covers it, no
+`Cargo.toml` change needed). Checked before bumping rather than assumed:
+`0.37.1`'s own dependency manifest still requires `lru ^0.18`
+(crates.io `/dependencies` API), so F-94's advisory fix is not undone.
+Verified in both ports: `cargo deny --all-features check advisories` →
+`advisories ok`; `cargo check --all-targets --locked` clean; offline
+`--lib --bins` suites green (44 + 6 tests each); and — because F-95's own
+lesson is that a `mysql_async` bump's TLS behaviour is only proven live, not
+by `--lib --bins` — the full live suite against local containers (MySQL 8.4,
+MariaDB 11.4), `--test-threads=1`, including `ssl_live.rs`'s two tests
+actually executing (not self-skipping) and passing: 27 tests in
+`fhir-mysql-store`, 27 in `fhir-mariadb-store`, 0 failed. `fmt`/`clippy -D
+warnings` clean in both.
+
+## F-102
+
+**F-98's own predicted consequence — "a workspace-root dependency version
+bump can silently pass the gate while genuinely violating O10.11" — had
+already happened, in twelve currently-published crates, and the reason is
+worse than F-98 alone: no CI job in this repository ever ran the improved
+script F-98 called for.** Severity: **High** — this is the gate
+`agents/release.md` calls "the gate that matters most," found not enforcing
+itself, on crates already on crates.io.
+
+**Found continuing the CI-watch backlog after F-101**, implementing F-98's
+own deferred fix (compare the *normalized* `Cargo.toml`, not just
+`Cargo.toml.orig`, as parsed TOML rather than diffed text so cargo's cosmetic
+reordering/requoting isn't mistaken for content). Two things surfaced
+immediately on running the improved script for real, neither of which F-98
+anticipated:
+
+1. **No workflow in this repository calls `scripts/check-published-match.sh`
+   — not once, anywhere.** `grep -rl check-published-match.sh .github/`
+   returns nothing. Each of the six database ports instead carries its own
+   `published-versions` job with an inline, independently-duplicated
+   ~20-line check — and that inline check diffs `src/` only, never looking
+   at `Cargo.toml` (normalized or `.orig`) at all: a strictly bigger blind
+   spot than F-98's, on the exact same gate, in every port's own hosted CI.
+   `fhir-ci.yml` has an equivalent inline job with the identical `src/`-only
+   defect. `fhir-loco-ci.yml` and `fhir-store-ci.yml` have no such job at
+   all — not a narrower one, none. The thorough script has existed since
+   F-35 and has apparently never been run as part of any push.
+2. **Running it for real found twelve already-published crates whose
+   published version does not match the source that claims it today**,
+   across both families:
+
+   | Crate | Published | What moved since | Caught by |
+   | --- | --- | --- | --- |
+   | `fhir-mariadb-store` | 0.6.0 | `hmac` 0.12→0.13 (workspace) | normalized `Cargo.toml` only (F-98's exact case) |
+   | `fhir-mssql-store` | 0.6.0 | `hmac` 0.12→0.13, `sha3` 0.10→0.12 (workspace) | normalized `Cargo.toml` only |
+   | `fhir-mysql-map`/`-gen`/`-store` | 0.6.0 | `sha2` 0.10→0.11 (workspace) | normalized `Cargo.toml` only |
+   | `fhir-postgresql-store` | 0.6.1 | this session's own F-99 fix (`tests/audit.rs`, packaged) + `getrandom` 0.3→0.4 (workspace, via the F-99/PR#59 `deadpool-postgres` bump) | packaged files **and** manifest — this one predates neither F-98 nor F-102, it is *today's* |
+   | `fhir-loco` | 0.3.1 | `rstest` 0.25→0.26 (direct dependency) + `AGENTS.md`/`CLAUDE.md` added | already visible via `Cargo.toml.orig` — this one only ever needed the existing script *run* |
+   | `fhir-store` | 0.3.0 | `AGENTS.md`/`CLAUDE.md` added, README's own version example left at `"0.1"` | packaged files only |
+   | `fhir-core` | 3.3.0 | `convert_case` 0.11→0.12 (direct dependency) | already visible via `Cargo.toml.orig` |
+   | `fhir-r5`, `fhir-r6` | 4.2.0 | `convert_case` 0.11→0.12 (direct dependency) | already visible via `Cargo.toml.orig` |
+   | `fhir` | 4.2.0 | `convert_case` 0.11→0.12 (direct dependency) | already visible via `Cargo.toml.orig` |
+
+   Five of these (`fhir-loco`, `fhir-core`, `fhir-r5`, `fhir-r6`, `fhir`) were
+   never actually invisible to the *existing* script — `Cargo.toml.orig`
+   already carries a direct (non-workspace) dependency bump. They were
+   invisible to **CI**, because nothing runs the script. The other seven are
+   F-98's exact predicted case: a workspace-inherited version moved and
+   `Cargo.toml.orig` still reads `foo.workspace = true`, unchanged.
+   `fhir-r2`/`r3`/`r4`/`r4b` and the four `-map`/`-gen` crates not listed
+   above were checked and are genuinely unaffected — this is not "everything
+   published is wrong," it is these twelve specifically, with evidence for
+   each.
+
+**Fixed:**
+
+- `scripts/check-published-match.sh`: added the normalized-`Cargo.toml`
+  comparison F-98 deferred (`tomllib`-parsed dict equality, not a text diff —
+  verified against a synthetic cosmetic-reorder case, which correctly reports
+  a match, and a synthetic version-change case, which correctly reports a
+  mismatch, before trusting it against real crates.io data). Also gained a
+  `<name>...` argument so a caller can scope it to one family's own crates
+  by exact name (a plain prefix was tried first and rejected: "fhir" as a
+  prefix would also match "fhir-postgresql" and everything else here, since
+  every crate in this repository is named "fhir-something").
+- All six ports' `published-versions` jobs, `fhir-ci.yml`'s equivalent, and
+  two new jobs in `fhir-loco-ci.yml` and `fhir-store-ci.yml` (which had none)
+  now call the shared script instead of an inline, independently-duplicated,
+  narrower check. Verified locally by simulating each job's exact
+  invocation from its own `working-directory` default before trusting the
+  YAML: `cd fhir-postgresql && ../scripts/check-published-match.sh --diff
+  fhir-postgresql-map fhir-postgresql-gen fhir-postgresql-store` and the
+  equivalent for every other family, each reproducing the same result the
+  full run found. `python3 -c "import yaml; yaml.safe_load(...)"` on every
+  edited workflow file.
+
+**Remediation of the twelve live violations — versions bumped, per
+`agents/release.md` §§1–4, under the 2026-09-02 release-readiness
+delegation (`GOVERNANCE.md`, `AI_STATEMENT.md` §§5–6):**
+
+| Crate(s) | New version | Verified |
+| --- | --- | --- |
+| `fhir-postgresql-map`/`-gen`/`-store` | 0.6.2 | fmt/clippy/deny clean; full live suite (26 tests) re-run against PostgreSQL 18 |
+| `fhir-mysql-map`/`-gen`/`-store` | 0.6.1 | same, live suite (27 tests) against MySQL 8.4, TLS tests executing |
+| `fhir-mariadb-map`/`-gen`/`-store` | 0.6.1 | same, live suite (27 tests) against MariaDB 11.4, TLS tests executing |
+| `fhir-mssql-map`/`-gen`/`-store` | 0.6.1 | same, live suite (40 tests) freshly re-run against `azure-sql-edge` (this host's arm64 substitute — `mcr.microsoft.com/mssql/server` segfaults under emulation here) |
+| `fhir-loco` | 0.3.2 | fmt/clippy clean, full test suite (41 tests) |
+| `fhir-store` | 0.3.1 | fmt/clippy/deny clean, full test suite (14 tests) |
+| `fhir-core` | 3.3.1 | fmt/clippy clean, 45 unit + 13 doctests |
+| `fhir-r5`, `fhir-r6` | 4.2.1 | fmt/clippy clean, 816 and 861 tests respectively |
+| `fhir` | 4.2.1 | fmt/clippy clean, full suite with `r2 r3 r4 r4b r5 r6` features |
+
+`check-published-match.sh` re-run after each bump: correct vacuous OK
+(ahead of the published version, nothing to compare yet) in every case.
+
+**A thirteenth thing found finishing this, not part of the original
+twelve:** bumping `fhir-store` broke `cargo check --locked` in every one of
+the six ports plus `fhir-loco` — each embeds `fhir-store` as a path
+dependency and their own `Cargo.lock` still pointed at 0.3.0. Caught live
+on hosted CI (`fhir-mssql`/`fhir-oracle`/`fhir-sqlite`/`fhir-loco`/
+`fhir-postgresql` CI all failed "cannot update the lock file ... because
+--locked was passed"), not locally first — the same class of gap
+`fhir-loco`'s own 0.3.1 changelog entry had already named ("a sibling
+workspace's lockfile also needs regenerating" — dependabot cannot see it,
+and neither, this time, did the session that made the change, until CI
+said so). Fixed by regenerating all seven `Cargo.lock` files; `fhir-sqlite`
+and `fhir-oracle` needed no version bump of their own, since only
+`Cargo.lock` moved — dependency-resolution drift, which
+`check-published-match.sh` already and correctly excludes from
+comparison, not source drift.
+
+**CLOSED IN FULL, 2026-09-02.** Hosted CI confirmed green on the final
+state (every port's own CI, `repository gates`, both security-audit
+workflows, and `fhir CI`'s `Publish dry-run` job all passed on the commit
+carrying the lockfile fix). All eighteen affected crates then published to
+crates.io in dependency order (`fhir-store`; `fhir-core` → `fhir-r5`,
+`fhir-r6` → `fhir`; each port's `map` → `gen` → `store`; `fhir-loco` last),
+under the 2026-09-02 release-readiness delegation. `check-published-match.sh`
+re-run against the live registry immediately after, with no filter — the
+whole tree, not a scoped subset — reports:
+
+```
+34 matched, 0 mismatched, 0 skipped.
+OK: every published version matches its source (34 compared).
+```
+
+Ten annotated, signed tags pushed (`fhir-store-v0.3.1`, `fhir-core-v3.3.1`,
+`fhir-r5-v4.2.1`, `fhir-r6-v4.2.1`, `fhir-v4.2.1`, `fhir-postgresql-v0.6.2`,
+`fhir-mysql-v0.6.1`, `fhir-mariadb-v0.6.1`, `fhir-mssql-v0.6.1`,
+`fhir-loco-v0.3.2`) with matching GitHub Releases. Do not reopen for a new
+divergence found later — that is a new finding, per this register's own
+convention (F-90's close-out already establishes it).
 
 ---
 

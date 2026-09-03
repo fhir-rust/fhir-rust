@@ -50,7 +50,7 @@ requirement, and it is the document to read before choosing one.
 > own engine and attributes every `serve`/endpoint to `fhir-loco`
 > (**F-56**). The [conformance matrix](spec/databases/conformance-matrix.md) is
 > the status document to trust, and [`spec/audit.md`](spec/databases/audit.md)
-> lists one finding still open (F-98).
+> currently lists none open.
 
 ## Also here: the model crate
 
@@ -88,11 +88,11 @@ framework; this is where that surface lives, and its job is narrow: translate
 HTTP to store calls and get the status codes right, so that a resource which was
 deleted answers `410 Gone` and one that never existed answers `404 Not Found`.
 
-It has **no specification yet**, which means none of those externally visible
-promises can be cited by number or shown to have regressed. That gap is recorded
-in [`spec/index.md`](spec/index.md#gaps) and, since it is now known to be *the*
-service §10 and §12 describe, in [`spec/audit.md`](spec/databases/audit.md)
-**F-58**.
+It has its own specification, `fhir-loco/spec/`, ids `SV1.x`–`SV4.x`, added
+2026-08-03 — the gap that finding **F-58** tracked is closed, recorded in
+[`spec/index.md`](spec/index.md#gaps) and
+[`spec/databases/audit.md`](spec/databases/audit.md). Those externally visible
+promises can now be cited by number and checked for regression.
 
 ## Why relational
 
@@ -248,7 +248,7 @@ requirement and to the test that evidences it.
 | [`spec/databases/index.md`](spec/databases/index.md) | the normative core, shared by all six ports |
 | [`spec/databases/conformance-matrix.md`](spec/databases/conformance-matrix.md) | what each port actually satisfies |
 | [`spec/databases/audit.md`](spec/databases/audit.md) | every known divergence, with evidence |
-| [`spec/publishing.md`](spec/publishing.md) | how these crates reach crates.io — a documented laptop step, by decision, since all 34 already have |
+| [`spec/publishing.md`](spec/publishing.md) | how these crates reach crates.io — a documented laptop step, by decision, since all 34 already have; a Claude Code session may judge a specific release ready and run it (2026-09-02, [`AI_STATEMENT.md`](AI_STATEMENT.md) §5) |
 | [`spec/trusted-publishing/index.md`](spec/trusted-publishing/index.md) | why that decision means no Trusted Publishing here yet, checked against each forge's actual support |
 | [`fhir/spec/index.md`](fhir/spec/index.md) | the model crate's specification |
 | [`AGENTS.md`](AGENTS.md) | contributing — human or agent |

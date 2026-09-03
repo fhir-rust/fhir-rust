@@ -10,7 +10,7 @@ is the part every port needs and none of them should own privately.
 
 ```toml
 [dependencies]
-fhir-store = "0.3.0"
+fhir-store = "0.3.1"
 ```
 
 ## What is in here

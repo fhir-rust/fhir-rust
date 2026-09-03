@@ -53,7 +53,7 @@
     {
       "title": "HTTP surface",
       "links": [
-        { "title": "fhir-loco/README.md", "path": "fhir-loco/README.md", "description": "A FHIR RESTful API server (Loco/Axum/Tokio/Hyper) mounted over fhir-sqlite; the only crate in the repo that speaks HTTP." },
+        { "title": "fhir-loco/README.md", "path": "fhir-loco/README.md", "description": "A FHIR RESTful API server (Loco/Axum/Tokio/Hyper) mounted over fhir-sqlite by default, or fhir-postgresql via FHIR_LOCO_BACKEND=postgresql; the only crate in the repo that speaks HTTP." },
         { "title": "fhir-loco/spec/index.md", "path": "fhir-loco/spec/index.md", "description": "Server specification, ids SV1.x–SV4.x." }
       ]
     },

@@ -104,3 +104,28 @@ jobs:
       # It found six defects on its first run, one of which did not parse.
       - name: Check
         run: ./scripts/check-doc-examples.sh
+
+  site-sync:
+    name: fhir-rust.github.io content matches the monorepo root
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26
+          cache: npm
+          cache-dependency-path: fhir-rust.github.io/package-lock.json
+
+      # fhir-rust.github.io/content/ and static/llms.* are vendored,
+      # committed snapshots — the deployed repo is a git-subtree push with no
+      # sibling checkout to sync from, so its own deploy.yml cannot run this.
+      # This checkout has both trees, so this is the one place drift between
+      # a root doc and the site's copy of it can be caught before it ships.
+      # Found real drift on the audit that motivated this job (2026-09-03):
+      # the site's copy of spec/databases/audit.md called a closed finding
+      # open and was missing another entirely.
+      - name: Install
+        working-directory: fhir-rust.github.io
+        run: npm ci
+      - name: Check
+        run: ./scripts/check-site-sync.sh

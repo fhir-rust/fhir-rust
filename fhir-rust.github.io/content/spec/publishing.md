@@ -61,6 +61,18 @@ accepted residual — one machine, one person, an unsigned upload path — is
 recorded in [`MAINTAINERS.md`](../MAINTAINERS.md) and stands until evidence
 reopens the question (RFC.md §10 still solicits it).
 
+**Who may judge a release ready is decided separately, 2026-09-02: an
+authorized Claude Code session, not only the owner.** This does not reopen
+the decision above — the publish path is still the same laptop, the same
+`~/.cargo/credentials.toml`, no CI workflow. What changes is who may conclude
+that [`agents/release.md`](../agents/release.md) §§1–4 pass for a given
+crate and carry out §5. The delegation is specific (one checkable question),
+revocable by the owner at any time, and does not move accountability for the
+release, which stays the owner's under `AI_STATEMENT.md` §4. See
+`GOVERNANCE.md`'s "What is decided where" and `AI_STATEMENT.md` §§5–6 for the
+full statement; this paragraph is the record required by `GOVERNANCE.md`'s
+"Where decisions are recorded" rule, not a restatement for its own sake.
+
 Two things the publication does *not* establish, and which no crates.io upload
 could:
 

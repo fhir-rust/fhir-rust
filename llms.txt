@@ -52,7 +52,7 @@ by the file it appears in.
 
 ## HTTP surface
 
-- [fhir-loco/README.md](fhir-loco/README.md): a FHIR RESTful API server (Loco/Axum/Tokio/Hyper) mounted over `fhir-sqlite` — the only crate in the repo that speaks HTTP
+- [fhir-loco/README.md](fhir-loco/README.md): a FHIR RESTful API server (Loco/Axum/Tokio/Hyper) mounted over `fhir-sqlite` by default, or `fhir-postgresql` via `FHIR_LOCO_BACKEND=postgresql` — the only crate in the repo that speaks HTTP
 - [fhir-loco/spec/index.md](fhir-loco/spec/index.md): server specification, ids `SV1.x`–`SV4.x`
 
 ## Documentation and tutorials

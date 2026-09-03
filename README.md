@@ -88,11 +88,11 @@ framework; this is where that surface lives, and its job is narrow: translate
 HTTP to store calls and get the status codes right, so that a resource which was
 deleted answers `410 Gone` and one that never existed answers `404 Not Found`.
 
-It has **no specification yet**, which means none of those externally visible
-promises can be cited by number or shown to have regressed. That gap is recorded
-in [`spec/index.md`](spec/index.md#gaps) and, since it is now known to be *the*
-service §10 and §12 describe, in [`spec/audit.md`](spec/databases/audit.md)
-**F-58**.
+It has its own specification, `fhir-loco/spec/`, ids `SV1.x`–`SV4.x`, added
+2026-08-03 — the gap that finding **F-58** tracked is closed, recorded in
+[`spec/index.md`](spec/index.md#gaps) and
+[`spec/databases/audit.md`](spec/databases/audit.md). Those externally visible
+promises can now be cited by number and checked for regression.
 
 ## Why relational
 

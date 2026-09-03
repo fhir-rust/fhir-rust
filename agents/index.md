@@ -26,5 +26,6 @@ those instead when working in [`../fhir/`](../fhir/).
 - Do not claim more than the port's conformance level.
 - Say what you did not verify.
 - Before releasing, run `scripts/check-published-match.sh` — a published version
-  must match the source that claims it (`O10.11`), and nothing else checks it
-  across all four families.
+  must match the source that claims it (`O10.11`). CI runs it too (wired into
+  all 9 workflows as of 2026-09-02), but a release still runs it locally
+  first, against the exact tree about to be published.

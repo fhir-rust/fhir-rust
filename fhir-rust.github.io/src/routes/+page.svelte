@@ -24,7 +24,7 @@
 		{
 			name: 'fhir-sqlite',
 			engine: 'SQLite 3',
-			level: 'Store',
+			level: 'Store, nearing Reference',
 			note: 'native, embeddable, no server'
 		},
 		{ name: 'fhir-mysql', engine: 'MySQL 8.4', level: 'Store', note: '' },
@@ -33,13 +33,13 @@
 			name: 'fhir-mssql',
 			engine: 'SQL Server',
 			level: 'Store',
-			note: 'live-verified; a standing TLS advisory risk (F-67)'
+			note: 'live-verified'
 		},
 		{
 			name: 'fhir-oracle',
 			engine: 'Oracle Database',
 			level: 'Store',
-			note: 'live-verified; no upgrade path yet, snapshot reads open'
+			note: 'live-verified; snapshot reads open (R4.5)'
 		}
 	];
 
@@ -245,7 +245,7 @@
 		subtitle="The model family is published; the database ports are pre-release."
 	/>
 	<p>
-		The model is <code>fhir = "3"</code> — five releases behind cargo features, <code>r5</code> on
+		The model is <code>fhir = "4"</code> — five releases behind cargo features, <code>r5</code> on
 		by default. The database ports and the server are pre-release in
 		<a href={REPOSITORY}>the fhir-rust repository</a>, each at the conformance level the matrix
 		states.

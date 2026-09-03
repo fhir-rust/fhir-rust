@@ -139,7 +139,7 @@
 			"links": [
 				{
 					"title": "fhir-loco/README.md",
-					"description": "A FHIR RESTful API server (Loco/Axum/Tokio/Hyper) mounted over fhir-sqlite; the only crate in the repo that speaks HTTP.",
+					"description": "A FHIR RESTful API server (Loco/Axum/Tokio/Hyper) mounted over fhir-sqlite by default, or fhir-postgresql via FHIR_LOCO_BACKEND=postgresql; the only crate in the repo that speaks HTTP.",
 					"url": "https://fhir-rust.github.io/server/"
 				},
 				{

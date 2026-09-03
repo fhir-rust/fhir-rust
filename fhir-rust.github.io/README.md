@@ -96,11 +96,12 @@ document's own relative links resolve exactly as they do in the repository.
 Lily's Svelte components and picker helpers are installed from npm
 (`lily-design-system-svelte-headless`,
 `lily-design-system-svelte-theme-picker`,
-`lily-design-system-svelte-text-size-picker` — see `dependencies` in
+`lily-design-system-svelte-text-size-picker`,
+`lily-design-system-svelte-share-picker` — see `dependencies` in
 `package.json`), not vendored. **Done 2026-08-30**, replacing a checkout-vendored
-copy: those three packages didn't exist on npm when this site was first built,
+copy: those packages didn't exist on npm when this site was first built,
 so `src/lib/lily/` carried the components and helpers verbatim, ahead of what
-npm had. All three are MIT-or-Apache-2.0-or-GPL-2.0-or-GPL-3.0 licensed and,
+npm had. All four are MIT-or-Apache-2.0-or-GPL-2.0-or-GPL-3.0 licensed and,
 as of the commit that made this switch, byte-identical to what was vendored.
 The one piece with no npm package yet is Lily's theme CSS — headless
 components ship no styles by design — so `static/themes/` is still vendored
@@ -152,9 +153,10 @@ a `BASE_PATH` in the workflow — see the comment in `svelte.config.js`.
 
 The site is built from Lily's headless components, which carry the semantics and
 no styling: `SkipLink`, `Header`, `Footer`, `ArticleLayout`, `BreadcrumbNav`,
-`ContentsNav`, `PaginationNav`, and the theme and text-size pickers. Themes and
-text size persist in `localStorage`, and the theme picker follows the system
-preference until a reader chooses otherwise.
+`ContentsNav`, `PaginationNav`, the theme and text-size pickers, and the share
+picker (the layout's "Share this page" control). Themes and text size persist
+in `localStorage`, and the theme picker follows the system preference until a
+reader chooses otherwise.
 
 ## Trademarks
 

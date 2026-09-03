@@ -230,10 +230,11 @@ oversight a reader has to infer:
   in §10 and §12 stay and now mean "binds `fhir-loco`, restated as `SV4.x`".
 
   What it does **not** meet is recorded at the `SV` id rather than in a list
-  that drifts: `SV4.2` (no concurrency or in-flight limit — Loco 1.0.1 exposes
-  neither), `SV4.3` (no admin plane, no `/metrics`), `SV2.14` (no conditional
-  create), `SV2.15` (no `$export`), and `SV3.11` (no requirement anywhere states
-  an obligation for the listener's own TLS).
+  that drifts — the previous version of this list did drift, and named four
+  requirements met weeks earlier as still unmet. As of 2026-09-03, only
+  `SV4.2` (no concurrency or in-flight limit — Loco 1.0.1 exposes neither) is
+  unmet; read `fhir-loco/spec/` directly for current status rather than
+  trusting this sentence as it ages.
 - **All six dialect annexes are still marked *proposed*** (`X15.9`), so none may
   be cited as evidence for a conformance level.
 

@@ -75,10 +75,11 @@ stated at the point of use.
 it does.** Several requirements below are currently unmet, and each says so at
 its own id rather than in a summary that can drift out of date.
 
-The honest summary as of 2026-08-03: routes, status codes and attribution are
-implemented and tested; a body limit and request timeout are configured in
-production; concurrency limits, an admin plane, `/metrics`, `$export` and
-conditional create are not.
+This summary itself drifted once — the 2026-08-03 version of this paragraph
+named four requirements as unmet that were met within the following month —
+which is exactly the failure mode the sentence above warns about. It is not
+restated here a second time: read the status line at each id (`SV2.14`,
+`SV2.15`, `SV2.19`, `SV3.11`, `SV4.2`, `SV4.3`) directly.
 
 ---
 
