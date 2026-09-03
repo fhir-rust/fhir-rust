@@ -212,6 +212,125 @@ Grouped by `plan.md` workstream. Order within a group is priority order.
       here, keep this repo's copies accurate first (see the in-flight
       items).
 
+## Capability roadmap (proposed, triaged) — 2026-09-03
+
+**This section is different from the rest of the file.** Everything above is
+a professionalization item: verified done, or a known gap in governance,
+compliance, or hygiene. What follows is **not done, not speced, and not
+normative** (`spec/index.md`'s precedence rule, restated in `GOVERNANCE.md`:
+nothing in this file decides anything) — it is a candidate list of FHIR®
+capabilities this repository does not yet serve, found by reading HL7®'s own
+RESTful API description (`hl7.org/fhir/http.html`) against `fhir-loco`'s
+spec (`SV1`–`SV4`) and the [conformance matrix](spec/databases/conformance-matrix.md),
+rather than by guessing. Pursuing any item means writing the requirement
+into the spec first ([`agents/spec-workflow.md`](agents/spec-workflow.md),
+`C0.19`–`C0.22`), same as
+everything else here — this list is the "should we" input to that step, not
+a substitute for it.
+
+Two things HL7 documents that this project has already, deliberately,
+decided **not** to build are left off this list rather than listed as gaps:
+a validation service and an authorization server (`SV1.4` — both explicitly
+out of scope, restated here so nobody re-proposes them without reading why).
+
+### Tier 1 — small-to-medium effort, no store-layer blocker
+
+- **Surface HTTP conditional delete where the store already has it.**
+  `conditional_delete` is `•` on `fhir-postgresql` and `fhir-sqlite` in the
+  conformance matrix today; `fhir-loco`'s route table (`SV2.1`) has no
+  query-based `DELETE /{version}/{rtype}?params` at all. This is a routing
+  gap on top of an existing capability, not new store work — the same
+  shape as `SV2.14`'s conditional create, which took one route and three
+  status-code rules to serve once written down.
+- **Conditional read** (`If-Modified-Since` / `If-None-Match` on `GET`,
+  answering `304`) — a standard, small RESTful capability with no mention
+  in `SV2` today; no store change implied, since it only needs the
+  `last_updated`/ETag data `get` and `vread` already return.
+- **`_elements` and `_summary` search/read parameters** — bandwidth-saving
+  partial responses HL7 defines alongside `_count`/`_offset`/`_total`
+  (`SV2.12`'s neighbours); adds a projection step after the store read,
+  no store change.
+- **`_since` on Bulk Data `$export`** — `SV2.15` refuses it by name today
+  ("`_type` is the one supported parameter"), which means every export is
+  a full dump; incremental export is the single most common real-world use
+  of Bulk Data and the store already tracks `last_updated` per resource,
+  so this is a filter addition to the existing per-resource-read
+  implementation, not new store machinery.
+- **Batch Bundles.** `SV2.18` refuses `POST /{version}` batch Bundles with
+  `501`, naming the reason plainly: batch is not atomic and "is
+  implementable without the [transaction] question" — it is refused only
+  because nobody has built it yet. Building it is looping the existing
+  per-resource routes over a Bundle's entries and assembling the response
+  Bundle; no new store capability, unlike transaction Bundles below.
+
+### Tier 2 — high value, blocked on store-layer work first
+
+- **Bring `fhir-mysql`, `fhir-mariadb`, `fhir-mssql`, and `fhir-oracle` to
+  audited-write parity with `fhir-postgresql`/`fhir-sqlite`.** The
+  conformance matrix shows `conditional_create`, `conditional_delete`,
+  `put_audited`, `delete_audited`, and `history_page` (type/system) all
+  `—` on those four ports today — meaning `fhir-loco`'s conditional-create
+  endpoint (`SV2.14`) and type/system history endpoints (`SV2.17`) can only
+  ever be meaningfully exercised against two of the six backends it could
+  mount. This is the single largest lever for making the other four ports'
+  **Store → Reference** gap concrete rather than descriptive: it is exactly
+  what separates the two levels per `CLAUDE.md`'s own framing, restated for
+  each port as its `M14.x` dialect work once someone picks it up.
+- **Transaction Bundles.** `SV2.18` refuses these with `501` too, but for a
+  named, harder reason: atomicity needs the store's `put`/`delete` to run
+  inside one caller-held transaction, and `transact_audited` is `•` on
+  `fhir-postgresql` alone (`~` on `fhir-sqlite`, `—` on the other four).
+  This is the capability most FHIR clients assume exists (`Bundle` of type
+  `transaction` is core to the spec, not an extra); it is also genuinely
+  hard here, since compensation-based atomicity was already investigated
+  and rejected (a reader could observe a half-applied bundle, and a
+  crash mid-unwind would leave it that way permanently, per `SV2.18`'s own
+  reasoning). Worth a dedicated design pass, not a quick patch.
+- **A real `export` store operation.** `export` is a named library
+  operation in `spec/databases/00-conformance.md` (alongside `put`, `get`,
+  `purge`) and shows `—` on **all six ports** in the matrix — it does not
+  exist anywhere. `fhir-loco`'s current Bulk Data `$export` (`SV2.15`)
+  works around this with a sequence of per-resource reads, which its own
+  spec text already flags as **not one transaction-time snapshot**. A real
+  `export` primitive (snapshot-consistent, streamed rather than read one
+  row at a time) would fix that honestly-stated gap and likely outperform
+  the current approach on large exports besides.
+- **`$everything` and compartment-based export
+  (`Patient/$export`, `Group/$export`).** All three need "compartment
+  machinery" `SV2.15` says plainly the store does not have. `$everything`
+  is one of the most commonly expected FHIR operations in practice
+  (a clinician's "give me this patient's whole record" button); bundling
+  it with compartment export makes sense because both need the same
+  underlying capability — a compartment definition and a way to resolve
+  "everything referencing or referenced by resource X" — built once.
+
+### Tier 3 — real capability, needs a scope decision before design
+
+- **Subscriptions** (the R4/R5 notification framework: `Subscription`
+  resources, channel types, event delivery, retry). Not mentioned anywhere
+  in `fhir-loco`'s spec — not deferred, not refused, simply absent. This is
+  a materially different kind of capability from everything above: it
+  needs background delivery, a retry/backoff policy, and a new failure
+  mode (a subscriber that never acknowledges) that nothing in the current
+  request/response model has to reason about. Worth a scope conversation —
+  does `fhir-loco` become a service with background workers, or does this
+  stay explicitly out of scope alongside validation and authorization? —
+  before any `SVx` requirement gets written, not after.
+- **JSON Patch** (`PATCH` route, restates HL7's `http.html` patch
+  interaction) and conditional patch. No route exists today (`SV2.1`'s
+  table has no `PATCH`). Needs a scope decision of its own: is a patch
+  audited the same way `put_audited` is, and does partial-update semantics
+  fit this crate's "translate, don't decide storage behaviour" principle
+  (`SV1.1`) as cleanly as a full-resource `PUT` does?
+- **System-level search and delete** (`GET {base}?_type=Type1,Type2`,
+  system-level conditional delete). Lower real-world demand than the
+  items above — mostly used by bulk tooling and admin scripts rather than
+  clinical clients — listed for completeness rather than urgency.
+- **Real cursor pagination for `_history`.** `SV2.17` already names this
+  as "future work, not an implied promise" rather than a gap discovered
+  today; repeated here only so it sits alongside the rest of this list
+  instead of only inside one requirement's prose.
+
 ## Trademarks
 
 HL7®, and FHIR® are the registered trademarks of Health Level Seven
