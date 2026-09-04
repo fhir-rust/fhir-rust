@@ -9,6 +9,20 @@ This file did not exist before 2026-08-29. This crate is the FHIR® REST
 surface — it inherited the name `fhir-store` briefly before being renamed
 (**F-37**), and had no changelog under either name.
 
+## 0.3.4 — 2026-09-04
+
+`spec/index.md`'s "honest summary" paragraph was corrected in a repo-wide
+documentation audit: it had drifted stale, still naming `SV2.14`, `SV2.15`,
+`SV3.11`, and `SV4.3` as unmet a month after each was met (and now
+`SV2.19`, shipped in 0.3.3, moves the same way if restated as-is). Fixed by
+no longer restating a status that can drift a second time — the paragraph
+now points at each id's own status line instead. Accurate against the
+source tree, but the already-published 0.3.3 artifact still carried the
+stale paragraph, since crates.io versions are immutable.
+`check-published-match.sh` caught it on the next hosted run (O10.11),
+exactly as designed. No source change beyond `spec/index.md` and this
+entry.
+
 ## 0.3.3 — 2026-09-03
 
 **Conditional delete** (`SV2.19`): `DELETE /{version}/{rtype}?params` is

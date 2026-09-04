@@ -11,6 +11,17 @@ had a changelog of its own. It starts here rather than being backfilled,
 since the extraction predates this file and reconstructing that history
 would be guessing at dates this crate itself has no record of.
 
+## 0.3.2 — 2026-09-04
+
+Same class of gap as 0.3.1, one version later: a repo-wide documentation
+audit corrected `README.md`'s dependency example from `fhir-store = "0.3.0"`
+to `"0.3.1"` — accurate against the source tree, but the *published* 0.3.1
+artifact still carries the old `"0.3.0"` line, since crates.io versions are
+immutable. `check-published-match.sh` caught it on the next hosted run
+(O10.11), exactly as designed. Released as a patch, no other source change,
+to ship the corrected line. No source change beyond `README.md` and this
+entry.
+
 ## 0.3.1 — 2026-09-02
 
 `AGENTS.md` and `CLAUDE.md` added since 0.3.0 published; `README.md`'s own

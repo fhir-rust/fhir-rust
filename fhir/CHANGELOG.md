@@ -5,6 +5,18 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.2.2 — 2026-09-04
+
+Same gap as the entry below, a release later: `README.md`'s status line
+(`stable (3.0)`, stale since the crate passed 3.0) and `llms.json`'s
+`version` field (`4.2.0`, stale since the 4.2.1 release below) were both
+corrected in a repo-wide documentation audit — accurate against the source
+tree, but the already-published 4.2.1 artifact still carried the old text,
+since crates.io versions are immutable. `check-published-match.sh` caught
+it on the next hosted run (O10.11), exactly as designed. `fhir-core`,
+`fhir-r2`–`fhir-r6` are unaffected and stay at their published versions.
+No source change beyond `README.md`, `llms.json`, and this entry.
+
 ## 4.2.1 / 3.3.1 — 2026-09-02
 
 `convert_case` 0.11 → 0.12 (direct dependency, shared by `fhir`, `fhir-core`,

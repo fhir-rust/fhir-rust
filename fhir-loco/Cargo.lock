@@ -1373,7 +1373,7 @@ checksum = "da7c62ceae207dd37ea5b845da6a0696c799f85e97da1ab5b7910be3c1c80223"
 
 [[package]]
 name = "fhir-loco"
-version = "0.3.3"
+version = "0.3.4"
 dependencies = [
  "async-trait",
  "axum",
@@ -1469,7 +1469,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-store"
-version = "0.3.1"
+version = "0.3.2"
 dependencies = [
  "getrandom 0.3.4",
  "hmac 0.12.1",
