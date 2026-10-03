@@ -987,7 +987,7 @@ mod tests {
 
         let none: ElementType =
             ::serde_json::from_value(::serde_json::json!({ "code": "string" })).unwrap();
-        assert!(none.target_profiles().is_empty());
+        assert_eq!(none.target_profiles(), [] as [&str; 0]);
     }
 
     #[test]

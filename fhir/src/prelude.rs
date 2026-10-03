@@ -9,7 +9,7 @@
 //! ```
 //!
 //! This is the R5 prelude, kept at the crate root because R5 is the default
-//! release. It re-exports [`r5::prelude`](crate::r5::prelude); for R4, use
-//! [`r4::prelude`](crate::r4::prelude).
+//! release. It re-exports [`r5::prelude`]; for R4, use
+//! [`r4::prelude`].
 
 pub use crate::r5::prelude::*;
