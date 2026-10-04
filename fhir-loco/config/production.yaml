@@ -66,3 +66,8 @@ server:
     # O10.8 also asks for a bounded concurrency limit and a maximum in-flight
     # count, shedding as 503 with `Retry-After`. Loco 1.0.1 exposes neither, so
     # they are **unmet** here rather than silently assumed — see F-58.
+
+# No background jobs and no queue backend: loco-rs 1.2 refuses to boot with
+# its BackgroundQueue default when no `queue` section is configured.
+workers:
+  mode: BackgroundAsync
