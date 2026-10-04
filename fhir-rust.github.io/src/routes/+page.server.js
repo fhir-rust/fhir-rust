@@ -1,5 +1,5 @@
-import { examples, guides, modelSections, specNormative } from '$lib/docs.js';
-import { SITE_NAME, SITE_TAGLINE } from '$lib/site.js';
+import { examples, guides, modelSections, specNormative } from '#lib/docs.js';
+import { SITE_NAME, SITE_TAGLINE } from '#lib/site.js';
 
 /** The hub is this site's own page, so it takes only the lists it links to. */
 export function load() {

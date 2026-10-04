@@ -11,7 +11,7 @@
 		THEMES,
 		THEME_LABELS,
 		SHARE_TARGETS
-	} from '$lib/site.js';
+	} from '#lib/site.js';
 	import '../styles/site.css';
 
 	let { children } = $props();

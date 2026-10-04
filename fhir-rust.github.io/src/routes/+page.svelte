@@ -1,6 +1,6 @@
 <script>
 	import { Card, SectionHeading } from 'lily-design-system-svelte-headless';
-	import { REPOSITORY, SITE_URL } from '$lib/site.js';
+	import { REPOSITORY, SITE_URL } from '#lib/site.js';
 
 	let { data } = $props();
 

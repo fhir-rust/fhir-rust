@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
-import { document, routes } from '$lib/docs.js';
-import { SITE_NAME } from '$lib/site.js';
+import { document, routes } from '#lib/docs.js';
+import { SITE_NAME } from '#lib/site.js';
 
 /** Prerender every document this site publishes, without relying on crawling. */
 export function entries() {

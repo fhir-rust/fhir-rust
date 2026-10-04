@@ -1,5 +1,5 @@
-import { routes } from '$lib/docs.js';
-import { SITE_URL } from '$lib/site.js';
+import { routes } from '#lib/docs.js';
+import { SITE_URL } from '#lib/site.js';
 
 export const prerender = true;
 

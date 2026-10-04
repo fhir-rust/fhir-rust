@@ -1,7 +1,7 @@
 <script>
 	import { page } from '$app/state';
 	import { ArticleLayout } from 'lily-design-system-svelte-headless';
-	import { SITE_NAME } from '$lib/site.js';
+	import { SITE_NAME } from '#lib/site.js';
 
 	const heading = $derived(page.status === 404 ? 'Page not found' : 'Something went wrong');
 </script>
