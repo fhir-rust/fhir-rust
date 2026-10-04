@@ -24,6 +24,10 @@ allow = [
     "Zlib",
     "CC0-1.0",
     "MPL-2.0",
+    # webpki-root-certs, reached through reqwest (feature `client`): a *data*
+    # licence for the root certificate set, not the code around it. Not
+    # copyleft; same allowance as fhir-loco.
+    "CDLA-Permissive-2.0",
 ]
 confidence-threshold = 0.9
 
