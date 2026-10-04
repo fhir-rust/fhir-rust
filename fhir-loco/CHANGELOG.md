@@ -9,6 +9,13 @@ This file did not exist before 2026-08-29. This crate is the FHIR® REST
 surface — it inherited the name `fhir-store` briefly before being renamed
 (**F-37**), and had no changelog under either name.
 
+## 0.3.5 — 2026-10-04
+
+Dependency maintenance only: `loco-rs` 1.0 -> 1.2, lockfile refreshed
+(including `rustls` 0.23.45, RUSTSEC-2026-0285, and the `fhir-sqlite`
+`getrandom` 0.4 move). No change to the REST surface.
+
+
 ## 0.3.4 — 2026-09-04
 
 `spec/index.md`'s "honest summary" paragraph was corrected in a repo-wide

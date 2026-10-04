@@ -438,7 +438,7 @@ version = "0.0.4"
 
 [[package]]
 name = "fhir-r2"
-version = "4.2.0"
+version = "4.2.1"
 dependencies = [
  "fhir",
  "fhir-core",
@@ -451,7 +451,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-r3"
-version = "4.2.0"
+version = "4.2.1"
 dependencies = [
  "fhir",
  "fhir-core",
@@ -464,7 +464,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-r4"
-version = "4.2.0"
+version = "4.2.1"
 dependencies = [
  "fhir",
  "fhir-core",
@@ -477,7 +477,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-r4b"
-version = "4.2.0"
+version = "4.2.1"
 dependencies = [
  "fhir",
  "fhir-core",
@@ -504,7 +504,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-r6"
-version = "4.2.1"
+version = "4.2.2"
 dependencies = [
  "convert_case",
  "fhir",

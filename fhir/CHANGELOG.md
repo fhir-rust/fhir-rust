@@ -5,6 +5,20 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.2.3 / 3.3.2 / 4.2.2 (fhir-r5, fhir-r6) / 4.2.1 (fhir-r2, r3, r4, r4b) — 2026-10-04
+
+- `fhir-core` and `fhir` move `reqwest` 0.12 -> 0.13 (Dependabot #75).
+  reqwest 0.13 made `RequestBuilder::query` opt-in, so the `client` feature now
+  enables reqwest's `query` feature. No public API change.
+- `serde_with` floor raised 3.21 -> 3.24 in the facade and every release crate.
+- `fhir-r5`: clippy 1.99 / rustdoc lint fixes (`ec3eab7`), source-only, no
+  behaviour change. `fhir-r6` carries the `serde_with` floor only.
+- `cargo deny` now allows `CDLA-Permissive-2.0`, the data licence of
+  `webpki-root-certs` (reached through reqwest 0.13); not copyleft.
+- The lockfile moves `rustls` to 0.23.45 (RUSTSEC-2026-0285); it affects
+  development and CI builds, not what downstream resolves.
+
+
 ## 4.2.2 — 2026-09-04
 
 Same gap as the entry below, a release later: `README.md`'s status line

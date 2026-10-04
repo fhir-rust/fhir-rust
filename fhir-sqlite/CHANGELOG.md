@@ -12,6 +12,12 @@
 > releases, and because a changelog is a historical record. What is specific to
 > this port is stated where it differs.
 
+## 0.6.2 — 2026-10-04
+
+`getrandom` 0.3 -> 0.4 (Dependabot #68) and lockfile refresh. Shared-core files
+are untouched. Applies to `fhir-sqlite-map`, `-gen` and `-store`.
+
+
 ## 0.6.1 — 2026-08-29
 
 `sha2` 0.10 → 0.11, `sha3` 0.10 → 0.12 (dependencies of the audit hash
