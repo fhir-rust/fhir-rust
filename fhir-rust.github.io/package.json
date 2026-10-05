@@ -4,6 +4,7 @@
 	"description": "The fhir-rust website: FHIR in Rust, stored as real relational tables.",
 	"type": "module",
 	"private": "true",
+	"packageManager": "pnpm@11.21.0",
 	"engines": {
 		"node": "=26"
 	},

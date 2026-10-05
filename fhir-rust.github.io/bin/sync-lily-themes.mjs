@@ -13,7 +13,7 @@
 // this script still vendors it from a sibling checkout.
 //
 // Source: $LILY if set, else ~/git/lilydesignsystem/lily-design-system.
-// Run after Lily's themes change:  npm run sync:lily-themes
+// Run after Lily's themes change:  pnpm run sync:lily-themes
 
 import { cp, mkdir, readdir, rm, writeFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
@@ -66,7 +66,7 @@ await writeFile(
 
 These files are copied verbatim from the Lily Design System (MIT licence) by
 \`bin/sync-lily-themes.mjs\`. Do not edit them here — change them upstream and
-re-run \`npm run sync:lily-themes\`.
+re-run \`pnpm run sync:lily-themes\`.
 
 Lily's Svelte components and picker helpers are installed from npm instead of
 vendored (\`lily-design-system-svelte-headless\`,

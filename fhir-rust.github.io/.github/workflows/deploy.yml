@@ -20,15 +20,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # Reads the version from package.json's `packageManager`.
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 26
-          cache: npm
+          cache: pnpm
       # No sync step: content/ and static/themes/ are committed, and Lily's
-      # Svelte components/helpers are npm dependencies (package-lock.json),
+      # Svelte components/helpers are registry dependencies (pnpm-lock.yaml),
       # so the site builds without the sibling checkouts they came from.
-      - run: npm ci
-      - run: npm run build
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

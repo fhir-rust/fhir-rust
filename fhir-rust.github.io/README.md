@@ -56,18 +56,18 @@ Everything else is copied verbatim.
 ## Building it
 
 Requires **Node 26+** (`package.json`'s `engines`, enforced —
-`.npmrc`'s `engine-strict=true` fails `npm install`/`npm ci` rather than
+`.npmrc`'s `engine-strict=true` fails `pnpm install` rather than
 warning on an older one). `.nvmrc` and `.tool-versions` both pin the exact
 version this repo is developed against, for `nvm`/`mise`/etc.
 
 ```sh
-npm install
-npm run dev        # http://localhost:5173
-npm run build      # -> build/
-npm run preview    # serve build/ as GitHub Pages will
+pnpm install
+pnpm run dev        # http://localhost:5173
+pnpm run build      # -> build/
+pnpm run preview    # serve build/ as GitHub Pages will
 ```
 
-`npm run build` is all CI does. The vendored directories below are committed, so
+`pnpm run build` is all CI does. The vendored directories below are committed, so
 the site builds from a bare checkout with no sibling repositories present.
 
 ## Vendored, not fetched
@@ -77,17 +77,17 @@ re-run the script.
 
 | Directory / file | Script | From |
 | --- | --- | --- |
-| `content/` | `npm run sync:content` | the monorepo: `README.md`, `index.md`, `doc/`, `spec/`, `fhir/`, `fhir-loco/`, `fhir-store/` |
-| `static/themes/` | `npm run sync:lily-themes` | Lily's theme CSS |
-| `static/llms.txt`, `static/llms.json` | `npm run sync:llms` | the monorepo's `llms.txt`/`llms.json` ([spec](https://github.com/fhir-rust/fhir-rust/blob/main/spec/llms-json-and-llms-txt/index.md)), with every link rewritten to wherever it resolves from *this* domain via `routeFor()`/`sourceUrl()` (see [`src/lib/paths.js`](src/lib/paths.js)) — the workspace copies use repository-relative links, which don't resolve on a live site |
+| `content/` | `pnpm run sync:content` | the monorepo: `README.md`, `index.md`, `doc/`, `spec/`, `fhir/`, `fhir-loco/`, `fhir-store/` |
+| `static/themes/` | `pnpm run sync:lily-themes` | Lily's theme CSS |
+| `static/llms.txt`, `static/llms.json` | `pnpm run sync:llms` | the monorepo's `llms.txt`/`llms.json` ([spec](https://github.com/fhir-rust/fhir-rust/blob/main/spec/llms-json-and-llms-txt/index.md)), with every link rewritten to wherever it resolves from *this* domain via `routeFor()`/`sourceUrl()` (see [`src/lib/paths.js`](src/lib/paths.js)) — the workspace copies use repository-relative links, which don't resolve on a live site |
 
-`npm run sync` runs all three. Each script takes its source from an
+`pnpm run sync` runs all three. Each script takes its source from an
 environment variable when the default location is wrong:
 
 ```sh
-WORKSPACE=/path/to/fhir-rust npm run sync:content        # default: .. (this site's own parent — the monorepo)
-WORKSPACE=/path/to/fhir-rust npm run sync:llms            # default: ..
-LILY=/path/to/lily-design-system npm run sync:lily-themes
+WORKSPACE=/path/to/fhir-rust pnpm run sync:content        # default: .. (this site's own parent — the monorepo)
+WORKSPACE=/path/to/fhir-rust pnpm run sync:llms            # default: ..
+LILY=/path/to/lily-design-system pnpm run sync:lily-themes
 ```
 
 `content/` mirrors the monorepo's layout rather than flattening it, so every

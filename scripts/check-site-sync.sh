@@ -7,7 +7,7 @@
 # deploy.yml says so explicitly ("No sync step: content/ and static/ are
 # committed"), and it has to be that way: the deployed repo is a git-subtree
 # push of this directory with no sibling checkout of the monorepo root, so
-# `npm run sync` has nothing to read from there. That leaves this monorepo,
+# `pnpm run sync` has nothing to read from there. That leaves this monorepo,
 # which does have both trees in one checkout, as the only place a drift
 # between root docs and the site's copy of them can be caught before it ships.
 #
@@ -40,18 +40,18 @@ if [[ ! -d node_modules ]]; then
 fi
 
 # Only content/ and llms.* come from this monorepo — deliberately not
-# `npm run sync`'s third leg, sync:lily-themes, which vendors theme CSS from
+# `pnpm run sync`'s third leg, sync:lily-themes, which vendors theme CSS from
 # a *different* project's sibling checkout ($LILY, default
 # ~/git/lilydesignsystem/lily-design-system) that a monorepo checkout, CI's
 # included, has no reason to have. That drift is real but out of scope here.
-npm run --silent sync:content
-npm run --silent sync:llms
+pnpm run --silent sync:content
+pnpm run --silent sync:llms
 
 drift="$(git -C "$repo_root" status --porcelain -- fhir-rust.github.io/content fhir-rust.github.io/static/llms.txt fhir-rust.github.io/static/llms.json)"
 
 if [[ -n "$drift" ]]; then
   echo "check-site-sync: FAIL — fhir-rust.github.io/content or static/llms.* was" >&2
-  echo "  stale relative to the monorepo root. 'npm run sync' has updated it in" >&2
+  echo "  stale relative to the monorepo root. 'pnpm run sync' has updated it in" >&2
   echo "  the working tree below; review and commit the result." >&2
   echo "$drift" >&2
   exit 1

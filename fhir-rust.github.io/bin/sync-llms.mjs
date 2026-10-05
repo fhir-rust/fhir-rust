@@ -16,7 +16,7 @@
 //
 // Source: $WORKSPACE if set, else this site's own parent directory — see
 // bin/sync-content.mjs for why it is no longer a sibling checkout.
-// Run after either workspace file changes:  npm run sync:llms
+// Run after either workspace file changes:  pnpm run sync:llms
 
 import { readFile, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';

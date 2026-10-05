@@ -26,7 +26,7 @@
 // spec/monorepo-github-pages/ (fhir-rust) moved this site to live inside the
 // monorepo, at fhir-rust.github.io/, so the monorepo root is one level up,
 // not a sibling checkout.
-// Run after the prose changes:  npm run sync:content
+// Run after the prose changes:  pnpm run sync:content
 
 import { cp, lstat, mkdir, readdir, readFile, readlink, rm, symlink, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
