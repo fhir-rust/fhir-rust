@@ -9,6 +9,14 @@ This file did not exist before 2026-08-29. This crate is the FHIR® REST
 surface — it inherited the name `fhir-store` briefly before being renamed
 (**F-37**), and had no changelog under either name.
 
+## 0.3.6 — 2026-10-05
+
+Dev-dependency and lockfile maintenance: `rstest` 0.26 -> 0.27 (the manifest
+requirement moves, which is why this is a version and not only a lockfile
+change; Dependabot #89 changed the lockfile alone and could not satisfy
+`--locked`), `clap` 4.6.7 and `thiserror` 2.0.21 in the lockfile (#90, #91).
+No change to the REST surface. Not yet published.
+
 ## 0.3.5 — 2026-10-04
 
 Dependency maintenance only: `loco-rs` 1.0 -> 1.2, lockfile refreshed
