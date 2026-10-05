@@ -35,8 +35,5 @@
 	"imports": {
 		"#lib": "./src/lib/index.js",
 		"#lib/*": "./src/lib/*"
-	},
-	"overrides": {
-		"cookie": "^0.7.0"
 	}
 }
