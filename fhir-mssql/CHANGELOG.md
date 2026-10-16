@@ -24,6 +24,10 @@
 > matrix](../spec/databases/conformance-matrix.md) and this port's own
 > `tasks.md` — not in any entry below, including *Unreleased*.
 
+## 0.6.2 — 2026-10-16
+
+Maintenance release; no behaviour change. Dependencies refreshed (`hmac` 0.13, `sha2` 0.11, `sha3` 0.12, `getrandom` 0.4, `serde_json` 1.0.154, `tokio`, `zeroize`). `bb8` 0.9: the connection manager now uses native async-fn-in-trait, so the `async-trait` dependency is dropped.
+
 ## 0.6.1 — 2026-09-02
 
 `hmac` 0.12 → 0.13 and `sha3` 0.10 → 0.12 (both workspace-inherited).

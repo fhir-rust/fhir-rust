@@ -5,6 +5,10 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.2.4 / 3.3.3 (fhir-core) / 1.6.1 (fhir-derive-macros) / 4.2.3 (fhir-r5, fhir-r6) / 4.2.2 (fhir-r2, r3, r4, r4b) — 2026-10-16
+
+Maintenance release; no API change. Dependencies refreshed (`cargo update`, `syn` 3, `quick-xml` 0.42, `serde_json` 1.0.154, `insta` 1.49, `serial_test` 4), and the Dependabot lockfile bumps (`tokio` 1.53, `zeroize` 1.9) applied.
+
 ## 4.2.3 / 3.3.2 / 4.2.2 (fhir-r5, fhir-r6) / 4.2.1 (fhir-r2, r3, r4, r4b) — 2026-10-04
 
 - `fhir-core` and `fhir` move `reqwest` 0.12 -> 0.13 (Dependabot #75).

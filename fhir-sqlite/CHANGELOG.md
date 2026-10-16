@@ -12,6 +12,10 @@
 > releases, and because a changelog is a historical record. What is specific to
 > this port is stated where it differs.
 
+## 0.6.3 — 2026-10-16
+
+Maintenance release; no behaviour change. Dependencies refreshed (`hmac` 0.13, `sha2` 0.11, `sha3` 0.12, `getrandom` 0.4, `serde_json` 1.0.154, `tokio`, `zeroize`). `rusqlite` 0.40.
+
 ## 0.6.2 — 2026-10-04
 
 `getrandom` 0.3 -> 0.4 (Dependabot #68) and lockfile refresh. Shared-core files

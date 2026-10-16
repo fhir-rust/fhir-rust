@@ -38,6 +38,19 @@ ignore = [
     # Re-check on every loco-rs release. Remove this entry, do not extend it.
     "RUSTSEC-2026-0194",
     "RUSTSEC-2026-0195",
+
+    # RUSTSEC-2024-0449 — `unsafe-libyaml` 0.2.11 is unmaintained (archived
+    # upstream, 2024-03). An "unmaintained" notice, not a vulnerability.
+    #
+    #   unsafe-libyaml 0.2.11
+    #     <- serde_yaml / serde_yaml_ng
+    #        <- loco-rs 1.2.0 (and its loco-gen / rrgen code generator)
+    #           <- fhir-loco
+    #
+    # Both parents are loco-rs's own dependencies, so nothing here can replace
+    # it, and this service parses no YAML from FHIR data. Dated 2026-10-16;
+    # re-check on every loco-rs release and remove this entry, do not extend it.
+    "RUSTSEC-2024-0449",
 ]
 
 [licenses]

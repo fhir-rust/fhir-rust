@@ -12,6 +12,10 @@
 > releases, and because a changelog is a historical record. What is specific to
 > this port is stated where it differs.
 
+## 0.6.2 — 2026-10-16
+
+Maintenance release; no behaviour change. Dependencies refreshed (`hmac` 0.13, `sha2` 0.11, `sha3` 0.12, `getrandom` 0.4, `serde_json` 1.0.154, `tokio`, `zeroize`).
+
 ## 0.6.1 — 2026-09-02
 
 `sha2` 0.10 → 0.11 (workspace-inherited, dependency of the audit hash chain,

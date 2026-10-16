@@ -9,6 +9,10 @@ This file did not exist before 2026-08-29. This crate is the FHIR® REST
 surface — it inherited the name `fhir-store` briefly before being renamed
 (**F-37**), and had no changelog under either name.
 
+## 0.3.7 — 2026-10-16
+
+Maintenance release. Lockfile refresh (`tokio`, `zeroize`, `uuid`, `insta`), and `RUSTSEC-2024-0449` (`unsafe-libyaml` unmaintained, via `loco-rs`) recorded in `deny.toml` with its reasoning.
+
 ## 0.3.6 — 2026-10-05
 
 Dev-dependency and lockfile maintenance: `rstest` 0.26 -> 0.27 (the manifest

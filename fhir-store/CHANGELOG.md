@@ -11,6 +11,10 @@ had a changelog of its own. It starts here rather than being backfilled,
 since the extraction predates this file and reconstructing that history
 would be guessing at dates this crate itself has no record of.
 
+## 0.3.3 — 2026-10-16
+
+Maintenance release. `hmac` 0.13 / `sha2` 0.11 (the chain MAC now imports `KeyInit` for `new_from_slice`, as `hmac` 0.13 requires; output is byte-identical), `sha3` 0.12, `getrandom` 0.4; lockfile refresh.
+
 ## 0.3.2 — 2026-09-04
 
 Same class of gap as 0.3.1, one version later: a repo-wide documentation

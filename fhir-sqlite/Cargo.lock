@@ -144,7 +144,7 @@ checksum = "7360491ce676a36bf9bb3c56c1aa791658183a54d2744120f27285738d90465a"
 
 [[package]]
 name = "fhir-sqlite-gen"
-version = "0.6.2"
+version = "0.6.3"
 dependencies = [
  "fhir-sqlite-map",
  "flate2",
@@ -156,7 +156,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-sqlite-map"
-version = "0.6.2"
+version = "0.6.3"
 dependencies = [
  "flate2",
  "serde",
@@ -168,7 +168,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-sqlite-store"
-version = "0.6.2"
+version = "0.6.3"
 dependencies = [
  "fhir-sqlite-gen",
  "fhir-sqlite-map",
@@ -189,7 +189,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-store"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "getrandom",
  "hmac",

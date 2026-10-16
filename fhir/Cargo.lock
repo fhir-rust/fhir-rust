@@ -422,7 +422,7 @@ checksum = "da7c62ceae207dd37ea5b845da6a0696c799f85e97da1ab5b7910be3c1c80223"
 
 [[package]]
 name = "fhir"
-version = "4.2.3"
+version = "4.2.4"
 dependencies = [
  "convert_case",
  "fhir-core",
@@ -446,7 +446,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-core"
-version = "3.3.2"
+version = "3.3.3"
 dependencies = [
  "convert_case",
  "fhir",
@@ -460,7 +460,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-derive-macros"
-version = "1.6.0"
+version = "1.6.1"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -477,7 +477,7 @@ version = "0.0.4"
 
 [[package]]
 name = "fhir-r2"
-version = "4.2.1"
+version = "4.2.2"
 dependencies = [
  "fhir",
  "fhir-core",
@@ -490,7 +490,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-r3"
-version = "4.2.1"
+version = "4.2.2"
 dependencies = [
  "fhir",
  "fhir-core",
@@ -503,7 +503,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-r4"
-version = "4.2.1"
+version = "4.2.2"
 dependencies = [
  "fhir",
  "fhir-core",
@@ -516,7 +516,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-r4b"
-version = "4.2.1"
+version = "4.2.2"
 dependencies = [
  "fhir",
  "fhir-core",
@@ -529,7 +529,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-r5"
-version = "4.2.2"
+version = "4.2.3"
 dependencies = [
  "convert_case",
  "fhir",
@@ -543,7 +543,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-r6"
-version = "4.2.2"
+version = "4.2.3"
 dependencies = [
  "convert_case",
  "fhir",

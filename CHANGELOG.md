@@ -22,6 +22,10 @@ onward; everything before that date is unsigned and stays that way
 History before 2026-08-01 belongs to the separate projects this monorepo was
 assembled from, and lives in the per-family changelogs above.
 
+## 2026-10-16 — dependency refresh; all publishable crates patch-bumped
+
+Maintenance release across the model, `fhir-store`, the six database ports and `fhir-loco`: dependencies updated (including `hmac` 0.13, `sha2` 0.11, `syn` 3, `bb8` 0.9, `rusqlite` 0.40), 19 Dependabot updates applied directly, and `RUSTSEC-2024-0449` (unmaintained, via `loco-rs`) recorded in `fhir-loco/deny.toml`. No API changes. The five reserved `0.0.x` model crates are unchanged. Per-crate detail is in each family changelog.
+
 ## 2026-08-30 — agent skills, llms.txt/llms.json, and a site-navigation gap closed
 
 Two new top-level agent skill folders, per `spec/agent-skills/index.md`:
