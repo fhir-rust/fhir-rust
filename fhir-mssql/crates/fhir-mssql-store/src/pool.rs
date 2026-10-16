@@ -7,7 +7,6 @@
 //! integration surface — so this is a from-scratch implementation rather than
 //! a third-party one, and it is small enough to read in one sitting.
 
-use async_trait::async_trait;
 use bb8::ManageConnection;
 use mssql_driver::{Client, Config};
 use tokio::net::TcpStream;
@@ -27,7 +26,6 @@ impl ConnectionManager {
     }
 }
 
-#[async_trait]
 impl ManageConnection for ConnectionManager {
     type Connection = Connection;
     type Error = mssql_driver::error::Error;

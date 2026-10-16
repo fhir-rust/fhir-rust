@@ -28,7 +28,6 @@ tokio = { workspace = true, features = ["net"] }
 mssql-driver.workspace = true
 tokio-util.workspace = true
 bb8.workspace = true
-async-trait = "0.1"
 # Only for rendering the DATE/DATETIME2 sort columns the driver returns as
 # its own `Date`/`DateTime2`, which `FromSql` converts to `chrono` types
 # (tds73 feature) — not for anything this store decides on its own.

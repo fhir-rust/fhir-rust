@@ -88,6 +88,6 @@ hex = "0.4"
 fhir-sqlite-map = { path = "../fhir-sqlite/crates/fhir-sqlite-map", version = "0.6.0" }
 fhir-sqlite-store = { path = "../fhir-sqlite/crates/fhir-sqlite-store", version = "0.6.0" }
 loco-rs = { workspace = true, features = ["testing"] }
-serial_test = { version = "3.5.0" }
+serial_test = { version = "4.0.1" }
 rstest = { version = "0.27" }
-insta = { version = "1.48", features = ["redactions", "yaml", "filters"] }
+insta = { version = "1.49", features = ["redactions", "yaml", "filters"] }

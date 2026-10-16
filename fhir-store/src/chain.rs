@@ -56,7 +56,7 @@
 //!   path already holds a `SELECT … FOR UPDATE` row lock on the base row for
 //!   this resource id before it appends history.
 
-use hmac::{Hmac, Mac};
+use hmac::{Hmac, KeyInit, Mac};
 use sha2::{Digest as _, Sha256};
 use sha3::Sha3_256;
 
@@ -277,8 +277,8 @@ pub fn link(
 /// Retired keys stay loadable, so rotation is additive rather than a flag day.
 #[must_use]
 pub fn mac(key: &ChainKey, prev_sha256: Option<&[u8]>, preimage: &[u8]) -> String {
-    let mut m =
-        <Hmac<Sha256> as Mac>::new_from_slice(&key.secret).expect("HMAC accepts any key length");
+    let mut m = <Hmac<Sha256> as KeyInit>::new_from_slice(&key.secret)
+        .expect("HMAC accepts any key length");
     m.update(prev_sha256.unwrap_or(&GENESIS));
     m.update(preimage);
     let tag = m.finalize().into_bytes();

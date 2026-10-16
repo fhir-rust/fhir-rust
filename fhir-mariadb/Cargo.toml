@@ -28,12 +28,12 @@ thiserror = "2"
 anyhow = "1"
 flate2 = "1"
 unicode-normalization = "0.1"
-sha2 = "0.10"
-sha3 = "0.10"
+sha2 = "0.11"
+sha3 = "0.12"
 hmac = "0.13"
 subtle = "2"
 zeroize = { version = "1", features = ["zeroize_derive"] }
-getrandom = "0.3"
+getrandom = "0.4"
 clap = { version = "4", features = ["derive", "env"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal", "sync", "time"] }
 # The MySQL/MariaDB driver: async and pure Rust, so it needs no client

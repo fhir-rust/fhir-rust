@@ -28,12 +28,12 @@ thiserror = "2"
 anyhow = "1"
 flate2 = "1"
 unicode-normalization = "0.1"
-sha2 = "0.10"
+sha2 = "0.11"
 sha3 = "0.12"
 hmac = "0.13"
 subtle = "2"
 zeroize = { version = "1", features = ["zeroize_derive"] }
-getrandom = "0.3"
+getrandom = "0.4"
 clap = { version = "4", features = ["derive", "env"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal", "sync", "time"] }
 # The SQL Server driver: pure Rust TDS, so no ODBC or FreeTDS on the host.
@@ -59,7 +59,7 @@ tokio-util = { version = "0.7", features = ["compat"] }
 # tokio-postgres's deadpool). bb8 is driver-agnostic -- the store implements a
 # ~30-line ManageConnection rather than pulling in a driver-specific pooling
 # crate, none of which is mature enough to depend on for a PHI-handling store.
-bb8 = "0.8"
+bb8 = "0.9"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
