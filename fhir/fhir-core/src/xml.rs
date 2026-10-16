@@ -206,7 +206,7 @@ pub fn xml_to_value(table: &'static [ElementMeta], xml: &str) -> Result<Value, X
     loop {
         match reader.read_event()? {
             Event::Start(e) => {
-                let name = String::from_utf8_lossy(e.name().as_ref()).into_owned();
+                let name = e.name().as_ref().to_owned();
                 let (id, _url, _val) = read_attrs(&e);
                 let mut obj = Map::new();
                 obj.insert("resourceType".to_string(), Value::String(name.clone()));
@@ -229,11 +229,11 @@ fn read_attrs(
     let (mut id, mut url, mut val) = (None, None, None);
     for attr in e.attributes().flatten() {
         let key = attr.key.as_ref();
-        let value = String::from_utf8_lossy(&attr.value).into_owned();
+        let value = attr.value.to_string();
         match key {
-            b"id" => id = Some(value),
-            b"url" => url = Some(value),
-            b"value" => val = Some(value),
+            "id" => id = Some(value),
+            "url" => url = Some(value),
+            "value" => val = Some(value),
             _ => {}
         }
     }
@@ -258,17 +258,17 @@ fn read_children(
     loop {
         match reader.read_event()? {
             Event::Start(e) => {
-                let name = String::from_utf8_lossy(e.name().as_ref()).into_owned();
+                let name = e.name().as_ref().to_owned();
                 let child = read_element(table, reader, &name, context, &e, false, depth + 1)?;
                 insert_child(table, obj, &name, context, child);
             }
             Event::Empty(e) => {
-                let name = String::from_utf8_lossy(e.name().as_ref()).into_owned();
+                let name = e.name().as_ref().to_owned();
                 let child = read_element(table, reader, &name, context, &e, true, depth + 1)?;
                 insert_child(table, obj, &name, context, child);
             }
             Event::End(e) => {
-                if String::from_utf8_lossy(e.name().as_ref()) == elem_name {
+                if e.name().as_ref() == elem_name {
                     return Ok(());
                 }
             }
