@@ -27,7 +27,7 @@ default-run = "fhir_loco-cli"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [workspace.dependencies]
-loco-rs = { version = "1.2", default-features = false }
+loco-rs = { version = "1.3", default-features = false }
 
 [dependencies]
 loco-rs = { workspace = true , features = ["cli"] }
@@ -56,7 +56,7 @@ fhir-sqlite-map = { path = "../fhir-sqlite/crates/fhir-sqlite-map", version = "0
 fhir-postgresql-store = { path = "../fhir-postgresql/crates/fhir-postgresql-store", version = "0.6.0" }
 fhir-postgresql-map = { path = "../fhir-postgresql/crates/fhir-postgresql-map", version = "0.6.0" }
 tokio-postgres = "0.7"
-tokio = { version = "1.53", default-features = false, features = [
+tokio = { version = "1.54", default-features = false, features = [
   "rt-multi-thread",
 ] }
 async-trait = { version = "0.1" }
@@ -89,5 +89,5 @@ fhir-sqlite-map = { path = "../fhir-sqlite/crates/fhir-sqlite-map", version = "0
 fhir-sqlite-store = { path = "../fhir-sqlite/crates/fhir-sqlite-store", version = "0.6.0" }
 loco-rs = { workspace = true, features = ["testing"] }
 serial_test = { version = "4.0.1" }
-rstest = { version = "0.27" }
+rstest = { version = "0.28" }
 insta = { version = "1.49", features = ["redactions", "yaml", "filters"] }
