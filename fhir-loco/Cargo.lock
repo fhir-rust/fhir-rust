@@ -918,7 +918,7 @@ checksum = "da7c62ceae207dd37ea5b845da6a0696c799f85e97da1ab5b7910be3c1c80223"
 
 [[package]]
 name = "fhir-loco"
-version = "0.3.7"
+version = "0.3.8"
 dependencies = [
  "async-trait",
  "axum",
@@ -983,7 +983,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-sqlite-map"
-version = "0.6.3"
+version = "0.6.4"
 dependencies = [
  "flate2",
  "serde",
@@ -995,7 +995,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-sqlite-store"
-version = "0.6.3"
+version = "0.6.4"
 dependencies = [
  "fhir-sqlite-map",
  "fhir-store",
