@@ -556,7 +556,6 @@ impl MsSqlStore {
     /// audit-envelope columns the per-resource diff cannot see, applies the
     /// destructive diff, and records the new checksum/version/asset.
     #[allow(clippy::too_many_arguments)]
-    #[allow(clippy::too_many_arguments)]
     async fn upgrade_in_tx(
         &self,
         conn: &mut pool::Connection,
