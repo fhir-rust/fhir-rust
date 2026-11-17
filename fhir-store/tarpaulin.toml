@@ -1,0 +1,8 @@
+# Coverage for fhir-store: `cargo tarpaulin` (from this directory).
+# Pure library with no database, so the whole suite runs anywhere.
+[default]
+engine = "Llvm"
+all-targets = false
+out = ["Html", "Xml", "Stdout"]
+output-dir = "target/tarpaulin"
+skip-clean = true

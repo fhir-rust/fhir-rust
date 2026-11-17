@@ -35,6 +35,14 @@ subtle = "2"
 zeroize = { version = "1", features = ["zeroize_derive"] }
 getrandom = "0.4"
 
+[dev-dependencies]
+# Statistics-driven micro-benchmarks for the audit chain (`cargo bench`).
+criterion = { version = "0.8", default-features = false, features = ["cargo_bench_support"] }
+
+[[bench]]
+name = "chain"
+harness = false
+
 # cargo-mutants builds every mutant once in a throwaway copy of the tree: no debug information and no
 # incremental state make each build quicker and smaller. `.cargo/mutants.toml` selects it.
 [profile.mutants]

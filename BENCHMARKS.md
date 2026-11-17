@@ -24,6 +24,24 @@ the requirement it broke, `W16.10`, was already in the specification at the time
 Per-port pages live at `fhir-<engine>/doc/benchmarks.md`. This page is the
 repository-level summary.
 
+## Measured — `fhir-store` audit chain
+
+**Apple Silicon development machine, release (bench) profile, 2026-11-17,
+Criterion 0.8.** Pure CPU: no database, so these say nothing about any engine.
+Not produced by hosted CI. Reproduce with `make bench`.
+
+| Operation | 256 B | 4 KiB | 64 KiB |
+| --- | --- | --- | --- |
+| SHA-256 + SHA3-256 link, one row | 0.55 µs | 6.0 µs | 94 µs |
+| HMAC-SHA-256 tag, one row | 1.2 µs | 2.7 µs | 37 µs |
+
+Verifying a history (link + tag per 1 KiB row) runs at roughly 200,000 rows/s
+(1,000 rows in about 4.6 ms) — far below any store's own per-row cost.
+
+**Coverage:** `make coverage` (cargo-tarpaulin, LLVM engine) reports **86.4 %**
+of `fhir-store`'s lines on 2026-11-17; the uncovered lines are the
+environment-variable key loaders and the `Audit::cli` fallback.
+
 ## Measured — `fhir-postgresql`
 
 **Apple Silicon development machine, PostgreSQL 18.4 local, release builds,
