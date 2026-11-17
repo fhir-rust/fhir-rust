@@ -182,7 +182,7 @@ async fn kickoff(
     let job = Job {
         version: version.clone(),
         request_url: format!("/{version}/$export"),
-        transaction_time: chrono::Utc::now().to_rfc3339(),
+        transaction_time: jiff::Timestamp::now().to_string(),
         status: JobStatus::Running {
             done: 0,
             total: types.len(),

@@ -1031,7 +1031,7 @@ async fn scoped_history(
             "_since" => {
                 // A malformed instant silently compared as text would return
                 // wrong slices while looking right (SV2.17).
-                if chrono::DateTime::parse_from_rfc3339(&v).is_err() {
+                if v.parse::<jiff::Timestamp>().is_err() {
                     return outcome(
                         StatusCode::BAD_REQUEST,
                         "error",

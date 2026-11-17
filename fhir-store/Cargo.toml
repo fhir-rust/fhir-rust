@@ -14,7 +14,7 @@ categories = ["database", "science", "data-structures"]
 # guess. Measured against 1.96 (the current RV1.1 ceiling, spec
 # spec/rust-msrv-n-minus-2/) with `cargo +1.96 check --all-targets --locked`
 # before being written down, per RV1.5.
-rust-version = "1.96"
+rust-version = "1.98"
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }

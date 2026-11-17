@@ -15,7 +15,7 @@ categories = ["web-programming::http-server", "science", "database"]
 # measured, and `agents/release.md` is explicit that an unverified MSRV is a
 # guess. Measured against loco-rs and axum with `cargo +1.96 check
 # --all-targets --locked` before being written down, per RV1.5.
-rust-version = "1.96"
+rust-version = "1.98"
 default-run = "fhir_loco-cli"
 
 # Publishing was blocked on its dependencies until 2026-08-22: the two
@@ -42,8 +42,8 @@ serde = { version = "1", features = ["derive"] }
 # readable diffs and for byte-comparable responses.
 # See spec/serde-json-float-roundtrip-arbitrary-precision/.
 serde_json = { version = "1", features = ["arbitrary_precision", "float_roundtrip", "preserve_order"] }
-# Timestamps the Bulk Data manifest's transactionTime (SV2.15). In the tree via loco.
-chrono = { version = "0.4", default-features = false, features = ["clock"] }
+# Timestamps the Bulk Data manifest's transactionTime (SV2.15). Migrated from chrono to jiff.
+jiff = { version = "0.2", default-features = false, features = ["std"] }
 # Parses the If-None-Exist header's query-string criteria (SV2.14). Already in
 # the dependency tree via axum; declared so the controller can name it.
 serde_urlencoded = "0.7"
