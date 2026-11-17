@@ -1,5 +1,7 @@
 # fhir-store
 
+[![CI](https://github.com/fhir-rust/fhir-rust/actions/workflows/fhir-store-ci.yml/badge.svg?branch=main)](https://github.com/fhir-rust/fhir-rust/actions/workflows/fhir-store-ci.yml)
+
 The **engine-agnostic half of FHIR® persistence**: everything about storing FHIR
 that is not specific to one SQL engine.
 

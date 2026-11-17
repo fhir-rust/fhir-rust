@@ -1,5 +1,17 @@
 # fhir-rust
 
+[![fhir](https://github.com/fhir-rust/fhir-rust/actions/workflows/fhir-ci.yml/badge.svg?branch=main)](https://github.com/fhir-rust/fhir-rust/actions/workflows/fhir-ci.yml)
+[![fhir-store](https://github.com/fhir-rust/fhir-rust/actions/workflows/fhir-store-ci.yml/badge.svg?branch=main)](https://github.com/fhir-rust/fhir-rust/actions/workflows/fhir-store-ci.yml)
+[![fhir-sqlite](https://github.com/fhir-rust/fhir-rust/actions/workflows/fhir-sqlite-ci.yml/badge.svg?branch=main)](https://github.com/fhir-rust/fhir-rust/actions/workflows/fhir-sqlite-ci.yml)
+[![fhir-postgresql](https://github.com/fhir-rust/fhir-rust/actions/workflows/fhir-postgresql-ci.yml/badge.svg?branch=main)](https://github.com/fhir-rust/fhir-rust/actions/workflows/fhir-postgresql-ci.yml)
+[![fhir-mysql](https://github.com/fhir-rust/fhir-rust/actions/workflows/fhir-mysql-ci.yml/badge.svg?branch=main)](https://github.com/fhir-rust/fhir-rust/actions/workflows/fhir-mysql-ci.yml)
+[![fhir-mariadb](https://github.com/fhir-rust/fhir-rust/actions/workflows/fhir-mariadb-ci.yml/badge.svg?branch=main)](https://github.com/fhir-rust/fhir-rust/actions/workflows/fhir-mariadb-ci.yml)
+[![fhir-mssql](https://github.com/fhir-rust/fhir-rust/actions/workflows/fhir-mssql-ci.yml/badge.svg?branch=main)](https://github.com/fhir-rust/fhir-rust/actions/workflows/fhir-mssql-ci.yml)
+[![fhir-oracle](https://github.com/fhir-rust/fhir-rust/actions/workflows/fhir-oracle-ci.yml/badge.svg?branch=main)](https://github.com/fhir-rust/fhir-rust/actions/workflows/fhir-oracle-ci.yml)
+[![fhir-loco](https://github.com/fhir-rust/fhir-rust/actions/workflows/fhir-loco-ci.yml/badge.svg?branch=main)](https://github.com/fhir-rust/fhir-rust/actions/workflows/fhir-loco-ci.yml)
+[![gates](https://github.com/fhir-rust/fhir-rust/actions/workflows/gates.yml/badge.svg?branch=main)](https://github.com/fhir-rust/fhir-rust/actions/workflows/gates.yml)
+[![security](https://github.com/fhir-rust/fhir-rust/actions/workflows/fhir-security.yml/badge.svg?branch=main)](https://github.com/fhir-rust/fhir-rust/actions/workflows/fhir-security.yml)
+
 A Rust monorepo for the [HL7® FHIR® standard](https://hl7.org/fhir/): the data
 model, six relational database ports, and an HTTP surface over them.
 

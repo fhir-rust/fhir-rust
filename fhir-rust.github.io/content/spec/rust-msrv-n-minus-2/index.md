@@ -54,7 +54,7 @@ declared, verified, and raised carries forward unchanged.
   not a breaking change and MAY be a patch.
 - Only the minor version is pinned. Patch releases of the MSRV minor version
   (`1.(N-2).x`) are all acceptable; the recorded value uses `.0`, dropped when
-  citing the bare minor (`1.96`, not `1.96.0`, matches this repository's
+  citing the bare minor (`1.98`, not `1.98.0`, matches this repository's
   existing convention).
 - Pre-release channels (beta, nightly) are never the MSRV and MUST NOT be
   required by any workspace target, including the fuzz targets — the
@@ -92,27 +92,27 @@ started requiring a newer toolchain than the policy allows.
 
 ## Where the tree stands
 
-Non-normative, measured 2026-08-29 (`rustc 1.98.0`, so `N-2` is **1.96**)
+Non-normative, measured 2026-11-17 (`rustc 1.100.0`, so `N-2` is **1.98**)
 across all 41 `[package]` manifests, all nine workspaces:
 
 | Crates | Declared | Under `RV1.1` |
 | --- | --- | --- |
-| model family (`fhir/`) — 14 crates | `1.96` | conformant — at the new floor, not above it |
-| the six database ports — 6 roots, 18 members inheriting | `1.96` | conformant, same reason |
-| [`fhir-store/`](../../fhir-store/) | `1.96` | conformant — `RV1.4` was unmet until this change; see below |
-| [`fhir-loco/`](../../fhir-loco/) | `1.96` | conformant — `RV1.4` was unmet until this change; see below |
+| model family (`fhir/`) — 14 crates | `1.98` | conformant — at the new floor, not above it |
+| the six database ports — 6 roots, 18 members inheriting | `1.98` | conformant, same reason |
+| [`fhir-store/`](../../fhir-store/) | `1.98` | conformant — `RV1.4` was unmet until this change; see below |
+| [`fhir-loco/`](../../fhir-loco/) | `1.98` | conformant — `RV1.4` was unmet until this change; see below |
 | the seven `fuzz/` crates | none | out of scope — `publish = false` |
 
 **Two things this measurement closes, not just records.** The previous
 version of this table (under the old `N-3` rule) found `fhir-store` and
 `fhir-loco` declaring no `rust-version` at all — `RV1.4` unmet in both, a gap
 this document itself said was worth catching and nobody had. Both now
-declare `1.96`, verified by `cargo +1.96 check --all-targets --workspace
+declare `1.98`, verified by `cargo +1.98 check --all-targets --workspace
 --locked` before being written down (`RV1.5`), and both gained an `msrv` CI
 job for the first time — declaring the number without a job that builds on
 it would repeat exactly the failure mode `RV1.5` exists to prevent.
 
-Every crate in the tree now sits at the same declared value, `1.96` — the new
+Every crate in the tree now sits at the same declared value, `1.98` — the new
 `N-2` exactly, not comfortably below it the way the old `N-3`-era values
 (`1.88`, `1.90`) sat eight and ten releases back. That is a deliberate
 consequence of narrowing the policy, not an oversight: a floor set exactly at
