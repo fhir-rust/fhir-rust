@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# Check and test every Rust workspace on the minimum supported Rust version
+# (MSRV, N-2) and on the next release up (N-1).
+#
+# The MSRV is read from the `rust-version` in fhir/Cargo.toml; N-1 is its minor
+# version plus one. Run via: make test-minimum-supported-rust-version
+set -euo pipefail
+
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$root"
+
+msrv="$(sed -n 's/^rust-version *= *"\([0-9.]*\)".*/\1/p' fhir/Cargo.toml | head -n1)"
+if [[ -z "$msrv" ]]; then
+  echo "error: no rust-version found in fhir/Cargo.toml" >&2
+  exit 1
+fi
+major="${msrv%%.*}"
+minor="${msrv#*.}"; minor="${minor%%.*}"
+n_minus_1="${major}.$((minor + 1))"
+
+# The independent Cargo workspaces (each is its own root; there is no root manifest).
+workspaces=(fhir fhir-store fhir-loco fhir-mariadb fhir-mssql fhir-mysql fhir-oracle fhir-postgresql fhir-sqlite)
+
+for tc in "$msrv" "$n_minus_1"; do
+  if ! rustup toolchain list | grep -q "^${tc}[.-]"; then
+    echo "error: toolchain ${tc} is not installed; run: rustup toolchain install ${tc}" >&2
+    exit 1
+  fi
+done
+
+for tc in "$msrv" "$n_minus_1"; do
+  for ws in "${workspaces[@]}"; do
+    echo "==> Rust ${tc}: ${ws}"
+    (cd "$ws" && RUSTUP_TOOLCHAIN="$tc" cargo check --all-targets && RUSTUP_TOOLCHAIN="$tc" cargo test)
+  done
+done
