@@ -34,3 +34,10 @@ hmac = "0.13"
 subtle = "2"
 zeroize = { version = "1", features = ["zeroize_derive"] }
 getrandom = "0.4"
+
+# cargo-mutants builds every mutant once in a throwaway copy of the tree: no debug information and no
+# incremental state make each build quicker and smaller. `.cargo/mutants.toml` selects it.
+[profile.mutants]
+inherits = "test"
+debug = "none"
+incremental = false
