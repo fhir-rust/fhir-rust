@@ -1,5 +1,7 @@
 # fhir-oracle — FHIR® in Oracle Database, relationally
 
+[![CI](https://github.com/fhir-rust/fhir-rust/actions/workflows/fhir-oracle-ci.yml/badge.svg?branch=main)](https://github.com/fhir-rust/fhir-rust/actions/workflows/fhir-oracle-ci.yml)
+
 The intent: store [FHIR](https://hl7.org/fhir/) resources in Oracle Database as
 **real relational tables** — typed columns, child tables, foreign keys, and
 check constraints — not JSON blobs.

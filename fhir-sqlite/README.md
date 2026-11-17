@@ -1,5 +1,7 @@
 # fhir-sqlite — FHIR® in SQLite, relationally
 
+[![CI](https://github.com/fhir-rust/fhir-rust/actions/workflows/fhir-sqlite-ci.yml/badge.svg?branch=main)](https://github.com/fhir-rust/fhir-rust/actions/workflows/fhir-sqlite-ci.yml)
+
 Store [FHIR](https://hl7.org/fhir/) resources in SQLite as **real relational
 tables** — typed columns, child tables, foreign keys, and check constraints —
 not JSON blobs. Get them back losslessly.

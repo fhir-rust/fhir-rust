@@ -1,5 +1,7 @@
 # fhir-loco
 
+[![CI](https://github.com/fhir-rust/fhir-rust/actions/workflows/fhir-loco-ci.yml/badge.svg?branch=main)](https://github.com/fhir-rust/fhir-rust/actions/workflows/fhir-loco-ci.yml)
+
 A FHIR® RESTful API server: Rust, [Loco](https://loco.rs),
 [Axum](https://github.com/tokio-rs/axum), Tokio and Hyper.
 
