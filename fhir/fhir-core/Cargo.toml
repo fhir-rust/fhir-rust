@@ -15,7 +15,7 @@ include = ["/src/**", "/README.md",
 [features]
 # Mirrors of the parent crate's features, forwarded rather than redefined, so
 # a consumer enabling `fhir/xml` gets `fhir-core/xml` and the two cannot drift.
-client = ["dep:reqwest", "dep:tokio"]
+client = ["dep:reqwest", "dep:rustls", "dep:tokio"]
 xml = ["dep:quick-xml"]
 precise-decimal = []
 
@@ -27,7 +27,9 @@ serde = { version = "~1.0.229", features = ["derive"] }
 serde_json = { version = "~1.0.154", features = ["arbitrary_precision", "float_roundtrip"] }
 vec1 = { version = "1.12", features = ["serde"] }
 convert_case = { version = "0.12" }
-reqwest = { version = "0.13", features = ["json", "query"], optional = true }
+# rustls with the `ring` provider: reqwest's default `rustls` feature selects aws-lc-rs.
+reqwest = { version = "0.13", features = ["json", "query", "rustls-no-provider", "http2", "charset", "system-proxy"], default-features = false, optional = true }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"], optional = true }
 tokio = { version = "1", features = [
     "rt-multi-thread",
     "macros",

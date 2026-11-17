@@ -35,8 +35,9 @@ subtle.workspace = true
 zeroize.workspace = true
 getrandom.workspace = true
 futures-util = "0.3"
-tokio-postgres-rustls = "0.14"
-rustls = "0.23"
+# `ring` provider only: rustls's default feature set selects aws-lc-rs.
+tokio-postgres-rustls = { version = "0.14", features = ["ring"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12", "logging"] }
 rustls-native-certs = "0.8"
 
 [dev-dependencies]
