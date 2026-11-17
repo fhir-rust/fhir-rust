@@ -147,7 +147,7 @@ Pages → Source: GitHub Actions** set once on the repository.
 
 `paths.base` is empty because this is an organization-pages repository, served
 from the root. A project-pages repository would need `paths: { base: ... }` and
-a `BASE_PATH` in the workflow — see the comment in `svelte.config.js`.
+a `BASE_PATH` in the workflow.
 
 ## Accessibility
 

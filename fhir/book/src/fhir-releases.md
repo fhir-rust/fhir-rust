@@ -26,18 +26,18 @@ Rust, so you compile only what you use. `r5` is on by default:
 ```toml
 [dependencies]
 # R5 only (the default)
-fhir = "3"
+fhir = "4"
 
 # R5 plus older releases
-# fhir = { version = "3", features = ["r4"] }
-# fhir = { version = "3", features = ["r3", "r4"] }
+# fhir = { version = "4", features = ["r4"] }
+# fhir = { version = "4", features = ["r3", "r4"] }
 
 # One older release on its own
-# fhir = { version = "3", default-features = false, features = ["r3"] }
+# fhir = { version = "4", default-features = false, features = ["r3"] }
 
 # The ballot draft and the oldest modelled release
-# fhir = { version = "3", features = ["r6"] }
-# fhir = { version = "3", default-features = false, features = ["r2"] }
+# fhir = { version = "4", features = ["r6"] }
+# fhir = { version = "4", default-features = false, features = ["r2"] }
 ```
 
 Each release you enable adds its own compile time, which is why none is implied
