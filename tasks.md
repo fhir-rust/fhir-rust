@@ -334,6 +334,78 @@ out of scope, restated here so nobody re-proposes them without reading why).
   today; repeated here only so it sits alongside the rest of this list
   instead of only inside one requirement's prose.
 
+### Tier 4 — adoption tooling (proposed 2026-11-17; items 1–2 of the source list were not supplied)
+
+Each of these touches a claim the project makes publicly, so the claims
+register governs every sentence, and each starts from an artifact that
+already exists rather than from nothing.
+
+- [ ] **Migration tools from JSON-based FHIR stores.** Import of existing
+      JSON/JSONB-backed resources (NDJSON, Bulk Data export files, a document
+      table) into any port via `put`, with a lossless-round-trip check per
+      resource (`R4.x`, db family) and a report of anything the shredder
+      refuses. Needs a spec section first (`C0.19`–`C0.22`); decide whether it
+      is a library function, a `fhir-loco` operation, or a new CLI crate
+      (there is no CLI crate today).
+- [ ] **Performance comparison against other FHIR implementations.** Blocked
+      on `PM-72`: only `fhir-postgresql` has a measured harness and the
+      JSONB-vs-relational comparison has never been run. `BENCHMARKS.md`
+      (`W16.10`: numbers name what measured them and when) and
+      `COMPARISONS.md` (qualitative) are the homes; no number may be
+      presented for a port that has not produced it.
+- [ ] **Implementation guides for common FHIR use cases.** Task-oriented
+      guides (store and search a Patient, history and `vread`, audited
+      writes, running `fhir-loco`), written per `agents/documentation.md`;
+      each example must be run, not assumed.
+- [~] **Compliance documentation showing which FHIR features are
+      supported.** *First, hand-derived version written 2026-11-17:
+      [`doc/fhir-feature-support.md`](doc/fhir-feature-support.md). Still open:
+      generate it, and inventory search modifiers per port (marked `?` there).* Publish a per-feature support statement — resources and
+      releases (R3/R4/R5), interactions, search parameters and modifiers,
+      operations — derived from the
+      [conformance matrix](spec/databases/conformance-matrix.md) and
+      `fhir-loco`'s `SV2`, ideally as a generated `CapabilityStatement`
+      so it cannot drift from the code. It must report `•`/`~`/`?`/`—`
+      honestly per port (e.g. batch/transaction Bundles `501`, `_since` on
+      `$export` refused) and is distinct from `13-compliance-mapping.md`,
+      which maps regulatory controls, not FHIR features.
+
+Second batch (same date; item 1 of this list was not supplied). Each entry
+says what already exists, so none is re-derived from scratch:
+
+- [ ] **Performance benchmarks for each database backend.** This is `PM-72`
+      (see Outreach above), not new work: one port of six has a harness.
+      Extending it to the other five must respect `W16.10` — dialect-specific
+      numbers per engine, never the PostgreSQL figures with a name swapped
+      (**F-64**).
+- [ ] **Regular security audit.** `SECURITY.md` and the `fhir-security.yml`
+      workflow exist; what is missing is a *recurring* human-reviewed audit
+      with findings filed in `spec/databases/audit.md`. Needs a cadence and an
+      owner decided first (`GOVERNANCE.md`).
+- [ ] **Better error messages for FHIR validation failures.** Note the scope
+      line: validation is out of scope for `fhir-loco` (`SV1.4`), so this
+      means clearer `OperationOutcome`s for the failures the store and
+      deserialiser already raise (`09-validation.md`, `SV2.14`), not a
+      validator.
+- [ ] **Caching layer for frequently accessed resources.** Needs a scope
+      decision before design (Tier 3 in kind): a cache over audited,
+      versioned clinical data must keep `get`/`vread`/history and the access
+      log honest — a cached read still has to be logged, and a stale read after
+      `put`/`delete`/`purge` is a correctness bug. Conditional read (Tier 1)
+      gives most of the client-side benefit with none of that risk.
+- [ ] **Complex FHIR search parameters.** Search is already specified
+      (`spec/databases/06-search.md`); the matrix records chained-reference
+      search as only partly tested. The work is to enumerate which parameter
+      types, modifiers, `_include`/`_revinclude` and chained forms are `•`
+      per port, then close the gaps — feeds the compliance documentation item
+      above.
+- [ ] **Cross-database integration tests.** Per-port live suites exist
+      (`fhir-<engine>-ci.yml`) and the shared core is gated byte-for-token by
+      `scripts/check-shared-core.sh`; what does not exist is one suite run
+      against all six engines asserting identical observable behaviour
+      (same resources in, same search results, history and reconstruction
+      out). Mutation-verify it (`T11.10`, `L16`).
+
 ## Trademarks
 
 HL7®, and FHIR® are the registered trademarks of Health Level Seven

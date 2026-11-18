@@ -42,6 +42,7 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal", "syn
 # sqlite3 CLI. Sync API, so calls are wrapped in spawn_blocking.
 rusqlite = { version = "0.42", features = ["bundled"] }
 tracing = "0.1"
+criterion = { version = "0.8", default-features = false, features = ["cargo_bench_support"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [profile.release]
