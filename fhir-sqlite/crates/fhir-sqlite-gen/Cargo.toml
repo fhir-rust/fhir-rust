@@ -18,3 +18,10 @@ sha2.workspace = true
 # F-41: the checker decompresses a committed asset to compare map content,
 # because the gzip container depends on flate2 feature unification.
 flate2.workspace = true
+
+[dev-dependencies]
+criterion.workspace = true
+
+[[bench]]
+name = "core"
+harness = false
