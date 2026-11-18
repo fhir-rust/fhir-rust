@@ -34,6 +34,8 @@ Read in order the first time; each builds on the last.
 
 - **[Choosing an engine](choosing-an-engine.md)** — the six ports compared:
   status, type bindings, what each costs you.
+- **[FHIR® feature support](fhir-feature-support.md)** — which interactions,
+  search features and operations are served, `~` limited, or refused.
 - **[The storage model](storage-model.md)** — the conceptual reference behind
   tutorial 2, for looking things up rather than reading through.
 - **[The trust boundary](trust-boundary.md)** — what these libraries guarantee
