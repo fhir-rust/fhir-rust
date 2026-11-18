@@ -361,8 +361,7 @@ fn render_resources_module(plans: &[plan::TypePlan], version: Version) -> String
         .iter()
         .find(|p| p.type_name == "Patient")
         .or_else(|| plans.first())
-        .map(|p| p.type_name.clone())
-        .unwrap_or_default();
+        .map_or_else(String::new, |p| p.type_name.clone());
 
     let _ = write!(
         out,

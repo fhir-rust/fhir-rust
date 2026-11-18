@@ -104,7 +104,7 @@ pub fn choice_key(base: &str, type_code: &str) -> String {
     let first = chars.next().map(|c| c.to_ascii_uppercase());
     format!(
         "{base}{}{}",
-        first.map(String::from).unwrap_or_default(),
+        first.map_or_else(String::new, String::from),
         chars.as_str()
     )
 }

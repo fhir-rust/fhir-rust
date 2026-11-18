@@ -218,6 +218,10 @@ impl<R: Release> ReleaseClient<R> {
     /// outside (spec R13.5).
     #[must_use]
     pub fn new(base_url: impl Into<String>) -> Self {
+        // reqwest is built with `rustls-no-provider` (ring only, no aws-lc-rs),
+        // so a provider must be installed before the first client is built or
+        // reqwest panics. An error means one is already installed — fine.
+        let _ = rustls::crypto::ring::default_provider().install_default();
         let http = reqwest::Client::builder()
             .timeout(DEFAULT_TIMEOUT)
             .connect_timeout(DEFAULT_CONNECT_TIMEOUT)

@@ -213,8 +213,7 @@ pub fn plan_type(sd: &StructureDefinition, ctx: &Context) -> Option<TypePlan> {
             elements
                 .iter()
                 .find(|e| e.base_path() == owner)
-                .map(|e| element_doc(e, None))
-                .unwrap_or_default()
+                .map_or_else(String::new, |e| element_doc(e, None))
         };
 
         let mut fields = Vec::new();
