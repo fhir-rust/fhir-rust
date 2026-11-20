@@ -45,16 +45,15 @@ not because this port did them.
   exercised in every `tests/oracle_store.rs` run against a real database, not
   by hand.
 
+- [x] **Snapshot reads** (db:R4.5, M14.19). Oracle 26ai Free 23.26.2.0.0
+  passed the live post-install and reader/writer regression on 2026-11-19.
+  Removing serializable isolation produced a torn read.
+
 ## What does not exist
 
 Not "planned and unstarted" — **absent**.
 
-- [ ] **A working `R4.5` mechanism.** The candidate this port's annex named,
-  `SET TRANSACTION READ ONLY`, was tried live and fails outright with
-  `ORA-01466` on any session that has run DDL. `get` currently has no
-  snapshot-isolation protection at all. This is an open, confirmed gap, not
-  merely an unverified requirement — see `M14.19` and **F-68**.
-- [ ] **A concurrency test.** `H5.4` (serialized `version_id`) is implemented
+- [ ] **A racing-writer test.** `H5.4` (serialized `version_id`) is implemented
   via `SELECT … FOR UPDATE`, but no test races concurrent writers against it
   the way `fhir-mssql`'s and `fhir-mysql`'s `concurrency.rs` do.
 - [ ] **A redaction test**, or benchmarks.
@@ -92,12 +91,10 @@ here.
 
 ## Next, in order
 
-1. A working `R4.5` mechanism — the annex's one named candidate is now known
-   not to work (`M14.19`); a replacement is untried.
-2. `concurrency.rs`, racing writers against `put`/`delete` to verify `H5.4`
+1. A concurrency test racing writers against `put`/`delete` to verify `H5.4`
    under contention, not just in sequence.
-3. `redaction.rs`.
-4. The transport-security decision (`O10.7`, `M14.22`).
+2. `redaction.rs`.
+3. The transport-security decision (`O10.7`, `M14.22`).
    (`upgrade`/`backfill_norm` was this list's item 4 until 2026-08-09 —
    done, see above.)
 

@@ -20,14 +20,10 @@
 //! a timestamp-binding bug, and a boolean bound as text in token search —
 //! see `oracle.rs`'s module doc and `audit.md` **F-68** for the account.
 //!
-//! **What this does *not* mean:** `R4.5` (snapshot reads under concurrent
-//! writers) has no working mechanism on this port — the candidate named in
-//! `M14.19` was tried live and removed after it broke every read
-//! (`ORA-01466`) — so `get` is not protected against torn reads today. There
-//! is also no `concurrency.rs` exercising `H5.4` under contention, no
-//! `redaction.rs`, and no `upgrade`/`backfill_norm`. See the [conformance
-//! matrix](../../../spec/databases/conformance-matrix.md) for the precise,
-//! row-by-row claim — this module doc is a summary, not the source of truth.
+//! `get` reconstructs each resource in one serializable transaction
+//! (`db:R4.5`, `M14.19`), verified with a concurrent writer on Oracle 26ai
+//! Free. Racing writers (`H5.4`) and redaction remain unverified. See the
+//! [conformance matrix](../../../spec/databases/conformance-matrix.md).
 //!
 //! See `oracle.rs`'s own module doc for the architecture decisions behind
 //! the implementation.

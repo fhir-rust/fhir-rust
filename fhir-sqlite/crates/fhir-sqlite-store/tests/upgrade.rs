@@ -309,6 +309,124 @@ async fn an_install_without_a_stored_map_asset_says_so() {
     );
 }
 
+/// A present-but-corrupt asset is different from a legacy install that has no
+/// asset. The diagnostic must identify stored-map corruption before attempting
+/// any DDL, so an operator does not mistake damaged migration evidence for an
+/// ordinary incompatible upgrade.
+#[tokio::test]
+async fn a_corrupt_stored_map_asset_refuses_before_ddl() {
+    let Some((db, full)) = seeded("corrupt-asset").await else {
+        eprintln!("skipping: no r5 relmap asset");
+        return;
+    };
+    {
+        let attached = db.with_file_name("fhir-r5.sqlite");
+        let c = rusqlite::Connection::open(&attached).expect("open attached");
+        c.execute(
+            "UPDATE fhir_sqlite_meta SET value = '00' WHERE key = 'map_asset'",
+            [],
+        )
+        .expect("corrupt asset");
+    }
+    let store = open_full(&db, &full).await;
+    let err = store
+        .upgrade("new-sum", false)
+        .await
+        .expect_err("invalid gzip bytes cannot describe the installed map");
+    assert!(
+        err.to_string().contains("stored map asset unreadable"),
+        "wrong diagnostic: {err}"
+    );
+}
+
+/// Additive DDL is transactional. A table created out-of-band under the name
+/// of a newly mapped resource forces an `already exists` failure; the error
+/// must carry the statement and the earlier additions must roll back.
+#[tokio::test]
+async fn conflicting_additive_ddl_is_diagnostic_and_atomic() {
+    let Some((db, full)) = seeded("conflicting-add").await else {
+        eprintln!("skipping: no r5 relmap asset");
+        return;
+    };
+    let basic_base = &full.resources["Basic"].base_table().name;
+    {
+        let attached = db.with_file_name("fhir-r5.sqlite");
+        let c = rusqlite::Connection::open(&attached).expect("open attached");
+        c.execute_batch(&format!(
+            "CREATE TABLE \"{}\" (\"id\" TEXT PRIMARY KEY)",
+            basic_base.replace('"', "\"\"")
+        ))
+        .expect("install conflicting table");
+    }
+    let store = open_full(&db, &full).await;
+    let err = store
+        .upgrade("new-sum", false)
+        .await
+        .expect_err("the out-of-band table must collide with additive DDL");
+    let message = err.to_string();
+    assert!(
+        message.contains("upgrade:")
+            && message.contains("statement was:")
+            && message.contains(basic_base),
+        "DDL failure lost its context: {message}"
+    );
+    assert_eq!(
+        store.installed_checksum().await.expect("checksum"),
+        Some("old-sum".into()),
+        "a failed additive upgrade committed its metadata"
+    );
+}
+
+/// Exactly one full batch plus one tail value proves the `n == BATCH` loop
+/// continues and then terminates. Direct rows isolate the folding algorithm
+/// from the much slower resource shred path while still exercising real SQL.
+#[tokio::test]
+async fn backfill_processes_more_than_one_full_batch() {
+    use fhir_sqlite_map::model::TableKind;
+
+    let Some(full) = relmap() else {
+        eprintln!("skipping: no r5 relmap asset");
+        return;
+    };
+    let (table, src, dst) = full.resources["Patient"]
+        .tables
+        .iter()
+        .find(|table| table.kind == TableKind::Elem && !table.norm_cols.is_empty())
+        .map(|table| {
+            let (src, dst) = &table.norm_cols[0];
+            (table.name.clone(), src.clone(), dst.clone())
+        })
+        .expect("Patient has a folded child-table column");
+    let db = scratch("backfill-multibatch").join("fhir.sqlite");
+    let store = SqliteStore::open(&db, Arc::new(full)).await.expect("open");
+    store.init("full-sum").await.expect("init");
+    {
+        let attached = db.with_file_name("fhir-r5.sqlite");
+        let mut c = rusqlite::Connection::open(&attached).expect("open attached");
+        c.pragma_update(None, "foreign_keys", "OFF")
+            .expect("disable fixture-only foreign keys");
+        let tx = c.transaction().expect("transaction");
+        let sql = format!(
+            "INSERT INTO \"{}\" (\"rid\", \"ords\", \"{}\", \"{}\") \
+             VALUES (?1, '{{0}}', ?2, NULL)",
+            table.replace('"', "\"\""),
+            src.replace('"', "\"\""),
+            dst.replace('"', "\"\"")
+        );
+        {
+            let mut insert = tx.prepare(&sql).expect("prepare insert");
+            for i in 0..1001 {
+                insert
+                    .execute(rusqlite::params![format!("p-{i}"), format!("Náme {i}")])
+                    .expect("insert source row");
+            }
+        }
+        tx.commit().expect("commit source rows");
+    }
+    assert_eq!(store.backfill_norm().await.expect("backfill"), 1001);
+    assert_eq!(store.backfill_norm().await.expect("resumed backfill"), 0);
+}
+
 /// Upgrading something that was never installed is a different error again.
 #[tokio::test]
 async fn upgrading_an_uninstalled_schema_says_it_is_not_installed() {

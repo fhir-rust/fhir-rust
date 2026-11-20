@@ -31,11 +31,10 @@ and [`tasks.md`](../../tasks.md); this file holds the rules.
    [`spec/hl7-trademarks-fair-use/`](../hl7-trademarks-fair-use/index.md):
    the registration mark follows the first prose use of a word mark on each
    page; any page using a mark carries the disclaimer verbatim; places of
-   prominence say "HL7® FHIR® standard". Enforcement is
-   `scripts/check-trademarks.sh` — root `*.md` plus `help/**`, code and
-   link targets masked — run by the `trademarks` job in
-   `.github/workflows/gates.yml`. Documents outside the script's scope,
-   this one included, comply anyway.
+   prominence say "HL7® FHIR® standard". The `trademarks` job in
+   `.github/workflows/gates.yml` checks Markdown across the repository
+   and the public crate roots listed in `scripts/check-trademarks.sh`.
+   The script documents its exemptions for generated and navigation files.
 6. **Patient data is addressed in plain language.** `PHI.md` at the root
    states what the software does and does not do with patient data, for a
    reader who is a privacy officer, not a Rust programmer. It never claims
@@ -53,6 +52,13 @@ and [`tasks.md`](../../tasks.md); this file holds the rules.
    rather than drifting independently.
 9. **Outreach is gated.** No promotion while a rule above is unmet for the
    surface being promoted; `help/outreach/index.md` names the prerequisites.
+10. **Regional support claims name what was exercised.** A public claim of
+    support for a regional implementation guide identifies the package and
+    version, base release, interactions tested, and relevant backend.
+    Evidence identifies the validator and terminology used, includes the
+    outcome of a conforming synthetic example and an expected rejection,
+    and states the untested parts of the guide. The claim attributes external
+    validation to the tool that performed it.
 
 ## Status in this repository
 

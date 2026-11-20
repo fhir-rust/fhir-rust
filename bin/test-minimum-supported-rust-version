@@ -21,16 +21,43 @@ n_minus_1="${major}.$((minor + 1))"
 # The independent Cargo workspaces (each is its own root; there is no root manifest).
 workspaces=(fhir fhir-store fhir-loco fhir-mariadb fhir-mssql fhir-mysql fhir-oracle fhir-postgresql fhir-sqlite)
 
-for tc in "$msrv" "$n_minus_1"; do
-  if ! rustup toolchain list | grep -q "^${tc}[.-]"; then
-    echo "error: toolchain ${tc} is not installed; run: rustup toolchain install ${tc}" >&2
+installed="$(rustup toolchain list)"
+# rustup treats a minor alias (1.99) and a patch installation (1.99.1)
+# as different names. Ask it to resolve each candidate for the default host.
+installed_release() {
+  local required="$1" name version
+  if rustup which --toolchain "$required" rustc >/dev/null 2>&1; then
+    echo "$required"
+    return
+  fi
+  while read -r name _; do
+    version="${name%%-*}"
+    if [[ "${version%.*}" == "$required" && "${version##*.}" =~ ^[0-9]+$ ]] &&
+       rustup which --toolchain "$version" rustc >/dev/null 2>&1; then
+      echo "$version"
+      return
+    fi
+  done <<< "$installed"
+  return 1
+}
+
+toolchains=()
+for required in "$major.$minor" "$n_minus_1"; do
+  if ! selected="$(installed_release "$required")"; then
+    echo "error: toolchain ${required} is not installed; run: rustup toolchain install ${required}" >&2
     exit 1
   fi
+  toolchains+=("$selected")
 done
 
-for tc in "$msrv" "$n_minus_1"; do
+for tc in "${toolchains[@]}"; do
   for ws in "${workspaces[@]}"; do
     echo "==> Rust ${tc}: ${ws}"
-    (cd "$ws" && RUSTUP_TOOLCHAIN="$tc" cargo check --all-targets && RUSTUP_TOOLCHAIN="$tc" cargo test)
+    (
+      cd "$ws"
+      export RUSTUP_TOOLCHAIN="$tc"
+      cargo check --workspace --all-targets --locked
+      cargo test --workspace --locked
+    )
   done
 done

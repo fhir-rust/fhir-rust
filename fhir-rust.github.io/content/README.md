@@ -45,7 +45,7 @@ Six ports, one specification, one engine.
 | [`fhir-mysql`](fhir-mysql/) | MySQL 8.4 | **Store** |
 | [`fhir-mariadb`](fhir-mariadb/) | MariaDB 11.4 | **Store** |
 | [`fhir-mssql`](fhir-mssql/) | SQL Server | **Store** — live-verified against `azure-sql-edge`, incl. `upgrade` (**F-65**) |
-| [`fhir-oracle`](fhir-oracle/) | Oracle Database | **Store** — live-verified against `gvenzl/oracle-free` (**F-68**), `upgrade`/backfill included (**F-15**, 2026-08-09); `R4.5` open |
+| [`fhir-oracle`](fhir-oracle/) | Oracle Database | **Store** — live-verified against `gvenzl/oracle-free` (**F-68**), `upgrade`/backfill included (**F-15**, 2026-08-09); snapshot reads verified on Oracle 26ai Free |
 
 Those are conformance levels, defined in
 [`spec/databases/00-conformance.md`](spec/databases/00-conformance.md). They are the honest version:
@@ -226,7 +226,7 @@ Full walkthroughs: [`doc/`](doc/index.md).
 | Production today, with the full test suite behind it | `fhir-postgresql` |
 | Embedded, no server, a single file | `fhir-sqlite` |
 | An existing MySQL or MariaDB estate | `fhir-mysql`, `fhir-mariadb` |
-| SQL Server or Oracle | supported, Store level — `fhir-mssql`, `fhir-oracle`; see the [matrix](spec/databases/conformance-matrix.md) for remaining gaps (no `conditional_create_audited`/`put_audited`/`transact_audited` on mssql; no working `R4.5` mechanism and no `search_page` concurrency coverage on Oracle) |
+| SQL Server or Oracle | supported, Store level — `fhir-mssql`, `fhir-oracle`; see the [matrix](spec/databases/conformance-matrix.md) for remaining gaps (no `conditional_create_audited`/`put_audited`/`transact_audited` on mssql; Oracle racing writers and `search_page` concurrency remain unverified) |
 
 [`doc/choosing-an-engine.md`](doc/choosing-an-engine.md) has the long version,
 including what each engine costs you in its type bindings.

@@ -47,10 +47,8 @@ Contributor guidance: [`../../AGENTS.md`](../../AGENTS.md).
 > schema-qualification bug, a timestamp-binding bug, and a boolean bound as
 > text in token search.
 >
-> **What is still open:** `R4.5` has no working mechanism on this port — the
-> only candidate named in the annex was tried live and removed after it broke
-> every read (`M14.19`). There is no `concurrency.rs` verifying `H5.4` under
-> contention, no `redaction.rs`, and no map test directory.
+> `get` uses a serializable snapshot verified on Oracle 26ai Free
+> (`M14.19`). Racing writers (`H5.4`) and redaction remain unverified.
 > (`upgrade`/`backfill_norm` left this list 2026-08-09 — `tests/upgrade.rs`,
 > 9 live tests, `M14.35`–`M14.37`, closing **F-15**'s last port.)
 > Conformance level is **Store**, not Reference — see the
@@ -74,7 +72,7 @@ The annex answers one item and opens the rest deliberately.
 | Idempotence (`G2.5`) | Decided in shape: a PL/SQL block swallowing ORA-00955, which makes every statement a block (`M14.15`) |
 | Append-only (`M3.17`) | `RAISE_APPLICATION_ERROR(-20001, …)` (`M14.16`) |
 | Erasure (`M3.18`) | `SYS_CONTEXT` + an application context — a heavier dependency than any other port's (`M14.17`) |
-| Snapshot reads (`R4.5`) | **Open, and worse than undecided: the one named candidate fails live.** `SET TRANSACTION READ ONLY` breaks with `ORA-01466` on any session that has run DDL (`M14.19`) |
+| Snapshot reads (`db:R4.5`) | `get` uses one serializable transaction, live-verified after schema install and during concurrent writes (`M14.19`) |
 | Write serialization (`H5.4`) | Decided and implemented: `SELECT … FOR UPDATE` (`M14.20`); not yet verified under concurrent writers |
 | Driver | Decided and live-verified: the `oracle` crate (ODPI-C), synchronous, wrapped in `spawn_blocking` (`M14.23`) |
 | Transport security (`O10.7`) | Open (`M14.22`) |

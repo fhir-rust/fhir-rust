@@ -77,9 +77,9 @@ cells are narrower — see the
 [conformance matrix](../spec/databases/conformance-matrix.md).
 
 `fhir-mssql`: a working store, live-verified (**F-65**), with `O10.7`
-satisfied (**F-67** closed). `fhir-oracle`: a working store (**F-68**),
-but `R4.5` snapshot reads are a confirmed open gap and it has no concurrency
-or redaction tests — not yet, for patient data.
+satisfied (**F-67** closed). `fhir-oracle`: a working store (**F-68**) with
+snapshot reads verified on Oracle 26ai Free (`M14.19`). Racing writers and
+redaction remain unverified.
 
 In every case you also need the perimeter — authentication, authorization,
 consent, TLS. See [the trust boundary](trust-boundary.md).

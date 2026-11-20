@@ -100,6 +100,18 @@
   A test whose flakiness is suspected but not yet understood MUST be recorded in
   [`audit.md`](audit.md) rather than retried until green.
 
+- **T11.16** A port MUST exercise its documented backup and restore procedure
+  (O10.6) on a synthetic store. Record the engine version and snapshot point,
+  restore into a fresh destination, and open it with the released map under
+  test. Check the installed map checksum, current resource, an earlier version
+  and its content, a recorded disclosure, and the audit chain. Where the port
+  provides a checkpoint (M3.16c), compare it with the checkpoint retained
+  outside the backup at the snapshot point. A write made
+  after the snapshot MUST be absent from the restored history. For a keyed
+  chain, supply the verification keys separately and check the verification
+  result for the expected signed entries. Record the elapsed restore time and
+  dataset size so an operator can interpret the measurement.
+
 ---
 
 Part of the [fhir-databases specification](index.md).

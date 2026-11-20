@@ -125,9 +125,10 @@ The table above describes what the specification requires. What each port has
 - ~~`fhir-mssql` and `fhir-oracle` have no store, so none of this applies to
   them yet.~~ **Obsolete, corrected 2026-08-26.** Both reached Store level
   (**F-65**, **F-68**) and this list had not been updated. What is actually
-  narrower for them is in the matrix: `fhir-oracle` has no concurrency or
-  redaction test and `R4.5` snapshot reads remain an open gap; `fhir-mssql`'s
-  **F-67** TLS advisories closed 2026-08-29 (driver switched to `mssql`).
+  narrower for them is in the matrix. Oracle snapshot reads are verified
+  on Oracle 26ai Free (`M14.19`). Racing writers and redaction remain
+  unverified. `fhir-mssql`'s **F-67** TLS advisories closed 2026-08-29
+  (driver switched to `mssql`).
 
 ## Where authentication actually happens
 

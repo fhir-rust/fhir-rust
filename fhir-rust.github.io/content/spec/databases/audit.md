@@ -167,7 +167,7 @@ type-/system-level history, multi-port wiring, is tracked in that crate's
 | [F-65](#f-65) | **High** | `fhir-mssql` gained a real store, live-verified; running it found five real defects, incl. a torn read (`R4.5`) and `verify_audit` never checking the keyed tag | **fixed** 2026-08-04 — all five; the port is Store level, 33 live tests, 0 ignored |
 | [F-66](#f-66) | — | Scope note: `fhir-oracle`'s store was written with no Instant Client on the host and had never connected to a database | **superseded** by **F-68** — the store has now run live |
 | [F-67](#f-67) | **High** | Four TLS advisories `deny.toml` excused as dev-dependency-only now reach the shipping `fhir-mssql-store`; `native-tls` fails the handshake on this host | **fixed** 2026-08-29 — owner accepted the risk formally 2026-08-28 (keep shipping on upstream `tiberius`, document loudly, do not chase a replacement, after pricing three alternatives — `M14.34`), then closed it outright the next day by switching the driver to `mssql`, a `tiberius` fork the owner publishes to carry security fixes forward. `cargo tree` confirms none of the four advisory packages remain; `deny.toml`'s ignore list is empty; full live suite (41 tests) re-verified against `azure-sql-edge` |
-| [F-68](#f-68) | — | `fhir-oracle` connected live and reached Store level; four real defects found and fixed doing it; `R4.5` regressed from "believed addressable" to a confirmed open gap | **recorded** 2026-08-04 — defects fixed; `R4.5` remains open (`M14.19` needs a new answer) |
+| [F-68](#f-68) | — | `fhir-oracle` connected live and reached Store level; four real defects found and fixed doing it; `R4.5` regressed from "believed addressable" to a confirmed open gap | **recorded** 2026-08-04. The snapshot-read gap closed 2026-11-19 (`M14.19`). |
 | [F-69](#f-69) | Medium | `scripts/db.sh up` silently exited 1 with zero output on a fresh checkout, in all six ports | **fixed** 2026-08-04 |
 | [F-70](#f-70) | Medium | `fhir-store`'s `ChainKey`/`KeyRing::from_env` hardcoded `FHIR_SQLITE_*` names, so five ports' documented chain-key variables silently did nothing | **fixed** 2026-08-04 — `from_env(prefix)`, live-verified on PostgreSQL 18; docs corrected in all six |
 | [F-71](#f-71) | **High** | `fhir-sqlite`: `active=true` token search silently matched zero rows — TEXT/INTEGER affinity never converts the word `"true"` | **fixed** 2026-08-04 — `bool_token_as_bind`, regression test added |
@@ -199,6 +199,8 @@ type-/system-level history, multi-port wiring, is tracked in that crate's
 | [F-98](#f-98) | Medium | `scripts/check-published-match.sh` reports "ok" for a crate whose source has genuinely diverged from what it published, when the divergence is a workspace-inherited dependency requirement (`sha2.workspace = true` etc.) — its `--exclude Cargo.toml` comparison relies on `Cargo.toml.orig`, which preserves the unresolved `.workspace = true` reference rather than the literal version crates.io actually receives | **open** — found 2026-08-29 bumping `sha2`/`sha3` in `fhir-postgresql`/`fhir-sqlite`: the gate said "34 matched, 0 mismatched" while the crates.io API confirmed `fhir-postgresql-map` 0.6.0's published manifest declares `sha2 ^0.10`, which the tree's new `sha2 = "0.11"` workspace requirement no longer matches. Worked around by bumping the affected crates to a patch version regardless of what the gate reported (commit `ca34cdf`), not by trusting it. Not fixed: a correct fix needs to compare the crate's *normalized*, packaged `Cargo.toml` (which does resolve `.workspace = true` to a literal) rather than `Cargo.toml.orig`, without reintroducing the cosmetic-reordering false positives `Cargo.toml.orig` was chosen to avoid |
 | [F-99](#f-99) | Medium | `fhir-postgresql-store`'s `checkpoints_are_logged_on_their_own_target_without_phi` test (`tests/audit.rs`) fails reproducibly — 2/2 hosted runs — on the Dependabot PR bumping `deadpool-postgres` 0.14.1 → 0.14.2 (PR #59), while `main`'s own last five hosted runs of the same job are all green | **fixed** 2026-09-01 — the leading hypothesis at filing (a `deadpool-postgres` 0.14.2 regression) was directly ruled out by diffing the crate from the registry cache; the real mechanism is `tracing`'s global per-callsite interest cache, decided by whichever of the file's three call paths reaches `emit_checkpoint`'s callsite first with no subscriber active, starving a thread-local `set_default` guard on any later, parallel-running test. Fixed mechanism-agnostically: `tests/audit.rs` now installs one process-wide `tracing_subscriber::fmt` default via `set_global_default` behind a `OnceLock` in `test_store()`, rather than scoping a subscriber around one call in one test. See the full entry for the ruled-out coalescing theory and the verification run |
 | [F-89](#f-89) | Medium | The mysql/mariadb DDL test harness was unportable and **masked real errors**: it passed MariaDB's `--skip-ssl-verify-server-cert` to whatever client exists (Oracle's mysql 8 client rejects it), assumed a utf8mb4 default charset (the runner's client defaults utf8mb3 → ERROR 1253 on the collation probe), and on any early client exit reported the stdin `Broken pipe` instead of reading the client's stderr — hiding whatever the real failure was | **fixed** 2026-08-10 — client-flavor-gated TLS flag, explicit `--default-character-set=utf8mb4`, and EPIPE falls through to collect stderr, so the next failure names itself |
+| [F-103](#f-103) | Medium | L8 promised unchanged keys across CJK scripts. Live cross-script search coverage is incomplete. | **open** for L15a after correcting L8 |
+| [F-104](#f-104) | Medium | Engine-native backup documentation lacks a repeatable store-level recovery drill. | SQLite has a regression test. PostgreSQL, MySQL, MariaDB, SQL Server-compatible Edge, and Oracle verified locally (T11.16). |
 
 ## What remains, and why
 
@@ -208,6 +210,8 @@ own closures — every one of them contradicted the summary table above.*
 
 | Finding | Why it is not fixed here |
 | --- | --- |
+| [F-103](#f-103) | The kana collision has local SQLite evidence. Each port still needs live-suite assertions. |
+| [F-104](#f-104) | SQLite has a full-map recovery test. PostgreSQL, MySQL, MariaDB, SQL Server-compatible Edge, and Oracle still need checked-in drills. SQL Server also needs repetition on the full product. |
 | ~~F-47~~ | Closed 2026-08-10: the six-step migration ran to completion — oracle's `upgrade` (step 1, closing F-15), the `U12a` bound decision (step 2, corrected by measurement), the six-port shared-core `path_bound` (step 3), mssql's transactional conversion (step 4), oracle's resumable add-copy-drop-rename conversion (step 5, surfacing and fixing **F-85**), and the matrix flip (step 6). |
 | ~~F-49~~ | Closed 2026-08-06: every family's CI now lives at the repository root — `fhir-ci.yml`, `fhir-security.yml`, one `<port>-ci.yml` per port, `fhir-loco-ci.yml` (rewritten: the old file was loco-rs template boilerplate provisioning Redis/PostgreSQL this app never used), and a new `fhir-store-ci.yml` for the one family that never had CI anywhere. Each carries a paths filter and a `working-directory` default; artifact paths were re-rooted. The inert per-family CI files are deleted. Deliberately **not** consolidated: the six ports' `publish.yml` (publishing is owner-gated; their fictional crate lists are fixed, F-84) and `fhir/release.yml` (cargo-dist manages it; moot until a release is cut). Honesty note: no hosted run has executed yet — this host cannot run GitHub Actions — so the matrix keeps `~` until the first push turns them green. |
 | ~~F-51~~ | Closed 2026-08-29: `tests/oracle_ddl.rs` now installs and verifies a sampled schema live on every run, not just by hand; the full-R5 install remains verified only by **F-08**'s hand-run transcript, a separate, narrower gap the entry names. |
@@ -4471,9 +4475,8 @@ code:**
    `ORA-01466: unable to read data - table definition has changed` —
    reproduced independently with a minimal 3-statement probe (`CREATE TABLE`
    + commit, then on the *same session* `SET TRANSACTION READ ONLY` +
-   `SELECT`), confirming this is a genuine Oracle behavior (any session that
-   has ever executed DDL is poisoned for later read-only or serializable
-   transactions) rather than a bug in how the store called it. The call was
+   `SELECT`). This confirmed the immediate post-DDL failure independently
+   of the store. The call was
    removed rather than shipped broken. **`R4.5` regresses from "an
    unverified but plausible design" to a confirmed, open gap** — `get` now
    has no snapshot-isolation protection at all on this engine. This is the
@@ -4541,6 +4544,17 @@ contention. See `fhir-oracle/spec/14-oracle-dialect.md` for the annex
 updates this finding requires (`M14.5`, `M14.19`, `M14.20`) and
 `fhir-oracle/CLAUDE.md`/`AGENTS.md`/`README.md`/`tasks.md` for the
 corresponding documentation pass.
+
+**Snapshot-read follow-up, 2026-11-19.** Oracle 26ai Free 23.26.2.0.0
+reproduced `ORA-01466` with `SET TRANSACTION READ ONLY` immediately after
+creating a table on the same session. A first read in a serializable
+transaction succeeded after fresh DDL. The store now runs `get` in one
+serializable transaction (`M14.19`). The live R5 Observation regression
+checks the first read after installation and compares each of 80 reads
+with the two complete versions on either side of the concurrent write.
+The previous implementation tore on the first pair. The fixed
+implementation passed, closing the `db:R4.5` gap. Racing writers under
+`H5.4` and older Oracle versions were outside this verification.
 
 *Found installing Oracle Instant Client and running the F-66 store live for
 the first time this pass, then writing a real test suite for it and running
@@ -6123,6 +6137,103 @@ Ten annotated, signed tags pushed (`fhir-store-v0.3.1`, `fhir-core-v3.3.1`,
 `fhir-loco-v0.3.2`) with matching GitHub Releases. Do not reopen for a new
 divergence found later — that is a new finding, per this register's own
 convention (F-90's close-out already establishes it).
+
+## F-103
+
+**Multilingual search.** On 2026-11-18 the shared Rust fold and a local R5
+SQLite 3.54.1 store confirmed that voiced and unvoiced kana share a search key.
+The existing `non_latin_scripts_fold_but_are_never_romanised` test uses
+`中文` for its CJK example. Those two Han characters retain their spelling.
+L8 now also describes what the existing fold does to kana and Hangul.
+The remaining work is to commit and run the [L15a store cases](locale-accent-folding.md#testing)
+for each engine, including literal lookup and reconstruction.
+
+## F-104
+
+**Recovery evidence.** A 2026-11-18 review of the port test suites and CI
+found schema upgrade tests and backup instructions, but no automated drill
+that reopens a restored store and verifies its clinical and audit history.
+A local SQLite exercise covered a quiescent R5 Patient fixture. The other
+five engines were untried in this review. Record further runs per port in the
+[matrix](conformance-matrix.md) against [T11.16](11-conformance-testing.md).
+
+**SQLite, 2026-11-19.** `sqlite_backup_restores_full_r5_with_keyed_history`
+installs the full bundled R5 map on SQLite 3.54.1. It writes two versions
+of a synthetic Observation and a disclosure, retains the keyed checkpoint
+log outside the backup, and runs `VACUUM INTO` on the quiescent main and R5
+files. The restore uses 77,336,576 bytes across two files. Two local runs
+took 1.69 s and 0.19 s from creating a fresh destination through the first
+resource read. The restored checksum, earlier version, disclosure identity,
+and audit verification matched. An incorrect key with the same key ID
+flagged both HMACs. The checkpoint log's verification result matched, and
+the deletion at version 3 was absent from the recovered history. SQLite's
+checkpoint log has no witness digest. This measurement covers one
+installed release, two history rows, and one disclosure. Substituting the
+live files after the deletion made the test fail on its first recovered read.
+
+**PostgreSQL, 2026-11-19.** A local probe installed the full bundled R5 map
+on PostgreSQL 18.7. It wrote two synthetic Patient versions and a
+disclosure, kept the keyed chain witness outside the database, and ran
+`pg_dump --format=custom` before a version 3 deletion. PostgreSQL 18.7
+client tools restored the 18,125,540-byte archive with
+`pg_restore --exit-on-error`. Creation of the destination through the
+first recovered resource read took 17.60 s on local storage. The installed
+checksum, two versions, disclosure attribution, and search result matched
+the snapshot. The audit chain verified with separately supplied keys,
+both HMACs failed with the wrong key under the same key ID, and the
+restored witness matched the value saved before the dump. The later
+deletion changed the source witness and was absent from the restored
+history. A checked-in drill and physical or point-in-time recovery
+exercises remain open.
+
+**MySQL, 2026-11-19.** A local probe selected Patient from the released R5
+map and installed it on MySQL 8.4.13. It wrote two signed versions and one
+disclosure, then created a 59,865-byte logical dump using
+`mysqldump --single-transaction --routines --triggers --hex-blob
+--no-tablespaces`. Restoring into a fresh schema through the first resource
+read took 4.75 s. The restored checksum, current and earlier versions,
+disclosure attribution, search result, and keyed audit chain matched the
+snapshot. Supplying different key material under the same key ID flagged
+both HMACs. A deletion made after the dump was absent. A checked-in drill,
+the full R5 map, and binary-log point-in-time recovery remain open.
+
+**MariaDB, 2026-11-19.** A local probe selected Patient from the released R5
+map and installed it on MariaDB 11.4.13. It wrote two signed versions and one
+disclosure, then created a 62,886-byte logical dump with `mariadb-dump
+--single-transaction --routines --triggers --hex-blob`. MariaDB qualifies
+trigger DDL with the source database, so the faithful disaster drill dropped
+and recreated the original database name rather than importing beside the live
+source. Restore through the first resource read took 15.41 s. The installed
+checksum, current and earlier versions, disclosure attribution, search result,
+and keyed audit chain matched the snapshot. Different key material under the
+same key ID flagged both HMACs, and the deletion after the dump was absent. A
+checked-in drill, the full R5 map, and binary-log point-in-time recovery remain
+open.
+
+**SQL Server-compatible Edge, 2026-11-19.** A local probe selected Patient
+from the released R5 map on Azure SQL Edge 15.0.2000.1574. It wrote two signed
+versions and a disclosure, then ran `BACKUP DATABASE` with `COPY_ONLY` and
+`CHECKSUM` to a 4,575,232-byte native backup. After a later deletion, the drill
+restored the whole `fhir_mssql` database using `WITH REPLACE`, reapplied the
+snapshot-isolation database options, and reached its first resource read in
+6.05 s. The installed checksum, current and earlier versions, every disclosure
+field, search result, and keyed audit chain matched. Wrong material under the
+same key ID flagged both HMACs; the later deletion was absent. Azure SQL Edge
+is a SQL Server-compatible subset on this arm64 host, not evidence for every
+SQL Server 2022 backup behavior. A checked-in drill, repetition on full SQL
+Server, larger-map exercise, and log-chain point-in-time recovery remain open.
+
+**Oracle, 2026-11-19.** A local probe selected Patient from the released R5
+map on Oracle 26ai Free 23.26.2.0.0. It wrote two signed versions and a
+disclosure, then exported the R5 user with Data Pump to a 2,998,272-byte dump.
+After a later deletion, the drill dropped and recreated the R5 user with the
+documented grants (`M14.5`, `M14.28`) and imported its objects with
+`EXCLUDE=USER`; importing the user itself is an error when the deployment has
+already provisioned it. Import through the first resource read took 11.62 s.
+The installed checksum, current and earlier versions, every disclosure field,
+search result, and keyed audit chain matched. Wrong material under the same key
+ID flagged both HMACs, and the later deletion was absent. A checked-in drill,
+full-R5 exercise, and RMAN or point-in-time recovery remain open.
 
 ---
 

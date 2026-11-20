@@ -68,14 +68,9 @@ The store connects and its full surface — `put`, `get`, `delete`, `history`,
 against a real Oracle in `tests/oracle_store.rs`: 7 of 7 tests pass, 0
 ignored.
 
-Not **Reference**: `R4.5` (snapshot reads under concurrent writers) has no
-working mechanism on this engine — the candidate this port's annex named was
-tried live and found to break every read (see [Operations](operations.md)).
-There is no concurrency test, no redaction test, and no `upgrade`/
-`backfill_norm`. The [conformance
-matrix](https://github.com/fhir-rust/fhir-rust/blob/main/spec/databases/conformance-matrix.md)
-is the document to trust for the exact, current state — this book is a tour,
-not the source of truth.
+The live suite covers snapshot reads during concurrent writes and tests
+upgrade and backfill. Racing writers and redaction remain unverified. See
+the [conformance matrix](https://github.com/fhir-rust/fhir-rust/blob/main/spec/databases/conformance-matrix.md).
 
 ## Trademarks
 

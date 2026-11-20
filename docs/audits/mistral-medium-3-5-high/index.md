@@ -1,6 +1,6 @@
 # Quality Improvement Tasks for fhir-rust
 
-Based on my analysis of your public open-source FHIR-Rust monorepo, here are **prioritized, actionable improvement tasks** organized by your requested categories. The project is exceptionally well-documented and has robust technical foundations, so these recommendations focus on **high-impact gaps** that align with your project's values of honesty, specification-driven development, and clinical software integrity.
+Based on my analysis of your public open-source FHIR®-Rust monorepo, here are **prioritized, actionable improvement tasks** organized by your requested categories. The project is exceptionally well-documented and has robust technical foundations, so these recommendations focus on **high-impact gaps** that align with your project's values of honesty, specification-driven development, and clinical software integrity.
 
 ---
 
@@ -51,7 +51,7 @@ Based on my analysis of your public open-source FHIR-Rust monorepo, here are **p
 | Priority | Task | Effort | Impact | Owner |
 |----------|------|--------|--------|-------|
 | **HIGH** | **Join and participate** in chat.fhir.org (`#implementers` stream) - answer questions, don't promote | Ongoing | **Critical** - Primary FHIR community venue | Maintainer |
-| **HIGH** | **List on HL7 Confluence** - Open Source Implementations + FHIR Tools Registry pages | 1 day | **Critical** - Official HL7 visibility | Maintainer |
+| **HIGH** | **List on HL7® Confluence** - Open Source Implementations + FHIR Tools Registry pages | 1 day | **Critical** - Official HL7 visibility | Maintainer |
 | **HIGH** | **Submit to awesome-rust** - Add to `rust-unofficial/awesome-rust` | 30 min | High - Rust community discovery | Anyone |
 | **HIGH** | **Create Twitter/X and Mastodon accounts** for project updates | 1 hour | High - Social presence for announcements | Maintainer |
 | **MEDIUM** | **Submit to Rust's "This Week in Rust"** - Project update | 1 day | Medium - Rust ecosystem visibility | Anyone |
@@ -415,3 +415,9 @@ For maintainers:
 ---
 
 This task list provides a **comprehensive, actionable roadmap** for improving the fhir-rust project across all requested dimensions. The focus is on **high-impact, honest improvements** that align with the project's values of transparency, specification-driven development, and clinical software integrity.
+
+## Trademarks
+
+HL7®, and FHIR® are the registered trademarks of Health Level Seven
+International and their use of these trademarks does not constitute an
+endorsement by HL7.

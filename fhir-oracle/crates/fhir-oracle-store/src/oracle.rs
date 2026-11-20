@@ -22,12 +22,9 @@
 //!    statement `ORA-01031` against a session that was really `"R5"`. Fixed
 //!    by creating users unquoted and setting `RelMap.schema` to match,
 //!    uppercase — the opposite convention from every other port.
-//! 2. **`R4.5`'s presumed mechanism doesn't work (`M14.19`).** `SET
-//!    TRANSACTION READ ONLY` failed every read with `ORA-01466: unable to
-//!    read data - table definition has changed` on any session that had run
-//!    DDL, reproduced with a minimal 3-statement probe. Removed rather than
-//!    shipped broken — `get` below has **no snapshot-isolation protection**;
-//!    `R4.5` is an open, confirmed gap on this port, not merely unverified.
+//! 2. **Post-DDL read isolation (`M14.19`).** `SET TRANSACTION READ ONLY`
+//!    returned `ORA-01466` immediately after DDL. The store now uses a
+//!    serializable transaction for the queries in `get` (`db:R4.5`).
 //! 3. **Double schema-qualification (`ORA-00926`).** `insert_row` took a
 //!    `schema` argument *and*, at several call sites, an already-qualified
 //!    table string. Fixed by taking one pre-qualified `target: &str`.
@@ -38,13 +35,9 @@
 //! 5. **A boolean bound as text in token search (`ORA-01722`)**, found by
 //!    `tests/oracle_store.rs` itself — see `oracle_search.rs`'s module doc.
 //!
-//! **This crate's conformance level is now Store (`C0.8`)** for the
-//! operations below, live-tested; it is not Reference — no concurrency test
-//! exists to verify `H5.4` under contention (the `SELECT … FOR UPDATE`
-//! mechanism is present but unexercised by a racing-writers test), and
-//! `R4.5` has no working mechanism at all, per point 2 above. See the
-//! [conformance matrix](../../../spec/databases/conformance-matrix.md) for
-//! the row-by-row claim.
+//! **Conformance level: Store (`C0.8`).** The live suite covers `get`
+//! under concurrent writes. Racing writers for `H5.4` remain unverified.
+//! See the [conformance matrix](../../../spec/databases/conformance-matrix.md).
 //!
 //! # What is implemented and live-tested
 //!
@@ -1114,28 +1107,16 @@ impl OracleStore {
             let conn = pool.get().map_err(db_err)?;
             let s = quote_ident(&map.schema);
 
-            // R4.5, NOT met — `SET TRANSACTION READ ONLY` was tried here as
-            // the multi-statement snapshot `M14.19` named as the likely
-            // answer, and running it live (not merely compiling it) found it
-            // reliably broken rather than merely unverified: on any session
-            // that has executed DDL — which every pooled connection here has,
-            // since `init` runs on this same pool — a later `SET TRANSACTION
-            // READ ONLY` followed by any `SELECT` fails outright with
-            // `ORA-01466: unable to read data - table definition has
-            // changed`, reproduced with a minimal two-statement probe
-            // (`CREATE TABLE` + commit, then `SET TRANSACTION READ ONLY`,
-            // then `SELECT`) with no application logic involved at all. This
-            // is a session-level Oracle behavior — DDL poisons that session
-            // for any later read-only/serializable transaction — not a bug
-            // in how this store calls it. Removed rather than left in
-            // silently failing every `get`; this engine's default `READ
-            // COMMITTED` still gives each individual statement its own
-            // consistent read, so this is a regression from "believed
-            // fixed" to "known undecided" (matching `fhir-mssql` before its
-            // own `R4.5` fix — see that port's `M14.25`), not a regression
-            // from a working state.
-            let r = recon_with_map(&conn, &s, rm, &id)?;
-            Ok(r)
+            // M14.19: READ ONLY can return ORA-01466 immediately after
+            // schema DDL. A serializable transaction supplies the snapshot.
+            conn.execute("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE", &[])
+                .map_err(db_err)?;
+            let result = recon_with_map(&conn, &s, rm, &id);
+            if let Err(err) = conn.rollback() {
+                let _ = conn.close_with_mode(oracle::conn::CloseMode::Drop);
+                return Err(db_err(err));
+            }
+            result
         })
         .await
         .map_err(join_err)?
@@ -2415,14 +2396,13 @@ fn recon_with_map(
     id: &str,
 ) -> Result<Option<serde_json::Value>, StoreError> {
     let base = quote_ident(&rm.base_table().name);
-    let present = conn
-        .query_row(
-            &format!("SELECT 1 FROM {s}.{base} WHERE \"id\" = :1"),
-            &[&id],
-        )
-        .is_ok();
-    if !present {
-        return Ok(None);
+    match conn.query_row(
+        &format!("SELECT 1 FROM {s}.{base} WHERE \"id\" = :1"),
+        &[&id],
+    ) {
+        Ok(_) => {}
+        Err(err) if err.kind() == oracle::ErrorKind::NoDataFound => return Ok(None),
+        Err(err) => return Err(db_err(err)),
     }
 
     use fhir_oracle_map::model::TableKind;

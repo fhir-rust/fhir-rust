@@ -140,10 +140,20 @@ A `fhir-sqlite` store is one file per FHIR version (plus the main file
 this crate implements no backup mechanism of its own:
 
 - **Simplest:** copy the file(s) while the database is closed.
-- **Live, consistent:** SQLite's own [online backup
-  API](https://www.sqlite.org/backup.html) or `VACUUM INTO 'backup.sqlite'`,
-  either of which produces a consistent snapshot while writers continue,
-  because `journal_mode=WAL` means readers are never blocked by a writer.
+- SQLite's online backup API and `VACUUM INTO 'backup.sqlite'` each produce a
+  consistent snapshot of one file. Pause writes across the store while
+  snapshotting the main file and every installed version file to give the
+  set one recovery point. [Online backup](https://www.sqlite.org/backup.html)
+  · [VACUUM INTO](https://www.sqlite.org/lang_vacuum.html)
+
+To restore, copy the snapshot files into a fresh directory under their
+original names. For example, reopen `fhir.sqlite` with the matching map and
+its sibling `fhir-r5.sqlite` in place. A consistent snapshot is a valid
+store. Supply the audit keys from their separate recovery location. Verify
+the installed checksum, resource and version history, disclosure records,
+and audit chain. Compare the store's checkpoint result with the retained
+log entry. The SQLite checkpoint records the verification result and key
+status. It carries no history digest.
 
 There is no `pg_dump`, no physical replication, and no write-ahead-log
 point-in-time recovery here — those are PostgreSQL features this book

@@ -17,7 +17,9 @@ use fhir_sqlite_map::{ResourceMap, ShredOut, fold::fold};
 use serde_json::Value;
 
 fn repo_path(rel: &str) -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../fhir").join(rel)
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../../fhir")
+        .join(rel)
 }
 
 fn to_recon(rm: &ResourceMap, out: &ShredOut) -> ReconIn {
@@ -34,7 +36,10 @@ fn to_recon(rm: &ResourceMap, out: &ShredOut) -> ReconIn {
             };
             cols.insert(name.clone(), text);
         }
-        tables[row.table as usize].push(InRow { ords: row.ords.clone(), cols });
+        tables[row.table as usize].push(InRow {
+            ords: row.ords.clone(),
+            cols,
+        });
     }
     ReconIn {
         tables,
@@ -45,7 +50,14 @@ fn to_recon(rm: &ResourceMap, out: &ShredOut) -> ReconIn {
 }
 
 fn bench_fold(c: &mut Criterion) {
-    let names = ["Ærø", "Müller", "Muñoz", "Ślusarczyk", "Ångström", "Henderson"];
+    let names = [
+        "Ærø",
+        "Müller",
+        "Muñoz",
+        "Ślusarczyk",
+        "Ångström",
+        "Henderson",
+    ];
     c.bench_function("fold/name", |b| {
         b.iter(|| {
             for n in &names {
@@ -63,7 +75,10 @@ fn bench_resources(c: &mut Criterion) {
         return;
     }
     let map = fhir_sqlite_gen::generate(&defs, "r5").expect("generate map");
-    for file in ["patient-example-ihe-pcd.json", "observation-example-eye-color.json"] {
+    for file in [
+        "patient-example-ihe-pcd.json",
+        "observation-example-eye-color.json",
+    ] {
         let path = examples.join(file);
         let Ok(bytes) = std::fs::read(&path) else {
             eprintln!("skipping {file}: not in corpus");

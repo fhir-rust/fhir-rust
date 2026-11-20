@@ -38,21 +38,19 @@ connected"): `tests/oracle_store.rs` runs `init`/`put`/`get`/`delete`/
 defects — see **F-68** in full, or the short version: Oracle folds an
 unquoted username to uppercase for session identity, so the three version
 namespaces must be **uppercase** Oracle users (`M14.5`, the opposite
-convention from `r3`/`r4`/`r5` elsewhere); `R4.5`'s presumed mechanism (`SET
-TRANSACTION READ ONLY`) fails outright with `ORA-01466` (`M14.19` — this is
-an **open, confirmed gap**, not merely unverified); a double
-schema-qualification bug (`ORA-00926`); a timestamp-binding bug
+convention from `r3`/`r4`/`r5` elsewhere). The first read-only transaction
+after DDL returned `ORA-01466`. Other findings included a double
+schema-qualification bug (`ORA-00926`), a timestamp-binding bug
 (`ORA-01843`); and a boolean bound as text in token search (`ORA-01722`,
 `M14.34`).
 
-Conformance level moved from Scaffold to **Store**. Not yet Reference: no
-`concurrency.rs` verifies `H5.4` under contention (the `SELECT … FOR UPDATE`
-mechanism is present, untested against racing writers), no `redaction.rs`,
-and `R4.5` has no working answer at all. (`upgrade`/`backfill_norm` left
-this list 2026-08-09: `tests/upgrade.rs`, 9 live tests — resumable DDL
-`M14.35`, chunked meta `M14.36`, ROWID-keyset backfill `M14.37` — closing
-**F-15**'s last port. Run the live suite with `--test-threads=1`: every
-test shares the one uppercase `R5` schema, `M14.5`.) The eleven
+Conformance level is **Store**. The reader/writer test in
+`tests/oracle_store.rs` verifies the serializable snapshot in `get` on
+Oracle 26ai Free (`M14.19`). Racing writers (`H5.4`) and redaction remain
+unverified. Live upgrade and backfill tests cover resumable DDL (`M14.35`),
+chunked meta (`M14.36`), and ROWID-keyset backfill (`M14.37`), closing
+**F-15** on Oracle. Run the live suite with `--test-threads=1` since the
+store tests share the uppercase `R5` schema (`M14.5`). The eleven
 `#[ignore]`d MySQL-asserting tests in `ddl.rs` were replaced by one
 consolidated `no_mysql_or_postgres_constructs_survive` test closing
 **F-08** — none remain ignored (`M14.25`).

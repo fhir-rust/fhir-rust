@@ -10,6 +10,27 @@ a documented history of false `[x]` claims (**F-27**); read the
 [conformance matrix](spec/databases/conformance-matrix.md) and each port's
 dialect annex for what works. Nothing here speaks for a port.
 
+## Work in progress handoff — 2026-11-20
+
+- [~] **Raise `fhir-sqlite-store` production line coverage to 100%.** The last
+      completed authoritative full-suite measurement is **97.71%**
+      (3,671/3,757 lines; search SQL 926/926), produced on macOS arm64 with
+      remapped paths and integration-test sources excluded from the denominator
+      while all tests still executed. Since that measurement, the worktree adds
+      deterministic rusqlite-authorizer fault injection, corrupt stored-map and
+      conflicting-DDL upgrade tests, a 1,001-value multi-batch fold backfill,
+      no-history and moved-column migration guards, and directly testable lazy
+      row decoders for search, references, reconstruction, history, audit, and
+      disclosure rows. The 22-test unit suite passes; the expanded 14-test
+      upgrade suite passed 13 tests in one serial run, and its sole fixture
+      failure (foreign-key enforcement on direct setup rows) was corrected and
+      re-run successfully in isolation. A new authoritative full coverage run
+      was deliberately stopped at the user's wrap-up request while its unit
+      suite was still green and actively consuming CPU. Next: rerun
+      `fhir-sqlite/scripts/coverage.sh`, use the new exact uncovered-line list to
+      close the remainder, and raise `--fail-under-lines` from 95 to 100 only
+      when that command passes. Do not cite 100% before then.
+
 ## Done (verified 2026-08-26, the state this file starts from)
 
 - [x] All 19 canonical special files exist
@@ -29,6 +50,56 @@ dialect annex for what works. Nothing here speaks for a port.
 ## Next up
 
 Grouped by `plan.md` workstream. Order within a group is priority order.
+
+### Deployment verification
+
+- [x] **Give Oracle readers a single committed version** (db:R4.5, T11.6,
+      Oracle M14.19). On Oracle 26ai Free 23.26.2.0.0, a read immediately
+      after schema installation succeeded and all 80 reads paired with
+      writes on independent connections returned a whole version. With
+      snapshot protection removed, the first pair mixed an old root status
+      with a new repeating child. See the
+      [matrix](spec/databases/conformance-matrix.md).
+- [~] **Rehearse recovery on the mounted stores first** (O10.6, T11.16).
+      The SQLite integration test exercised the full bundled R5 map on
+      SQLite 3.54.1. It recovered the resource and its earlier version,
+      installed checksum, disclosure attribution, both signed entries,
+      and the checkpoint kept outside the two snapshot files. A later
+      deletion was absent from restored history.
+      PostgreSQL 18.7 passed a local full-R5 custom archive restore with
+      the same checks, including the retained chain witness. Add a
+      repeatable PostgreSQL store test. MySQL 8.4.13 also passed a local
+      keyed logical restore over a Patient slice of the released R5 map.
+      MariaDB 11.4.13 passed the equivalent keyed Patient-slice drill with
+      its native dump and same-name database restore. Azure SQL Edge
+      15.0.2000.1574 passed a native checksummed whole-database backup and
+      restore with the same assertions. Oracle 26ai Free 23.26.2.0.0 passed
+      a Data Pump export/import of the keyed Patient slice, including the
+      pre-provisioned-user recovery required by M14.5/M14.28. Add checked-in
+      drills for the five server ports, and repeat the SQL Server exercise on
+      full SQL Server 2022 before treating it as product conformance.
+      Track each engine's results in [F-104](spec/databases/audit.md#f-104).
+- [ ] **Exercise HTTP overload at the clinical listener** (SV4.2). Hold
+      admitted requests open at a small configured limit. Assert that the
+      next request receives `503` and `Retry-After` before a store call.
+      After a held request completes or is cancelled, an ordinary request
+      must succeed. Record the tested service or perimeter configuration and
+      distinguish any deployment mitigation from the service's own status.
+      [Production settings](fhir-loco/config/production.yaml)
+- [~] **Run multilingual search through each store** (L15a). On 2026-11-18
+      SQLite R5 returned all three synthetic IDs for the voiced kana query.
+      Exact search distinguished all three spellings, including the decomposed
+      form, and each Patient retained its input. Add the full default/exact
+      table to the proposed cross-database suite below, run it per engine,
+      and mutation-check that using a folded key for exact search fails.
+      [Fixtures and expected results](spec/databases/locale-accent-folding.md)
+- [ ] **Verify the first regional profile requested by an adopter.** Record
+      the implementation-guide package and version, base release, terminology
+      versions, validator and configuration. Validate a synthetic accepted
+      example and one that violates a named profile constraint. Exercise the
+      required interactions on the selected backend and publish the observed
+      outcomes and outstanding gaps alongside the support claim.
+      [Scope of regional claims](spec/professionalization/index.md#rules)
 
 ### In flight — land it first
 
@@ -62,6 +133,14 @@ Grouped by `plan.md` workstream. Order within a group is priority order.
 
 ### Security and supply chain
 
+- [x] **Repair the local Rust compatibility check** (2026-11-18, RV1.5).
+      `make test-minimum-supported-rust-version` now calls the renamed
+      script, resolves installed patch releases, and checks and tests whole
+      workspaces with their lockfiles. A recording Cargo stand-in verified
+      both commands in all nine directories using real Rust 1.98.1 and
+      1.99.1 toolchains. The persistence core also passed an actual locked
+      all-target check on 1.98.1. The full compatibility suite was outside
+      this review.
 - [x] **Widen `fhir-security.yml`'s `cargo deny` beyond `fhir/**`** — done
       2026-08-26: a nine-workspace matrix, each against its own `deny.toml`,
       path-triggered on any workspace plus the weekly cron. Verified

@@ -90,7 +90,8 @@ pub(crate) fn fmt_ords(ords: &[i16]) -> String {
 /// Inverse of [`fmt_ords`]. Lenient about surrounding braces and whitespace so
 /// a value written by either engine round-trips.
 pub(crate) fn parse_ords(s: &str) -> Result<Vec<i16>, StoreError> {
-    let t = s.trim_start_matches('{').trim_end_matches('}');
+    let trimmed = s.trim();
+    let t = trimmed.trim_start_matches('{').trim_end_matches('}');
     if t.is_empty() {
         return Ok(Vec::new());
     }
@@ -160,18 +161,8 @@ impl SqliteStore {
             {
                 std::fs::create_dir_all(dir).map_err(|e| StoreError::Other(e.to_string()))?;
             }
-            let c = Connection::open(&p).map_err(sqlite_err)?;
-            c.pragma_update(None, "foreign_keys", "ON")
-                .map_err(sqlite_err)?;
-            // Returns a row, so it is a query rather than an update.
-            let _: String = c
-                .query_row("PRAGMA journal_mode=WAL", [], |r| r.get(0))
-                .map_err(sqlite_err)?;
-            c.pragma_update(None, "busy_timeout", 30_000)
-                .map_err(sqlite_err)?;
-            c.pragma_update(None, "synchronous", "FULL")
-                .map_err(sqlite_err)?;
-            Ok(c)
+            let c = Connection::open(&p).store()?;
+            configure_connection(c)
         })
         .await
         .map_err(join_err)??;
@@ -240,7 +231,7 @@ impl SqliteStore {
                     [&schema],
                     |r| r.get(0),
                 )
-                .map_err(sqlite_err)?;
+                .store()?;
             if already > 0 {
                 return Ok(());
             }
@@ -251,7 +242,7 @@ impl SqliteStore {
                 &format!("ATTACH DATABASE ?1 AS \"{}\"", escape_ident(&schema)),
                 [file.to_string_lossy().as_ref()],
             )
-            .map_err(sqlite_err)?;
+            .store()?;
             Ok(())
         })
         .await
@@ -278,12 +269,7 @@ impl SqliteStore {
         let statements = fhir_sqlite_map::ddl::ddl(&self.map);
         let schema = self.map.schema.clone();
         let checksum = checksum.to_string();
-        let asset_hex = hex_encode(
-            &self
-                .map
-                .to_gz_bytes()
-                .map_err(|e| StoreError::Other(e.to_string()))?,
-        );
+        let asset_hex = map_asset_hex(&self.map)?;
         let version = self.map.fhir_version.as_str().to_string();
         let conn = self.conn.clone();
 
@@ -291,7 +277,7 @@ impl SqliteStore {
             let mut c = conn.blocking_lock();
             let tx = c
                 .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
-                .map_err(sqlite_err)?;
+                .store()?;
             let n = statements.len();
             for s in &statements {
                 tx.execute_batch(s).map_err(|e| {
@@ -309,10 +295,9 @@ impl SqliteStore {
                 ("fhir_version", &version),
                 ("map_asset", &asset_hex),
             ] {
-                tx.execute(&meta, rusqlite::params![k, v])
-                    .map_err(sqlite_err)?;
+                tx.execute(&meta, rusqlite::params![k, v]).store()?;
             }
-            tx.commit().map_err(sqlite_err)?;
+            tx.commit().store()?;
             Ok(n)
         })
         .await
@@ -436,7 +421,7 @@ impl SqliteStore {
                         [],
                         |r| r.get(0),
                     )
-                    .map_err(sqlite_err)?;
+                    .store()?;
                 if exists == 0 {
                     return Err(StoreError::Other(format!("schema {esc2} is not installed")));
                 }
@@ -487,7 +472,7 @@ impl SqliteStore {
                                 [],
                                 |r| r.get(0),
                             )
-                            .map_err(sqlite_err)?;
+                            .store()?;
                         if has != 0 {
                             out.push(format!("{t}.{col} → {nt}"));
                         }
@@ -530,12 +515,7 @@ impl SqliteStore {
             }
         }
 
-        let new_hex = hex_encode(
-            &self
-                .map
-                .to_gz_bytes()
-                .map_err(|e| StoreError::Other(e.to_string()))?,
-        );
+        let new_hex = map_asset_hex(&self.map)?;
         let (checksum, version) = (
             checksum.to_string(),
             self.map.fhir_version.as_str().to_string(),
@@ -550,7 +530,7 @@ impl SqliteStore {
             let mut c = conn.blocking_lock();
             let tx = c
                 .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
-                .map_err(sqlite_err)?;
+                .store()?;
 
             // Adds first: a resource type new in this artifact has no tables
             // until `adds` creates them, and reconciliation would then try to
@@ -617,11 +597,9 @@ impl SqliteStore {
                             .prepare(&format!(
                                 "SELECT \"id\" FROM \"{esc2}\".\"{base}\" ORDER BY \"id\""
                             ))
-                            .map_err(sqlite_err)?;
-                        let rows = st
-                            .query_map([], |r| r.get::<_, String>(0))
-                            .map_err(sqlite_err)?;
-                        rows.collect::<Result<_, _>>().map_err(sqlite_err)?
+                            .store()?;
+                        let rows = st.query_map([], |r| r.get::<_, String>(0)).store()?;
+                        rows.collect::<Result<_, _>>().store()?
                     };
                     for id in ids {
                         let input = fetch_recon_input(&tx, &esc2, old_rm, &id)?;
@@ -636,27 +614,19 @@ impl SqliteStore {
                                 [&id],
                                 |r| Ok((r.get(0)?, r.get(1)?)),
                             )
-                            .map_err(sqlite_err)?;
+                            .store()?;
                         tx.execute(
                             &format!("DELETE FROM \"{esc2}\".\"{base}\" WHERE \"id\" = ?1"),
                             [&id],
                         )
-                        .map_err(sqlite_err)?;
+                        .store()?;
                         let out = fhir_sqlite_map::shred::shred(new_rm, &value)?;
                         let plan = InsertPlan::build(new_rm, &out, &id)?;
                         plan.apply(&tx, &esc2, version_id, &ts)?;
                         let back = fetch_recon_input(&tx, &esc2, new_rm, &id)?;
                         let v2 =
                             fhir_sqlite_map::reconstruct::reconstruct(new_rm, &back, Some(&id))?;
-                        if fhir_sqlite_map::canon::canonicalize(&v2)
-                            != fhir_sqlite_map::canon::canonicalize(&value)
-                        {
-                            return Err(StoreError::Other(format!(
-                                "re-shred verification failed for {rtype}/{id}: the \
-                                 new-shape reconstruction is not byte-identical; \
-                                 the transaction is rolled back"
-                            )));
-                        }
+                        verify_reshred_identity(rtype, &id, &value, &v2)?;
                         n_reshred += 1;
                     }
                 }
@@ -673,13 +643,8 @@ impl SqliteStore {
                             [],
                             |r| r.get(0),
                         )
-                        .map_err(sqlite_err)?;
-                    if has != 0 {
-                        return Err(StoreError::Other(format!(
-                            "re-shred left data behind in {t}.{col} (destined for \
-                             {nt}); the transaction is rolled back"
-                        )));
-                    }
+                        .store()?;
+                    ensure_moved_source_empty(has, t, col, nt)?;
                 }
             }
 
@@ -696,10 +661,9 @@ impl SqliteStore {
                 ("fhir_version", &version),
                 ("map_asset", &new_hex),
             ] {
-                tx.execute(&meta, rusqlite::params![k, v])
-                    .map_err(sqlite_err)?;
+                tx.execute(&meta, rusqlite::params![k, v]).store()?;
             }
-            tx.commit().map_err(sqlite_err)?;
+            tx.commit().store()?;
             Ok(n_reshred)
         })
         .await
@@ -839,11 +803,9 @@ impl SqliteStore {
                                  WHERE \"{dst}\" IS NULL AND \"{src}\" IS NOT NULL \
                                  LIMIT {BATCH}"
                             ))
-                            .map_err(sqlite_err)?;
-                        let rows = stmt
-                            .query_map([], |r| r.get::<_, String>(0))
-                            .map_err(sqlite_err)?;
-                        rows.collect::<Result<_, _>>().map_err(sqlite_err)?
+                            .store()?;
+                        let rows = stmt.query_map([], |r| r.get::<_, String>(0)).store()?;
+                        rows.collect::<Result<_, _>>().store()?
                     };
                     if vals.is_empty() {
                         break;
@@ -854,20 +816,20 @@ impl SqliteStore {
                     // rolled back to nothing.
                     let tx = c
                         .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
-                        .map_err(sqlite_err)?;
+                        .store()?;
                     {
                         let mut up = tx
                             .prepare(&format!(
                                 "UPDATE \"{esc}\".\"{tn}\" SET \"{dst}\" = ?2 \
                                  WHERE \"{src}\" = ?1 AND \"{dst}\" IS NULL"
                             ))
-                            .map_err(sqlite_err)?;
+                            .store()?;
                         for v in &vals {
                             up.execute(rusqlite::params![v, fhir_sqlite_map::fold::fold(v)])
-                                .map_err(sqlite_err)?;
+                                .store()?;
                         }
                     }
-                    tx.commit().map_err(sqlite_err)?;
+                    tx.commit().store()?;
                     total += n;
                     if n < BATCH {
                         break;
@@ -896,7 +858,7 @@ impl SqliteStore {
                     [],
                     |r| r.get(0),
                 )
-                .map_err(sqlite_err)?;
+                .store()?;
             Ok(usize::try_from(n).unwrap_or(0))
         })
         .await
@@ -920,10 +882,10 @@ impl SqliteStore {
                     [&schema],
                     |r| r.get(0),
                 )
-                .map_err(sqlite_err)?;
+                .store()?;
             if attached > 0 {
                 c.execute_batch(&format!("DETACH DATABASE \"{}\"", escape_ident(&schema)))
-                    .map_err(sqlite_err)?;
+                    .store()?;
             }
             for suffix in ["", "-wal", "-shm"] {
                 let p = if suffix.is_empty() {
@@ -943,6 +905,1191 @@ impl SqliteStore {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use std::collections::{BTreeMap, HashMap};
+
+    use fhir_sqlite_map::model::{Column, ResourceMap, Table};
+    use rusqlite::types::{Value, ValueRef};
+
+    use super::*;
+
+    fn deny_reads_from(connection: &mut Connection, denied: &'static str) {
+        use rusqlite::hooks::{AuthAction, AuthContext, Authorization};
+
+        connection
+            .authorizer(Some(move |ctx: AuthContext<'_>| match ctx.action {
+                AuthAction::Read { table_name, .. } if table_name == denied => Authorization::Deny,
+                AuthAction::Pragma { pragma_name, .. } if pragma_name == denied => {
+                    Authorization::Deny
+                }
+                _ => Authorization::Allow,
+            }))
+            .unwrap();
+    }
+
+    fn allow_all(connection: &mut Connection) {
+        use rusqlite::hooks::{AuthContext, Authorization};
+
+        connection
+            .authorizer(None::<fn(AuthContext<'_>) -> Authorization>)
+            .unwrap();
+    }
+
+    fn scratch(name: &str) -> PathBuf {
+        let path =
+            std::env::temp_dir().join(format!("fhir-sqlite-unit-{name}-{}", std::process::id()));
+        if path.exists() {
+            std::fs::remove_dir_all(&path).unwrap();
+        }
+        std::fs::create_dir_all(&path).unwrap();
+        path
+    }
+
+    #[test]
+    fn cell_rendering_and_ordinal_images_reject_corruption() {
+        assert_eq!(
+            cell_text(ValueRef::Null, ColTy::Text, 0, "x").unwrap(),
+            None
+        );
+        assert_eq!(
+            cell_text(ValueRef::Integer(0), ColTy::Bool, 0, "x").unwrap(),
+            Some("false".into())
+        );
+        assert_eq!(
+            cell_text(ValueRef::Integer(7), ColTy::Bool, 0, "x").unwrap(),
+            Some("true".into())
+        );
+        for (raw, expected) in [
+            ("true", "true"),
+            ("t", "t"),
+            ("false", "false"),
+            ("f", "f"),
+            ("1", "true"),
+            ("0", "false"),
+        ] {
+            assert_eq!(
+                cell_text(ValueRef::Text(raw.as_bytes()), ColTy::Bool, 2, "flag").unwrap(),
+                Some(expected.into())
+            );
+        }
+        assert!(cell_text(ValueRef::Text(b"yes"), ColTy::Bool, 2, "flag").is_err());
+        assert!(cell_text(ValueRef::Text(&[0xff]), ColTy::Bool, 2, "flag").is_err());
+        assert_eq!(
+            cell_text(ValueRef::Integer(-4), ColTy::Int, 0, "x").unwrap(),
+            Some("-4".into())
+        );
+        assert_eq!(
+            cell_text(ValueRef::Real(1.25), ColTy::Numeric, 0, "x").unwrap(),
+            Some("1.25".into())
+        );
+        assert_eq!(
+            cell_text(ValueRef::Text(b"text"), ColTy::Text, 0, "x").unwrap(),
+            Some("text".into())
+        );
+        assert!(cell_text(ValueRef::Text(&[0xff]), ColTy::Text, 3, "bad").is_err());
+        assert!(cell_text(ValueRef::Blob(b"bytes"), ColTy::Text, 3, "bad").is_err());
+
+        assert_eq!(fmt_ords(&[]), "{}");
+        assert!(parse_ords("{}").unwrap().is_empty());
+        assert_eq!(fmt_ords(&[1, -2, 3]), "{1,-2,3}");
+        assert_eq!(parse_ords(" {1, -2,3} ").unwrap(), [1, -2, 3]);
+        assert!(parse_ords("{1,nope}").is_err());
+    }
+
+    #[test]
+    fn upgrade_parsers_and_encodings_are_lossless_and_diagnostic() {
+        assert_eq!(escape_ident("a\"b"), "a\"\"b");
+        assert_eq!(
+            added_column_name("ALTER TABLE x ADD COLUMN \"audit_actor\" TEXT"),
+            Some("audit_actor".into())
+        );
+        assert_eq!(added_column_name("CREATE TABLE x (a TEXT)"), None);
+        let hinted = drop_column_hint("ALTER TABLE x DROP COLUMN y", "cannot drop");
+        assert!(hinted.contains("table rebuilt"));
+        assert!(hinted.contains("cannot drop"));
+        assert_eq!(
+            drop_column_hint("ALTER TABLE x ADD COLUMN y", "duplicate"),
+            "upgrade: duplicate\nstatement was:\nALTER TABLE x ADD COLUMN y"
+        );
+
+        let bytes = [0, 1, 15, 16, 254, 255];
+        let encoded = hex_encode(&bytes);
+        assert_eq!(encoded, "00010f10feff");
+        assert_eq!(hex_decode(&encoded).unwrap(), bytes);
+        assert!(hex_decode("abc").is_err());
+        assert!(hex_decode("zz").is_err());
+        assert_eq!(map_asset_hex_with(|| Ok(vec![0, 255])).unwrap(), "00ff");
+        let json_error = serde_json::from_str::<serde_json::Value>("{").unwrap_err();
+        assert!(map_asset_hex_with(|| Err(json_error)).is_err());
+
+        let db = Connection::open_in_memory().unwrap();
+        db.execute_batch(
+            "ATTACH DATABASE ':memory:' AS r5; CREATE TABLE r5.sample (a TEXT, b INTEGER)",
+        )
+        .unwrap();
+        let tx = db.unchecked_transaction().unwrap();
+        let columns = installed_columns(&tx, "r5", "sample").unwrap();
+        assert_eq!(
+            columns,
+            ["a".to_string(), "b".to_string()].into_iter().collect()
+        );
+    }
+
+    #[test]
+    fn time_leaf_and_sql_value_conversions_cover_every_storage_kind() {
+        use fhir_sqlite_map::shred::SqlVal;
+        use fhir_sqlite_map::value::LeafVal;
+
+        assert_eq!(
+            utc_micros(std::time::UNIX_EPOCH),
+            "1970-01-01 00:00:00.000000"
+        );
+        assert_eq!(
+            utc_micros(std::time::UNIX_EPOCH - std::time::Duration::from_secs(1)),
+            "1970-01-01 00:00:00.000000"
+        );
+        assert_eq!(
+            utc_micros(std::time::UNIX_EPOCH + std::time::Duration::new(951_868_799, 123_456_000)),
+            "2000-02-29 23:59:59.123456"
+        );
+        assert_eq!(civil_from_days(-1), (1969, 12, 31));
+
+        assert!(
+            matches!(leaf_from_cols("s", Some("x".into()), None, None), LeafVal::Str(v) if v == "x")
+        );
+        assert!(matches!(
+            leaf_from_cols("s", None, None, None),
+            LeafVal::Str(v) if v.is_empty()
+        ));
+        assert!(
+            matches!(leaf_from_cols("n", None, Some("1.20".into()), None), LeafVal::Num(v) if v == "1.20")
+        );
+        assert!(matches!(leaf_from_cols("n", None, None, None), LeafVal::Num(v) if v.is_empty()));
+        assert!(matches!(
+            leaf_from_cols("b", None, None, Some(1)),
+            LeafVal::Bool(true)
+        ));
+        assert!(matches!(
+            leaf_from_cols("b", None, None, None),
+            LeafVal::Bool(false)
+        ));
+        assert!(matches!(
+            leaf_from_cols("?", None, None, None),
+            LeafVal::Null
+        ));
+
+        assert_eq!(sqlval(&SqlVal::Bool(true)), Value::Integer(1));
+        assert_eq!(sqlval(&SqlVal::Int(-2)), Value::Integer(-2));
+        for value in [
+            SqlVal::Num("1.20".into()),
+            SqlVal::Text("text".into()),
+            SqlVal::Ts("2024-01-01T00:00:00Z".into()),
+            SqlVal::Date("2024".into()),
+            SqlVal::Jsonb("{}".into()),
+        ] {
+            assert!(matches!(sqlval(&value), Value::Text(_)));
+        }
+        assert_eq!(sqlval(&SqlVal::Bytes(vec![1, 2])), Value::Blob(vec![1, 2]));
+        assert_eq!(opt_text(None), Value::Null);
+        assert_eq!(opt_text(Some("x")), Value::Text("x".into()));
+    }
+
+    fn map_with_column(table: &str, column: &str, path: &str) -> RelMap {
+        let resource = ResourceMap {
+            name: "Patient".into(),
+            tables: vec![Table {
+                name: table.into(),
+                kind: TableKind::Base,
+                path: String::new(),
+                cols: vec![Column {
+                    name: column.into(),
+                    ty: ColTy::Text,
+                    path: path.into(),
+                }],
+                norm_cols: Vec::new(),
+                adjunct_cols: Vec::new(),
+            }],
+            nodes: Vec::new(),
+            root: 0,
+            search: Vec::new(),
+            path_bound: 0,
+        };
+        RelMap {
+            fhir_version: "test".into(),
+            schema: "r5".into(),
+            resources: BTreeMap::from([("Patient".into(), resource)]),
+        }
+    }
+
+    fn bundled_map(version: &str) -> Arc<RelMap> {
+        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../fhir-sqlite-map/assets")
+            .join(format!("fhir-sqlite-relmap-{version}.json.gz"));
+        let bytes = std::fs::read(path).expect("bundled relational map");
+        Arc::new(RelMap::from_gz_bytes(&bytes).expect("valid bundled relational map"))
+    }
+
+    #[test]
+    fn moved_columns_distinguish_relocation_from_removal_and_retention() {
+        let old = map_with_column("patient", "family", "Patient.name.family");
+        let moved = map_with_column("patient_name", "family", "Patient.name.family");
+        assert_eq!(
+            moved_columns(&old, &moved),
+            [("patient".into(), "family".into(), "patient_name".into())]
+        );
+        assert!(moved_columns(&old, &old).is_empty());
+        assert!(moved_columns(&old, &map_with_column("other", "x", "Patient.x")).is_empty());
+        assert!(
+            moved_columns(
+                &map_with_column("patient", "family", ""),
+                &map_with_column("patient_name", "family", "")
+            )
+            .is_empty()
+        );
+
+        let before = serde_json::json!({"resourceType": "Patient", "id": "p1", "active": true});
+        let reordered = serde_json::json!({"active": true, "id": "p1", "resourceType": "Patient"});
+        verify_reshred_identity("Patient", "p1", &before, &reordered).unwrap();
+        let changed = serde_json::json!({"resourceType": "Patient", "id": "p1", "active": false});
+        assert!(
+            verify_reshred_identity("Patient", "p1", &before, &changed)
+                .expect_err("changed content must roll the migration back")
+                .to_string()
+                .contains("Patient/p1")
+        );
+        ensure_moved_source_empty(0, "old", "value", "new").unwrap();
+        assert!(
+            ensure_moved_source_empty(1, "old", "value", "new")
+                .expect_err("left-behind source data must roll the migration back")
+                .to_string()
+                .contains("old.value")
+        );
+    }
+
+    #[tokio::test]
+    async fn reshred_refuses_cross_resource_moves_and_base_table_renames() {
+        let old = map_with_column("patient", "active", "Patient.active");
+
+        let dir = scratch("reshred-missing-resource");
+        let db = dir.join("fhir.sqlite");
+        let installed = SqliteStore::open(&db, Arc::new(old.clone())).await.unwrap();
+        installed.init("old").await.unwrap();
+        drop(installed);
+
+        let mut cross_resource = map_with_column("other", "active", "Patient.active");
+        let mut other = cross_resource.resources.remove("Patient").unwrap();
+        other.name = "Other".into();
+        cross_resource.resources.insert("Other".into(), other);
+        let upgraded = SqliteStore::open(&db, Arc::new(cross_resource))
+            .await
+            .unwrap();
+        let err = upgraded
+            .upgrade_with(
+                "new",
+                crate::UpgradeOpts {
+                    allow_destructive: true,
+                    reshred_moved: true,
+                },
+            )
+            .await
+            .expect_err("a moved path cannot silently change resource type");
+        assert!(err.to_string().contains("does not carry the resource"));
+        drop(upgraded);
+
+        let dir = scratch("reshred-base-rename");
+        let db = dir.join("fhir.sqlite");
+        let installed = SqliteStore::open(&db, Arc::new(old)).await.unwrap();
+        installed.init("old").await.unwrap();
+        drop(installed);
+
+        let renamed = map_with_column("patient_renamed", "active", "Patient.active");
+        let upgraded = SqliteStore::open(&db, Arc::new(renamed)).await.unwrap();
+        let err = upgraded
+            .upgrade_with(
+                "new",
+                crate::UpgradeOpts {
+                    allow_destructive: true,
+                    reshred_moved: true,
+                },
+            )
+            .await
+            .expect_err("re-shred cannot infer a base-table rename");
+        assert!(err.to_string().contains("base table renamed"));
+    }
+
+    #[test]
+    fn batched_insert_checks_shape_quotes_identifiers_and_chunks() {
+        let mut db = Connection::open_in_memory().unwrap();
+        db.execute_batch(
+            "ATTACH DATABASE ':memory:' AS r5; CREATE TABLE r5.\"odd\"\"table\" (\"a\" TEXT, \"b\" INTEGER)",
+        )
+        .unwrap();
+        let tx = db.transaction().unwrap();
+        let cols = ["a".into(), "b".into()];
+        let rows: Vec<Vec<Value>> = (0..451)
+            .map(|i| vec![Value::Text(format!("row-{i}")), Value::Integer(i)])
+            .collect();
+        insert_rows(&tx, "r5", "odd\"table", &cols, &rows).unwrap();
+        assert_eq!(
+            tx.query_row("SELECT count(*) FROM r5.\"odd\"\"table\"", [], |r| r
+                .get::<_, i64>(0))
+                .unwrap(),
+            451
+        );
+        insert_rows(&tx, "r5", "odd\"table", &cols, &[]).unwrap();
+        assert!(insert_rows(&tx, "r5", "odd\"table", &cols, &[vec![Value::Null]]).is_err());
+        assert!(
+            insert_rows(
+                &tx,
+                "r5",
+                "missing",
+                &cols,
+                &[vec![Value::Null, Value::Null]]
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn lazy_query_helpers_report_binding_and_column_type_corruption() {
+        let connection = Connection::open_in_memory().unwrap();
+
+        let mut statement = connection.prepare("SELECT ?1").unwrap();
+        assert!(query_search_ids(&mut statement, &[], "SELECT ?1").is_err());
+        assert_eq!(
+            query_search_ids(&mut statement, &["p1".into()], "SELECT ?1").unwrap(),
+            ["p1"]
+        );
+        let mut statement = connection.prepare("SELECT X'00'").unwrap();
+        assert!(query_search_ids(&mut statement, &[], "SELECT X'00'").is_err());
+
+        let mut statement = connection.prepare("SELECT ?1, ?2").unwrap();
+        assert!(query_reference_rows(&mut statement, &["Patient".into()]).is_err());
+        let mut statement = connection.prepare("SELECT 'Patient', 'p1'").unwrap();
+        assert_eq!(
+            query_reference_rows(&mut statement, &[]).unwrap(),
+            [("Patient".into(), "p1".into())]
+        );
+        let mut statement = connection.prepare("SELECT X'00', 'p1'").unwrap();
+        assert!(query_reference_rows(&mut statement, &[]).is_err());
+
+        assert_eq!(active_version(crate::ResourceStatus::Active(7)), Some(7));
+        assert_eq!(active_version(crate::ResourceStatus::Deleted(8)), None);
+        assert_eq!(active_version(crate::ResourceStatus::Unknown), None);
+
+        let mut statement = connection
+            .prepare(
+                "SELECT 1, 'ts', '', '{\"resourceType\":\"Patient\"}' \
+                 WHERE ?1 = 'p1'",
+            )
+            .unwrap();
+        let history = query_history_entries(&mut statement, "p1").unwrap();
+        assert_eq!(history.len(), 1);
+        assert_eq!(history[0].op, '?');
+        let mut statement = connection
+            .prepare("SELECT 1, 'ts', 'C', NULL WHERE ?1 = ?2")
+            .unwrap();
+        assert!(query_history_entries(&mut statement, "p1").is_err());
+        let mut statement = connection
+            .prepare("SELECT X'00', 'ts', 'C', NULL WHERE ?1 = 'p1'")
+            .unwrap();
+        assert!(query_history_entries(&mut statement, "p1").is_err());
+        let mut statement = connection
+            .prepare("SELECT 1, 'ts', 'C', '{' WHERE ?1 = 'p1'")
+            .unwrap();
+        assert!(query_history_entries(&mut statement, "p1").is_err());
+
+        let valid_access = "SELECT NULL, 'actor', NULL, NULL, 'read', 'Patient', 'p1', \
+                            1, 'ok', 1, NULL WHERE ?1 = 'Patient' AND ?2 = 'p1'";
+        let mut statement = connection.prepare(valid_access).unwrap();
+        let access = query_access_records(&mut statement, "Patient", "p1").unwrap();
+        assert_eq!(access.len(), 1);
+        assert_eq!(access[0].audit.actor, "actor");
+        let mut statement = connection
+            .prepare(&format!("{valid_access} AND ?3 = 'extra'"))
+            .unwrap();
+        assert!(query_access_records(&mut statement, "Patient", "p1").is_err());
+        let invalid_access = "SELECT NULL, X'00', NULL, NULL, 'read', 'Patient', 'p1', \
+                              1, 'ok', 1, NULL WHERE ?1 = 'Patient' AND ?2 = 'p1'";
+        let mut statement = connection.prepare(invalid_access).unwrap();
+        assert!(query_access_records(&mut statement, "Patient", "p1").is_err());
+
+        let mut statement = connection
+            .prepare("SELECT 'Patient', 'p1', 1, 'key:00'")
+            .unwrap();
+        assert_eq!(query_countersigns(&mut statement).unwrap().len(), 1);
+        let mut statement = connection
+            .prepare("SELECT 'Patient', 'p1', 1, 'key:00' WHERE ?1")
+            .unwrap();
+        assert!(query_countersigns(&mut statement).is_err());
+        let mut statement = connection
+            .prepare("SELECT 'Patient', 'p1', X'00', 'key:00'")
+            .unwrap();
+        assert!(query_countersigns(&mut statement).is_err());
+
+        let valid_audit = "SELECT 'p1', 1, 'ts', 'C', NULL, 'actor', NULL, NULL, \
+                           NULL, NULL, NULL";
+        let mut statement = connection.prepare(valid_audit).unwrap();
+        assert_eq!(query_audit_rows(&mut statement).unwrap().len(), 1);
+        let mut statement = connection
+            .prepare(&format!("{valid_audit} WHERE ?1"))
+            .unwrap();
+        assert!(query_audit_rows(&mut statement).is_err());
+        let mut statement = connection
+            .prepare("SELECT 'p1', X'00', 'ts', 'C', NULL, 'actor', NULL, NULL, NULL, NULL, NULL")
+            .unwrap();
+        assert!(query_audit_rows(&mut statement).is_err());
+
+        let columns = [("value".to_string(), ColTy::Text)];
+        let mut statement = connection.prepare("SELECT 'text' WHERE ?1 = 'p1'").unwrap();
+        let rows = query_recon_rows(&mut statement, "p1", &columns, false).unwrap();
+        assert_eq!(rows[0].cols["value"], "text");
+        let mut statement = connection
+            .prepare("SELECT '{1}', 'text' WHERE ?1 = 'p1'")
+            .unwrap();
+        let rows = query_recon_rows(&mut statement, "p1", &columns, true).unwrap();
+        assert_eq!(rows[0].ords, [1]);
+        let mut statement = connection.prepare("SELECT 'text' WHERE ?1 = ?2").unwrap();
+        assert!(query_recon_rows(&mut statement, "p1", &columns, false).is_err());
+        let mut statement = connection.prepare("SELECT X'00' WHERE ?1 = 'p1'").unwrap();
+        assert!(query_recon_rows(&mut statement, "p1", &columns, false).is_err());
+
+        let ext_sql = "SELECT 'path', '{1}', 1, 2, 'url', 'leaf', 's', 'value', NULL, NULL \
+                       WHERE ?1 = 'p1'";
+        let mut statement = connection.prepare(ext_sql).unwrap();
+        assert_eq!(query_ext_rows(&mut statement, "p1").unwrap().len(), 1);
+        let mut statement = connection
+            .prepare(&format!("{ext_sql} AND ?2 = 'extra'"))
+            .unwrap();
+        assert!(query_ext_rows(&mut statement, "p1").is_err());
+        let mut statement = connection
+            .prepare("SELECT X'00', '{1}', 1, 2, 'url', 'leaf', 's', 'value', NULL, NULL WHERE ?1 = 'p1'")
+            .unwrap();
+        assert!(query_ext_rows(&mut statement, "p1").is_err());
+
+        let deep_sql = "SELECT 'path', '{1}', 'leaf', 's', 'value', NULL, NULL \
+                        WHERE ?1 = 'p1'";
+        let mut statement = connection.prepare(deep_sql).unwrap();
+        assert_eq!(query_deep_rows(&mut statement, "p1").unwrap().len(), 1);
+        let mut statement = connection
+            .prepare(&format!("{deep_sql} AND ?2 = 'extra'"))
+            .unwrap();
+        assert!(query_deep_rows(&mut statement, "p1").is_err());
+        let mut statement = connection
+            .prepare("SELECT X'00', '{1}', 'leaf', 's', 'value', NULL, NULL WHERE ?1 = 'p1'")
+            .unwrap();
+        assert!(query_deep_rows(&mut statement, "p1").is_err());
+
+        let mut statement = connection
+            .prepare("SELECT 1, '{\"resourceType\":\"Patient\"}' WHERE ?1 = 'p1'")
+            .unwrap();
+        assert_eq!(query_contained_rows(&mut statement, "p1").unwrap().len(), 1);
+        let mut statement = connection.prepare("SELECT 1, '{}' WHERE ?1 = ?2").unwrap();
+        assert!(query_contained_rows(&mut statement, "p1").is_err());
+        let mut statement = connection
+            .prepare("SELECT X'00', '{}' WHERE ?1 = 'p1'")
+            .unwrap();
+        assert!(query_contained_rows(&mut statement, "p1").is_err());
+        let mut statement = connection.prepare("SELECT 1, '{' WHERE ?1 = 'p1'").unwrap();
+        assert!(query_contained_rows(&mut statement, "p1").is_err());
+    }
+
+    #[test]
+    fn insert_plan_carries_every_auxiliary_row_kind() {
+        use fhir_sqlite_map::shred::{DeepRow, ExtRow, Row, ShredOut, SqlVal};
+        use fhir_sqlite_map::value::LeafVal;
+
+        let table = |name: &str, kind: TableKind| Table {
+            name: name.into(),
+            kind,
+            path: String::new(),
+            cols: Vec::new(),
+            norm_cols: Vec::new(),
+            adjunct_cols: Vec::new(),
+        };
+        let rm = ResourceMap {
+            name: "Patient".into(),
+            tables: vec![
+                table("patient", TableKind::Base),
+                table("patient_name", TableKind::Elem),
+                table("patient_ext", TableKind::Ext),
+                table("patient_deep", TableKind::Deep),
+                table("patient_contained", TableKind::Contained),
+                table("patient_history", TableKind::History),
+            ],
+            nodes: Vec::new(),
+            root: 0,
+            search: Vec::new(),
+            path_bound: 0,
+        };
+        let out = ShredOut {
+            id: Some("p1".into()),
+            rows: vec![
+                Row {
+                    table: 0,
+                    ords: Vec::new(),
+                    cols: vec![("active".into(), SqlVal::Bool(true))],
+                },
+                Row {
+                    table: 1,
+                    ords: vec![1],
+                    cols: vec![("family".into(), SqlVal::Text("One".into()))],
+                },
+                Row {
+                    table: 1,
+                    ords: vec![2],
+                    cols: vec![("given".into(), SqlVal::Text("Two".into()))],
+                },
+                Row {
+                    table: 5,
+                    ords: Vec::new(),
+                    cols: Vec::new(),
+                },
+            ],
+            ext: vec![ExtRow {
+                path: "name".into(),
+                ords: vec![1],
+                modifier: true,
+                ext_ord: 2,
+                url: Some("urn:test".into()),
+                leaf: "valueString".into(),
+                val: LeafVal::Str("extension".into()),
+            }],
+            deep: vec![DeepRow {
+                path: "recursive".into(),
+                ords: vec![3],
+                leaf: "valueBoolean".into(),
+                val: LeafVal::Bool(true),
+            }],
+            contained: vec![(
+                1,
+                serde_json::json!({"resourceType": "Patient", "id": "c1"}),
+            )],
+        };
+        let plan = InsertPlan::build(&rm, &out, "p1").unwrap();
+        assert_eq!(plan.base_cols, ["active"]);
+        assert_eq!(plan.batches.len(), 4);
+
+        let mut db = Connection::open_in_memory().unwrap();
+        db.execute_batch(
+            "ATTACH DATABASE ':memory:' AS r5;
+             CREATE TABLE r5.patient (id TEXT PRIMARY KEY, version_id INTEGER, last_updated TEXT, active INTEGER);
+             CREATE TABLE r5.patient_name (rid TEXT, ords TEXT, family TEXT, given TEXT);
+             CREATE TABLE r5.patient_ext (rid TEXT, path TEXT, ords TEXT, modifier INTEGER, ext_ord INTEGER, url TEXT, leaf TEXT, v_kind TEXT, v_text TEXT, v_num TEXT, v_bool INTEGER);
+             CREATE TABLE r5.patient_deep (rid TEXT, path TEXT, ords TEXT, leaf TEXT, v_kind TEXT, v_text TEXT, v_num TEXT, v_bool INTEGER);
+             CREATE TABLE r5.patient_contained (rid TEXT, ord INTEGER, resource TEXT);",
+        )
+        .unwrap();
+        let tx = db.transaction().unwrap();
+        plan.apply(&tx, "r5", 7, "2026-11-19 12:00:00.000000")
+            .unwrap();
+        assert_eq!(
+            tx.query_row("SELECT active FROM r5.patient WHERE id='p1'", [], |r| r
+                .get::<_, i64>(0))
+                .unwrap(),
+            1
+        );
+        assert_eq!(
+            tx.query_row("SELECT count(*) FROM r5.patient_name", [], |r| r
+                .get::<_, i64>(0))
+                .unwrap(),
+            2
+        );
+        assert_eq!(
+            tx.query_row("SELECT v_text FROM r5.patient_ext", [], |r| r
+                .get::<_, String>(0))
+                .unwrap(),
+            "extension"
+        );
+        assert_eq!(
+            tx.query_row("SELECT v_bool FROM r5.patient_deep", [], |r| r
+                .get::<_, i64>(0))
+                .unwrap(),
+            1
+        );
+        assert!(
+            tx.query_row("SELECT resource FROM r5.patient_contained", [], |r| r
+                .get::<_, String>(0))
+                .unwrap()
+                .contains("\"c1\"")
+        );
+        tx.commit().unwrap();
+
+        let input = fetch_recon_input(&db, "r5", &rm, "p1").unwrap();
+        assert_eq!(input.tables[0].len(), 1);
+        assert_eq!(input.tables[1].len(), 2);
+        assert_eq!(input.ext.len(), 1);
+        assert_eq!(input.deep.len(), 1);
+        assert_eq!(input.contained.len(), 1);
+
+        db.execute(
+            "UPDATE r5.patient_contained SET resource = '{' WHERE rid = 'p1'",
+            [],
+        )
+        .unwrap();
+        assert!(
+            fetch_recon_input(&db, "r5", &rm, "p1")
+                .expect_err("invalid contained JSON is stored corruption")
+                .to_string()
+                .contains("contained")
+        );
+    }
+
+    #[test]
+    fn keyed_tag_verdicts_only_report_proven_mismatches() {
+        let key = crate::chain::ChainKey::from_hex(
+            "current",
+            "1111111111111111111111111111111111111111111111111111111111111111",
+        )
+        .unwrap();
+        let keys = crate::chain::KeyRing::new(vec![key.clone()]);
+        let pre = b"canonical history row";
+        let valid = crate::chain::mac(&key, None, pre);
+        let mut breaks = Vec::new();
+        let mut countersigns = HashMap::new();
+
+        for stored in [
+            Some(valid.as_str()),
+            None,
+            Some("malformed"),
+            Some("retired:00"),
+        ] {
+            check_mac(
+                &keys,
+                &countersigns,
+                "Patient",
+                "p1",
+                1,
+                stored,
+                None,
+                pre,
+                &mut breaks,
+            );
+        }
+        assert!(breaks.is_empty());
+
+        check_mac(
+            &keys,
+            &countersigns,
+            "Patient",
+            "p1",
+            1,
+            Some("current:00"),
+            None,
+            pre,
+            &mut breaks,
+        );
+        assert_eq!(breaks.len(), 1);
+        assert_eq!(breaks[0].algorithm, "hmac-sha256");
+
+        countersigns.insert(("Patient".into(), "p2".into(), 2), valid);
+        check_mac(
+            &keys,
+            &countersigns,
+            "Patient",
+            "p2",
+            2,
+            None,
+            None,
+            pre,
+            &mut breaks,
+        );
+        assert_eq!(breaks.len(), 1);
+
+        countersigns.insert(("Patient".into(), "p3".into(), 3), "active:00".into());
+        check_mac(
+            &keys,
+            &countersigns,
+            "Patient",
+            "p3",
+            3,
+            None,
+            None,
+            pre,
+            &mut breaks,
+        );
+        assert_eq!(breaks.len(), 1, "a bad countersign cannot invent a break");
+    }
+
+    #[tokio::test]
+    async fn history_target_requires_both_a_known_resource_and_history_table() {
+        let map = Arc::new(map_with_column("patient", "active", "Patient.active"));
+        let dir = scratch("history-target");
+        let store = SqliteStore {
+            path: dir.join("fhir.sqlite"),
+            map,
+            conn: Arc::new(tokio::sync::Mutex::new(
+                Connection::open_in_memory().unwrap(),
+            )),
+            write_gate: Arc::new(tokio::sync::Mutex::new(())),
+            keys: crate::chain::KeyRing::default(),
+        };
+        assert!(matches!(
+            store.hist_target("Missing"),
+            Err(StoreError::Unsupported(_))
+        ));
+        assert!(
+            store
+                .hist_target("Patient")
+                .expect_err("minimal test map has no history table")
+                .to_string()
+                .contains("no history table")
+        );
+        assert!(store.history_canon("Patient", "p1", 1).await.is_err());
+        {
+            let c = store.conn.lock().await;
+            c.execute_batch(
+                "CREATE TABLE r5.fhir_sqlite_countersign (\
+                 rtype TEXT, id TEXT, version_id INTEGER, row_mac TEXT)",
+            )
+            .unwrap();
+        }
+        assert!(store.verify_audit().await.unwrap().is_empty());
+
+        let mut no_history = (*bundled_map("r5")).clone();
+        no_history.resources.retain(|name, _| name == "Patient");
+        no_history
+            .resources
+            .get_mut("Patient")
+            .unwrap()
+            .tables
+            .retain(|table| table.kind != TableKind::History);
+        let no_history = SqliteStore::open(dir.join("no-history.sqlite"), Arc::new(no_history))
+            .await
+            .unwrap();
+        no_history.init("no-history").await.unwrap();
+        no_history.upgrade("no-history-again", false).await.unwrap();
+        let patient = serde_json::json!({
+            "resourceType": "Patient",
+            "id": "no-history",
+            "active": true
+        });
+        assert!(
+            no_history
+                .put(&patient, &crate::Audit::default())
+                .await
+                .expect_err("put requires an audit-history table")
+                .to_string()
+                .contains("has no history table")
+        );
+    }
+
+    #[tokio::test]
+    async fn blocking_task_panics_become_store_errors() {
+        let err = tokio::task::spawn_blocking(|| panic!("intentional test panic"))
+            .await
+            .expect_err("task must panic");
+        assert!(join_err(err).to_string().contains("blocking task failed"));
+        assert!(matches!(
+            sqlite_err(rusqlite::Error::InvalidQuery),
+            StoreError::Other(message) if !message.is_empty()
+        ));
+        assert_eq!(Ok::<_, rusqlite::Error>(7).store().unwrap(), 7);
+        assert!(Err::<(), _>(rusqlite::Error::InvalidQuery).store().is_err());
+    }
+
+    #[tokio::test]
+    async fn store_lifecycle_accessors_and_empty_work_paths_are_observable() {
+        let dir = scratch("lifecycle");
+        let path = dir.join("nested").join("clinical.sqlite");
+        let mut map = map_with_column("patient", "active", "Patient.active");
+        map.resources.clear();
+        let map = Arc::new(map);
+        let store = SqliteStore::open(&path, Arc::clone(&map)).await.unwrap();
+        let memory = SqliteStore::open(":memory:", Arc::clone(&map))
+            .await
+            .unwrap();
+        drop(memory);
+
+        assert_eq!(store.path(), path);
+        assert_eq!(store.schema(), "r5");
+        assert!(Arc::ptr_eq(store.map(), &map));
+        assert_eq!(store.chain_key_id(), None);
+        assert_eq!(
+            store.attached_path("r5"),
+            dir.join("nested/clinical-r5.sqlite")
+        );
+        assert_eq!(store.backfill_norm().await.unwrap(), 0);
+        assert_eq!(store.installed_checksum().await.unwrap(), None);
+        assert_eq!(store.table_count().await.unwrap(), 0);
+        store.ping().await.unwrap();
+
+        let keyed = store.with_chain_keys(crate::chain::KeyRing::new(vec![
+            crate::chain::ChainKey::from_hex(
+                "active",
+                "1111111111111111111111111111111111111111111111111111111111111111",
+            )
+            .unwrap(),
+        ]));
+        assert_eq!(keyed.chain_key_id().as_deref(), Some("active"));
+        keyed.drop_schema().await.unwrap();
+        keyed.drop_schema().await.unwrap();
+
+        let fallback = SqliteStore {
+            path: PathBuf::from("/"),
+            map,
+            conn: Arc::new(tokio::sync::Mutex::new(
+                Connection::open_in_memory().unwrap(),
+            )),
+            write_gate: Arc::new(tokio::sync::Mutex::new(())),
+            keys: crate::chain::KeyRing::default(),
+        };
+        assert_eq!(
+            fallback.attached_path("r5"),
+            PathBuf::from("/fhir-r5.sqlite")
+        );
+    }
+
+    #[tokio::test]
+    async fn open_and_schema_helpers_surface_real_storage_errors() {
+        let dir = scratch("errors");
+        let blocker = dir.join("not-a-directory");
+        std::fs::write(&blocker, b"file").unwrap();
+        let map = Arc::new(map_with_column("patient", "active", "Patient.active"));
+        let err = SqliteStore::open(blocker.join("store.sqlite"), Arc::clone(&map))
+            .await
+            .err()
+            .expect("a file cannot be used as a parent directory");
+        assert!(!err.to_string().is_empty());
+        assert!(SqliteStore::open(&dir, map).await.is_err());
+
+        let mut db = Connection::open_in_memory().unwrap();
+        db.execute_batch("ATTACH DATABASE ':memory:' AS r5")
+            .unwrap();
+        let tx = db.transaction().unwrap();
+        assert!(installed_columns(&tx, "bad\"schema", "table").is_err());
+
+        let mut denied = Connection::open_in_memory().unwrap();
+        deny_reads_from(&mut denied, "journal_mode");
+        assert!(configure_connection(denied).is_err());
+
+        let reused = scratch("reused");
+        std::fs::write(reused.join("old"), b"old").unwrap();
+        let reused = scratch("reused");
+        assert!(!reused.join("old").exists());
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn corrupted_schema_objects_surface_specific_read_and_audit_errors() {
+        let dir = scratch("fault-injection");
+        let store = SqliteStore::open(dir.join("fhir.sqlite"), bundled_map("r5"))
+            .await
+            .unwrap();
+        store.init("fault-injection").await.unwrap();
+
+        {
+            let mut c = store.conn.lock().await;
+            deny_reads_from(&mut c, "sqlite_master");
+        }
+        assert!(store.installed_checksum().await.is_err());
+        assert!(store.table_count().await.is_err());
+        assert!(store.upgrade("denied-metadata", false).await.is_err());
+        {
+            let mut c = store.conn.lock().await;
+            allow_all(&mut c);
+        }
+
+        let mut probe_map = (*bundled_map("r5")).clone();
+        probe_map.resources.clear();
+        let probe = SqliteStore::open(dir.join("probe.sqlite"), Arc::new(probe_map))
+            .await
+            .unwrap();
+        probe.attach().await.unwrap();
+        {
+            let mut c = probe.conn.lock().await;
+            deny_reads_from(&mut c, "pragma_database_list");
+        }
+        assert!(probe.attach().await.is_err());
+        assert!(probe.drop_schema().await.is_err());
+        {
+            let mut c = probe.conn.lock().await;
+            allow_all(&mut c);
+        }
+        probe.drop_schema().await.unwrap();
+
+        // An old audit envelope with one missing column must attempt a real
+        // additive repair. Denying ALTER proves the repair failure is
+        // contextual and transactional; removing the denial then heals it.
+        {
+            let c = store.conn.lock().await;
+            c.execute_batch("ALTER TABLE r5.patient_history DROP COLUMN reason")
+                .unwrap();
+        }
+        {
+            use rusqlite::hooks::{AuthAction, AuthContext, Authorization};
+            let mut c = store.conn.lock().await;
+            c.authorizer(Some(|ctx: AuthContext<'_>| match ctx.action {
+                AuthAction::AlterTable {
+                    table_name: "patient_history",
+                    ..
+                } => Authorization::Deny,
+                _ => Authorization::Allow,
+            }))
+            .unwrap();
+        }
+        assert!(store.upgrade("denied-audit-column", false).await.is_err());
+        {
+            let mut c = store.conn.lock().await;
+            allow_all(&mut c);
+        }
+        store.upgrade("restored-audit-column", false).await.unwrap();
+
+        // Reconciliation is also inside the upgrade transaction. Remove one
+        // schema-wide object, deny its recreation, then prove a retry heals it.
+        {
+            let c = store.conn.lock().await;
+            c.execute_batch("DROP TABLE r5.fhir_sqlite_access_log")
+                .unwrap();
+        }
+        {
+            use rusqlite::hooks::{AuthAction, AuthContext, Authorization};
+            let mut c = store.conn.lock().await;
+            c.authorizer(Some(|ctx: AuthContext<'_>| match ctx.action {
+                AuthAction::CreateTable {
+                    table_name: "fhir_sqlite_access_log",
+                } => Authorization::Deny,
+                _ => Authorization::Allow,
+            }))
+            .unwrap();
+        }
+        assert!(store.upgrade("denied-reconcile", false).await.is_err());
+        {
+            let mut c = store.conn.lock().await;
+            allow_all(&mut c);
+        }
+        store.upgrade("restored-reconcile", false).await.unwrap();
+
+        let mut reduced_map = (*bundled_map("r5")).clone();
+        reduced_map.resources.remove("Basic").unwrap();
+        let reduced = SqliteStore::open(dir.join("fhir.sqlite"), Arc::new(reduced_map))
+            .await
+            .unwrap();
+        {
+            use rusqlite::hooks::{AuthAction, AuthContext, Authorization};
+            let mut c = reduced.conn.lock().await;
+            c.authorizer(Some(|ctx: AuthContext<'_>| match ctx.action {
+                AuthAction::DropTable { .. } => Authorization::Deny,
+                _ => Authorization::Allow,
+            }))
+            .unwrap();
+        }
+        assert!(reduced.upgrade("denied-drop", true).await.is_err());
+        {
+            let mut c = reduced.conn.lock().await;
+            allow_all(&mut c);
+        }
+        drop(reduced);
+
+        let mut moved_map = (*bundled_map("r5")).clone();
+        let patient_map = moved_map.resources.get_mut("Patient").unwrap();
+        let position = patient_map.tables[0]
+            .cols
+            .iter()
+            .position(|column| column.name == "multiple_birth_boolean")
+            .unwrap();
+        let column = patient_map.tables[0].cols.remove(position);
+        patient_map.tables.push(Table {
+            name: "patient_multiple_birth_moved".into(),
+            kind: TableKind::Elem,
+            path: "Patient.multipleBirth".into(),
+            cols: vec![column],
+            norm_cols: Vec::new(),
+            adjunct_cols: Vec::new(),
+        });
+        let moved = SqliteStore::open(dir.join("fhir.sqlite"), Arc::new(moved_map))
+            .await
+            .unwrap();
+        {
+            let mut c = moved.conn.lock().await;
+            deny_reads_from(&mut c, "patient");
+        }
+        assert!(moved.upgrade("denied-moved-read", true).await.is_err());
+        {
+            let mut c = moved.conn.lock().await;
+            allow_all(&mut c);
+        }
+        drop(moved);
+
+        let patient = serde_json::json!({
+            "resourceType": "Patient",
+            "id": "fault-patient",
+            "active": true,
+            "managingOrganization": {"reference": "Organization/fault-org"}
+        });
+        store.put(&patient, &crate::Audit::default()).await.unwrap();
+        let orphan = serde_json::json!({
+            "resourceType": "Patient",
+            "id": "missing-history",
+            "active": false
+        });
+        store.put(&orphan, &crate::Audit::default()).await.unwrap();
+
+        assert!(matches!(
+            store.history_canon("Missing", "x", 1).await,
+            Err(StoreError::Unsupported(_))
+        ));
+
+        {
+            let c = store.conn.lock().await;
+            c.execute(
+                "INSERT INTO r5.fhir_sqlite_countersign \
+                 (rtype,id,version_id,row_mac,signed_at,actor,reason) \
+                 VALUES ('Patient','fault-patient',1,'retired:00','2024-01-01T00:00:00.000000Z','tester','coverage')",
+                [],
+            )
+            .unwrap();
+            c.execute(
+                "INSERT INTO r5.fhir_sqlite_erasure (token) VALUES ('fault-injection')",
+                [],
+            )
+            .unwrap();
+            c.execute(
+                "DELETE FROM r5.patient_history WHERE id='missing-history'",
+                [],
+            )
+            .unwrap();
+            c.execute(
+                "DELETE FROM r5.fhir_sqlite_erasure WHERE token='fault-injection'",
+                [],
+            )
+            .unwrap();
+        }
+        assert_eq!(
+            store
+                .delete("Patient", "missing-history", &crate::Audit::default())
+                .await
+                .unwrap(),
+            Some(1),
+            "a damaged store with a live row but no history starts a fresh tombstone chain"
+        );
+        let subscriber = tracing_subscriber::fmt()
+            .with_test_writer()
+            .with_max_level(tracing::Level::TRACE)
+            .finish();
+        let _guard = tracing::subscriber::set_default(subscriber);
+        let mut direct_breaks = Vec::new();
+        let preimage = b"coverage-preimage";
+        check_mac(
+            &crate::chain::KeyRing::default(),
+            &HashMap::new(),
+            "Patient",
+            "unknown-key",
+            1,
+            Some("retired:00"),
+            None,
+            preimage,
+            &mut direct_breaks,
+        );
+        check_mac(
+            &crate::chain::KeyRing::default(),
+            &HashMap::new(),
+            "Patient",
+            "malformed-tag",
+            1,
+            Some("not-a-tag"),
+            None,
+            preimage,
+            &mut direct_breaks,
+        );
+        assert!(direct_breaks.is_empty());
+        assert!(store.verify_audit().await.unwrap().is_empty());
+        store.emit_checkpoint("clean").await;
+
+        {
+            let c = store.conn.lock().await;
+            c.execute(
+                "INSERT INTO r5.fhir_sqlite_countersign \
+                 (rtype,id,version_id,row_mac,signed_at,actor,reason) \
+                 VALUES ('Patient','bad-version','not-an-integer','retired:00','2024-01-01T00:00:00.000000Z','tester','coverage')",
+                [],
+            )
+            .unwrap();
+        }
+        assert!(store.verify_audit().await.is_err());
+        {
+            let c = store.conn.lock().await;
+            c.execute(
+                "DELETE FROM r5.fhir_sqlite_countersign WHERE id='bad-version'",
+                [],
+            )
+            .unwrap();
+        }
+
+        {
+            let c = store.conn.lock().await;
+            let trigger: String = c
+                .query_row(
+                    "SELECT name FROM r5.sqlite_master WHERE type='trigger' \
+                     AND tbl_name='patient_history' AND name LIKE '%upd%'",
+                    [],
+                    |row| row.get(0),
+                )
+                .unwrap();
+            c.execute_batch(&format!("DROP TRIGGER r5.\"{}\"", escape_ident(&trigger)))
+                .unwrap();
+            c.execute(
+                "UPDATE r5.patient_history SET resource = replace(resource, '\"active\":true', '\"active\":false') \
+                 WHERE id='fault-patient' AND version_id=1",
+                [],
+            )
+            .unwrap();
+        }
+        assert!(!store.verify_audit().await.unwrap().is_empty());
+        store.emit_checkpoint("tampered").await;
+
+        {
+            let c = store.conn.lock().await;
+            c.execute_batch("DROP TABLE r5.fhir_sqlite_countersign")
+                .unwrap();
+        }
+        assert!(store.verify_audit().await.is_err());
+        store.emit_checkpoint("missing-countersigns").await;
+
+        {
+            let c = store.conn.lock().await;
+            c.execute_batch("DROP TABLE r5.patient").unwrap();
+        }
+        assert!(store.get("Patient", "fault-patient").await.is_err());
+        assert!(store.put(&patient, &crate::Audit::default()).await.is_err());
+        assert!(
+            store
+                .delete("Patient", "fault-patient", &crate::Audit::default())
+                .await
+                .is_err()
+        );
+        let params = vec![("active".to_string(), "true".to_string())];
+        assert!(
+            store
+                .search_full("Patient", &params, 10, 0, &[], true)
+                .await
+                .expect_err("count must fail after the base table is removed")
+                .to_string()
+                .contains("count:")
+        );
+        assert!(
+            store
+                .search_full("Patient", &params, 10, 0, &[], false)
+                .await
+                .expect_err("prepare must fail after the base table is removed")
+                .to_string()
+                .contains("preparing search:")
+        );
+
+        {
+            let c = store.conn.lock().await;
+            c.execute_batch("DROP TABLE r5.fhir_sqlite_access_log")
+                .unwrap();
+        }
+        assert!(
+            store
+                .access_log_for("Patient", "fault-patient")
+                .await
+                .is_err()
+        );
+    }
+}
+
 /// Double any embedded quote, so an identifier cannot terminate its own quoting.
 ///
 /// Schema names come from the generator, not from a request, so this is
@@ -955,6 +2102,36 @@ fn escape_ident(s: &str) -> String {
 
 fn sqlite_err(e: rusqlite::Error) -> StoreError {
     StoreError::Other(e.to_string())
+}
+
+/// Apply the durability and concurrency contract to a newly opened handle.
+///
+/// Kept separate from filesystem opening so each pragma failure is testable
+/// with SQLite's authorizer hook; otherwise `open` can only observe failures
+/// that happen before a connection exists.
+fn configure_connection(c: Connection) -> Result<Connection, StoreError> {
+    c.pragma_update(None, "foreign_keys", "ON").store()?;
+    // Returns a row, so it is a query rather than an update.
+    let _: String = c
+        .query_row("PRAGMA journal_mode=WAL", [], |r| r.get(0))
+        .store()?;
+    c.pragma_update(None, "busy_timeout", 30_000).store()?;
+    c.pragma_update(None, "synchronous", "FULL").store()?;
+    Ok(c)
+}
+
+/// Convert a driver result without repeating an error-only closure at every
+/// call site. Besides keeping the adapter in one testable place, this avoids
+/// LLVM attributing otherwise-successful statements solely to the closure's
+/// never-taken error edge.
+trait SqliteResultExt<T> {
+    fn store(self) -> Result<T, StoreError>;
+}
+
+impl<T> SqliteResultExt<T> for rusqlite::Result<T> {
+    fn store(self) -> Result<T, StoreError> {
+        self.map_err(sqlite_err)
+    }
 }
 
 fn join_err(e: tokio::task::JoinError) -> StoreError {
@@ -976,11 +2153,9 @@ fn installed_columns(
         .prepare(&format!(
             "SELECT name FROM \"{schema}\".pragma_table_info(?1)"
         ))
-        .map_err(sqlite_err)?;
-    let rows = stmt
-        .query_map([table], |r| r.get::<_, String>(0))
-        .map_err(sqlite_err)?;
-    rows.collect::<Result<_, _>>().map_err(sqlite_err)
+        .store()?;
+    let rows = stmt.query_map([table], |r| r.get::<_, String>(0)).store()?;
+    rows.collect::<Result<_, _>>().store()
 }
 
 /// The column name in an `ALTER TABLE … ADD COLUMN "name" …` statement.
@@ -1021,6 +2196,48 @@ fn hex_encode(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
 
+fn map_asset_hex(map: &RelMap) -> Result<String, StoreError> {
+    map_asset_hex_with(|| map.to_gz_bytes())
+}
+
+fn map_asset_hex_with(
+    serialize: impl FnOnce() -> Result<Vec<u8>, serde_json::Error>,
+) -> Result<String, StoreError> {
+    serialize()
+        .map(|bytes| hex_encode(&bytes))
+        .map_err(|error| StoreError::Other(error.to_string()))
+}
+
+fn verify_reshred_identity(
+    rtype: &str,
+    id: &str,
+    before: &serde_json::Value,
+    after: &serde_json::Value,
+) -> Result<(), StoreError> {
+    if fhir_sqlite_map::canon::canonicalize(before) != fhir_sqlite_map::canon::canonicalize(after) {
+        return Err(StoreError::Other(format!(
+            "re-shred verification failed for {rtype}/{id}: the new-shape reconstruction is not \
+             byte-identical; the transaction is rolled back"
+        )));
+    }
+    Ok(())
+}
+
+fn ensure_moved_source_empty(
+    has_data: i64,
+    table: &str,
+    column: &str,
+    destination: &str,
+) -> Result<(), StoreError> {
+    if has_data != 0 {
+        return Err(StoreError::Other(format!(
+            "re-shred left data behind in {table}.{column} (destined for {destination}); the \
+             transaction is rolled back"
+        )));
+    }
+    Ok(())
+}
+
 /// Everything `reconstruct` needs for one resource, read under `rm` — the
 /// caller's choice of map, not necessarily the store's own. `get` reads
 /// under the bundled map; `O10.4c`'s re-shred migration reads under the
@@ -1032,7 +2249,7 @@ fn fetch_recon_input(
     id: &str,
 ) -> Result<fhir_sqlite_map::reconstruct::ReconIn, StoreError> {
     use fhir_sqlite_map::model::TableKind;
-    use fhir_sqlite_map::reconstruct::{InRow, ReconIn};
+    use fhir_sqlite_map::reconstruct::ReconIn;
     let mut input = ReconIn {
         tables: vec![Vec::new(); rm.tables.len()],
         ..Default::default()
@@ -1066,32 +2283,8 @@ fn fetch_recon_input(
                     select.join(", "),
                     t.name
                 );
-                let mut st = c.prepare(&sql).map_err(sqlite_err)?;
-                let rows = st
-                    .query_map([&id], |r| {
-                        let mut ords = Vec::new();
-                        let mut off = 0usize;
-                        if want_ords {
-                            let img: String = r.get(0)?;
-                            ords = parse_ords(&img).unwrap_or_default();
-                            off = 1;
-                        }
-                        let mut map = std::collections::HashMap::new();
-                        for (i, (name, ty)) in cols.iter().enumerate() {
-                            let idx = i + off;
-                            // `?` rather than a discarded Result: a cell
-                            // the engine cannot render is an integrity
-                            // error, not an absent element (F-20).
-                            if let Some(v) = cell_text(r.get_ref(idx)?, *ty, idx, name)? {
-                                map.insert(name.clone(), v);
-                            }
-                        }
-                        Ok(InRow { ords, cols: map })
-                    })
-                    .map_err(sqlite_err)?;
-                for row in rows {
-                    input.tables[ti].push(row.map_err(sqlite_err)?);
-                }
+                let mut st = c.prepare(&sql).store()?;
+                input.tables[ti] = query_recon_rows(&mut st, id, &cols, want_ords)?;
             }
             TableKind::Ext => {
                 let mut st = c
@@ -1101,28 +2294,8 @@ fn fetch_recon_input(
                          FROM \"{s}\".\"{}\" WHERE \"rid\" = ?1",
                         t.name
                     ))
-                    .map_err(sqlite_err)?;
-                let rows = st
-                    .query_map([&id], |r| {
-                        Ok(fhir_sqlite_map::shred::ExtRow {
-                            path: r.get(0)?,
-                            ords: parse_ords(&r.get::<_, String>(1)?).unwrap_or_default(),
-                            modifier: r.get::<_, i64>(2)? != 0,
-                            ext_ord: r.get(3)?,
-                            url: r.get(4)?,
-                            leaf: r.get(5)?,
-                            val: leaf_from_cols(
-                                &r.get::<_, String>(6)?,
-                                r.get(7)?,
-                                r.get(8)?,
-                                r.get::<_, Option<i64>>(9)?,
-                            ),
-                        })
-                    })
-                    .map_err(sqlite_err)?;
-                for row in rows {
-                    input.ext.push(row.map_err(sqlite_err)?);
-                }
+                    .store()?;
+                input.ext.extend(query_ext_rows(&mut st, id)?);
             }
             TableKind::Deep => {
                 let mut st = c
@@ -1132,25 +2305,8 @@ fn fetch_recon_input(
                          FROM \"{s}\".\"{}\" WHERE \"rid\" = ?1",
                         t.name
                     ))
-                    .map_err(sqlite_err)?;
-                let rows = st
-                    .query_map([&id], |r| {
-                        Ok(fhir_sqlite_map::shred::DeepRow {
-                            path: r.get(0)?,
-                            ords: parse_ords(&r.get::<_, String>(1)?).unwrap_or_default(),
-                            leaf: r.get(2)?,
-                            val: leaf_from_cols(
-                                &r.get::<_, String>(3)?,
-                                r.get(4)?,
-                                r.get(5)?,
-                                r.get::<_, Option<i64>>(6)?,
-                            ),
-                        })
-                    })
-                    .map_err(sqlite_err)?;
-                for row in rows {
-                    input.deep.push(row.map_err(sqlite_err)?);
-                }
+                    .store()?;
+                input.deep.extend(query_deep_rows(&mut st, id)?);
             }
             TableKind::Contained => {
                 let mut st = c
@@ -1158,26 +2314,108 @@ fn fetch_recon_input(
                         "SELECT \"ord\", \"resource\" FROM \"{s}\".\"{}\" WHERE \"rid\" = ?1",
                         t.name
                     ))
-                    .map_err(sqlite_err)?;
-                let rows = st
-                    .query_map([&id], |r| {
-                        let ord: i16 = r.get(0)?;
-                        let raw: String = r.get(1)?;
-                        Ok((ord, raw))
-                    })
-                    .map_err(sqlite_err)?;
-                for row in rows {
-                    let (ord, raw) = row.map_err(sqlite_err)?;
-                    let v = serde_json::from_str(&raw)
-                        .map_err(|e| StoreError::Other(format!("contained: {e}")))?;
-                    input.contained.push((ord, v));
-                }
+                    .store()?;
+                input.contained.extend(query_contained_rows(&mut st, id)?);
             }
             TableKind::History => {}
         }
     }
 
     Ok(input)
+}
+
+fn query_recon_rows(
+    statement: &mut rusqlite::Statement<'_>,
+    id: &str,
+    columns: &[(String, ColTy)],
+    want_ords: bool,
+) -> Result<Vec<fhir_sqlite_map::reconstruct::InRow>, StoreError> {
+    let rows = statement
+        .query_map([id], |row| {
+            let mut ords = Vec::new();
+            let mut offset = 0usize;
+            if want_ords {
+                let image: String = row.get(0)?;
+                ords = parse_ords(&image).unwrap_or_default();
+                offset = 1;
+            }
+            let mut values = std::collections::HashMap::new();
+            for (index, (name, ty)) in columns.iter().enumerate() {
+                let index = index + offset;
+                if let Some(value) = cell_text(row.get_ref(index)?, *ty, index, name)? {
+                    values.insert(name.clone(), value);
+                }
+            }
+            Ok(fhir_sqlite_map::reconstruct::InRow { ords, cols: values })
+        })
+        .store()?;
+    rows.collect::<Result<_, _>>().store()
+}
+
+fn query_ext_rows(
+    statement: &mut rusqlite::Statement<'_>,
+    id: &str,
+) -> Result<Vec<fhir_sqlite_map::shred::ExtRow>, StoreError> {
+    let rows = statement
+        .query_map([id], |row| {
+            Ok(fhir_sqlite_map::shred::ExtRow {
+                path: row.get(0)?,
+                ords: parse_ords(&row.get::<_, String>(1)?).unwrap_or_default(),
+                modifier: row.get::<_, i64>(2)? != 0,
+                ext_ord: row.get(3)?,
+                url: row.get(4)?,
+                leaf: row.get(5)?,
+                val: leaf_from_cols(
+                    &row.get::<_, String>(6)?,
+                    row.get(7)?,
+                    row.get(8)?,
+                    row.get::<_, Option<i64>>(9)?,
+                ),
+            })
+        })
+        .store()?;
+    rows.collect::<Result<_, _>>().store()
+}
+
+fn query_deep_rows(
+    statement: &mut rusqlite::Statement<'_>,
+    id: &str,
+) -> Result<Vec<fhir_sqlite_map::shred::DeepRow>, StoreError> {
+    let rows = statement
+        .query_map([id], |row| {
+            Ok(fhir_sqlite_map::shred::DeepRow {
+                path: row.get(0)?,
+                ords: parse_ords(&row.get::<_, String>(1)?).unwrap_or_default(),
+                leaf: row.get(2)?,
+                val: leaf_from_cols(
+                    &row.get::<_, String>(3)?,
+                    row.get(4)?,
+                    row.get(5)?,
+                    row.get::<_, Option<i64>>(6)?,
+                ),
+            })
+        })
+        .store()?;
+    rows.collect::<Result<_, _>>().store()
+}
+
+fn query_contained_rows(
+    statement: &mut rusqlite::Statement<'_>,
+    id: &str,
+) -> Result<Vec<(i16, serde_json::Value)>, StoreError> {
+    let rows = statement
+        .query_map([id], |row| {
+            Ok((row.get::<_, i16>(0)?, row.get::<_, String>(1)?))
+        })
+        .store()?;
+    let mut values = Vec::new();
+    for row in rows {
+        let (ordinal, raw) = row.store()?;
+        let value = serde_json::from_str(&raw)
+            .map_err(|error| StoreError::Other(format!("contained: {error}")))?;
+        values.push((ordinal, value));
+    }
+    Ok(values)
 }
 
 /// `O10.4b`: dropped columns — or columns of dropped tables — whose element
@@ -1319,7 +2557,7 @@ impl SqliteStore {
             let mut c = conn.blocking_lock();
             let tx = c
                 .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
-                .map_err(sqlite_err)?;
+                .store()?;
             let s = escape_ident(&schema);
 
             // Previous version and chain tips, from history rather than the base
@@ -1347,13 +2585,13 @@ impl SqliteStore {
                     [&id],
                     |r| r.get(0),
                 )
-                .map_err(sqlite_err)?;
+                .store()?;
             if existed > 0 {
                 tx.execute(
                     &format!("DELETE FROM \"{s}\".\"{base}\" WHERE \"id\" = ?1"),
                     [&id],
                 )
-                .map_err(sqlite_err)?;
+                .store()?;
             }
 
             plan.apply(&tx, &s, version_id, &ts)?;
@@ -1400,9 +2638,9 @@ impl SqliteStore {
                     &row_mac,
                 ],
             )
-            .map_err(sqlite_err)?;
+            .store()?;
 
-            tx.commit().map_err(sqlite_err)?;
+            tx.commit().store()?;
             Ok(Put {
                 id,
                 version_id,
@@ -1459,7 +2697,7 @@ impl SqliteStore {
             // Deferred rather than immediate: this is read-only and must not
             // take a write lock, and a deferred transaction pins its snapshot
             // at the first statement — which is the one below.
-            let tx = guard.unchecked_transaction().map_err(sqlite_err)?;
+            let tx = guard.unchecked_transaction().store()?;
             let c = &*tx;
 
             let s = escape_ident(&schema);
@@ -1471,7 +2709,7 @@ impl SqliteStore {
                     [&id],
                     |r| r.get(0),
                 )
-                .map_err(sqlite_err)?;
+                .store()?;
             if present == 0 {
                 return Ok(None);
             }
@@ -1892,35 +3130,8 @@ impl SqliteStore {
                      FROM \"{}\".\"{hist}\" WHERE \"id\" = ?1 ORDER BY \"version_id\" DESC",
                     escape_ident(&schema)
                 ))
-                .map_err(sqlite_err)?;
-            let rows = st
-                .query_map([&id], |r| {
-                    Ok((
-                        r.get::<_, i64>(0)?,
-                        r.get::<_, String>(1)?,
-                        r.get::<_, String>(2)?,
-                        r.get::<_, Option<String>>(3)?,
-                    ))
-                })
-                .map_err(sqlite_err)?;
-            let mut out = Vec::new();
-            for row in rows {
-                let (version_id, last_updated, op, raw) = row.map_err(sqlite_err)?;
-                let resource = match raw {
-                    Some(t) => Some(
-                        serde_json::from_str(&t)
-                            .map_err(|e| StoreError::Other(format!("history {version_id}: {e}")))?,
-                    ),
-                    None => None,
-                };
-                out.push(crate::HistEntry {
-                    version_id,
-                    last_updated,
-                    op: op.chars().next().unwrap_or('?'),
-                    resource,
-                });
-            }
-            Ok(out)
+                .store()?;
+            query_history_entries(&mut st, &id)
         })
         .await
         .map_err(join_err)?
@@ -1975,16 +3186,16 @@ impl SqliteStore {
                          \"resource\" FROM \"{s}\".\"{hist}\"{filter} \
                          ORDER BY \"last_updated\" DESC, \"version_id\" DESC LIMIT {count}"
                     );
-                    let mut st = c.prepare(&sql).map_err(sqlite_err)?;
+                    let mut st = c.prepare(&sql).store()?;
                     let map_row = |r: &rusqlite::Row<'_>| -> rusqlite::Result<Raw> {
                         Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?))
                     };
                     let rows: Vec<rusqlite::Result<Raw>> = match &since {
-                        Some(v) => st.query_map([v], map_row).map_err(sqlite_err)?.collect(),
-                        None => st.query_map([], map_row).map_err(sqlite_err)?.collect(),
+                        Some(v) => st.query_map([v], map_row).store()?.collect(),
+                        None => st.query_map([], map_row).store()?.collect(),
                     };
                     for row in rows {
-                        let (id, version_id, last_updated, op, raw) = row.map_err(sqlite_err)?;
+                        let (id, version_id, last_updated, op, raw) = row.store()?;
                         let resource = match raw {
                             Some(txt) => Some(serde_json::from_str(&txt).map_err(|e| {
                                 StoreError::Other(format!("history {t}/{id}/{version_id}: {e}"))
@@ -2106,7 +3317,7 @@ impl SqliteStore {
             let mut c = conn.blocking_lock();
             let tx = c
                 .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
-                .map_err(sqlite_err)?;
+                .store()?;
             let s = escape_ident(&schema);
 
             let present: i64 = tx
@@ -2115,7 +3326,7 @@ impl SqliteStore {
                     [&id],
                     |r| r.get(0),
                 )
-                .map_err(sqlite_err)?;
+                .store()?;
             if present == 0 {
                 return Ok(None);
             }
@@ -2139,7 +3350,7 @@ impl SqliteStore {
                 &format!("DELETE FROM \"{s}\".\"{base}\" WHERE \"id\" = ?1"),
                 [&id],
             )
-            .map_err(sqlite_err)?;
+            .store()?;
 
             // No resource in the preimage: there is no content to commit to, and
             // an empty string is what `preimage` substitutes for `None`, so a
@@ -2176,9 +3387,9 @@ impl SqliteStore {
                     &row_mac,
                 ],
             )
-            .map_err(sqlite_err)?;
+            .store()?;
 
-            tx.commit().map_err(sqlite_err)?;
+            tx.commit().store()?;
             Ok(Some(version_id))
         })
         .await
@@ -2217,30 +3428,13 @@ impl SqliteStore {
             // Counter-signatures, keyed by the row they vouch for. Read up front:
             // there is one small table for the whole schema, and querying it per
             // history row would turn a linear walk into a quadratic one.
-            let mut countersigns: std::collections::HashMap<(String, String, i64), String> =
-                std::collections::HashMap::new();
-            {
-                let mut st = c
-                    .prepare(&format!(
-                        "SELECT \"rtype\", \"id\", \"version_id\", \"row_mac\" \
-                         FROM \"{s}\".\"fhir_sqlite_countersign\""
-                    ))
-                    .map_err(sqlite_err)?;
-                let rows = st
-                    .query_map([], |r| {
-                        Ok((
-                            r.get::<_, String>(0)?,
-                            r.get::<_, String>(1)?,
-                            r.get::<_, i64>(2)?,
-                            r.get::<_, String>(3)?,
-                        ))
-                    })
-                    .map_err(sqlite_err)?;
-                for row in rows {
-                    let (rt, id, v, mac) = row.map_err(sqlite_err)?;
-                    countersigns.insert((rt, id, v), mac);
-                }
-            }
+            let mut st = c
+                .prepare(&format!(
+                    "SELECT \"rtype\", \"id\", \"version_id\", \"row_mac\" \
+                     FROM \"{s}\".\"fhir_sqlite_countersign\""
+                ))
+                .store()?;
+            let countersigns = query_countersigns(&mut st)?;
 
             for rm in map.resources.values() {
                 let Some((_, hist)) = rm.find_table(TableKind::History) else {
@@ -2254,7 +3448,7 @@ impl SqliteStore {
                          FROM \"{s}\".\"{}\" ORDER BY \"id\", \"version_id\"",
                         hist.name
                     ))
-                    .map_err(sqlite_err)?;
+                    .store()?;
 
                 // Ordered by (id, version_id), so each resource's chain is walked
                 // in order and the tip resets when the id changes.
@@ -2262,23 +3456,7 @@ impl SqliteStore {
                 let mut prior_256: Option<Vec<u8>> = None;
                 let mut prior_3: Option<Vec<u8>> = None;
 
-                let rows = st
-                    .query_map([], |r| {
-                        Ok((
-                            r.get::<_, String>(0)?,
-                            r.get::<_, i64>(1)?,
-                            r.get::<_, String>(2)?,
-                            r.get::<_, String>(3)?,
-                            r.get::<_, Option<String>>(4)?,
-                            r.get::<_, String>(5)?,
-                            r.get::<_, Option<Vec<u8>>>(6)?,
-                            r.get::<_, Option<Vec<u8>>>(7)?,
-                            r.get::<_, Option<Vec<u8>>>(8)?,
-                            r.get::<_, Option<Vec<u8>>>(9)?,
-                            r.get::<_, Option<String>>(10)?,
-                        ))
-                    })
-                    .map_err(sqlite_err)?;
+                let rows = query_audit_rows(&mut st)?;
 
                 for row in rows {
                     let (
@@ -2293,7 +3471,7 @@ impl SqliteStore {
                         prev_3,
                         row_3,
                         row_mac,
-                    ) = row.map_err(sqlite_err)?;
+                    ) = row;
                     if id != cur {
                         cur = id.clone();
                         prior_256 = None;
@@ -2557,15 +3735,7 @@ impl SqliteStore {
             let mut st = c
                 .prepare(&q.sql)
                 .map_err(|e| StoreError::Other(format!("preparing search: {e}\n{}", q.sql)))?;
-            let rows = st
-                .query_map(rusqlite::params_from_iter(q.binds.iter()), |r| {
-                    r.get::<_, String>(0)
-                })
-                .map_err(|e| StoreError::Other(format!("search: {e}\n{}", q.sql)))?;
-            let mut ids = Vec::new();
-            for row in rows {
-                ids.push(row.map_err(sqlite_err)?);
-            }
+            let ids = query_search_ids(&mut st, &q.binds, &q.sql)?;
             Ok(crate::SearchOutcome { ids, total })
         })
         .await
@@ -2617,7 +3787,7 @@ impl SqliteStore {
                     &rec.audit.reason,
                 ],
             )
-            .map_err(sqlite_err)?;
+            .store()?;
             Ok(())
         })
         .await
@@ -2639,7 +3809,7 @@ impl SqliteStore {
                 [],
                 |r| r.get(0),
             )
-            .map_err(sqlite_err)
+            .store()
         })
         .await
         .map_err(join_err)?
@@ -2687,7 +3857,7 @@ impl SqliteStore {
             let mut c = conn.blocking_lock();
             let tx = c
                 .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
-                .map_err(sqlite_err)?;
+                .store()?;
             let s = escape_ident(&schema);
 
             let tip: Option<ChainTip> = tx
@@ -2713,19 +3883,19 @@ impl SqliteStore {
                 &format!("INSERT INTO \"{s}\".\"fhir_sqlite_erasure\" (\"token\") VALUES (?1)"),
                 [&id],
             )
-            .map_err(sqlite_err)?;
+            .store()?;
 
             tx.execute(
                 &format!("DELETE FROM \"{s}\".\"{base}\" WHERE \"id\" = ?1"),
                 [&id],
             )
-            .map_err(sqlite_err)?;
+            .store()?;
             let erased = tx
                 .execute(
                     &format!("DELETE FROM \"{s}\".\"{hist}\" WHERE \"id\" = ?1"),
                     [&id],
                 )
-                .map_err(sqlite_err)? as u64;
+                .store()? as u64;
 
             let tomb_version = last_version + 1;
             let pre = crate::chain::preimage(&id, tomb_version, &ts, "X", None, &audit.actor);
@@ -2763,15 +3933,15 @@ impl SqliteStore {
                     &row_mac,
                 ],
             )
-            .map_err(sqlite_err)?;
+            .store()?;
 
             tx.execute(
                 &format!("DELETE FROM \"{s}\".\"fhir_sqlite_erasure\" WHERE \"token\" = ?1"),
                 [&id],
             )
-            .map_err(sqlite_err)?;
+            .store()?;
 
-            tx.commit().map_err(sqlite_err)?;
+            tx.commit().store()?;
             Ok(crate::PurgeReport {
                 versions_erased: erased,
                 existed: true,
@@ -2806,9 +3976,7 @@ impl SqliteStore {
         let conn = self.conn.clone();
         tokio::task::spawn_blocking(move || -> Result<(), StoreError> {
             let c = conn.blocking_lock();
-            let _: i64 = c
-                .query_row("SELECT 1", [], |r| r.get(0))
-                .map_err(sqlite_err)?;
+            let _: i64 = c.query_row("SELECT 1", [], |r| r.get(0)).store()?;
             Ok(())
         })
         .await
@@ -2824,11 +3992,10 @@ impl SqliteStore {
         let Some(resource) = self.get(rtype, id).await? else {
             return Ok(None);
         };
-        let version_id = match self.status(rtype, id).await? {
-            crate::ResourceStatus::Active(v) => v,
-            // The row was read a moment ago; if it is gone now the read is stale
-            // rather than wrong, and reporting absence is the honest answer.
-            _ => return Ok(None),
+        // The row was read a moment ago; if it is gone now the read is stale
+        // rather than wrong, and reporting absence is the honest answer.
+        let Some(version_id) = active_version(self.status(rtype, id).await?) else {
+            return Ok(None);
         };
         Ok(Some(crate::Got {
             resource,
@@ -3067,15 +4234,8 @@ impl SqliteStore {
                          WHERE \"{id_col}\" IN ({marks}) \
                            AND \"{c_type}\" IS NOT NULL AND \"{c_id}\" IS NOT NULL"
                     );
-                    let mut st = c.prepare(&sql).map_err(sqlite_err)?;
-                    let rows = st
-                        .query_map(rusqlite::params_from_iter(chunk.iter()), |r| {
-                            Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
-                        })
-                        .map_err(sqlite_err)?;
-                    for row in rows {
-                        out.push(row.map_err(sqlite_err)?);
-                    }
+                    let mut st = c.prepare(&sql).store()?;
+                    out.extend(query_reference_rows(&mut st, chunk)?);
                 }
             }
             Ok(out)
@@ -3112,6 +4272,94 @@ impl SqliteStore {
              atomicity needs one transaction across all operations (tasks.md, T64)"
                 .to_string(),
         ))
+    }
+}
+
+fn query_search_ids(
+    statement: &mut rusqlite::Statement<'_>,
+    binds: &[String],
+    sql: &str,
+) -> Result<Vec<String>, StoreError> {
+    let rows = statement
+        .query_map(rusqlite::params_from_iter(binds.iter()), |row| {
+            row.get::<_, String>(0)
+        })
+        .map_err(|error| StoreError::Other(format!("search: {error}\n{sql}")))?;
+    rows.collect::<Result<_, _>>().store()
+}
+
+fn query_reference_rows(
+    statement: &mut rusqlite::Statement<'_>,
+    ids: &[String],
+) -> Result<Vec<(String, String)>, StoreError> {
+    let rows = statement
+        .query_map(rusqlite::params_from_iter(ids.iter()), |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        })
+        .store()?;
+    rows.collect::<Result<_, _>>().store()
+}
+
+type AuditRow = (
+    String,
+    i64,
+    String,
+    String,
+    Option<String>,
+    String,
+    Option<Vec<u8>>,
+    Option<Vec<u8>>,
+    Option<Vec<u8>>,
+    Option<Vec<u8>>,
+    Option<String>,
+);
+
+fn query_countersigns(
+    statement: &mut rusqlite::Statement<'_>,
+) -> Result<std::collections::HashMap<(String, String, i64), String>, StoreError> {
+    let rows = statement
+        .query_map([], |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, String>(1)?,
+                row.get::<_, i64>(2)?,
+                row.get::<_, String>(3)?,
+            ))
+        })
+        .store()?;
+    let mut countersigns = std::collections::HashMap::new();
+    for row in rows {
+        let (rtype, id, version, mac) = row.store()?;
+        countersigns.insert((rtype, id, version), mac);
+    }
+    Ok(countersigns)
+}
+
+fn query_audit_rows(statement: &mut rusqlite::Statement<'_>) -> Result<Vec<AuditRow>, StoreError> {
+    let rows = statement
+        .query_map([], |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, i64>(1)?,
+                row.get::<_, String>(2)?,
+                row.get::<_, String>(3)?,
+                row.get::<_, Option<String>>(4)?,
+                row.get::<_, String>(5)?,
+                row.get::<_, Option<Vec<u8>>>(6)?,
+                row.get::<_, Option<Vec<u8>>>(7)?,
+                row.get::<_, Option<Vec<u8>>>(8)?,
+                row.get::<_, Option<Vec<u8>>>(9)?,
+                row.get::<_, Option<String>>(10)?,
+            ))
+        })
+        .store()?;
+    rows.collect::<Result<_, _>>().store()
+}
+
+fn active_version(status: crate::ResourceStatus) -> Option<i64> {
+    match status {
+        crate::ResourceStatus::Active(version) => Some(version),
+        crate::ResourceStatus::Deleted(_) | crate::ResourceStatus::Unknown => None,
     }
 }
 
@@ -3257,33 +4505,71 @@ impl SqliteStore {
                      WHERE \"rtype\" = ?1 AND \"id\" = ?2 ORDER BY \"seq\" DESC",
                     escape_ident(&schema)
                 ))
-                .map_err(sqlite_err)?;
-            let rows = st
-                .query_map(rusqlite::params![&rtype, &id], |r| {
-                    Ok(crate::AccessRecord {
-                        audit: crate::Audit {
-                            request_id: r.get(0)?,
-                            actor: r.get(1)?,
-                            actor_source: r.get(2)?,
-                            client: r.get(3)?,
-                            reason: r.get(10)?,
-                        },
-                        interaction: r.get(4)?,
-                        rtype: r.get(5)?,
-                        id: r.get(6)?,
-                        version_id: r.get(7)?,
-                        outcome: r.get(8)?,
-                        result_count: r.get(9)?,
-                    })
-                })
-                .map_err(sqlite_err)?;
-            let mut out = Vec::new();
-            for row in rows {
-                out.push(row.map_err(sqlite_err)?);
-            }
-            Ok(out)
+                .store()?;
+            query_access_records(&mut st, &rtype, &id)
         })
         .await
         .map_err(join_err)?
     }
+}
+
+fn query_history_entries(
+    statement: &mut rusqlite::Statement<'_>,
+    id: &str,
+) -> Result<Vec<crate::HistEntry>, StoreError> {
+    let rows = statement
+        .query_map([id], |row| {
+            Ok((
+                row.get::<_, i64>(0)?,
+                row.get::<_, String>(1)?,
+                row.get::<_, String>(2)?,
+                row.get::<_, Option<String>>(3)?,
+            ))
+        })
+        .store()?;
+    let mut out = Vec::new();
+    for row in rows {
+        let (version_id, last_updated, op, raw) = row.store()?;
+        let resource = match raw {
+            Some(text) => Some(
+                serde_json::from_str(&text)
+                    .map_err(|error| StoreError::Other(format!("history {version_id}: {error}")))?,
+            ),
+            None => None,
+        };
+        out.push(crate::HistEntry {
+            version_id,
+            last_updated,
+            op: op.chars().next().unwrap_or('?'),
+            resource,
+        });
+    }
+    Ok(out)
+}
+
+fn query_access_records(
+    statement: &mut rusqlite::Statement<'_>,
+    rtype: &str,
+    id: &str,
+) -> Result<Vec<crate::AccessRecord>, StoreError> {
+    let rows = statement
+        .query_map(rusqlite::params![rtype, id], |row| {
+            Ok(crate::AccessRecord {
+                audit: crate::Audit {
+                    request_id: row.get(0)?,
+                    actor: row.get(1)?,
+                    actor_source: row.get(2)?,
+                    client: row.get(3)?,
+                    reason: row.get(10)?,
+                },
+                interaction: row.get(4)?,
+                rtype: row.get(5)?,
+                id: row.get(6)?,
+                version_id: row.get(7)?,
+                outcome: row.get(8)?,
+                result_count: row.get(9)?,
+            })
+        })
+        .store()?;
+    rows.collect::<Result<_, _>>().store()
 }

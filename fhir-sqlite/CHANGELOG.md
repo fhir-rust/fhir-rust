@@ -12,6 +12,18 @@
 > releases, and because a changelog is a historical record. What is specific to
 > this port is stated where it differs.
 
+## Unreleased (0.6.5)
+
+The full R5 recovery drill exercises SQLite snapshots, disclosure history,
+keyed audit verification, and the external checkpoint log (T11.16).
+
+Store line coverage is now enforced at 95%. Direct search-SQL, conversion,
+migration, audit-MAC, auxiliary-row, server-surface, corruption, and checkpoint
+tests raise the measured suite to at least 97.71% (3,671/3,757 production lines,
+measured 2026-11-20 on macOS arm64); the ordinal parser also honours its
+documented whitespace tolerance, and malformed calendar dates are rejected
+instead of being normalized into a different date.
+
 ## 0.6.4 — 2026-11-15
 
 Maintenance release: `rusqlite` 0.40 -> 0.42 (bundled SQLite); lockfile refresh.

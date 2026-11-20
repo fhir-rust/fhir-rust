@@ -9,13 +9,35 @@ worldwide, in settings where a wrong claim has clinical cost.
 
 Method: **specification-driven development, with an adversarial audit
 culture.** Normative behavior lives in `spec/` and `fhir/spec/`; the findings
-register (`spec/databases/audit.md`, 102 findings and counting) exists because
+register ([database audit](spec/databases/audit.md)) exists because
 this repository's main failure mode has been confident text that nothing
 substantiates. Engineering status is read from the
 [conformance matrix](spec/databases/conformance-matrix.md) and the dialect
 annexes — never from a checklist. This file holds only what no spec does: the
 repository-level professionalization plan. Execution items live in
 [`tasks.md`](tasks.md), where a `[x]` means verified, not intended.
+
+## Production readiness review, 2026-11-18
+
+For an initial deployment evaluation, choose the base release required by
+the adopter, one mounted store (SQLite or PostgreSQL), and the interactions
+the application uses. The local exercise below used R5.
+PostgreSQL has the widest store evidence in the conformance matrix. SQLite
+offers a way to exercise the same clinical examples locally. The model,
+store and HTTP service each have a different support boundary. A regional
+implementation guide also brings its own profiles and terminology.
+[Feature support](doc/fhir-feature-support.md) · [Model assurance](fhir/spec/13-assurance.md)
+
+| Priority | Finding | Deployment decision |
+| --- | --- | --- |
+| First, read integrity | Oracle `get` could mix a root and its children from different committed versions. The 2026-11-19 fix held a single snapshot on Oracle 26ai Free 23.26.2.0.0. | The live test reproduced a torn read before the fix and passed afterward. Check the matrix for the deployment's port and operations. [Matrix](spec/databases/conformance-matrix.md) |
+| First, recovery | Both mounted stores recovered a full R5 schema, two signed history entries, and a disclosure in local drills on 2026-11-19. SQLite reopens two snapshot files. PostgreSQL restores a custom archive and verifies the retained chain witness. | Rehearse recovery at the deployment's data volume and with its key configuration. Compare the observed recovery point and time with the operator's targets. [Drill results](spec/databases/audit.md#f-104) |
+| Before shared HTTP traffic | The production configuration sets a body limit and timeout. The service spec records the missing concurrency and in-flight limits. | Verify load shedding on the intended request path and recovery after a request releases capacity. [Service limits](fhir-loco/spec/04-operations.md) |
+| Before regional rollout | SQLite's folded family search finds both `が` and `か`. Literal search distinguishes them and a read returns the spelling supplied. Different spellings can therefore select several records. | Run the same fixtures on the target engine. Verify the applicable profile and terminology versions separately for each regional support claim. [Search contract](spec/databases/locale-accent-folding.md) |
+
+The [deployment tasks](tasks.md#deployment-verification) give the acceptance
+criteria. A successful local exercise supplies evidence for that configuration.
+The port matrix remains the source for cross-engine comparisons.
 
 ## Where the repository stands (verified 2026-08-26, end of day)
 
@@ -92,8 +114,8 @@ posture. Open items for each are in `tasks.md`.
    2026-08-26. **F-98** (`check-published-match.sh` compared the wrong
    manifest for workspace-inherited dependencies) and **F-102** (nothing in
    CI ever called that script, and twelve already-published crates had
-   drifted as a result) both closed 2026-09-02 — the register currently has
-   no open findings. This repository also holds the canonical special-files
+   drifted as a result) both closed 2026-09-02. The November review added
+   F-103 (multilingual search) and F-104 (recovery drills). This repository also holds the canonical special-files
    list and trademark spec that the siblings have drifted from;
    harmonization means the siblings re-sync from here, and this repo keeps
    its canon accurate.

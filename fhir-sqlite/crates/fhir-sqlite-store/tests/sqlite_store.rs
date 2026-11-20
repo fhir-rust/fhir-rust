@@ -601,6 +601,158 @@ async fn verify_audit_detects_a_tampered_history_row() {
         );
     }
 
+    // Checkpointing is deliberately non-fatal both when it reports a verified
+    // break and when the schema itself is unavailable.
+    store.emit_checkpoint("tampered-history").await;
+    store.drop_schema().await.expect("drop tampered schema");
+    store.emit_checkpoint("missing-schema").await;
+
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[tokio::test]
+async fn corrupt_history_json_and_links_fail_with_specific_diagnostics() {
+    let Some((dir, store)) = fresh("history-corruption", "r5").await else {
+        return;
+    };
+    let audit = fhir_sqlite_store::Audit::default();
+    store.put(&observation(), &audit).await.expect("v1");
+    let mut v2 = observation();
+    v2["status"] = serde_json::json!("amended");
+    store.put(&v2, &audit).await.expect("v2");
+    let schema = store.schema().to_string();
+    drop(store);
+
+    let attached = dir.join(format!("fhir-{schema}.sqlite"));
+    let conn = rusqlite::Connection::open(&attached).expect("open attached db");
+    let trigger: String = conn
+        .query_row(
+            "SELECT name FROM sqlite_master WHERE type='trigger' AND tbl_name='observation_history' AND name LIKE '%upd%'",
+            [],
+            |r| r.get(0),
+        )
+        .expect("find update trigger");
+    conn.execute_batch(&format!("DROP TRIGGER \"{trigger}\""))
+        .expect("drop update trigger");
+    conn.execute(
+        "UPDATE observation_history SET resource = '{' WHERE id='obs-1' AND version_id=1",
+        [],
+    )
+    .expect("corrupt JSON");
+    drop(conn);
+
+    let reopen = || async {
+        SqliteStore::open(dir.join("fhir.sqlite"), relmap("r5").expect("relmap"))
+            .await
+            .expect("reopen")
+    };
+    let store = reopen().await;
+    assert!(
+        store
+            .history("Observation", "obs-1")
+            .await
+            .expect_err("history must reject corrupt JSON")
+            .to_string()
+            .contains("history 1")
+    );
+    assert!(
+        store
+            .vread("Observation", "obs-1", 1)
+            .await
+            .expect_err("vread must reject corrupt JSON")
+            .to_string()
+            .contains("version 1")
+    );
+    assert!(
+        store
+            .history_page(Some("Observation"), 10, None)
+            .await
+            .expect_err("history page must reject corrupt JSON")
+            .to_string()
+            .contains("Observation/obs-1/1")
+    );
+    drop(store);
+
+    let conn = rusqlite::Connection::open(&attached).expect("reopen attached db");
+    conn.execute(
+        "UPDATE observation_history SET resource = ?1 WHERE id='obs-1' AND version_id=1",
+        [fhir_sqlite_map::canon::canonicalize(&observation())],
+    )
+    .expect("repair JSON");
+    conn.execute(
+        "UPDATE observation_history SET prev_hash = zeroblob(32), prev_hash_sha3 = zeroblob(32) WHERE id='obs-1' AND version_id=2",
+        [],
+    )
+    .expect("break link only");
+    drop(conn);
+
+    let store = reopen().await;
+    let breaks = store.verify_audit().await.expect("verify link-only break");
+    assert_eq!(breaks.len(), 2, "both digest links must report");
+    assert!(
+        breaks
+            .iter()
+            .all(|b| b.detail == "link to the previous version differs")
+    );
+    drop(store);
+
+    let conn = rusqlite::Connection::open(&attached).expect("reopen attached db");
+    conn.execute(
+        "UPDATE observation_history SET resource = replace(resource, '\"amended\"', '\"entered-in-error\"') WHERE id='obs-1' AND version_id=2",
+        [],
+    )
+    .expect("break content and link");
+    drop(conn);
+    let store = reopen().await;
+    let breaks = store.verify_audit().await.expect("verify combined break");
+    assert_eq!(breaks.len(), 2, "both digest chains must report");
+    assert!(
+        breaks
+            .iter()
+            .all(|b| b.detail == "row hash and link both differ")
+    );
+
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[tokio::test]
+async fn legacy_history_without_digest_columns_is_not_mislabeled_tampering() {
+    let Some((dir, store)) = fresh("legacy-null-digests", "r5").await else {
+        return;
+    };
+    store
+        .put(&observation(), &fhir_sqlite_store::Audit::default())
+        .await
+        .expect("put");
+    let schema = store.schema().to_string();
+    drop(store);
+
+    let attached = dir.join(format!("fhir-{schema}.sqlite"));
+    let conn = rusqlite::Connection::open(&attached).expect("open attached db");
+    let trigger: String = conn
+        .query_row(
+            "SELECT name FROM sqlite_master WHERE type='trigger' AND tbl_name='observation_history' AND name LIKE '%upd%'",
+            [],
+            |r| r.get(0),
+        )
+        .expect("find update trigger");
+    conn.execute_batch(&format!("DROP TRIGGER \"{trigger}\""))
+        .expect("drop update trigger");
+    conn.execute(
+        "UPDATE observation_history SET row_hash = NULL, row_hash_sha3 = NULL WHERE id='obs-1'",
+        [],
+    )
+    .expect("simulate a row predating digest columns");
+    drop(conn);
+
+    let store = SqliteStore::open(dir.join("fhir.sqlite"), relmap("r5").expect("relmap"))
+        .await
+        .expect("reopen");
+    assert!(
+        store.verify_audit().await.expect("verify").is_empty(),
+        "absence of a historical digest is unverifiable, not evidence of a mismatch"
+    );
+
     let _ = std::fs::remove_dir_all(&dir);
 }
 
@@ -613,6 +765,204 @@ fn test_keys(id: &str) -> fhir_sqlite_store::chain::KeyRing {
     )
     .expect("key parses");
     fhir_sqlite_store::chain::KeyRing::new(vec![k])
+}
+
+async fn record_recovery_checkpoint(store: &SqliteStore, path: &std::path::Path) {
+    use tracing::instrument::WithSubscriber;
+
+    let log = std::fs::File::create(path).expect("checkpoint log");
+    let subscriber = tracing_subscriber::fmt()
+        .without_time()
+        .with_ansi(false)
+        .with_writer(move || log.try_clone().expect("clone checkpoint log"))
+        .finish();
+    store
+        .emit_checkpoint("recovery-drill")
+        .with_subscriber(subscriber)
+        .await;
+}
+
+#[tokio::test]
+async fn sqlite_backup_restores_full_r5_with_keyed_history() {
+    use std::{fs, time::Instant};
+
+    let map = Arc::new(RelMap::bundled("r5").expect("bundled R5 map"));
+    let dir = scratch("restore-r5");
+    let source = dir.join("source");
+    let backup = dir.join("backup");
+    let restored_dir = dir.join("restored");
+    let checksum = "recovery-r5";
+    let store = SqliteStore::open(source.join("fhir.sqlite"), map.clone())
+        .await
+        .expect("open source")
+        .with_chain_keys(test_keys("recovery"));
+    store.init(checksum).await.expect("install full R5 schema");
+
+    let first = observation();
+    let mut second = first.clone();
+    second["status"] = serde_json::json!("amended");
+    let audit = fhir_sqlite_store::Audit::principal("recovery-reader", "test")
+        .with_request_id(Some("recovery-read-v2".into()));
+    assert_eq!(
+        store.put(&first, &audit).await.expect("create").version_id,
+        1
+    );
+    assert_eq!(
+        store.put(&second, &audit).await.expect("update").version_id,
+        2
+    );
+    store
+        .log_access(&fhir_sqlite_store::AccessRecord {
+            audit: audit.clone(),
+            interaction: "read".into(),
+            rtype: Some("Observation".into()),
+            id: Some("obs-1".into()),
+            version_id: Some(2),
+            outcome: "ok".into(),
+            result_count: Some(1),
+        })
+        .await
+        .expect("record disclosure");
+    let expected_checkpoint = dir.join("before.log");
+    record_recovery_checkpoint(&store, &expected_checkpoint).await;
+
+    // Hold the recovery point between version 2 and the later deletion
+    // while SQLite takes a separate snapshot of each database file.
+    fs::create_dir(&backup).expect("backup directory");
+    let files = ["fhir.sqlite", "fhir-r5.sqlite"];
+    let mut backup_bytes = 0;
+    for file in files {
+        let snapshot = backup.join(file);
+        let conn = rusqlite::Connection::open_with_flags(
+            source.join(file),
+            rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
+        )
+        .expect("open snapshot source");
+        conn.execute("VACUUM INTO ?1", [snapshot.to_str().expect("UTF-8 path")])
+            .expect("snapshot database");
+        backup_bytes += fs::metadata(snapshot).expect("snapshot metadata").len();
+    }
+    assert_eq!(
+        store
+            .delete("Observation", "obs-1", &audit)
+            .await
+            .expect("later delete"),
+        Some(3)
+    );
+    assert!(
+        store
+            .get("Observation", "obs-1")
+            .await
+            .expect("read source")
+            .is_none()
+    );
+    drop(store);
+
+    let start = Instant::now();
+    fs::create_dir(&restored_dir).expect("fresh restore directory");
+    for file in files {
+        fs::copy(backup.join(file), restored_dir.join(file)).expect("restore snapshot file");
+    }
+    let restored_path = restored_dir.join("fhir.sqlite");
+    let restored = SqliteStore::open(&restored_path, map.clone())
+        .await
+        .expect("open restored store")
+        .with_chain_keys(test_keys("recovery"));
+    assert_eq!(
+        restored
+            .get("Observation", "obs-1")
+            .await
+            .expect("restored resource"),
+        Some(second)
+    );
+    let restore_time = start.elapsed();
+
+    assert_eq!(
+        restored
+            .installed_checksum()
+            .await
+            .expect("restored checksum")
+            .as_deref(),
+        Some(checksum)
+    );
+    let history = restored
+        .history("Observation", "obs-1")
+        .await
+        .expect("restored history");
+    assert_eq!(
+        history
+            .iter()
+            .map(|entry| entry.version_id)
+            .collect::<Vec<_>>(),
+        [2, 1]
+    );
+    assert_eq!(history[1].resource.as_ref(), Some(&first));
+
+    let disclosure = restored
+        .access_log_for("Observation", "obs-1")
+        .await
+        .expect("restored disclosure");
+    let [record] = disclosure.as_slice() else {
+        panic!("expected one restored disclosure, got {disclosure:?}");
+    };
+    assert_eq!(record.audit, audit);
+    assert_eq!(record.interaction, "read");
+    assert_eq!(record.rtype.as_deref(), Some("Observation"));
+    assert_eq!(record.id.as_deref(), Some("obs-1"));
+    assert_eq!(record.version_id, Some(2));
+    assert_eq!(record.outcome, "ok");
+    assert_eq!(record.result_count, Some(1));
+    assert!(
+        restored
+            .verify_audit()
+            .await
+            .expect("verify restored chain")
+            .is_empty()
+    );
+
+    let restored_checkpoint = dir.join("restored.log");
+    record_recovery_checkpoint(&restored, &restored_checkpoint).await;
+    let expected = fs::read_to_string(expected_checkpoint).expect("read retained checkpoint");
+    assert!(expected.contains("audit_checkpoint: chain checkpoint: verified"));
+    assert!(expected.contains("keyed=true"));
+    assert_eq!(
+        fs::read_to_string(restored_checkpoint).expect("read restored checkpoint"),
+        expected
+    );
+    drop(restored);
+
+    // An empty verdict with the right key alone would also pass for unsigned
+    // rows. The same key ID with different key material must flag both tags.
+    let wrong_key = fhir_sqlite_store::chain::ChainKey::from_hex("recovery", &"a1".repeat(32))
+        .expect("wrong key parses");
+    let wrong_keys = fhir_sqlite_store::chain::KeyRing::new(vec![wrong_key]);
+    let with_wrong_key = SqliteStore::open(&restored_path, map)
+        .await
+        .expect("open restored store for negative control")
+        .with_chain_keys(wrong_keys);
+    let breaks = with_wrong_key
+        .verify_audit()
+        .await
+        .expect("wrong-key verdict");
+    let mut versions = breaks
+        .iter()
+        .map(|b| {
+            assert_eq!(
+                (b.rtype.as_str(), b.id.as_str(), b.algorithm),
+                ("Observation", "obs-1", "hmac-sha256")
+            );
+            b.version_id
+        })
+        .collect::<Vec<_>>();
+    versions.sort_unstable();
+    assert_eq!(versions, [1, 2]);
+
+    eprintln!(
+        "SQLite {}: {backup_bytes} bytes across two snapshot files, restored through first resource read in {restore_time:?}",
+        rusqlite::version()
+    );
+    drop(with_wrong_key);
+    fs::remove_dir_all(dir).expect("remove recovery drill files");
 }
 
 #[tokio::test]
@@ -998,6 +1348,268 @@ async fn disclosures_are_logged() {
     store.log_access(&miss).await.expect("log miss");
 
     assert_eq!(store.access_log_len().await.expect("len"), 2);
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[tokio::test]
+async fn server_surface_preserves_reference_conditional_and_audit_semantics() {
+    let Some((dir, store)) = fresh("server-surface", "r5").await else {
+        return;
+    };
+    let audit = fhir_sqlite_store::Audit::default();
+
+    assert_eq!(store.schema(), "r5");
+    assert_eq!(store.map().fhir_version, "5.0.0");
+    assert_eq!(store.path(), dir.join("fhir.sqlite"));
+    assert_eq!(store.chain_key_id(), None);
+    store.ping().await.expect("readiness query");
+
+    let patient = serde_json::json!({
+        "resourceType": "Patient",
+        "id": "pat-1",
+        "active": true,
+        "name": [{"family": "Surface"}]
+    });
+    let mut first = observation();
+    first["subject"] = serde_json::json!({"reference": "Patient/pat-1"});
+    let mut second = observation();
+    second["id"] = serde_json::json!("obs-2");
+    second["subject"] = serde_json::json!({"reference": "Patient/pat-1"});
+
+    store.put(&patient, &audit).await.expect("patient");
+    store.put(&first, &audit).await.expect("first observation");
+    store
+        .put(&second, &audit)
+        .await
+        .expect("second observation");
+
+    let got = store
+        .get_versioned("Observation", "obs-1")
+        .await
+        .expect("versioned read")
+        .expect("present");
+    assert_eq!(got.version_id, 1);
+    assert_eq!(got.resource["subject"]["reference"], "Patient/pat-1");
+    assert!(
+        store
+            .get_versioned("Observation", "absent")
+            .await
+            .expect("missing versioned read")
+            .is_none()
+    );
+
+    let refs = store
+        .refs_of("Observation", &["obs-1".into(), "obs-2".into()], "subject")
+        .await
+        .expect("subject references");
+    assert_eq!(refs, [("Patient".into(), "pat-1".into())]);
+    assert!(
+        store
+            .refs_of("Observation", &[], "subject")
+            .await
+            .expect("empty reference input")
+            .is_empty()
+    );
+    assert!(
+        store
+            .refs_of("Observation", &["obs-1".into()], "status")
+            .await
+            .expect("non-reference search target")
+            .is_empty()
+    );
+    assert!(
+        store
+            .refs_of("Unknown", &["obs-1".into()], "subject")
+            .await
+            .is_err()
+    );
+    assert!(
+        store
+            .refs_of("Observation", &["obs-1".into()], "unknown")
+            .await
+            .is_err()
+    );
+
+    assert_eq!(
+        store
+            .conditional_delete_audited("Observation", &[("_id".into(), "absent".into())], &audit,)
+            .await
+            .expect("no-match conditional delete"),
+        fhir_sqlite_store::CondDelete::NoMatch
+    );
+    assert_eq!(
+        store
+            .conditional_delete_audited(
+                "Observation",
+                &[("status".into(), "final".into())],
+                &audit,
+            )
+            .await
+            .expect("multiple conditional delete"),
+        fhir_sqlite_store::CondDelete::Multiple
+    );
+    assert_eq!(
+        store
+            .conditional_delete_audited("Observation", &[("_id".into(), "obs-1".into())], &audit,)
+            .await
+            .expect("single conditional delete"),
+        fhir_sqlite_store::CondDelete::Deleted
+    );
+    assert!(
+        store
+            .get_versioned("Observation", "obs-1")
+            .await
+            .expect("deleted versioned read")
+            .is_none()
+    );
+
+    let missing = serde_json::json!({"resourceType": "Patient", "id": "never-stored"});
+    let err = store
+        .put_audited(&missing, Some(4), &audit)
+        .await
+        .expect_err("If-Match cannot create a missing resource");
+    assert!(matches!(
+        err,
+        fhir_sqlite_store::StoreError::Conflict {
+            expected: 4,
+            found: 0
+        }
+    ));
+    let malformed = serde_json::json!({"id": "no-type"});
+    assert!(
+        store
+            .put_audited(&malformed, Some(1), &audit)
+            .await
+            .expect_err("guarded write needs resourceType")
+            .to_string()
+            .contains("resourceType")
+    );
+
+    let disclosure = fhir_sqlite_store::AccessRecord {
+        audit: fhir_sqlite_store::Audit {
+            actor: "coverage-clinician".into(),
+            actor_source: Some("test".into()),
+            client: Some("127.0.0.1".into()),
+            request_id: Some("surface-1".into()),
+            reason: Some("treatment".into()),
+        },
+        interaction: "read".into(),
+        rtype: Some("Patient".into()),
+        id: Some("pat-1".into()),
+        version_id: Some(1),
+        outcome: "ok".into(),
+        result_count: Some(1),
+    };
+    let mut later = disclosure.clone();
+    later.audit.request_id = Some("surface-2".into());
+    later.interaction = "vread".into();
+    store
+        .log_access_batch(&[disclosure, later])
+        .await
+        .expect("batch disclosure");
+    let log = store
+        .access_log_for("Patient", "pat-1")
+        .await
+        .expect("resource disclosure log");
+    assert_eq!(log.len(), 2);
+    assert_eq!(log[0].audit.request_id.as_deref(), Some("surface-2"));
+    assert_eq!(log[0].audit.actor, "coverage-clinician");
+    assert_eq!(log[0].interaction, "vread");
+    assert_eq!(log[0].audit.reason.as_deref(), Some("treatment"));
+
+    assert!(
+        store
+            .transact_audited(&[], &audit)
+            .await
+            .expect_err("transaction Bundles are explicitly unsupported")
+            .to_string()
+            .contains("atomicity")
+    );
+    store.emit_checkpoint("server-surface").await;
+
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[tokio::test]
+async fn server_surface_rejects_unknown_and_malformed_requests_explicitly() {
+    let Some((dir, store)) = fresh("surface-errors", "r5").await else {
+        return;
+    };
+    let audit = fhir_sqlite_store::Audit::default();
+
+    for result in [
+        store.get("Missing", "id").await.map(|_| ()),
+        store.history("Missing", "id").await.map(|_| ()),
+        store.vread("Missing", "id", 1).await.map(|_| ()),
+        store.delete("Missing", "id", &audit).await.map(|_| ()),
+        store.purge("Missing", "id", &audit).await.map(|_| ()),
+        store.status("Missing", "id").await.map(|_| ()),
+        store.search("Missing", &[], 10, 0).await.map(|_| ()),
+        store.refs_of("Missing", &[], "subject").await.map(|_| ()),
+    ] {
+        assert!(
+            matches!(result, Err(fhir_sqlite_store::StoreError::Unsupported(_))),
+            "unknown resource types must be rejected explicitly: {result:?}"
+        );
+    }
+
+    for resource in [
+        serde_json::json!({"id": "missing-type"}),
+        serde_json::json!({"resourceType": "Patient"}),
+        serde_json::json!({"resourceType": "Missing", "id": "x"}),
+    ] {
+        assert!(store.put(&resource, &audit).await.is_err(), "{resource}");
+    }
+
+    assert!(
+        store
+            .put_audited(
+                &serde_json::json!({"resourceType": "Patient"}),
+                Some(1),
+                &audit,
+            )
+            .await
+            .expect_err("guarded write needs an id")
+            .to_string()
+            .contains("id")
+    );
+    assert!(
+        store
+            .refs_of("Patient", &[], "missing")
+            .await
+            .expect_err("unknown include parameter")
+            .to_string()
+            .contains("_include")
+    );
+    assert!(
+        store
+            .refs_of("Patient", &[], "deceased")
+            .await
+            .expect_err("targetless include parameter")
+            .to_string()
+            .contains("no reference targets")
+    );
+    assert!(
+        store
+            .refs_of("Patient", &[], "general-practitioner")
+            .await
+            .expect("an empty id set is a valid empty include")
+            .is_empty()
+    );
+
+    store.put(&observation(), &audit).await.expect("create");
+    store
+        .delete("Observation", "obs-1", &audit)
+        .await
+        .expect("delete");
+    assert!(matches!(
+        store.put_audited(&observation(), Some(1), &audit).await,
+        Err(fhir_sqlite_store::StoreError::Conflict {
+            expected: 1,
+            found: 2
+        })
+    ));
+
     let _ = std::fs::remove_dir_all(&dir);
 }
 

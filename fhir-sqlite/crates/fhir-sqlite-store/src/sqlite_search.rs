@@ -433,7 +433,9 @@ fn target_pred(
             if let (Some(sys), Some(sc)) = (sys.filter(|s| !s.is_empty()), system) {
                 pred = format!("({pred} AND «c».\"{sc}\" = {})", b(binds, sys));
             }
-            if let (Some(u), Some(cc)) = (unit.filter(|s| !s.is_empty()), code) {
+            if let Some(u) = unit.filter(|s| !s.is_empty())
+                && let Some(cc) = code
+            {
                 pred = format!("({pred} AND «c».\"{cc}\" = {})", b(binds, u));
             }
             Ok(pred)
@@ -603,7 +605,13 @@ fn date_bounds(v: &str) -> Option<(String, Option<String>)> {
             Some(format!("{:04}-01-01T00:00:00Z", year + 1)),
         )),
         7 => {
+            if b.get(4) != Some(&b'-') {
+                return None;
+            }
             let m: i64 = v.get(5..7)?.parse().ok()?;
+            if !(1..=12).contains(&m) {
+                return None;
+            }
             let (ny, nm) = if m == 12 {
                 (year + 1, 1)
             } else {
@@ -615,9 +623,16 @@ fn date_bounds(v: &str) -> Option<(String, Option<String>)> {
             ))
         }
         10 => {
+            if b.get(4) != Some(&b'-') || b.get(7) != Some(&b'-') {
+                return None;
+            }
             let m: i64 = v.get(5..7)?.parse().ok()?;
             let d: i64 = v.get(8..10)?.parse().ok()?;
-            let (ny, nm, nd) = if d < days_in(year, m) {
+            let last = days_in(year, m);
+            if last == 0 || !(1..=last).contains(&d) {
+                return None;
+            }
+            let (ny, nm, nd) = if d < last {
                 (year, m, d + 1)
             } else if m == 12 {
                 (year + 1, 1, 1)
@@ -643,4 +658,580 @@ fn like_escape(v: &str) -> String {
     v.replace('\\', "\\\\")
         .replace('%', "\\%")
         .replace('_', "\\_")
+}
+
+#[cfg(test)]
+mod tests {
+    use fhir_sqlite_map::model::{ColTy, Column, SearchTarget, SearchTy};
+
+    use super::*;
+
+    fn def(code: &str, ty: SearchTy) -> SearchDef {
+        SearchDef {
+            code: code.to_string(),
+            ty,
+            targets: Vec::new(),
+            note: None,
+        }
+    }
+
+    fn col(name: &str, ty: ColTy) -> Column {
+        Column {
+            name: name.to_string(),
+            ty,
+            path: String::new(),
+        }
+    }
+
+    fn pred(
+        kind: TargetKind,
+        value: &str,
+        modifier: Option<&str>,
+        cols: &[Column],
+    ) -> Result<(String, Vec<String>), StoreError> {
+        let target = SearchTarget { table: 0, kind };
+        let mut binds = Vec::new();
+        let sql = target_pred(
+            &def("test", SearchTy::Special),
+            &target,
+            value,
+            modifier,
+            cols,
+            &mut binds,
+        )?;
+        Ok((sql, binds))
+    }
+
+    #[test]
+    fn date_bounds_cover_every_fhir_precision_and_calendar_edge() {
+        assert_eq!(
+            date_bounds("2024"),
+            Some((
+                "2024-01-01T00:00:00Z".into(),
+                Some("2025-01-01T00:00:00Z".into())
+            ))
+        );
+        assert_eq!(
+            date_bounds("2024-12"),
+            Some((
+                "2024-12-01T00:00:00Z".into(),
+                Some("2025-01-01T00:00:00Z".into())
+            ))
+        );
+        assert_eq!(
+            date_bounds("2024-02-28"),
+            Some((
+                "2024-02-28T00:00:00Z".into(),
+                Some("2024-02-29T00:00:00Z".into())
+            ))
+        );
+        assert_eq!(
+            date_bounds("2023-02-28"),
+            Some((
+                "2023-02-28T00:00:00Z".into(),
+                Some("2023-03-01T00:00:00Z".into())
+            ))
+        );
+        assert_eq!(
+            date_bounds("2024-12-31"),
+            Some((
+                "2024-12-31T00:00:00Z".into(),
+                Some("2025-01-01T00:00:00Z".into())
+            ))
+        );
+        assert_eq!(
+            date_bounds("2024-01-02T03:04:05Z"),
+            Some(("2024-01-02T03:04:05Z".into(), None))
+        );
+        assert_eq!(date_bounds("bad"), None);
+        assert_eq!(date_bounds("2024-01-02 03:04:05Z"), None);
+
+        assert_eq!(date_prefix("ge2024"), ("ge", "2024"));
+        assert_eq!(date_prefix("2024"), ("eq", "2024"));
+        assert_eq!(num_prefix("ne2.5"), ("<>", "2.5"));
+        assert_eq!(num_prefix("ap2.5"), ("=", "ap2.5"));
+    }
+
+    #[test]
+    fn date_predicates_bind_the_correct_interval_edges() {
+        let cases = [
+            (
+                "2024",
+                "(d >= ?1 AND d < ?2)",
+                vec!["2024-01-01T00:00:00Z", "2025-01-01T00:00:00Z"],
+            ),
+            (
+                "ne2024",
+                "NOT (d >= ?1 AND d < ?2)",
+                vec!["2024-01-01T00:00:00Z", "2025-01-01T00:00:00Z"],
+            ),
+            ("lt2024", "d < ?1", vec!["2024-01-01T00:00:00Z"]),
+            ("eb2024", "d < ?1", vec!["2024-01-01T00:00:00Z"]),
+            ("gt2024", "d >= ?1", vec!["2025-01-01T00:00:00Z"]),
+            ("sa2024", "d >= ?1", vec!["2025-01-01T00:00:00Z"]),
+            ("ge2024", "d >= ?1", vec!["2024-01-01T00:00:00Z"]),
+            ("le2024", "d < ?1", vec!["2025-01-01T00:00:00Z"]),
+        ];
+        for (value, expected, expected_binds) in cases {
+            let mut binds = Vec::new();
+            assert_eq!(date_pred("d", None, value, &mut binds).unwrap(), expected);
+            assert_eq!(binds, expected_binds);
+        }
+
+        let mut binds = Vec::new();
+        assert_eq!(
+            date_pred("start", Some("finish"), "2024", &mut binds).unwrap(),
+            "(start < ?1 AND coalesce(finish, '9999-12-31T23:59:59.999999Z') >= ?2)"
+        );
+        assert_eq!(binds, ["2025-01-01T00:00:00Z", "2024-01-01T00:00:00Z"]);
+        let mut binds = Vec::new();
+        assert!(
+            date_pred("d", None, "ap2024", &mut binds)
+                .unwrap_err()
+                .to_string()
+                .contains("unsupported date prefix")
+        );
+        assert!(
+            date_pred("d", None, "nonsense", &mut Vec::new())
+                .unwrap_err()
+                .to_string()
+                .contains("invalid date value")
+        );
+    }
+
+    #[test]
+    fn string_token_number_and_uri_targets_preserve_fhir_semantics() {
+        let string = TargetKind::Str {
+            col: "value".into(),
+            norm: Some("value_norm".into()),
+        };
+        assert_eq!(
+            pred(string.clone(), "Müller", None, &[]).unwrap(),
+            (
+                "(«c».\"value_norm\" >= ?1 AND «c».\"value_norm\" < ?2)".into(),
+                vec!["muller".into(), "mulles".into()]
+            )
+        );
+        assert_eq!(
+            pred(string.clone(), "50%_\\", Some("contains"), &[]).unwrap(),
+            (
+                "«c».\"value_norm\" LIKE ?1 ESCAPE '\\'".into(),
+                vec!["%50\\%\\_\\\\%".into()]
+            )
+        );
+        assert_eq!(
+            pred(string.clone(), "Case", Some("exact"), &[]).unwrap(),
+            ("«c».\"value\" = ?1".into(), vec!["Case".into()])
+        );
+        assert!(pred(string, "x", Some("missing"), &[]).is_err());
+
+        let legacy = TargetKind::Str {
+            col: "value".into(),
+            norm: None,
+        };
+        assert_eq!(
+            pred(legacy.clone(), "x", Some("text"), &[]).unwrap().1,
+            ["x%"]
+        );
+        assert_eq!(
+            pred(legacy.clone(), "x", Some("contains"), &[]).unwrap().1,
+            ["%x%"]
+        );
+        assert_eq!(pred(legacy, "x", Some("exact"), &[]).unwrap().1, ["x"]);
+
+        let token = TargetKind::Token {
+            system: Some("system".into()),
+            code: "code".into(),
+        };
+        assert_eq!(pred(token.clone(), "code", None, &[]).unwrap().1, ["code"]);
+        assert_eq!(
+            pred(token.clone(), "sys|code", None, &[]).unwrap().1,
+            ["sys", "code"]
+        );
+        assert_eq!(pred(token.clone(), "|code", None, &[]).unwrap().1, ["code"]);
+        assert_eq!(pred(token, "sys|", None, &[]).unwrap().1, ["sys"]);
+
+        let bare = TargetKind::Token {
+            system: None,
+            code: "active".into(),
+        };
+        let cols = [col("active", ColTy::Bool)];
+        assert_eq!(pred(bare.clone(), "true", None, &cols).unwrap().1, ["1"]);
+        assert_eq!(pred(bare.clone(), "false", None, &cols).unwrap().1, ["0"]);
+        assert_eq!(pred(bare.clone(), "|yes", None, &cols).unwrap().1, ["yes"]);
+        assert_eq!(pred(bare, "sys|yes", None, &cols).unwrap().0, "FALSE");
+
+        for (value, op, number) in [
+            ("2", "=", "2"),
+            ("lt2", "<", "2"),
+            ("gt2", ">", "2"),
+            ("ge2", ">=", "2"),
+            ("le2", "<=", "2"),
+        ] {
+            let (sql, binds) =
+                pred(TargetKind::Number { col: "n".into() }, value, None, &[]).unwrap();
+            assert!(sql.contains(&format!(" AS REAL) {op} CAST(")));
+            assert_eq!(binds, [number]);
+        }
+        assert_eq!(
+            pred(TargetKind::Uri { col: "url".into() }, "urn:test", None, &[]).unwrap(),
+            ("«c».\"url\" = ?1".into(), vec!["urn:test".into()])
+        );
+        assert_eq!(
+            pred(
+                TargetKind::Date {
+                    lo: "start".into(),
+                    hi: Some("finish".into()),
+                },
+                "ge2024",
+                None,
+                &[],
+            )
+            .unwrap()
+            .1,
+            ["2024-01-01T00:00:00Z"]
+        );
+    }
+
+    #[test]
+    fn quantity_and_reference_targets_cover_qualified_and_absolute_forms() {
+        let quantity = TargetKind::Quantity {
+            value: "value".into(),
+            system: Some("system".into()),
+            code: Some("code".into()),
+        };
+        assert_eq!(
+            pred(quantity.clone(), "ge5|UCUM|mg", None, &[]).unwrap().1,
+            ["5", "UCUM", "mg"]
+        );
+        assert_eq!(pred(quantity, "5||mg", None, &[]).unwrap().1, ["5", "mg"]);
+        let (sql, binds) = pred(
+            TargetKind::Quantity {
+                value: "value".into(),
+                system: None,
+                code: Some("code".into()),
+            },
+            "5||mg",
+            None,
+            &[],
+        )
+        .unwrap();
+        assert!(sql.contains("\"code\" = ?2"));
+        assert_eq!(binds, ["5", "mg"]);
+        assert_eq!(
+            pred(
+                TargetKind::Quantity {
+                    value: "value".into(),
+                    system: None,
+                    code: None,
+                },
+                "5||mg",
+                None,
+                &[],
+            )
+            .unwrap()
+            .1,
+            ["5"]
+        );
+        assert_eq!(
+            pred(
+                TargetKind::Quantity {
+                    value: "value".into(),
+                    system: None,
+                    code: None,
+                },
+                "5",
+                None,
+                &[],
+            )
+            .unwrap()
+            .1,
+            ["5"]
+        );
+
+        let reference = TargetKind::Reference {
+            c_type: "ref_type".into(),
+            c_id: "ref_id".into(),
+            c_url: "ref_url".into(),
+        };
+        assert_eq!(
+            pred(reference.clone(), "Patient/7", None, &[]).unwrap().1,
+            ["Patient", "7"]
+        );
+        assert_eq!(
+            pred(reference.clone(), "7", Some("Patient"), &[])
+                .unwrap()
+                .1,
+            ["Patient", "7"]
+        );
+        assert_eq!(pred(reference.clone(), "7", None, &[]).unwrap().1, ["7"]);
+        assert_eq!(
+            pred(reference.clone(), "https://example.test/p/7", None, &[])
+                .unwrap()
+                .1,
+            ["https://example.test/p/7"]
+        );
+        assert_eq!(
+            pred(reference.clone(), "urn:uuid:7", None, &[]).unwrap().1,
+            ["urn:uuid:7"]
+        );
+        assert_eq!(
+            pred(reference, "#contained", None, &[]).unwrap().1,
+            ["#contained"]
+        );
+    }
+
+    #[test]
+    fn compiled_queries_cover_filters_sort_cursor_and_reference_chains() {
+        let map = RelMap::bundled("r5").expect("bundled R5 map");
+        let patient = &map.resources["Patient"];
+        let query = build_search_sql(
+            &map,
+            patient,
+            &[
+                ("_id".into(), "a,b".into()),
+                ("_lastUpdated".into(), "ge2024".into()),
+                ("active".into(), "true".into()),
+                ("family:contains".into(), "Müller".into()),
+            ],
+            25,
+            10,
+            &[SortKey {
+                code: "_lastUpdated".into(),
+                descending: true,
+            }],
+            Some("cursor"),
+        )
+        .unwrap();
+        assert!(query.sql.contains("p.\"id\" = ?1 OR p.\"id\" = ?2"));
+        assert!(query.sql.contains("p.\"id\" > ?"));
+        assert!(
+            query
+                .sql
+                .contains("ORDER BY p.\"last_updated\" DESC NULLS LAST, p.\"id\" ASC")
+        );
+        assert!(!query.count_sql.contains("cursor"));
+        assert_eq!(query.count_binds + 3, query.binds.len());
+        assert_eq!(
+            &query.binds[query.binds.len() - 3..],
+            ["cursor", "25", "10"]
+        );
+
+        let observation = &map.resources["Observation"];
+        let chained = build_search_sql(
+            &map,
+            observation,
+            &[("subject:Patient.family".into(), "Smith".into())],
+            10,
+            0,
+            &[],
+            None,
+        )
+        .unwrap();
+        assert!(chained.sql.contains("subject_ref_type"));
+        assert!(chained.sql.contains("patient"));
+        assert_eq!(chained.binds.first().unwrap(), "Patient");
+    }
+
+    #[test]
+    fn unsupported_queries_fail_instead_of_silently_broadening_results() {
+        let map = RelMap::bundled("r5").expect("bundled R5 map");
+        let patient = &map.resources["Patient"];
+        for params in [
+            vec![("unknown".into(), "x".into())],
+            vec![("deceased".into(), "true".into())],
+            vec![("general-practitioner.name".into(), "x".into())],
+            vec![("general-practitioner:Unknown.name".into(), "x".into())],
+            vec![("family:Patient.name".into(), "x".into())],
+            vec![(
+                "general-practitioner:Practitioner.organization:Organization.name".into(),
+                "x".into(),
+            )],
+        ] {
+            assert!(
+                build_search_sql(&map, patient, &params, 10, 0, &[], None).is_err(),
+                "{params:?}"
+            );
+        }
+
+        assert!(
+            build_search_sql(
+                &map,
+                patient,
+                &[],
+                10,
+                0,
+                &[SortKey {
+                    code: "unknown".into(),
+                    descending: false
+                }],
+                None,
+            )
+            .is_err()
+        );
+        assert!(
+            build_search_sql(
+                &map,
+                patient,
+                &[],
+                10,
+                0,
+                &[SortKey {
+                    code: "family".into(),
+                    descending: false
+                }],
+                None,
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn remaining_sort_chain_and_predicate_edges_are_explicit() {
+        let map = RelMap::bundled("r5").expect("bundled R5 map");
+        let patient = &map.resources["Patient"];
+
+        assert_eq!(
+            sort_col(
+                patient,
+                &SortKey {
+                    code: "_id".into(),
+                    descending: false,
+                },
+            )
+            .unwrap(),
+            "p.\"id\""
+        );
+
+        let mut sortable = patient.clone();
+        for (code, kind, expected) in [
+            (
+                "quantity-sort",
+                TargetKind::Quantity {
+                    value: "quantity_value".into(),
+                    system: None,
+                    code: None,
+                },
+                "p.\"quantity_value\"",
+            ),
+            (
+                "reference-sort",
+                TargetKind::Reference {
+                    c_type: "reference_type".into(),
+                    c_id: "reference_id".into(),
+                    c_url: "reference_url".into(),
+                },
+                "p.\"reference_id\"",
+            ),
+        ] {
+            sortable.search.push(SearchDef {
+                code: code.into(),
+                ty: SearchTy::Special,
+                targets: vec![SearchTarget { table: 0, kind }],
+                note: None,
+            });
+            assert_eq!(
+                sort_col(
+                    &sortable,
+                    &SortKey {
+                        code: code.into(),
+                        descending: false,
+                    },
+                )
+                .unwrap(),
+                expected
+            );
+        }
+
+        let cursor_only = build_search_sql(&map, patient, &[], 1, 0, &[], Some("p0")).unwrap();
+        assert!(cursor_only.sql.contains(" WHERE p.\"id\" > ?1"));
+
+        let practitioner_chain = build_search_sql(
+            &map,
+            patient,
+            &[(
+                "general-practitioner:Practitioner.name".into(),
+                "Smith".into(),
+            )],
+            10,
+            0,
+            &[],
+            None,
+        )
+        .unwrap();
+        assert!(practitioner_chain.sql.contains("EXISTS (SELECT 1"));
+
+        assert!(
+            build_search_sql(
+                &map,
+                patient,
+                &[("missing:Patient.name".into(), "x".into())],
+                10,
+                0,
+                &[],
+                None,
+            )
+            .is_err()
+        );
+
+        let legacy = TargetKind::Str {
+            col: "value".into(),
+            norm: None,
+        };
+        assert!(pred(legacy, "x", Some("unsupported"), &[]).is_err());
+        let folded = TargetKind::Str {
+            col: "value".into(),
+            norm: Some("value_norm".into()),
+        };
+        assert_eq!(pred(folded, "", None, &[]).unwrap().1, [""]);
+        assert_eq!(bool_token_as_bind("other"), "other");
+        assert_eq!(num_prefix("eq2.5"), ("=", "2.5"));
+    }
+
+    #[test]
+    fn remaining_date_edges_cover_periods_seconds_and_month_shapes() {
+        for (value, expected) in [
+            (
+                "gt2024",
+                "coalesce(finish, '9999-12-31T23:59:59.999999Z') >= ?1",
+            ),
+            (
+                "ge2024",
+                "coalesce(finish, '9999-12-31T23:59:59.999999Z') >= ?1",
+            ),
+        ] {
+            let mut binds = Vec::new();
+            assert_eq!(
+                date_pred("start", Some("finish"), value, &mut binds).unwrap(),
+                expected
+            );
+        }
+
+        let mut binds = Vec::new();
+        assert_eq!(
+            date_pred("instant", None, "2024-01-02T03:04:05Z", &mut binds).unwrap(),
+            "(instant >= ?1 AND instant < datetime(?2, '+1 second'))"
+        );
+        assert_eq!(binds, ["2024-01-02T03:04:05Z", "2024-01-02T03:04:05Z"]);
+
+        assert_eq!(
+            date_bounds("2024-04"),
+            Some((
+                "2024-04-01T00:00:00Z".into(),
+                Some("2024-05-01T00:00:00Z".into())
+            ))
+        );
+        assert_eq!(
+            date_bounds("2024-04-30"),
+            Some((
+                "2024-04-30T00:00:00Z".into(),
+                Some("2024-05-01T00:00:00Z".into())
+            ))
+        );
+        assert_eq!(date_bounds("2024-13-01"), None);
+        assert_eq!(date_bounds("2024-04-31"), None);
+        assert_eq!(date_bounds("2024/04"), None);
+        assert_eq!(date_bounds("2024-13"), None);
+        assert_eq!(date_bounds("2024/04/30"), None);
+    }
 }

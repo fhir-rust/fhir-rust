@@ -191,8 +191,20 @@ a DBA act that leaves its own trace in the server log.
 
 ## Backup
 
-A `fhir-postgresql` database is plain PostgreSQL. `pg_dump`, physical
-replication, and point-in-time recovery all apply unchanged, and any
-consistent snapshot is a valid store (`M14.28`) — nothing here needs a
-special backup tool or a quiesce step beyond what PostgreSQL itself
-requires.
+A consistent PostgreSQL snapshot is a valid store (`M14.28`). To rehearse a
+logical restore, create a custom-format archive and restore it into a fresh
+database on the recovery server.
+
+```sh
+pg_dump --format=custom --file=snapshot.dump fhir_source
+createdb fhir_recovered
+pg_restore --exit-on-error --dbname=fhir_recovered snapshot.dump
+```
+
+During a keyed drill, pause writes while recording the chain witness and
+taking the dump so they describe the same recovery point. Keep the witness
+and verification keys separately from the archive. Reopen the restored
+database with the matching map, check its installed checksum, and verify
+current and earlier resources, disclosures, the audit chain, and the
+witness. [PostgreSQL pg_dump](https://www.postgresql.org/docs/18/app-pgdump.html)
+· [PostgreSQL pg_restore](https://www.postgresql.org/docs/18/app-pgrestore.html)

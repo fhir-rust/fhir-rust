@@ -11,7 +11,7 @@ the `store` crate — and in how much has been verified.
 | Embedded, no server | **`fhir-sqlite`** | one file, bundled engine, always-runnable tests |
 | An existing MySQL/MariaDB estate | `fhir-mysql`, `fhir-mariadb` | native stores and search, live CI gates |
 | SQL Server | `fhir-mssql` | native store and search, live-verified incl. `upgrade` (**F-65**); `O10.7` satisfied (**F-67** closed) |
-| Oracle | `fhir-oracle`, cautiously | native store, search, and `upgrade`/backfill, live-verified (**F-68**, **F-15**) — but no concurrency/redaction tests, and `R4.5` snapshot reads are a confirmed open gap |
+| Oracle | `fhir-oracle`, Store | live-tested store, search, upgrade, backfill, and snapshot reads. Racing writers and redaction remain unverified. |
 
 ## Status in detail
 
@@ -145,13 +145,10 @@ statements — installs on 26ai with 0 invalid objects, and the store (the
 CRUD/history/search/audit surface live, 7/7 tests, 0 ignored. The caveats
 are sharper here than anywhere else:
 
-- **`R4.5` snapshot reads are a confirmed open gap**, not an unverified one:
-  `SET TRANSACTION READ ONLY` fails with `ORA-01466` on any session that has
-  run DDL, so `get` currently reads with no snapshot protection.
-- No `upgrade`/`backfill_norm`, no concurrency or redaction tests, transport
-  security undecided (`M14.22`), and no CI gate — the fake MySQL gate was
-  removed rather than repointed (**F-06**), and `scripts/db.sh` is the local
-  gate.
+- `get` uses one serializable snapshot on Oracle 26ai Free, with a live
+  regression for torn reads under concurrent writes (`M14.19`).
+- Upgrade and backfill are live-tested (**F-15**). Racing writers and
+  redaction remain unverified. Transport security is undecided (`M14.22`).
 
 Open Oracle questions that make this more than mechanical: no boolean type
 before 23ai; `VARCHAR2` capped at 4000 bytes with longer values becoming `CLOB`,

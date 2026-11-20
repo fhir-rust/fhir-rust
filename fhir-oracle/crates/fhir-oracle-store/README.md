@@ -1,6 +1,6 @@
 # fhir-oracle-store
 
-The storage layer for `fhir-oracle` — live-verified, with one confirmed gap.
+The storage layer for `fhir-oracle` — live-verified at Store level.
 
 Part of **`fhir-oracle`**, which stores FHIR® R3, R4 and R5 resources in Oracle Database as real relational tables — typed columns, child tables, foreign keys, check constraints — and gives them back losslessly.
 
@@ -12,13 +12,10 @@ Part of **`fhir-oracle`**, which stores FHIR® R3, R4 and R5 resources in Oracle
 > since 2026-08-03 (**F-08**): the full R5 schema, 9,636 statements, installs
 > on Oracle 26ai with 0 invalid objects.
 >
-> **What is still missing:** `R4.5` (snapshot reads under concurrent
-> writers) has no working mechanism — the one candidate this port's annex
-> named was tried live and removed after it broke every read (`ORA-01466`).
-> There is no concurrency test verifying `H5.4` under contention and no
-> redaction test. (`upgrade`/`backfill_norm` left this list 2026-08-09 —
-> `tests/upgrade.rs`, 9 live tests, closing **F-15**'s last port.) Needs
-> Oracle Instant Client on the host to run at all — see the port README.
+> `get` uses a serializable snapshot, verified after schema install and
+> during concurrent writes on Oracle 26ai Free (`M14.19`). Racing writers
+> (`H5.4`) and redaction remain unverified. Install Oracle Instant Client
+> to run the live tests.
 
 ## What is here
 
@@ -34,23 +31,18 @@ five real defects — see the module docs in `oracle.rs`/`oracle_search.rs` and
 `audit.md` **F-68** for the full account: Oracle's username case-folding
 requiring an uppercase schema, a double schema-qualification bug, a
 timestamp-binding bug, and a boolean bound as text in token search, plus the
-`R4.5` mechanism failure named above.
+post-DDL `READ ONLY` failure (`ORA-01466`).
 
 ## Why it is published anyway
 
-A conformance level is a claim about what has been verified, not about what
-the code contains. This crate now has real, live evidence behind most of its
-surface, but not all of it — `R4.5` in particular is a named, open gap, not
-merely an absence. Read the module docs and the [dialect annex](../../spec/14-oracle-dialect.md)
-before depending on any operation this README does not name above.
+The [dialect annex](../../spec/14-oracle-dialect.md) records supported
+operations and verification gaps at Store level.
 
 ## Tests
 
-This crate's own `tests/oracle_store.rs`: 7 tests, 0 ignored, all live
-against a real Oracle. (An earlier revision said eleven sibling-crate tests
-were `#[ignore]`d as MySQL-asserting — they were replaced with
-Oracle-asserting ones under **F-08**; no `#[ignore]` remains anywhere in
-this workspace.)
+On 2026-11-19, Oracle 26ai Free 23.26.2.0.0 passed all 25 store integration
+tests, including the eight tests in `tests/oracle_store.rs`. Run with
+`--test-threads=1` because the tests share the `R5` schema.
 
 ## Trust boundary
 
@@ -85,8 +77,8 @@ not about what its code contains. This crate is part of a port at **Store**
 level (`C0.8`): the DDL emitter is real Oracle and has been executed both by
 hand and by this crate's own live test suite, and the store's full CRUD/
 history/search/audit surface is live-tested against a real Oracle — 7 of 7
-tests pass, 0 ignored. Not **Reference**: `R4.5` has no working mechanism,
-and `H5.4` is unverified under concurrent writers.
+tests passed in the original suite. The snapshot regression is covered in
+`tests/oracle_store.rs`.
 
 The conformance matrix is the document to trust — a README, a book chapter, and
 a `tasks.md` checkbox have all been wrong in this repository before.

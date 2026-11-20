@@ -46,8 +46,9 @@ design this replaced — not a dependency.
   4. Decompose and drop combining marks again.
   5. Expand the letters in L6.
 
-  Step 4 is not redundant. Lowercasing can *introduce* a mark: `İ` (U+0130)
-  lowercases to `i` followed by a combining dot above.
+  Step 4 applies the same normalization to the lowercase result. For example,
+  `İ` (U+0130) already loses its dot in steps 1 and 2, before step 3
+  lowercases the resulting `I`.
 
 - **L5** `fold` MUST be idempotent: `fold(fold(s)) == fold(s)`.
 
@@ -88,16 +89,20 @@ design this replaced — not a dependency.
   fold their combining marks like any other script — `ό` → `ο`, `й` → `и`, which
   is accent-insensitive search working consistently — but romanising them would
   make "the same string" a property of a romanisation policy rather than of the
-  text. CJK has no marks to strip and MUST pass through unchanged.
+  text. L4 applies across scripts. For example, the Han character `字`
+  retains its spelling, Japanese `が` and `か` share the search key `か`,
+  and the Korean syllable `가` decomposes to the jamo U+1100 U+1161.
+  Reconstruction preserves the input in each case (db:R4.2). For the
+  decomposition used by L4, see [Unicode Normalization Forms](https://www.unicode.org/reports/tr15/).
 
 - **L9** Lowercasing MUST be locale-independent. A locale-sensitive fold would
   make stored values depend on the server's locale, so the same database would
   answer differently after a configuration change — and `_norm` values written
   under one locale would silently stop matching terms folded under another.
 
-  The visible consequence is Turkish: `İ` folds to `i` rather than to the
-  dotless `ı` that Turkish casing rules would give. This is a deliberate
-  trade, and it is the same trade every locale-independent index makes.
+  For example, `I`, `İ`, `ı` and `i` all yield the search key `i` under
+  L4 and L6. Turkish lowercasing distinguishes the pairs `I`/`ı` and
+  `İ`/`i`. [Unicode special casing data](https://www.unicode.org/Public/UCD/latest/ucd/SpecialCasing.txt)
 
 - **L10** The fold MUST NOT be treated as reversible or as a collation. It
   defines an equivalence class for matching. Ordering is a separate concern,
@@ -131,6 +136,14 @@ design this replaced — not a dependency.
 - **L15** The conformance suite MUST include, at minimum: a name whose folding
   depends on L6 (`Ærø`), one that depends only on L4 (`Muñoz`), a case proving
   idempotence under L5, and a case proving no transliteration under L8.
+
+- **L15a** Each port's live string-search suite MUST store three synthetic
+  Patients with distinct IDs and the respective family names `が` (U+304C), `か` (U+304B),
+  and `が` (U+304B U+3099). A default family search for each spelling
+  MUST return all three IDs. A `family:exact` search for each spelling MUST
+  return only its own ID, and reading each Patient MUST return the original
+  sequence. The test exercises the stored key, query binding, column
+  comparison and reconstruction together (L1, L2, L11, db:R4.2).
 
 - **L16** Tests asserting the fold MUST be verified by mutation — disabling the
   expansion and confirming the test fails. A folding test that passes with the

@@ -85,13 +85,24 @@ new column. Closes this port's share of audit **F-15**.
 
 ## Backup
 
-A fhir-mariadb store is plain MariaDB: `mariadb-dump` for a logical dump,
-binary-log replication, and any consistent filesystem or volume snapshot
-taken while the server is quiesced is a valid backup. Point-in-time recovery
-is binlog replay — not PostgreSQL's WAL-based PITR, which this chapter
-described for every port until 2026-08-03 (audit **F-56**). Nothing in this
-crate schedules a backup; that is the deployment's job (see the
-[trust boundary](trust-boundary.md)).
+A consistent MariaDB snapshot is a valid store. A logical drill can use
+`mariadb-dump --single-transaction --routines --triggers --hex-blob`. Keep the
+audit keys outside the dump, restore with the `mariadb` client, then reopen with
+the matching map and verify the installed checksum, current and earlier
+resources, disclosures, search results, and keyed audit chain.
+
+MariaDB's dump qualifies trigger DDL with the original database name. Restore
+into that same name after dropping or renaming the damaged database; importing
+beside a still-live source under a different default database can attempt to
+recreate triggers against the source and fail with `ERROR 1359` (trigger
+already exists). A 2026-11-19 drill verified this procedure on MariaDB 11.4.13
+with a keyed R5 Patient slice (F-104).
+
+For production recovery objectives, use binary-log backup and replay, or a
+consistent filesystem/volume snapshot taken while the server is quiesced.
+This is not PostgreSQL WAL PITR. Nothing in this crate schedules or retains a
+backup; that remains the deployment's job (see the [trust
+boundary](trust-boundary.md)).
 
 ## Trademarks
 

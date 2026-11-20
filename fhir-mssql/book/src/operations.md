@@ -113,16 +113,25 @@ remain in the tree. **This port now claims `O10.7` satisfied.**
 
 ## Backup
 
-A fhir-mssql deployment's backup story is plain SQL Server: native `BACKUP
-DATABASE`, log shipping, availability groups, and point-in-time restore
-from a log chain — not `pg_dump` or PostgreSQL PITR, which this chapter
-claimed for every port until 2026-08-03 (**F-56**). This crate does not
-implement any of it; there is no `backup`/`restore` method on `MsSqlStore`
-and none is planned here. A consistent database is a valid store to restore
-from — the append-only history table and the hash chain reconstruct the
-same way after a restore as before one — but scheduling, retention, and
-executing a restore are the operator's and the engine's job, not this
-library's.
+A consistent SQL Server database backup is a valid store. A native drill can
+use `BACKUP DATABASE ... WITH COPY_ONLY, CHECKSUM`, retain the backup outside
+the live database, and restore the whole database with `RESTORE DATABASE ...
+WITH REPLACE`. Reapply deployment-level database options after restore where
+needed: this port's snapshot reads require both `READ_COMMITTED_SNAPSHOT` and
+`ALLOW_SNAPSHOT_ISOLATION` (`M14.25`). Reopen with the matching map and audit
+keys, then verify the installed checksum, current and earlier resources,
+disclosures, search results, and keyed chain.
+
+This procedure passed locally on Azure SQL Edge 15.0.2000.1574 with a keyed R5
+Patient slice on 2026-11-19 (F-104). Edge is the arm64-compatible subset used
+locally, not full SQL Server 2022 evidence; production recovery rehearsal must
+run on the deployed product and storage.
+
+For production objectives, use native full/differential/log backups, log
+shipping, availability groups, and point-in-time restore from the log chain —
+not `pg_dump` or PostgreSQL PITR (**F-56**). This crate deliberately has no
+`backup`/`restore` method: scheduling, retention, and execution belong to the
+operator and engine.
 
 ## Running the live suite
 

@@ -122,11 +122,10 @@ with every port that closes a gap, so read them live —
 [conformance matrix](../spec/databases/conformance-matrix.md) rather than
 trusting a number written here.
 
-The consequence is in the [conformance matrix](../spec/databases/conformance-matrix.md):
-`R4.5`, `H5.4`, `T11.6`, `T11.7`, and `T11.8` are `?` outside PostgreSQL. Those
-are the concurrency and audit guarantees — the ones §13 maps to HIPAA
-§164.312(b) and (c). Porting `concurrency.rs`, `redaction.rs`, and `audit.rs` to
-the other stores is the highest-value test work available.
+The [conformance matrix](../spec/databases/conformance-matrix.md) shows the
+evidence for each concurrency and audit requirement. Oracle's reader/writer
+test lives in `tests/oracle_store.rs`. It covers `db:R4.5`, including a read
+after schema installation. Oracle racing writers (`H5.4`) remain unverified.
 
 ## Writing a store test
 

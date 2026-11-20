@@ -38,22 +38,19 @@ check constraints — not JSON blobs.
 > Oracle folds an unquoted username to uppercase for session identity, so the
 > three version namespaces must be uppercase Oracle users, not the lowercase
 > `r3`/`r4`/`r5` every other port uses; `R4.5`'s presumed mechanism
-> (`SET TRANSACTION READ ONLY`) fails every read with `ORA-01466` on any
-> session that has run DDL; two `insert_row` call sites double-qualified the
-> schema (`ORA-00926`); timestamp/date values bound as plain strings relied
+> (`SET TRANSACTION READ ONLY`) returned `ORA-01466` immediately after DDL.
+> Two `insert_row` call sites double-qualified the schema (`ORA-00926`).
+> Timestamp/date values bound as plain strings relied
 > on session NLS settings (`ORA-01843`); and token search bound a boolean as
 > text (`ORA-01722`).
 >
+> `get` uses a serializable snapshot (`M14.19`), verified on Oracle
+> 26ai Free after schema installation and during concurrent writes.
+>
 > **What is still missing:**
 >
-> - **`R4.5` (snapshot reads under concurrent writers) has no working
->   mechanism.** The one candidate this port's annex named was tried live and
->   removed after it broke every read. `get` currently reads with no
->   protection against torn reads under concurrent writers. This is an open,
->   confirmed gap, not merely an unverified one — see `M14.19`.
-> - **No concurrency test.** `H5.4` (serialized `version_id`) is implemented
->   via `SELECT … FOR UPDATE`, but no test races concurrent writers against
->   it the way `fhir-mssql`'s and `fhir-mysql`'s `concurrency.rs` do.
+> - **Racing writers (`H5.4`).** The store uses `SELECT … FOR UPDATE`.
+>   Verification under contention remains open.
 > - **No `redaction.rs`.** (`upgrade` and `backfill_norm` left this list
 >   2026-08-09 — `tests/upgrade.rs`, 9 live tests, closing **F-15**'s last
 >   port; see `M14.35`–`M14.37` for what Oracle made different about them.)
@@ -150,7 +147,6 @@ The port had inherited the constant without inheriting a reason (**F-09**).
 
 | Question | Why it is not mechanical |
 | --- | --- |
-| **`R4.5` snapshot reads** | The presumed answer, `SET TRANSACTION READ ONLY`, was tried live and **fails** — `ORA-01466` on any session that has run DDL. No replacement is proposed yet (`M14.19`). |
 | `TextC` | Collation and `NLS_SORT`; note `CHAR` is blank-padded (`M14.10`). |
 | `ords` | `VARCHAR2` or `RAW`. Watch Oracle's `''`-is-`NULL` rule against a `NOT NULL` key column. |
 | Install atomicity at scale | `G2.5` — the live install so far has been a single hand-run script, not tested for partial failure (`M14.18`). |
@@ -165,7 +161,7 @@ on Rust types without ever emitting SQL. A CI gate checks that they have not
 diverged.
 
 `ddl.rs` and the store are both now written and live-verified. What remains
-is narrower: `R4.5`, a concurrency test, redaction, and transport
+is narrower: racing-writer verification, redaction, and transport
 security — see "Still open" above. (Upgrade/backfill left this list
 2026-08-09.)
 

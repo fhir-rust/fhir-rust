@@ -12,7 +12,7 @@ github-pages:
 
 # Check and test every workspace on the MSRV (N-2) and N-1 toolchains.
 test-minimum-supported-rust-version:
-	bin/make-test-minimum-supported-rust-version
+	bin/test-minimum-supported-rust-version
 
 # Criterion micro-benchmarks for the audit chain (fhir-store; pure CPU, no database).
 bench:

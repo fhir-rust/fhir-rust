@@ -26,7 +26,7 @@ they belong to whatever process embeds this store.
 
 | Property | Why not |
 | --- | --- |
-| **Reads see one consistent snapshot (`R4.5`)** | **Open, confirmed gap.** The one candidate mechanism this port considered, `SET TRANSACTION READ ONLY`, fails outright on this engine (`ORA-01466` on any session that has run DDL) — see [Operations](operations.md). `get` currently reads with no snapshot-isolation protection under concurrent writers at all. |
+| **Reads see one consistent snapshot (`db:R4.5`)** | `get` uses a serializable transaction, verified on Oracle 26ai Free after installation and during concurrent writes. [Operations](operations.md) |
 | Authentication | Identity belongs to whatever calls this library. `Audit::from_principal(...)` records who the caller says did something; it verifies nothing. |
 | Authorization | There is no scope check, no compartment restriction, no `meta.security` label enforcement, and no consent evaluation. |
 | Transport encryption to the database | Undecided on this engine (`O10.7`, `M14.22`) — the live test suite connects over a plain local port with no encryption configured either way. |

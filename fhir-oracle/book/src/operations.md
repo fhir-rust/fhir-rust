@@ -43,18 +43,10 @@ writers against it** — unlike `fhir-mssql`'s and `fhir-mysql`'s
 `concurrency.rs`, which do. Treat it as "present and plausible", not
 "contention-verified".
 
-**`get` has no snapshot-isolation protection at all, and that is a known,
-open gap, not an oversight.** `R4.5` requires a multi-statement read of one
-resource's tables to see one consistent snapshot. The candidate this port's
-annex named, `SET TRANSACTION READ ONLY`, was tried live and found to fail
-outright: `ORA-01466: unable to read data - table definition has changed`,
-on **any** session that has ever executed DDL — which includes every session
-that has run `init`. This was reproduced independently with a minimal
-3-statement probe (`CREATE TABLE` + commit, then on the same session `SET
-TRANSACTION READ ONLY` + `SELECT`), confirming it is a genuine Oracle
-session-level behavior, not a bug in how the store called it. The call was
-removed rather than shipped broken. No replacement mechanism is implemented
-yet — see `M14.19` in the [dialect annex](../../spec/14-oracle-dialect.md).
+`get` uses one serializable transaction for the root and child table queries
+(`db:R4.5`). The live reader/writer test verified whole resource versions on
+Oracle 26ai Free 23.26.2.0.0 and exercised the first read after installation.
+See the [dialect annex](../../spec/14-oracle-dialect.md).
 
 ## Erasure
 
@@ -87,3 +79,14 @@ until 2026-08-03 (audit **F-56**).
 One Oracle-specific note: a version namespace here is a **user** (`M14.5`),
 so a backup scope is a user's objects rather than a schema inside a
 database — plan RMAN/export scripts accordingly.
+
+A 2026-11-19 recovery drill on Oracle 26ai Free 23.26.2.0.0 exported a keyed
+R5 Patient slice with Data Pump (`SCHEMAS=R5`, `DIRECTORY=DATA_PUMP_DIR`,
+`EXCLUDE=STATISTICS`). Recovery recreated the R5 user and its documented grants
+before running `impdp` with `SCHEMAS=R5 EXCLUDE=USER`; without `EXCLUDE=USER`,
+Data Pump reports the deliberately pre-provisioned account as `ORA-31684`.
+The 2,998,272-byte export reached its first restored read in 11.62 seconds and
+preserved both resource versions, disclosure attribution, the installed map
+checksum, search behavior, and keyed audit verification. A deletion made after
+the export was absent. This verifies logical recovery of a Patient slice, not
+RMAN, point-in-time recovery, or the full R5 map (audit **F-104**).

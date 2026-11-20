@@ -28,10 +28,9 @@ Five things to know before editing anything here:
    Getting there found and fixed five real defects — the
    sharpest one to remember: **Oracle folds an unquoted username to
    uppercase for session identity**, so `RelMap.schema` MUST be uppercase
-   (`M14.5`) — the opposite of `r3`/`r4`/`r5` everywhere else. `R4.5` is an
-   **open, confirmed gap**: the one candidate mechanism (`SET TRANSACTION
-   READ ONLY`) was tried live and fails outright (`ORA-01466`); do not
-   assume it works because it appears sound on paper (`M14.19`).
+   (`M14.5`) — the opposite of `r3`/`r4`/`r5` everywhere else.
+   `get` uses a serializable snapshot, verified after schema install and
+   under concurrent writes on Oracle 26ai Free (`M14.19`).
 4. Normative behaviour is [`../spec/`](../spec/databases/index.md), not this directory.
    Check [`../spec/audit.md`](../spec/databases/audit.md) before reporting a defect — it
    may already be tracked.
@@ -48,5 +47,5 @@ review it. Its first version failed open because Oracle treats `''` as NULL, so
 **If you touch `SET TRANSACTION READ ONLY` or any other snapshot-isolation
 idea for `R4.5`, run it live before trusting it.** The obvious candidate
 already failed once, live, in a way no amount of reading would have caught
-(`ORA-01466` on any session that has ever executed DDL) — see `M14.19` and
+(`ORA-01466` immediately after DDL on the same session) — see `M14.19` and
 **F-68**.

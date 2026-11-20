@@ -30,9 +30,9 @@ use fhir_oracle_store::oracle::OracleStore;
 mod common;
 
 fn creds() -> Option<(String, String, String)> {
+    let connect = common::dsn()?.to_string();
     let user = std::env::var("FHIR_ORACLE_TEST_USER").ok()?;
     let password = std::env::var("FHIR_ORACLE_TEST_PASSWORD").ok()?;
-    let connect = common::dsn()?.to_string();
     Some((user, password, connect))
 }
 
@@ -130,6 +130,63 @@ async fn put_then_get_round_trips_a_resource() {
     );
 
     store.drop_schema().await.expect("drop");
+}
+
+#[tokio::test]
+async fn reads_never_tear_under_concurrent_writes() {
+    let Some((user, password, connect)) = creds() else {
+        assert!(
+            !common::require_db(),
+            "Oracle test credentials are required"
+        );
+        eprintln!("skipping: set FHIR_ORACLE_TEST_USER/_PASSWORD/_CONNECT to run");
+        return;
+    };
+    let map = sampled(&["Observation"]).expect("bundled R5 Observation map");
+    let reader = OracleStore::connect(&user, &password, &connect, map.clone())
+        .await
+        .expect("reader connects");
+    reader.drop_schema().await.expect("drop");
+    reader.init("snapshot").await.expect("init");
+
+    // A single idle connection in the reader pool has just run DDL.
+    let id = "snapshot";
+    assert_eq!(
+        reader
+            .get("Observation", id)
+            .await
+            .expect("read after init"),
+        None
+    );
+
+    let writer = OracleStore::connect(&user, &password, &connect, map)
+        .await
+        .expect("writer connects");
+    let audit = fhir_oracle_store::Audit::default();
+    let mut previous = observation(id, "final");
+    writer.put(&previous, &audit).await.expect("seed");
+    for n in 1..=80 {
+        let mut next = observation(id, if n % 2 == 0 { "final" } else { "amended" });
+        next["note"] = serde_json::json!([{"text": format!("version {n}")}]);
+        let (read, written) =
+            tokio::join!(reader.get("Observation", id), writer.put(&next, &audit));
+        written.expect("write");
+        let got = read.expect("read").expect("resource exists");
+        assert!(
+            got == previous || got == next,
+            "torn read during write {n}: {got}"
+        );
+        previous = next;
+    }
+    assert_eq!(
+        reader.get("Observation", id).await.expect("final read"),
+        Some(previous)
+    );
+    reader.drop_schema().await.expect("drop");
+    assert!(
+        reader.get("Observation", id).await.is_err(),
+        "a missing table is a database error"
+    );
 }
 
 #[tokio::test]

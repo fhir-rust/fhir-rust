@@ -36,7 +36,7 @@ getrandom.workspace = true
 
 [dev-dependencies]
 fhir-sqlite-map.workspace = true
-rusqlite.workspace = true
+rusqlite = { workspace = true, features = ["hooks"] }
 fhir-sqlite-gen.workspace = true
 tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
 tracing.workspace = true

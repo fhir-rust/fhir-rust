@@ -96,12 +96,16 @@ chunking does not protect against it.
 
 ## Backup
 
-A fhir-mysql store is plain MySQL: `mysqldump` for a logical dump,
-binary-log replication, and any consistent snapshot is a valid store.
-Point-in-time recovery is binlog replay — not PostgreSQL's WAL-based PITR,
-which this chapter described for every port until 2026-08-03 (audit
-**F-56**). `fhir-mysql` guarantees that a consistent snapshot is a valid
-store; it does not schedule, verify, or retain one.
+A consistent MySQL snapshot is a valid store. A logical drill can use
+`mysqldump --single-transaction --routines --triggers --hex-blob`, restored
+into a freshly created schema with the `mysql` client. Keep the audit keys
+outside the dump. Reopen the restored schema with the matching map and verify
+the installed checksum, current and earlier resources, disclosures, search
+results, and keyed audit chain.
+
+For production recovery objectives, use MySQL's binary log backup and replay
+facilities as appropriate. This crate does not schedule, verify, or retain
+backups.
 
 ## Trademarks
 

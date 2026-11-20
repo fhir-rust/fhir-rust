@@ -59,10 +59,9 @@ RFC 2119 keywords.
 >   `M14.5`, `M14.19`, `M14.34`, and `audit.md` **F-68** for the account.
 >   `upgrade`/`backfill_norm` followed on 2026-08-09 (**F-15**'s last port,
 >   **F-47** step 1): `tests/upgrade.rs`, 9 more live tests, and three new
->   requirements, `M14.35`–`M14.37` below. Not done: `R4.5` has no working
->   mechanism (`M14.19`, regressed from "presumed" to "confirmed absent"),
->   no `concurrency.rs` verifies `H5.4` under contention, and no
->   `redaction.rs`.
+>   requirements, `M14.35`–`M14.37` below. The live suite covers serializable snapshot
+>   reads (`M14.19`). Racing writers (`H5.4`) and redaction remain
+>   unverified.
 > - **There are no map tests** — `crates/fhir-oracle-map/tests/` does not exist.
 >   The unit tests in `ddl.rs` are what exists.
 >
@@ -270,26 +269,13 @@ RFC 2119 keywords.
 - **M14.18** Install atomicity at scale (`G2.5`) — see `M14.15`. Still
   undecided; the live schema install (`M14.23a`) was a single hand-run
   script, not tested for partial-failure behavior.
-- **M14.19** Snapshot isolation (`R4.5`). **Tried live, 2026-08-04, and
-  rejected: `SET TRANSACTION READ ONLY` does not work on this engine for
-  this port's shape of session.** The candidate this requirement named as
-  "the likely answer" fails every read with `ORA-01466: unable to read data
-  - table definition has changed` on any session that has ever executed
-  DDL — reproduced independently with a minimal 3-statement probe (`CREATE
-  TABLE` + commit, then on the *same session* `SET TRANSACTION READ ONLY` +
-  `SELECT`), with no application logic involved, confirming this is a
-  genuine Oracle session-level behavior and not a bug in how the store
-  called it. Every session that runs `init` (which is `CREATE TABLE`-heavy)
-  is poisoned for this technique for its lifetime.
-
-  The call was removed from `get` rather than shipped broken (see `oracle.rs`
-  module doc, `audit.md` **F-68**). **`R4.5` is therefore an open,
-  unresolved requirement on this port** — worse than merely undecided, since
-  the one candidate mechanism named here is now known not to work. A
-  dedicated Oracle session per read-transaction that has never run DDL, a
-  separate read-only connection pool, or `DBMS_FLASHBACK`/flashback query
-  (`AS OF SCN`/`AS OF TIMESTAMP`) are the remaining candidates and are
-  **untried**.
+- **M14.19** To satisfy `db:R4.5`, `get` MUST use one pooled connection and
+  begin with `SET TRANSACTION ISOLATION LEVEL SERIALIZABLE` before checking
+  for the resource or fetching any of its rows. The transaction MUST contain
+  only queries and MUST end before the connection returns to the pool.
+  Oracle 26ai Free returned `ORA-01466` when `SET TRANSACTION READ ONLY`
+  immediately followed table creation on the same session. A first read
+  using serializable isolation succeeded in the same post-DDL probe.
 - **M14.20** Write serialization for `version_id` and the chain append
   (`H5.4`). **Implemented, 2026-08-04: `SELECT … FOR UPDATE`** on the base
   row, held until commit/rollback, mirroring the pattern in `put`/`delete`

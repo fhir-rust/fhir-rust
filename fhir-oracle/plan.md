@@ -110,16 +110,11 @@ Work breakdown: [`tasks.md`](tasks.md).
   a silent edit or deletion detectable (M3.16). Chosen over write-once
   storage or an external ledger, both of which push the problem into the
   deployment.
-- **D18 — Snapshot reads.** The intent — multi-table reads see one snapshot
-  (R4.5) — stands; the mechanism does not exist in this port, and that is a
-  confirmed open gap, not an unverified requirement. The one candidate the
-  annex named, `SET TRANSACTION READ ONLY`, was tried live and fails with
-  `ORA-01466` on any session that has run DDL (reproduced minimally); the
-  call was removed rather than shipped broken, so `get` currently has no
-  snapshot-isolation protection at all (`M14.19`, **F-68**). The reason
-  this must be fixed is the ancestor's: the alternative is reconstructing
-  resources that never existed, which is not a trade a clinical store gets
-  to make.
+- **D18 — Snapshot reads.** A serializable transaction covers all queries
+  in `get` (`db:R4.5`, `M14.19`). Oracle 26ai Free 23.26.2.0.0 verified
+  this immediately after schema installation and with concurrent writes.
+  The earlier `SET TRANSACTION READ ONLY` probe returned `ORA-01466`
+  immediately after DDL (**F-68**).
 - **D19 — Normalize for search, keep the original for truth.** Accent- and
   case-insensitive matching (P6.6) uses generated normalized columns, not
   mangled stored values. The stored column stays lexically exact for
@@ -177,8 +172,7 @@ Work breakdown: [`tasks.md`](tasks.md).
   snapshot; on Oracle a slow reconstruction of a very large resource risks
   `ORA-01555` when it outruns undo retention (delayed vacuum was the
   ancestor's, PostgreSQL, form of this risk). Mitigation: reads are bounded
-  by timeouts and undo retention is an operational setting to size. Moot
-  until D18's gap is closed — today `get` holds no snapshot at all.
+  by deployment timeouts. Size Oracle undo retention for the expected reads.
 
 ## Milestones
 

@@ -29,7 +29,7 @@ store.
 | `fhir-mysql` | MySQL | 8.4 | Store |
 | `fhir-mariadb` | MariaDB | 11.4 | Store |
 | `fhir-mssql` | SQL Server | 2019+ | Store — see the advisory note below |
-| `fhir-oracle` | Oracle Database | 12.2+ | Store — `R4.5` snapshot reads are an open gap |
+| `fhir-oracle` | Oracle Database | 12.2+ | Store — snapshot reads verified on Oracle 26ai Free |
 
 Read [`doc/choosing-an-engine.md`](doc/choosing-an-engine.md) before deciding,
 and the [conformance matrix](spec/databases/conformance-matrix.md) before
