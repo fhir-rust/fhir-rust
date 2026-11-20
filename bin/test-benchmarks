@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Criterion micro-benchmarks for the audit chain (fhir-store).
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/../fhir-store"
+cargo bench --bench chain

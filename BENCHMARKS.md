@@ -28,7 +28,7 @@ repository-level summary.
 
 **Apple Silicon development machine, release (bench) profile, 2026-11-17,
 Criterion 0.8.** Pure CPU: no database, so these say nothing about any engine.
-Not produced by hosted CI. Reproduce with `make bench`.
+Not produced by hosted CI. Reproduce with `make test-benchmarks`.
 
 | Operation | 256 B | 4 KiB | 64 KiB |
 | --- | --- | --- | --- |
@@ -38,7 +38,7 @@ Not produced by hosted CI. Reproduce with `make bench`.
 Verifying a history (link + tag per 1 KiB row) runs at roughly 200,000 rows/s
 (1,000 rows in about 4.6 ms) — far below any store's own per-row cost.
 
-**Coverage:** `make coverage` (cargo-tarpaulin, LLVM engine) reports **86.4 %**
+**Coverage:** `make test-coverage` (cargo-tarpaulin, LLVM engine) reports **86.4 %**
 of `fhir-store`'s lines on 2026-11-17; the uncovered lines are the
 environment-variable key loaders and the `Audit::cli` fallback.
 

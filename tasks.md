@@ -139,7 +139,7 @@ Grouped by `plan.md` workstream. Order within a group is priority order.
 ### Security and supply chain
 
 - [x] **Repair the local Rust compatibility check** (2026-11-18, RV1.5).
-      `make test-minimum-supported-rust-version` now calls the renamed
+      `make ci-minimum-supported-rust-version` now calls the renamed
       script, resolves installed patch releases, and checks and tests whole
       workspaces with their lockfiles. A recording Cargo stand-in verified
       both commands in all nine directories using real Rust 1.98.1 and

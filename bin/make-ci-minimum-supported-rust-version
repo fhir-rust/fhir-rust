@@ -3,7 +3,7 @@
 # (MSRV, N-2) and on the next release up (N-1).
 #
 # The MSRV is read from the `rust-version` in fhir/Cargo.toml; N-1 is its minor
-# version plus one. Run via: make test-minimum-supported-rust-version
+# version plus one. Run via: make ci-minimum-supported-rust-version
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

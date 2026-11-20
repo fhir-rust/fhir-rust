@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Line coverage for fhir-store with cargo-tarpaulin (config: fhir-store/tarpaulin.toml).
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/../fhir-store"
+cargo tarpaulin
