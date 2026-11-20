@@ -24,9 +24,14 @@ dialect annex for what works. Nothing here speaks for a port.
       disclosure rows. The 22-test unit suite passes; the expanded 14-test
       upgrade suite passed 13 tests in one serial run, and its sole fixture
       failure (foreign-key enforcement on direct setup rows) was corrected and
-      re-run successfully in isolation. A new authoritative full coverage run
-      was deliberately stopped at the user's wrap-up request while its unit
-      suite was still green and actively consuming CPU. Next: rerun
+      re-run successfully in isolation. The implementation and this evidence
+      are committed and pushed as `d89cc3b`. Two subsequent authoritative full
+      coverage attempts were interrupted at the user's stop requests; the
+      second had not produced
+      `/private/tmp/fhir-sqlite-full-post-commit.json`, and its process-status
+      check was itself cancelled, so do not infer either a pass or a failure
+      from that attempt. Next: first confirm no stale `cargo llvm-cov` process
+      remains, then rerun
       `fhir-sqlite/scripts/coverage.sh`, use the new exact uncovered-line list to
       close the remainder, and raise `--fail-under-lines` from 95 to 100 only
       when that command passes. Do not cite 100% before then.
