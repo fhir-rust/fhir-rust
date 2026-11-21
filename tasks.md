@@ -242,7 +242,7 @@ Grouped by `plan.md` workstream. Order within a group is priority order.
       sat one unpublished version ahead — published in full 2026-08-26,
       34 matched at the gate.
 - [x] Replace the ports' `LICENSE-APACHE` header-boilerplate files — done
-      2026-08-26: all six are now copies of `LICENSES/Apache-2.0.txt` (§4 of
+      2026-08-26: all six are now copies of `LICENSES/apache-2.0/index.md` (§4 of
       Apache-2.0 requires recipients be given the License, and a header
       notice is not it); LICENSE.md's two statements about them updated in
       the same change.

@@ -1,7 +1,7 @@
 # License
 
 ```
-SPDX-License-Identifier: MIT OR Apache-2.0 OR BSD-3-Clause OR GPL-2.0-only OR GPL-3.0-only
+SPDX-License-Identifier: MIT OR Apache-2.0 OR BSD-3-Clause OR GPL-2.0-only OR GPL-3.0-only OR OGL-UK-3.0 OR CC-BY-NC-SA-4.0
 ```
 
 That expression is the authoritative, machine-readable statement of the terms,
@@ -10,7 +10,7 @@ all 34 of the repository's 41 `[package]` manifests that publish — 16
 verbatim, 18 via `license.workspace = true` from a workspace root carrying
 the same string; the seven `publish = false` internal crates declare no
 licence field). `OR` means **the recipient chooses**: take any one of the
-five, and no obligation from any other one applies to you.
+seven, and no obligation from any other one applies to you.
 
 License is any of these or contact us for custom license options.
 
@@ -22,7 +22,11 @@ License is any of these or contact us for custom license options.
 
 * [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0-standalone.html) ([SPDX: GPL-3.0-only](https://spdx.org/licenses/GPL-3.0-only.html))
 
-* [BSD 3-Clause License](https://opensource.org/license/bsd-3-clause) ([SPDX: BSD-Clause](https://spdx.org/licenses/BSD-3-Clause.html))
+* [BSD 3-Clause License](https://opensource.org/license/bsd-3-clause) ([SPDX: BSD-3-Clause](https://spdx.org/licenses/BSD-3-Clause.html))
+
+* [UK Open Government Licence v3.0](https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/) ([SPDX: OGL-UK-3.0](https://spdx.org/licenses/OGL-UK-3.0.html))
+
+* [Creative Commons Attribution Non Commercial Share Alike 4.0 International](https://creativecommons.org/licenses/by-nc-sa/4.0/) ([SPDX: CC-BY-NC-SA-4.0](https://spdx.org/licenses/CC-BY-NC-SA-4.0.html))
 
 ## Scope
 
@@ -39,7 +43,7 @@ The seven `fuzz` crates are `publish = false` and carry no manifest licence;
 they are build tooling, not distributed artifacts.
 
 Six ports also carry `LICENSE-APACHE` and `LICENSE-MIT`, the full texts of two
-of the five. They are the same grant as above, not a narrower one.
+of the seven. They are the same grant as above, not a narrower one.
 
 ## Already-published versions
 
@@ -50,19 +54,21 @@ names (`fhir-release-1` through `-10` — since renamed `fhir-r1`…`fhir-r10`
 in this tree) have releases that predate this harmonization; the terms
 above apply from the next published version of each.
 
-## The five texts
+## The seven texts
 
-Full text of every option is in [`LICENSES/`](LICENSES/), one file per SPDX
-identifier — the [REUSE](https://reuse.software/) convention, which exists for
-repositories that offer more than one licence:
+Full text of every option is in [`LICENSES/`](LICENSES/), one directory per
+license, named by the lowercase SPDX identifier, each holding the full text in
+`index.md`:
 
 | | |
 | --- | --- |
-| [`LICENSES/MIT.txt`](LICENSES/MIT.txt) | MIT |
-| [`LICENSES/Apache-2.0.txt`](LICENSES/Apache-2.0.txt) | Apache License 2.0 |
-| [`LICENSES/BSD-3-Clause.txt`](LICENSES/BSD-3-Clause.txt) | BSD 3-Clause |
-| [`LICENSES/GPL-2.0-only.txt`](LICENSES/GPL-2.0-only.txt) | GNU GPL v2.0 only |
-| [`LICENSES/GPL-3.0-only.txt`](LICENSES/GPL-3.0-only.txt) | GNU GPL v3.0 only |
+| [`LICENSES/mit/index.md`](LICENSES/mit/index.md) | MIT |
+| [`LICENSES/apache-2.0/index.md`](LICENSES/apache-2.0/index.md) | Apache License 2.0 |
+| [`LICENSES/bsd-3-clause/index.md`](LICENSES/bsd-3-clause/index.md) | BSD 3-Clause |
+| [`LICENSES/gpl-2.0-only/index.md`](LICENSES/gpl-2.0-only/index.md) | GNU GPL v2.0 only |
+| [`LICENSES/gpl-3.0-only/index.md`](LICENSES/gpl-3.0-only/index.md) | GNU GPL v3.0 only |
+| [`LICENSES/ogl-uk-3.0/index.md`](LICENSES/ogl-uk-3.0/index.md) | UK Open Government Licence v3.0 |
+| [`LICENSES/cc-by-nc-sa-4.0/index.md`](LICENSES/cc-by-nc-sa-4.0/index.md) | Creative Commons Attribution Non Commercial Share Alike 4.0 International |
 
 Added 2026-08-26. Before then this file offered five licences and the repository
 shipped the text of none of them at the root — only links. MIT, Apache-2.0 and
@@ -72,11 +78,11 @@ was not sufficient.
 **The six ports' `LICENSE-APACHE` files are the Apache licence, as of
 2026-08-26.** Until that date each contained only the fifteen-line boilerplate
 notice Apache publishes for *source file headers* — not a copy of the License,
-which §4 of Apache-2.0 requires recipients be given. All six are now copies of
-[`LICENSES/Apache-2.0.txt`](LICENSES/Apache-2.0.txt), which remains the
-authoritative text.
+which §4 of Apache-2.0 requires recipients be given. All six now carry the full Apache-2.0 text, the same text as
+[`LICENSES/apache-2.0/index.md`](LICENSES/apache-2.0/index.md), which remains the
+authoritative copy.
 
-## The five-way choice is deliberate
+## The seven-way choice is deliberate
 
 **Decided 2026-08-26: the five-way expression stays.** The alternative
 considered was narrowing the manifest field to the ecosystem-standard
@@ -96,7 +102,7 @@ adoption friction rather than a defect to fix.
 ## For automated tooling
 
 `LICENSE.md` is prose, and a licence detector reading only this file will report
-the repository as unlicensed rather than as any of the five — which is what
+the repository as unlicensed rather than as any of the seven — which is what
 GitHub currently does (`license.spdx_id: "NOASSERTION"`). The authoritative
 answers a tool should read are, in order:
 
@@ -104,9 +110,9 @@ answers a tool should read are, in order:
    expression above in all 34 of them, 16 verbatim and 18 by
    `license.workspace = true` inheritance;
 2. the `SPDX-License-Identifier` line at the top of this file;
-3. the full texts in [`LICENSES/`](LICENSES/), one file per SPDX identifier.
+3. the full texts in [`LICENSES/`](LICENSES/), one directory per license, each holding `index.md`.
    (The six ports also carry `LICENSE-MIT` and `LICENSE-APACHE`, full texts
-   both — the latter copies of `LICENSES/Apache-2.0.txt` since 2026-08-26;
+   both — the latter carrying the full Apache-2.0 text since 2026-08-26;
    see above.)
 
 If your licence policy evaluates SPDX expressions but not `OR` — a common

@@ -1,3 +1,12 @@
+# GNU General Public License v2.0
+
+SPDX identifier: [`GPL-2.0-only`](https://spdx.org/licenses/GPL-2.0-only.html)
+
+Official page: <https://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html>
+
+Full text:
+
+```text
 GNU GENERAL PUBLIC LICENSE
 Version 2, June 1991
 
@@ -115,3 +124,5 @@ You should also get your employer (if you work as a programmer) or your school, 
      Yoyodyne, Inc., hereby disclaims all copyright interest in the program `Gnomovision' (which makes passes at compilers) written by James Hacker.
 
 signature of Ty Coon, 1 April 1989 Ty Coon, President of Vice
+
+```

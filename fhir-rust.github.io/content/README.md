@@ -301,7 +301,7 @@ against this repository's paths.
 | [GOVERNANCE.md](GOVERNANCE.md) | how decisions get made, what binds them, and how to disagree |
 | [AI_STATEMENT.md](AI_STATEMENT.md) | how AI tooling is used here, and the failure mode it has already caused |
 | [CITATION.cff](CITATION.cff) | how to cite this work |
-| [LICENSE.md](LICENSE.md) | the five-way licence choice, with SPDX |
+| [LICENSE.md](LICENSE.md) | the seven-way licence choice, with SPDX |
 | [help/outreach/index.md](help/outreach/index.md) | who this is for, what may be claimed about it, and what is missing |
 
 ## Specification-driven
@@ -325,7 +325,7 @@ prefix collision between them.
 
 ## License
 
-`MIT OR Apache-2.0 OR BSD-3-Clause OR GPL-2.0-only OR GPL-3.0-only` — declared
+`MIT OR Apache-2.0 OR BSD-3-Clause OR GPL-2.0-only OR GPL-3.0-only OR OGL-UK-3.0 OR CC-BY-NC-SA-4.0` — declared
 identically by all 34 crates in the repository, across all four families. `OR`
 means you choose; no obligation from one option carries into another.
 
