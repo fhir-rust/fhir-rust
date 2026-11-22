@@ -411,7 +411,7 @@ async fn file(
     match std::fs::read(&path) {
         Ok(bytes) => {
             // The whole file is a disclosure — count says how large a one.
-            #[allow(clippy::cast_possible_wrap)]
+            // `None` (unknown) when the count has no `i64`, never a wrong number.
             disclose(
                 store,
                 &headers,
@@ -420,7 +420,7 @@ async fn file(
                 None,
                 None,
                 "ok",
-                Some(count as i64),
+                i64::try_from(count).ok(),
             )
             .await;
             (StatusCode::OK, [(header::CONTENT_TYPE, NDJSON)], bytes).into_response()

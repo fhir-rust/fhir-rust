@@ -5,6 +5,7 @@
 
 use std::collections::HashMap;
 
+use fhir_sqlite_map::model::index;
 use fhir_sqlite_map::model::{
     ColTy, Column, Elem, ElemKind, Node, Prim, PrimCol, RefCols, RelMap, ResourceMap, Table,
     TableKind,
@@ -67,14 +68,44 @@ const fn fixed_charge(kind: TableKind) -> usize {
     }
 }
 
+/// Fallback for a charge or width too large to count (RCA-NONE-3): `usize::MAX`.
+///
+/// Why it is correct: the figures here are estimates compared with a budget
+/// (`ROW_CHARGE_BUDGET`, `ROW_CHARGE_TRIGGER`, `SPLIT_WIDTH`). A total that does
+/// not fit a `usize` is past every budget, and `usize::MAX` is also past every
+/// budget, so each comparison answers "over" exactly as the true total would.
+const CHARGE_OVERFLOW: usize = usize::MAX;
+
+/// Sum of charges or widths, or [`CHARGE_OVERFLOW`] when the sum does not fit.
+fn total(parts: impl IntoIterator<Item = usize>) -> usize {
+    parts
+        .into_iter()
+        .try_fold(0_usize, usize::checked_add)
+        .unwrap_or(CHARGE_OVERFLOW) // CHARGE_OVERFLOW: over any budget
+}
+
+/// `a + b`, or [`CHARGE_OVERFLOW`] when the sum does not fit.
+fn add(a: usize, b: usize) -> usize {
+    a.checked_add(b).unwrap_or(CHARGE_OVERFLOW) // CHARGE_OVERFLOW: over any budget
+}
+
+/// `n * unit`, or [`CHARGE_OVERFLOW`] when the product does not fit.
+fn times(n: usize, unit: usize) -> usize {
+    n.checked_mul(unit).unwrap_or(CHARGE_OVERFLOW) // CHARGE_OVERFLOW: over any budget
+}
+
+/// A table's fixed charge plus the charge of every data column.
+fn table_total(kind: TableKind, cols: &[Column]) -> usize {
+    total(std::iter::once(fixed_charge(kind)).chain(cols.iter().map(|c| row_charge(c.ty))))
+}
+
 /// `G2.6a`: no table in the finished map may charge past the row budget.
 /// Runs after the search phase (its `_norm` columns count) so the bound is
 /// a fact of the shipped asset, mirroring the 1500-column check in `build`.
 pub fn assert_row_budget(map: &RelMap) -> Result<(), GenError> {
     for rm in map.resources.values() {
         for t in &rm.tables {
-            let charge: usize =
-                fixed_charge(t.kind) + t.cols.iter().map(|c| row_charge(c.ty)).sum::<usize>();
+            let charge = table_total(t.kind, &t.cols);
             if charge > ROW_CHARGE_BUDGET {
                 return Err(GenError::Build(format!(
                     "table {} charges {charge} bytes against InnoDB's row-size \
@@ -167,7 +198,7 @@ impl<'s> ResourceBuilder<'s> {
         }
         self.col_regs.push(base_reg);
 
-        let root = self.alloc_node();
+        let root = self.alloc_node()?;
         let mut stack: Vec<String> = vec![rname.clone()];
         self.build_children(root, self.root_def, &rname, 0, "", &rname, &mut stack)?;
 
@@ -215,13 +246,22 @@ impl<'s> ResourceBuilder<'s> {
         })
     }
 
-    fn alloc_node(&mut self) -> u32 {
+    fn alloc_node(&mut self) -> Result<u32, GenError> {
+        let id = u32::try_from(self.nodes.len())
+            .map_err(|_| GenError::Build("more nodes than a u32 id can name".to_string()))?;
         self.nodes.push(Node { elems: Vec::new() });
-        (self.nodes.len() - 1) as u32
+        Ok(id)
     }
 
-    fn new_table(&mut self, parent_table: u32, col_base: &str, res_path: &str) -> u32 {
-        let parent = &self.tables[parent_table as usize].name;
+    fn new_table(
+        &mut self,
+        parent_table: u32,
+        col_base: &str,
+        res_path: &str,
+    ) -> Result<u32, GenError> {
+        let id = u32::try_from(self.tables.len())
+            .map_err(|_| GenError::Build("more tables than a u32 id can name".to_string()))?;
+        let parent = &self.tables[index(parent_table)].name;
         let name = self.table_reg.claim(&format!("{parent}_{col_base}"));
         self.tables.push(Table {
             norm_cols: Vec::new(),
@@ -236,12 +276,12 @@ impl<'s> ResourceBuilder<'s> {
             reg.claim(reserved);
         }
         self.col_regs.push(reg);
-        (self.tables.len() - 1) as u32
+        Ok(id)
     }
 
     fn add_col(&mut self, table: u32, name: &str, ty: ColTy, path: &str) -> String {
-        let claimed = self.col_regs[table as usize].claim(name);
-        self.tables[table as usize].cols.push(Column {
+        let claimed = self.col_regs[index(table)].claim(name);
+        self.tables[index(table)].cols.push(Column {
             name: claimed.clone(),
             ty,
             path: path.to_string(),
@@ -279,12 +319,12 @@ impl<'s> ResourceBuilder<'s> {
                     neg_lane: false,
                     kind: ElemKind::Contained,
                 };
-                self.nodes[node as usize].elems.push(elem);
+                self.nodes[index(node)].elems.push(elem);
                 continue;
             }
             let child_res_path = format!("{res_path}.{}", e.name);
             let elem = self.build_elem(e, def, table, prefix, &child_res_path, stack)?;
-            self.nodes[node as usize].elems.push(elem);
+            self.nodes[index(node)].elems.push(elem);
         }
         Ok(())
     }
@@ -302,8 +342,10 @@ impl<'s> ResourceBuilder<'s> {
         // would-be inline contribution passes the trigger, anything that can
         // own a table does. Primitives cannot and land regardless — the
         // trigger-to-budget gap is their headroom.
-        let force =
-            self.table_charge(table) + self.charge_est_elem(e, def, stack) > ROW_CHARGE_TRIGGER;
+        let force = add(
+            self.table_charge(table),
+            self.charge_est_elem(e, def, stack),
+        ) > ROW_CHARGE_TRIGGER;
         // Backbone: children defined in place take precedence over the
         // BackboneElement/Element type code.
         if !def.kids(&e.path).is_empty() && e.content_ref.is_none() && !e.choice {
@@ -350,9 +392,9 @@ impl<'s> ResourceBuilder<'s> {
             || e.repeats
             || self.cyclic_targets.contains(&e.path)
             || self.width_children(def, &e.path, stack) > SPLIT_WIDTH;
-        let node = self.alloc_node();
+        let node = self.alloc_node()?;
         let (t, new_prefix): (Option<u32>, String) = if split {
-            let t = self.new_table(table, &col_base, res_path);
+            let t = self.new_table(table, &col_base, res_path)?;
             (Some(t), String::new())
         } else {
             (None, format!("{col_base}_"))
@@ -435,13 +477,13 @@ impl<'s> ResourceBuilder<'s> {
         // Sibling-branch reference: copy-expand the target's subtree here,
         // with the copy shadowing the target for any nested self-recursion.
         let col_base = format!("{prefix}{}", snake(&e.name));
-        let node = self.alloc_node();
+        let node = self.alloc_node()?;
         let split = force
             || e.repeats
             || self.cyclic_targets.contains(target)
             || self.width_children(self.root_def, target, stack) > SPLIT_WIDTH;
         let (t, new_prefix): (Option<u32>, String) = if split {
-            let t = self.new_table(table, &col_base, res_path);
+            let t = self.new_table(table, &col_base, res_path)?;
             (Some(t), String::new())
         } else {
             (None, format!("{col_base}_"))
@@ -500,7 +542,7 @@ impl<'s> ResourceBuilder<'s> {
         let col_base = format!("{prefix}{}", snake(&e.name));
         let split = force || self.width_choice(&e.types, stack) > SPLIT_WIDTH;
         let (t, var_table, var_prefix): (Option<u32>, u32, String) = if split {
-            let t = self.new_table(table, &col_base, res_path);
+            let t = self.new_table(table, &col_base, res_path)?;
             (Some(t), t, format!("{}_", snake(&e.name)))
         } else {
             (None, table, format!("{col_base}_"))
@@ -513,8 +555,8 @@ impl<'s> ResourceBuilder<'s> {
             // `G2.6a` again, per variant: an open-typed `value[x]` splat is
             // wider than any budget on its own, so complex variants spill
             // into their own tables once the choice table fills.
-            let var_force =
-                self.table_charge(var_table) + self.charge_of_one(ty, stack) > ROW_CHARGE_TRIGGER;
+            let var_force = add(self.table_charge(var_table), self.charge_of_one(ty, stack))
+                > ROW_CHARGE_TRIGGER;
             let var = self.build_typed_named(
                 json,
                 &e.path,
@@ -574,7 +616,7 @@ impl<'s> ResourceBuilder<'s> {
     ) -> Result<Elem, GenError> {
         if let Some(prim) = self.prim_of(ty) {
             if repeats {
-                let t = self.new_table(table, col_base, res_path);
+                let t = self.new_table(table, col_base, res_path)?;
                 let pc = self.prim_cols(t, "value", prim, res_path);
                 return Ok(Elem {
                     json,
@@ -629,9 +671,9 @@ impl<'s> ResourceBuilder<'s> {
             return Err(GenError::Build(format!("{def_path}: unknown type {ty:?}")));
         };
         let split = force || repeats || self.width_of_type(ty, stack) > SPLIT_WIDTH;
-        let node = self.alloc_node();
+        let node = self.alloc_node()?;
         let (t, new_prefix): (Option<u32>, String) = if split {
-            let t = self.new_table(table, col_base, res_path);
+            let t = self.new_table(table, col_base, res_path)?;
             (Some(t), String::new())
         } else {
             (None, format!("{col_base}_"))
@@ -692,7 +734,7 @@ impl<'s> ResourceBuilder<'s> {
                     ColTy::Text,
                     &child_res_path,
                 );
-                self.nodes[node as usize].elems.push(Elem {
+                self.nodes[index(node)].elems.push(Elem {
                     json: "reference".to_string(),
                     path: e.path.clone(),
                     repeats: false,
@@ -706,7 +748,7 @@ impl<'s> ResourceBuilder<'s> {
                 });
             } else {
                 let elem = self.build_elem(e, tdef, table, prefix, &child_res_path, stack)?;
-                self.nodes[node as usize].elems.push(elem);
+                self.nodes[index(node)].elems.push(elem);
             }
         }
         Ok(())
@@ -744,8 +786,8 @@ impl<'s> ResourceBuilder<'s> {
     /// What this table already charges: its fixed columns plus every data
     /// column built so far.
     fn table_charge(&self, table: u32) -> usize {
-        let t = &self.tables[table as usize];
-        fixed_charge(t.kind) + t.cols.iter().map(|c| row_charge(c.ty)).sum::<usize>()
+        let t = &self.tables[index(table)];
+        table_total(t.kind, &t.cols)
     }
 
     /// The element's would-be inline contribution, in charged bytes,
@@ -807,30 +849,33 @@ impl<'s> ResourceBuilder<'s> {
             if !def.kids(&e.path).is_empty() && !e.choice {
                 let bw = self.width_children_of(def, &e.path, stack);
                 if bw <= SPLIT_WIDTH {
-                    w += self.charge_children_of(def, &e.path, stack);
+                    w = add(w, self.charge_children_of(def, &e.path, stack));
                 }
                 continue;
             }
             if e.choice {
                 let cw = self.width_choice(&e.types, stack);
                 if cw <= SPLIT_WIDTH {
-                    w += self.charge_choice(&e.types, stack);
+                    w = add(w, self.charge_choice(&e.types, stack));
                 }
                 continue;
             }
             let [ty] = e.types.as_slice() else { continue };
-            w += self.charge_of_one(ty, stack);
+            w = add(w, self.charge_of_one(ty, stack));
         }
         w
     }
 
     fn charge_choice(&mut self, types: &[String], stack: &[String]) -> usize {
-        types.iter().map(|t| self.charge_of_one(t, stack)).sum()
+        total(types.iter().map(|t| self.charge_of_one(t, stack)))
     }
 
     fn charge_of_one(&mut self, ty: &str, stack: &[String]) -> usize {
         if let Some(prim) = self.prim_of(ty) {
-            return row_charge(prim.col_ty()) + prim.sort_ty().map_or(0, row_charge);
+            return add(
+                row_charge(prim.col_ty()),
+                prim.sort_ty().map_or(0, row_charge),
+            );
         }
         if ty == "Resource" || ty == "DomainResource" {
             return row_charge(ColTy::Jsonb);
@@ -838,7 +883,7 @@ impl<'s> ResourceBuilder<'s> {
         if ty == "Reference" {
             // Twelve Text-family columns (the parsed reference triple,
             // display, type, and the flattened identifier).
-            return 12 * row_charge(ColTy::Text);
+            return times(12, row_charge(ColTy::Text));
         }
         if stack.iter().any(|s| s == ty) {
             return 0; // spills
@@ -884,22 +929,22 @@ impl<'s> ResourceBuilder<'s> {
             }
             if !def.kids(&e.path).is_empty() && !e.choice {
                 let bw = self.width_children_of(def, &e.path, stack);
-                w += if bw > SPLIT_WIDTH { 0 } else { bw };
+                w = add(w, if bw > SPLIT_WIDTH { 0 } else { bw });
                 continue;
             }
             if e.choice {
                 let cw = self.width_choice(&e.types, stack);
-                w += if cw > SPLIT_WIDTH { 0 } else { cw };
+                w = add(w, if cw > SPLIT_WIDTH { 0 } else { cw });
                 continue;
             }
             let [ty] = e.types.as_slice() else { continue };
-            w += self.width_of_one(ty, stack);
+            w = add(w, self.width_of_one(ty, stack));
         }
         w
     }
 
     fn width_choice(&mut self, types: &[String], stack: &[String]) -> usize {
-        types.iter().map(|t| self.width_of_one(t, stack)).sum()
+        total(types.iter().map(|t| self.width_of_one(t, stack)))
     }
 
     fn width_of_one(&mut self, ty: &str, stack: &[String]) -> usize {
@@ -984,7 +1029,7 @@ pub fn record_path_bound(map: &mut RelMap) {
 const CYCLE_CAP: u8 = 8;
 
 fn longest_path(rm: &ResourceMap, node: u32, jlen: usize, on_stack: &mut [u8]) -> usize {
-    let n = node as usize;
+    let n = index(node);
     if on_stack[n] >= CYCLE_CAP {
         return jlen;
     }
@@ -1016,5 +1061,31 @@ fn longest_elem(rm: &ResourceMap, elem: &Elem, jlen: usize, on_stack: &mut [u8])
     match &elem.kind {
         ElemKind::Group(child) => longest_path(rm, *child, elen, on_stack),
         _ => elen,
+    }
+}
+
+#[cfg(test)]
+mod charge_tests {
+    use super::*;
+
+    #[test]
+    fn total_adds_exactly() {
+        assert_eq!(total([1, 2, 3]), 6);
+        assert_eq!(total([]), 0);
+    }
+
+    #[test]
+    fn total_falls_back_to_over_budget_when_the_sum_overflows() {
+        assert_eq!(total([usize::MAX, 1]), CHARGE_OVERFLOW);
+        assert_eq!(CHARGE_OVERFLOW, usize::MAX);
+        assert!(total([usize::MAX, 1]) > ROW_CHARGE_BUDGET);
+    }
+
+    #[test]
+    fn add_and_times_fall_back_to_over_budget_on_overflow() {
+        assert_eq!(add(2, 3), 5);
+        assert_eq!(add(usize::MAX, 1), usize::MAX);
+        assert_eq!(times(12, 4), 48);
+        assert_eq!(times(usize::MAX, 2), usize::MAX);
     }
 }

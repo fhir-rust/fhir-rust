@@ -63,6 +63,27 @@ impl Registry {
     }
 }
 
+/// Fallback for [`joined_len`] (RCA-NONE-3): `usize::MAX`.
+///
+/// Why it is correct: a length that does not fit a `usize` is longer than
+/// `PG_MAX_IDENT`, and `usize::MAX` is too, so `fit` keeps abbreviating exactly
+/// as it would for the true length.
+const JOINED_LEN_OVERFLOW: usize = usize::MAX;
+
+/// Length of `segs` joined by one separator byte each.
+fn joined_len(segs: &[String]) -> usize {
+    // Fallback: 0 separators for no segments; `split` yields at least one.
+    #[expect(
+        clippy::manual_saturating_arithmetic,
+        reason = "RCA-INT-4: checked_sub with a declared 0 fallback is the required form"
+    )]
+    let separators = segs.len().checked_sub(1).unwrap_or(0);
+    segs.iter()
+        .map(String::len)
+        .try_fold(separators, usize::checked_add)
+        .unwrap_or(JOINED_LEN_OVERFLOW) // JOINED_LEN_OVERFLOW: longer than any limit
+}
+
 /// Shorten a snake_case identifier under the limit: abbreviate the longest
 /// segments to 4 characters until it fits, falling back to a hash suffix.
 fn fit(full: &str) -> String {
@@ -71,7 +92,7 @@ fn fit(full: &str) -> String {
     }
     let mut segs: Vec<String> = full.split('_').map(str::to_string).collect();
     loop {
-        let total: usize = segs.iter().map(String::len).sum::<usize>() + segs.len() - 1;
+        let total = joined_len(&segs);
         if total <= PG_MAX_IDENT {
             return segs.join("_");
         }
@@ -98,6 +119,33 @@ fn hashed(full: &str) -> String {
     let keep = PG_MAX_IDENT - hex.len() - 1;
     let head: String = full.chars().take(keep).collect();
     format!("{head}_{hex}")
+}
+
+#[cfg(test)]
+mod joined_len_tests {
+    use super::*;
+
+    #[test]
+    fn joined_len_counts_bytes_and_separators() {
+        let segs: Vec<String> = ["ab", "cde"].iter().map(|s| s.to_string()).collect();
+        assert_eq!(joined_len(&segs), 6);
+        assert_eq!(joined_len(&[]), 0);
+        assert_eq!(joined_len(&["x".to_string()]), 1);
+    }
+
+    #[test]
+    fn joined_len_is_over_any_limit_when_it_overflows() {
+        // A `String` cannot be `usize::MAX` long; the fallback is exercised
+        // through the fold's own type instead.
+        assert_eq!(
+            [usize::MAX, 1]
+                .into_iter()
+                .try_fold(0_usize, usize::checked_add)
+                .unwrap_or(JOINED_LEN_OVERFLOW),
+            JOINED_LEN_OVERFLOW
+        );
+        assert_eq!(JOINED_LEN_OVERFLOW, usize::MAX);
+    }
 }
 
 #[cfg(test)]

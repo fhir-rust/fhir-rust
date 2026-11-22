@@ -1043,30 +1043,47 @@ pub(crate) fn parse_ords(s: &str) -> Result<Vec<i16>, StoreError> {
 /// zone, so a verifier connecting from elsewhere would recompute different bytes
 /// and report every history row as broken.
 fn utc_micros(t: std::time::SystemTime) -> String {
-    let d = t.duration_since(std::time::UNIX_EPOCH).unwrap_or_default();
-    let (secs, micros) = (d.as_secs() as i64, d.subsec_micros());
-    let (days, sod) = (secs.div_euclid(86_400), secs.rem_euclid(86_400));
-    let (y, m, dd) = civil_from_days(days);
-    format!(
-        "{y:04}-{m:02}-{dd:02} {:02}:{:02}:{:02}.{micros:06}",
-        sod / 3600,
-        (sod % 3600) / 60,
-        sod % 60
-    )
+    render_utc_micros(t).unwrap_or_else(|| UTC_MICROS_FALLBACK.to_string())
 }
 
-/// Howard Hinnant's `civil_from_days`.
-fn civil_from_days(z: i64) -> (i64, u32, u32) {
-    let z = z + 719_468;
-    let era = z.div_euclid(146_097);
-    let doe = z.rem_euclid(146_097);
+/// Fallback for [`utc_micros`] (RCA-NONE-3): the Unix epoch, rendered.
+///
+/// Why it is correct: a clock before 1970 has no `Duration` since the epoch
+/// and has always rendered as the epoch, so the stored text stays fixed width
+/// and comparable. A date outside `i64` days cannot come from a real clock;
+/// it renders the same way rather than panicking.
+const UTC_MICROS_FALLBACK: &str = "1970-01-01 00:00:00.000000";
+
+/// The fixed-width UTC rendering, or `None` when the instant is before the epoch
+/// or outside the range the calendar arithmetic can express.
+fn render_utc_micros(t: std::time::SystemTime) -> Option<String> {
+    let d = t.duration_since(std::time::UNIX_EPOCH).ok()?;
+    let secs = i64::try_from(d.as_secs()).ok()?;
+    let micros = d.subsec_micros();
+    let days = secs.checked_div_euclid(86_400)?;
+    let sod = secs.checked_rem_euclid(86_400)?;
+    let (y, m, dd) = civil_from_days(days)?;
+    // RCA-EXC-2: 0 <= sod < 86_400, and the divisors are nonzero constants.
+    let (hh, mm, ss) = (sod / 3600, (sod % 3600) / 60, sod % 60);
+    Some(format!(
+        "{y:04}-{m:02}-{dd:02} {hh:02}:{mm:02}:{ss:02}.{micros:06}"
+    ))
+}
+
+/// Howard Hinnant's `civil_from_days`: days since the Unix epoch to y/m/d, or
+/// `None` when the arithmetic does not fit.
+fn civil_from_days(z: i64) -> Option<(i64, u32, u32)> {
+    let z = z.checked_add(719_468)?;
+    let era = z.checked_div_euclid(146_097)?;
+    let doe = z.checked_rem_euclid(146_097)?;
+    // RCA-EXC-2: 0 <= doe < 146_097, so every term below is under 1_000_000.
     let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
-    let y = yoe + era * 400;
+    let y = era.checked_mul(400)?.checked_add(yoe)?;
     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
     let mp = (5 * doy + 2) / 153;
-    let d = (doy - (153 * mp + 2) / 5 + 1) as u32;
-    let m = if mp < 10 { mp + 3 } else { mp - 9 } as u32;
-    (if m <= 2 { y + 1 } else { y }, m, d)
+    let d = u32::try_from(doy - (153 * mp + 2) / 5 + 1).ok()?;
+    let m = u32::try_from(if mp < 10 { mp + 3 } else { mp - 9 }).ok()?;
+    Some((if m <= 2 { y.checked_add(1)? } else { y }, m, d))
 }
 
 fn sqlval(v: &fhir_mariadb_map::shred::SqlVal) -> mysql_async::Value {
@@ -2045,7 +2062,7 @@ async fn write_shredded(
         by_table.entry(r.table).or_default().push(r);
     }
     for (ti, rows) in by_table {
-        let t = &rm.tables[ti as usize];
+        let t = &rm.tables[fhir_mariadb_map::model::index(ti)];
         let mut names: Vec<String> = Vec::new();
         for r in &rows {
             for (n, _) in &r.cols {
@@ -2353,4 +2370,35 @@ async fn recon_with_map(
     // (audit F-23).
     let v = fhir_mariadb_map::reconstruct::reconstruct(rm, &input, Some(id))?;
     Ok(Some(v))
+}
+
+#[cfg(test)]
+mod utc_micros_tests {
+    use super::*;
+    use std::time::{Duration, UNIX_EPOCH};
+
+    #[test]
+    fn the_epoch_renders_as_itself() {
+        assert_eq!(utc_micros(UNIX_EPOCH), "1970-01-01 00:00:00.000000");
+    }
+
+    #[test]
+    fn a_leap_day_renders_with_fixed_width_micros() {
+        let t = UNIX_EPOCH + Duration::new(951_868_799, 123_456_000);
+        assert_eq!(utc_micros(t), "2000-02-29 23:59:59.123456");
+    }
+
+    #[test]
+    fn a_clock_before_the_epoch_renders_as_the_declared_fallback() {
+        let t = UNIX_EPOCH - Duration::from_secs(1);
+        assert_eq!(utc_micros(t), UTC_MICROS_FALLBACK);
+        assert_eq!(UTC_MICROS_FALLBACK, "1970-01-01 00:00:00.000000");
+    }
+
+    #[test]
+    fn civil_from_days_is_exact_and_refuses_what_does_not_fit() {
+        assert_eq!(civil_from_days(0), Some((1970, 1, 1)));
+        assert_eq!(civil_from_days(-1), Some((1969, 12, 31)));
+        assert_eq!(civil_from_days(i64::MAX), None);
+    }
 }

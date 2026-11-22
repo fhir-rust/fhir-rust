@@ -7,6 +7,25 @@ use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 
+// RCA-CONV-6: node and table ids are `u32`; a vector index is `usize`. The
+// conversion below is lossless only where `usize` is at least 32 bits, so a
+// narrower target is refused at compile time rather than mis-indexing.
+const _: () = assert!(usize::BITS >= 32, "u32 node and table ids must fit a usize");
+
+/// Fallback for [`index`] (RCA-NONE-3): `usize::MAX`.
+///
+/// Why it is correct: the conversion fails only where `usize` is narrower than
+/// the id, which the compile-time assertion above rules out. If it ever did,
+/// `usize::MAX` is past the end of every `Vec`, so a lookup misses (`get`) or
+/// stops at the ordinary out-of-bounds failure, and never aliases another
+/// element.
+pub const INDEX_FALLBACK: usize = usize::MAX;
+
+/// A node or table id (`u32`), or any integer, as a vector index.
+pub fn index<T: TryInto<usize>>(id: T) -> usize {
+    id.try_into().unwrap_or(INDEX_FALLBACK) // INDEX_FALLBACK: past every Vec
+}
+
 /// The complete relational map for one FHIR version.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RelMap {
@@ -498,11 +517,11 @@ impl RelMap {
 
 impl ResourceMap {
     pub fn node(&self, id: u32) -> &Node {
-        &self.nodes[id as usize]
+        &self.nodes[index(id)]
     }
 
     pub fn table(&self, id: u32) -> &Table {
-        &self.tables[id as usize]
+        &self.tables[index(id)]
     }
 
     pub fn base_table(&self) -> &Table {
@@ -514,6 +533,29 @@ impl ResourceMap {
             .iter()
             .enumerate()
             .find(|(_, t)| t.kind == kind)
-            .map(|(i, t)| (i as u32, t))
+            // An index that does not fit a `u32` id cannot name a table: absent.
+            .and_then(|(i, t)| u32::try_from(i).ok().map(|id| (id, t)))
+    }
+}
+
+#[cfg(test)]
+mod index_tests {
+    use super::*;
+
+    #[test]
+    fn index_widens_a_u32_id_exactly() {
+        assert_eq!(index(0_u32), 0);
+        assert_eq!(index(7_u32), 7);
+        assert_eq!(index(u32::MAX), 4_294_967_295);
+    }
+
+    #[test]
+    fn index_falls_back_past_every_vec_when_the_value_does_not_fit() {
+        // RCA-NONE-3: a negative value has no `usize`; the declared fallback is
+        // `usize::MAX`, not zero (which would alias the first element).
+        assert_eq!(index(-1_i64), INDEX_FALLBACK);
+        assert_eq!(INDEX_FALLBACK, usize::MAX);
+        let v = [10, 20, 30];
+        assert_eq!(v.get(index(-1_i64)), None);
     }
 }

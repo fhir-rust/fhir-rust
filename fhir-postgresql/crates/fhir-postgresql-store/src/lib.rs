@@ -43,6 +43,9 @@ use thiserror::Error;
 use tokio_postgres::NoTls;
 use tokio_postgres::types::ToSql;
 
+/// Spec P6.3: `_count` is at most 1000; a history page holds no more entries.
+const MAX_HISTORY_PAGE: i64 = 1000;
+
 #[derive(Debug, Error)]
 pub enum StoreError {
     /// A database failure.
@@ -1607,7 +1610,15 @@ impl Store {
             }
             None => self.map.resources.keys().map(String::as_str).collect(),
         };
-        let count = count.clamp(1, 1000);
+        // Spec P6.3: a page holds at most `MAX_HISTORY_PAGE` entries. A count
+        // below 1 is refused, not raised to 1: an unusable page size is the
+        // caller's error, not a figure to repair.
+        if count < 1 {
+            return Err(StoreError::Unsupported(format!(
+                "history count must be at least 1, got {count}"
+            )));
+        }
+        let count = count.min(MAX_HISTORY_PAGE);
         let s = &self.map.schema;
         let client = self.pool.get().await?;
         let mut out: Vec<(String, String, HistEntry)> = Vec::new();
@@ -2648,7 +2659,7 @@ impl Store {
             let TargetKind::Reference { c_type, c_id, .. } = &t.kind else {
                 continue;
             };
-            let table = &rm.tables[t.table as usize].name;
+            let table = &rm.tables[fhir_postgresql_map::model::index(t.table)].name;
             let (id_col, filter) = if t.table == 0 {
                 ("\"id\"", "")
             } else {
@@ -2719,7 +2730,7 @@ async fn insert_shredded(
     let mut by_table: Vec<Vec<&fhir_postgresql_map::shred::Row>> =
         vec![Vec::new(); rm.tables.len()];
     for row in &out.rows {
-        by_table[row.table as usize].push(row);
+        by_table[fhir_postgresql_map::model::index(row.table)].push(row);
     }
 
     for (ti, rows) in by_table.iter().enumerate() {

@@ -74,6 +74,42 @@ static METRICS: Metrics = Metrics {
     ],
 };
 
+/// Whole microseconds in `seconds`, or `None` when they are not a `u64`.
+fn whole_micros(seconds: f64) -> Option<u64> {
+    let duration = std::time::Duration::try_from_secs_f64(seconds).ok()?;
+    u64::try_from(duration.as_micros()).ok()
+}
+
+/// The largest microsecond total an `f64` holds exactly (RCA-CONV-4): 2^53.
+const MAX_EXACT_MICROS: u64 = 1 << 53;
+
+/// `micros` as seconds, or `None` above 2^53 microseconds (about 285 years of
+/// summed request time), where an `f64` would round.
+fn micros_to_seconds(micros: u64) -> Option<f64> {
+    if micros > MAX_EXACT_MICROS {
+        return None;
+    }
+    #[expect(
+        clippy::as_conversions,
+        clippy::cast_precision_loss,
+        reason = "RCA-CONV-4: micros <= 2^53 is checked above, so the conversion is exact"
+    )]
+    let micros = micros as f64;
+    Some(micros / 1_000_000.0)
+}
+
+/// The counter for `status`'s class: index 0 for 1xx up to index 4 for 5xx.
+///
+/// A status past 5xx (non-standard 6xx to 9xx) counts with the last class, the
+/// catch-all for server-side codes; nothing is dropped from the totals.
+fn class_slot(by_class: &[AtomicU64; 5], status: StatusCode) -> Option<&AtomicU64> {
+    let class = usize::from(status.as_u16() / 100);
+    class
+        .checked_sub(1)
+        .and_then(|i| by_class.get(i))
+        .or_else(|| by_class.last())
+}
+
 impl Metrics {
     fn observe(&self, seconds: f64, status: StatusCode) {
         match BUCKETS.iter().position(|&b| seconds <= b) {
@@ -82,11 +118,15 @@ impl Metrics {
         }
         .fetch_add(1, Ordering::Relaxed);
         self.count.fetch_add(1, Ordering::Relaxed);
-        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
-        self.sum_micros
-            .fetch_add((seconds * 1_000_000.0) as u64, Ordering::Relaxed);
-        let class = (status.as_u16() / 100).clamp(1, 5) as usize - 1;
-        self.by_class[class].fetch_add(1, Ordering::Relaxed);
+        // An elapsed time with no `u64` microseconds (negative, NaN, or past
+        // 584,000 years) adds nothing to the sum rather than a made-up figure;
+        // the request is still counted above.
+        if let Some(micros) = whole_micros(seconds) {
+            self.sum_micros.fetch_add(micros, Ordering::Relaxed);
+        }
+        if let Some(slot) = class_slot(&self.by_class, status) {
+            slot.fetch_add(1, Ordering::Relaxed);
+        }
     }
 
     /// Prometheus text exposition. Bucket counts become cumulative here.
@@ -112,8 +152,9 @@ impl Metrics {
         out.push_str(&format!(
             "fhir_loco_http_request_duration_seconds_bucket{{le=\"+Inf\"}} {cumulative}\n"
         ));
-        #[allow(clippy::cast_precision_loss)]
-        let sum = self.sum_micros.load(Ordering::Relaxed) as f64 / 1_000_000.0;
+        // Unknown looks different from zero (RCA-NONE-5): `NaN`, not `0`.
+        let sum = micros_to_seconds(self.sum_micros.load(Ordering::Relaxed))
+            .map_or_else(|| "NaN".to_string(), |s| s.to_string());
         out.push_str(&format!(
             "fhir_loco_http_request_duration_seconds_sum {sum}\n"
         ));
@@ -199,6 +240,36 @@ pub fn spawn_if_configured() {
 mod tests {
     use super::*;
     use tower::ServiceExt;
+
+    #[test]
+    fn whole_micros_truncates_and_refuses_what_is_not_a_u64() {
+        assert_eq!(whole_micros(1.5), Some(1_500_000));
+        assert_eq!(whole_micros(0.0), Some(0));
+        assert_eq!(whole_micros(-1.0), None);
+        assert_eq!(whole_micros(f64::NAN), None);
+        assert_eq!(whole_micros(1.0e30), None);
+    }
+
+    #[test]
+    fn micros_to_seconds_is_exact_to_2_pow_53_and_unknown_above() {
+        assert_eq!(micros_to_seconds(2_500_000), Some(2.5));
+        assert!(micros_to_seconds(MAX_EXACT_MICROS).is_some());
+        assert_eq!(micros_to_seconds(MAX_EXACT_MICROS + 1), None);
+    }
+
+    #[test]
+    fn class_slot_maps_classes_and_falls_back_to_the_last() {
+        let by_class: [AtomicU64; 5] = Default::default();
+        let at = |s: u16| {
+            class_slot(&by_class, StatusCode::from_u16(s).expect("status")).map(std::ptr::from_ref)
+        };
+        assert_eq!(at(100), Some(std::ptr::from_ref(&by_class[0])));
+        assert_eq!(at(204), Some(std::ptr::from_ref(&by_class[1])));
+        assert_eq!(at(404), Some(std::ptr::from_ref(&by_class[3])));
+        assert_eq!(at(503), Some(std::ptr::from_ref(&by_class[4])));
+        // Fallback: the 5xx counter, as before.
+        assert_eq!(at(799), Some(std::ptr::from_ref(&by_class[4])));
+    }
 
     async fn hit(path: &str) -> (StatusCode, String) {
         let response = router()

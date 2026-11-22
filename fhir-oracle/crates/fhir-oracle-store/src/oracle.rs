@@ -1640,7 +1640,9 @@ impl OracleStore {
                 insert_row(&conn, &hist, &cols, &vals)?;
 
                 Ok(crate::PurgeReport {
-                    versions_erased: versions_erased as u64,
+                    versions_erased: u64::try_from(versions_erased).map_err(|_| {
+                        StoreError::Other("negative erased-version count".to_string())
+                    })?,
                     existed,
                 })
             })();
@@ -1949,13 +1951,13 @@ fn parse_date(s: &str) -> Option<oracle::sql_type::Timestamp> {
 
 fn to_ora_ts(d: jiff::civil::DateTime) -> Option<oracle::sql_type::Timestamp> {
     oracle::sql_type::Timestamp::new(
-        d.year() as i32,
-        d.month() as u32,
-        d.day() as u32,
-        d.hour() as u32,
-        d.minute() as u32,
-        d.second() as u32,
-        d.subsec_nanosecond() as u32,
+        i32::from(d.year()),
+        u32::try_from(d.month()).ok()?,
+        u32::try_from(d.day()).ok()?,
+        u32::try_from(d.hour()).ok()?,
+        u32::try_from(d.minute()).ok()?,
+        u32::try_from(d.second()).ok()?,
+        u32::try_from(d.subsec_nanosecond()).ok()?,
     )
     .ok()
 }
@@ -2130,37 +2132,57 @@ pub fn surrogate_key(parts: &[&str]) -> [u8; 32] {
     use sha2::{Digest, Sha256};
     let mut h = Sha256::new();
     for p in parts {
-        h.update((p.len() as u64).to_le_bytes());
+        // The length prefix frames the part. Fallback: `u64::MAX` for a length
+        // with no `u64`, which no real part has, so it still never equals a
+        // genuine prefix.
+        h.update(u64::try_from(p.len()).unwrap_or(u64::MAX).to_le_bytes());
         h.update(p.as_bytes());
     }
     h.finalize().into()
 }
 
 fn utc_micros(t: std::time::SystemTime) -> String {
-    let dur = t.duration_since(std::time::UNIX_EPOCH).unwrap_or_default();
-    let secs = dur.as_secs() as i64;
-    let micros = dur.subsec_micros();
-    let days = secs.div_euclid(86_400);
-    let rem = secs.rem_euclid(86_400);
-    let (y, m, d) = civil_from_days(days);
-    let hh = rem / 3600;
-    let mm = (rem % 3600) / 60;
-    let ss = rem % 60;
-    format!("{y:04}-{m:02}-{d:02}T{hh:02}:{mm:02}:{ss:02}.{micros:06}")
+    render_utc_micros(t).unwrap_or_else(|| UTC_MICROS_FALLBACK.to_string())
 }
 
-/// Howard Hinnant's `civil_from_days`, identical across every port.
-fn civil_from_days(z: i64) -> (i64, u32, u32) {
-    let z = z + 719_468;
-    let era = if z >= 0 { z } else { z - 146_096 } / 146_097;
-    let doe = (z - era * 146_097) as u64;
-    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146_096) / 365;
-    let y = yoe as i64 + era * 400;
+/// Fallback for [`utc_micros`] (RCA-NONE-3): the Unix epoch, rendered.
+///
+/// Why it is correct: a clock before 1970 has no `Duration` since the epoch
+/// and has always rendered as the epoch, so the stored text stays fixed width
+/// and comparable. A date outside `i64` days cannot come from a real clock;
+/// it renders the same way rather than panicking.
+const UTC_MICROS_FALLBACK: &str = "1970-01-01T00:00:00.000000";
+
+/// The fixed-width UTC rendering, or `None` when the instant is before the epoch
+/// or outside the range the calendar arithmetic can express.
+fn render_utc_micros(t: std::time::SystemTime) -> Option<String> {
+    let d = t.duration_since(std::time::UNIX_EPOCH).ok()?;
+    let secs = i64::try_from(d.as_secs()).ok()?;
+    let micros = d.subsec_micros();
+    let days = secs.checked_div_euclid(86_400)?;
+    let sod = secs.checked_rem_euclid(86_400)?;
+    let (y, m, dd) = civil_from_days(days)?;
+    // RCA-EXC-2: 0 <= sod < 86_400, and the divisors are nonzero constants.
+    let (hh, mm, ss) = (sod / 3600, (sod % 3600) / 60, sod % 60);
+    Some(format!(
+        "{y:04}-{m:02}-{dd:02}T{hh:02}:{mm:02}:{ss:02}.{micros:06}"
+    ))
+}
+
+/// Howard Hinnant's `civil_from_days`: days since the Unix epoch to y/m/d, or
+/// `None` when the arithmetic does not fit.
+fn civil_from_days(z: i64) -> Option<(i64, u32, u32)> {
+    let z = z.checked_add(719_468)?;
+    let era = z.checked_div_euclid(146_097)?;
+    let doe = z.checked_rem_euclid(146_097)?;
+    // RCA-EXC-2: 0 <= doe < 146_097, so every term below is under 1_000_000.
+    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
+    let y = era.checked_mul(400)?.checked_add(yoe)?;
     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
     let mp = (5 * doy + 2) / 153;
-    let d = (doy - (153 * mp + 2) / 5 + 1) as u32;
-    let m = if mp < 10 { mp + 3 } else { mp - 9 } as u32;
-    (if m <= 2 { y + 1 } else { y }, m, d)
+    let d = u32::try_from(doy - (153 * mp + 2) / 5 + 1).ok()?;
+    let m = u32::try_from(if mp < 10 { mp + 3 } else { mp - 9 }).ok()?;
+    Some((if m <= 2 { y.checked_add(1)? } else { y }, m, d))
 }
 
 fn hist_entry(r: &Row) -> Result<crate::HistEntry, StoreError> {
@@ -2513,10 +2535,12 @@ fn recon_with_map(
                         .unwrap_or(None)
                         .unwrap_or(0)
                         != 0;
-                    let ext_ord = row
-                        .get::<usize, Option<i64>>(3)
-                        .unwrap_or(None)
-                        .unwrap_or(0) as i16;
+                    let ext_ord = i16::try_from(
+                        row.get::<usize, Option<i64>>(3)
+                            .unwrap_or(None)
+                            .unwrap_or(0),
+                    )
+                    .map_err(|_| StoreError::Other("ext_ord out of range".to_string()))?;
                     let url: Option<String> = row.get(4).unwrap_or(None);
                     let leaf: String = row
                         .get::<usize, Option<String>>(5)
@@ -2587,10 +2611,12 @@ fn recon_with_map(
                     .map_err(db_err)?;
                 for row in rows {
                     let row = row.map_err(db_err)?;
-                    let ord: i16 = row
-                        .get::<usize, Option<i64>>(0)
-                        .unwrap_or(None)
-                        .unwrap_or(0) as i16;
+                    let ord: i16 = i16::try_from(
+                        row.get::<usize, Option<i64>>(0)
+                            .unwrap_or(None)
+                            .unwrap_or(0),
+                    )
+                    .map_err(|_| StoreError::Other("contained ord out of range".to_string()))?;
                     let raw: String = row
                         .get::<usize, Option<String>>(1)
                         .unwrap_or(None)
@@ -2652,7 +2678,7 @@ fn write_shredded(
         by_table.entry(r.table).or_default().push(r);
     }
     for (ti, rows) in by_table {
-        let t = &rm.tables[ti as usize];
+        let t = &rm.tables[fhir_oracle_map::model::index(ti)];
         let mut names: Vec<String> = Vec::new();
         for r in &rows {
             for (n, _) in &r.cols {
@@ -2781,4 +2807,35 @@ fn write_shredded(
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod utc_micros_tests {
+    use super::*;
+    use std::time::{Duration, UNIX_EPOCH};
+
+    #[test]
+    fn the_epoch_renders_as_itself() {
+        assert_eq!(utc_micros(UNIX_EPOCH), "1970-01-01T00:00:00.000000");
+    }
+
+    #[test]
+    fn a_leap_day_renders_with_fixed_width_micros() {
+        let t = UNIX_EPOCH + Duration::new(951_868_799, 123_456_000);
+        assert_eq!(utc_micros(t), "2000-02-29T23:59:59.123456");
+    }
+
+    #[test]
+    fn a_clock_before_the_epoch_renders_as_the_declared_fallback() {
+        let t = UNIX_EPOCH - Duration::from_secs(1);
+        assert_eq!(utc_micros(t), UTC_MICROS_FALLBACK);
+        assert_eq!(UTC_MICROS_FALLBACK, "1970-01-01T00:00:00.000000");
+    }
+
+    #[test]
+    fn civil_from_days_is_exact_and_refuses_what_does_not_fit() {
+        assert_eq!(civil_from_days(0), Some((1970, 1, 1)));
+        assert_eq!(civil_from_days(-1), Some((1969, 12, 31)));
+        assert_eq!(civil_from_days(i64::MAX), None);
+    }
 }

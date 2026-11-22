@@ -28,6 +28,8 @@ thiserror = "2"
 anyhow = "1"
 flate2 = "1"
 unicode-normalization = "0.1"
+# FNV-1a for truncated index names (RCA-EXC-3: hashes come from a vetted crate).
+fnv = "1"
 sha2 = "0.11"
 sha3 = "0.12"
 hmac = "0.13"
@@ -64,6 +66,8 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 [profile.release]
+# RCA-ENF-4: a plain operator the lints miss panics instead of wrapping silently.
+overflow-checks = true
 lto = "thin"
 
 # cargo-mutants builds every mutant once in a throwaway copy of the tree: no debug information and no

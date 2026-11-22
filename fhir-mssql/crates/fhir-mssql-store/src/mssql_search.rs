@@ -253,7 +253,7 @@ fn param_predicate(
             let (ref_alias, wrap) = if t.table == 0 {
                 (alias.to_string(), None)
             } else {
-                let tname = quote_ident(&rm.tables[t.table as usize].name);
+                let tname = quote_ident(&rm.tables[fhir_mssql_map::model::index(t.table)].name);
                 (
                     format!("c{d}"),
                     Some(format!(
@@ -304,7 +304,7 @@ fn param_predicate(
     for v in value.split(',') {
         for t in &def.targets {
             let pred = target_pred(def, t, v, modifier, binds)?;
-            let tname = quote_ident(&rm.tables[t.table as usize].name);
+            let tname = quote_ident(&rm.tables[fhir_mssql_map::model::index(t.table)].name);
             if t.table == 0 {
                 ors.push(pred.replace("«c»", alias));
             } else {

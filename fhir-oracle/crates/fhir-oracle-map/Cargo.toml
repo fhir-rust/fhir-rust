@@ -29,6 +29,7 @@ flate2.workspace = true
 unicode-normalization.workspace = true
 # U4: the checksum adjunct is computed here, never by a SQL function.
 sha2.workspace = true
+fnv.workspace = true
 
 [dev-dependencies]
 # For tests/oracle_ddl.rs only (F-51): does the generated DDL actually install

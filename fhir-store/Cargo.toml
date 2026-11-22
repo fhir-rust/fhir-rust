@@ -43,6 +43,10 @@ criterion = { version = "0.8", default-features = false, features = ["cargo_benc
 name = "chain"
 harness = false
 
+[profile.release]
+# RCA-ENF-4: a plain operator the lints miss panics instead of wrapping silently.
+overflow-checks = true
+
 # cargo-mutants builds every mutant once in a throwaway copy of the tree: no debug information and no
 # incremental state make each build quicker and smaller. `.cargo/mutants.toml` selects it.
 [profile.mutants]

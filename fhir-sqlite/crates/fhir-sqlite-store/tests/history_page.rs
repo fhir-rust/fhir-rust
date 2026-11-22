@@ -118,3 +118,28 @@ async fn system_level_history_spans_types_and_respects_count_and_since() {
         .expect("page");
     assert!(none.is_empty());
 }
+
+/// A page size below 1 is refused (P6.3); one above the cap is limited to it.
+#[tokio::test]
+async fn history_page_refuses_a_count_below_one_and_caps_a_huge_one() {
+    let Some(store) = seeded("count_bounds").await else {
+        eprintln!("skipping: no r5 relmap asset");
+        return;
+    };
+    for bad in [0_i64, -1, i64::MIN] {
+        let err = store
+            .history_page(None, bad, None)
+            .await
+            .expect_err("refused");
+        assert_eq!(
+            err.to_string(),
+            format!("history count must be at least 1, got {bad}")
+        );
+    }
+    // The cap is 1000 and there are only four entries: a huge count serves all.
+    let all = store
+        .history_page(None, i64::MAX, None)
+        .await
+        .expect("capped");
+    assert_eq!(all.len(), 4);
+}

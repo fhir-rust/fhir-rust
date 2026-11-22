@@ -107,7 +107,7 @@ pub fn prefix_upper(prefix: &str) -> Option<String> {
 /// The next scalar value after `c`, skipping the surrogate range, or `None`
 /// at `char::MAX`.
 fn next_char(c: char) -> Option<char> {
-    let mut n = c as u32 + 1;
+    let mut n = u32::from(c).checked_add(1)?;
     if n == 0xD800 {
         n = 0xE000;
     }

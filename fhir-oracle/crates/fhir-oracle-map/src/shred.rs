@@ -103,7 +103,7 @@ pub fn shred(rm: &ResourceMap, v: &Value) -> Result<ShredOut, ShredError> {
     // schema has. Refusal, never truncation: a truncated path would
     // reconstruct the wrong resource shape (L4).
     if rm.path_bound > 0 {
-        let bound = rm.path_bound as usize;
+        let bound = crate::model::index(rm.path_bound);
         let over = sh
             .ext
             .iter()
@@ -137,7 +137,7 @@ pub fn shred(rm: &ResourceMap, v: &Value) -> Result<ShredOut, ShredError> {
 /// string that would match a prefix search for "".
 fn fill_norm_cols(rm: &ResourceMap, rows: &mut [Row]) {
     for row in rows {
-        let pairs = &rm.tables[row.table as usize].norm_cols;
+        let pairs = &rm.tables[crate::model::index(row.table)].norm_cols;
         if pairs.is_empty() {
             continue;
         }
@@ -170,7 +170,7 @@ fn fill_norm_cols(rm: &ResourceMap, rows: &mut [Row]) {
 /// pre-image is built from canonical JSON of the resource, not from rows.
 fn fill_adjunct_cols(rm: &ResourceMap, rows: &mut [Row]) {
     for row in rows {
-        let adjuncts = &rm.tables[row.table as usize].adjunct_cols;
+        let adjuncts = &rm.tables[crate::model::index(row.table)].adjunct_cols;
         if adjuncts.is_empty() {
             continue;
         }

@@ -170,6 +170,7 @@ name = "fhir-oracle-map"
 version = "0.6.2"
 dependencies = [
  "flate2",
+ "fnv",
  "oracle",
  "serde",
  "serde_json",

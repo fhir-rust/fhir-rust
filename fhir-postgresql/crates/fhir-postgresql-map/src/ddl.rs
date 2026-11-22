@@ -266,7 +266,7 @@ pub fn search_indexes(schema: &str, rm: &ResourceMap) -> Vec<String> {
                 TargetKind::Quantity { value, .. } => vec![value],
                 TargetKind::Reference { c_type, c_id, .. } => vec![c_type, c_id],
             };
-            let table = &rm.tables[t.table as usize].name;
+            let table = &rm.tables[crate::model::index(t.table)].name;
             let key = format!("{table}:{}", cols.join(","));
             if !seen.insert(key) {
                 continue;
@@ -287,12 +287,12 @@ fn index_name(table: &str, cols: &[&str]) -> String {
     if full.len() <= 63 {
         return full;
     }
-    // FNV-1a of the full name keeps truncated names unique and stable.
-    let mut h: u64 = 0xcbf29ce484222325;
-    for b in full.as_bytes() {
-        h ^= u64::from(*b);
-        h = h.wrapping_mul(0x100000001b3);
-    }
+    // FNV-1a of the full name keeps truncated names unique and stable. FNV is
+    // defined modulo 2^64, so the hash comes from the vetted `fnv` crate
+    // (RCA-EXC-3) rather than from wrapping arithmetic written here.
+    let mut hasher = fnv::FnvHasher::default();
+    std::hash::Hasher::write(&mut hasher, full.as_bytes());
+    let h = std::hash::Hasher::finish(&hasher);
     let hex = format!("{h:016x}");
     let keep: String = full.chars().take(63 - 17).collect();
     format!("{keep}_{hex}")
@@ -459,5 +459,40 @@ mod tests {
         let all = schema_wide_objects("r5").join("\n");
         assert!(all.contains("fhir_postgresql_history_is_append_only"));
         assert!(all.contains("LANGUAGE plpgsql"));
+    }
+}
+
+#[cfg(test)]
+mod index_name_tests {
+    use super::index_name;
+
+    #[test]
+    fn a_short_name_is_kept_as_is() {
+        assert_eq!(index_name("patient", &["name"]), "patient_name_ix");
+    }
+
+    #[test]
+    fn a_long_name_gets_the_fnv_1a_suffix_it_always_had() {
+        // 74 bytes, so it is truncated to 46 characters plus the 64-bit FNV-1a
+        // of the full name. The expected value was computed independently with
+        // the textbook loop (offset 0xcbf29ce484222325, prime 0x100000001b3,
+        // mod 2^64): the stored schema's names must not change.
+        let got = index_name(
+            "observation",
+            &[
+                "component",
+                "value",
+                "codeable",
+                "concept",
+                "coding",
+                "system",
+                "code",
+                "display",
+            ],
+        );
+        assert_eq!(
+            got,
+            "observation_component_value_codeable_concept_c_df43b93e8b10b8b8"
+        );
     }
 }

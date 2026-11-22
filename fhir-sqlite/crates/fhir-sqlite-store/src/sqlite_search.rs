@@ -215,7 +215,7 @@ fn param_predicate(
             let (ref_alias, wrap) = if t.table == 0 {
                 (alias.to_string(), None)
             } else {
-                let tname = &rm.tables[t.table as usize].name;
+                let tname = &rm.tables[fhir_sqlite_map::model::index(t.table)].name;
                 (
                     format!("c{d}"),
                     Some(format!(
@@ -261,9 +261,9 @@ fn param_predicate(
     let mut ors: Vec<String> = Vec::new();
     for v in value.split(',') {
         for t in &def.targets {
-            let cols = &rm.tables[t.table as usize].cols;
+            let cols = &rm.tables[fhir_sqlite_map::model::index(t.table)].cols;
             let pred = target_pred(def, t, v, modifier, cols, binds)?;
-            let tname = &rm.tables[t.table as usize].name;
+            let tname = &rm.tables[fhir_sqlite_map::model::index(t.table)].name;
             if t.table == 0 {
                 ors.push(pred.replace("«c»", alias));
             } else {

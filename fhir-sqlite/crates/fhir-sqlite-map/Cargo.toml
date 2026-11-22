@@ -29,3 +29,4 @@ flate2.workspace = true
 unicode-normalization.workspace = true
 # U4: the checksum adjunct is computed here, never by a SQL function.
 sha2.workspace = true
+fnv.workspace = true

@@ -367,7 +367,8 @@ impl<R: Release> ReleaseClient<R> {
     ) -> Result<String, ReleaseClientError<R>> {
         if resp
             .content_length()
-            .is_some_and(|n| n > self.max_body as u64)
+            // A cap with no `u64` (never on a supported target) is exceeded by nothing.
+            .is_some_and(|n| u64::try_from(self.max_body).is_ok_and(|max| n > max))
         {
             return Err(ReleaseClientError::BodyTooLarge {
                 limit: self.max_body,
@@ -375,7 +376,12 @@ impl<R: Release> ReleaseClient<R> {
         }
         let mut buf: Vec<u8> = Vec::new();
         while let Some(chunk) = resp.chunk().await? {
-            if buf.len() + chunk.len() > self.max_body {
+            // A total that overflows `usize` is past the cap.
+            if buf
+                .len()
+                .checked_add(chunk.len())
+                .is_none_or(|total| total > self.max_body)
+            {
                 return Err(ReleaseClientError::BodyTooLarge {
                     limit: self.max_body,
                 });

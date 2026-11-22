@@ -28,6 +28,9 @@ use rusqlite::Connection;
 
 use crate::{StoreError, UpgradeReport};
 
+/// Spec P6.3: `_count` is at most 1000; a history page holds no more entries.
+const MAX_HISTORY_PAGE: i64 = 1000;
+
 /// Render one stored cell as the **text image** the shared reconstruction
 /// engine expects, given the column's declared type.
 ///
@@ -1053,7 +1056,7 @@ mod tests {
             utc_micros(std::time::UNIX_EPOCH + std::time::Duration::new(951_868_799, 123_456_000)),
             "2000-02-29 23:59:59.123456"
         );
-        assert_eq!(civil_from_days(-1), (1969, 12, 31));
+        assert_eq!(civil_from_days(-1), Some((1969, 12, 31)));
 
         assert!(
             matches!(leaf_from_cols("s", Some("x".into()), None, None), LeafVal::Str(v) if v == "x")
@@ -2792,32 +2795,47 @@ fn leaf_from_cols(
 /// number of fractional digits would make lexicographic and chronological order
 /// disagree. Rendered without a chrono dependency, which the crate does not have.
 fn utc_micros(t: std::time::SystemTime) -> String {
-    let d = t.duration_since(std::time::UNIX_EPOCH).unwrap_or_default();
-    let secs = d.as_secs() as i64;
-    let micros = d.subsec_micros();
-    let days = secs.div_euclid(86_400);
-    let sod = secs.rem_euclid(86_400);
-    let (y, m, dd) = civil_from_days(days);
-    format!(
-        "{y:04}-{m:02}-{dd:02} {:02}:{:02}:{:02}.{micros:06}",
-        sod / 3600,
-        (sod % 3600) / 60,
-        sod % 60
-    )
+    render_utc_micros(t).unwrap_or_else(|| UTC_MICROS_FALLBACK.to_string())
 }
 
-/// Howard Hinnant's `civil_from_days`: days since the Unix epoch to y/m/d.
-fn civil_from_days(z: i64) -> (i64, u32, u32) {
-    let z = z + 719_468;
-    let era = z.div_euclid(146_097);
-    let doe = z.rem_euclid(146_097);
+/// Fallback for [`utc_micros`] (RCA-NONE-3): the Unix epoch, rendered.
+///
+/// Why it is correct: a clock before 1970 has no `Duration` since the epoch
+/// and has always rendered as the epoch, so the stored text stays fixed width
+/// and comparable. A date outside `i64` days cannot come from a real clock;
+/// it renders the same way rather than panicking.
+const UTC_MICROS_FALLBACK: &str = "1970-01-01 00:00:00.000000";
+
+/// The fixed-width UTC rendering, or `None` when the instant is before the epoch
+/// or outside the range the calendar arithmetic can express.
+fn render_utc_micros(t: std::time::SystemTime) -> Option<String> {
+    let d = t.duration_since(std::time::UNIX_EPOCH).ok()?;
+    let secs = i64::try_from(d.as_secs()).ok()?;
+    let micros = d.subsec_micros();
+    let days = secs.checked_div_euclid(86_400)?;
+    let sod = secs.checked_rem_euclid(86_400)?;
+    let (y, m, dd) = civil_from_days(days)?;
+    // RCA-EXC-2: 0 <= sod < 86_400, and the divisors are nonzero constants.
+    let (hh, mm, ss) = (sod / 3600, (sod % 3600) / 60, sod % 60);
+    Some(format!(
+        "{y:04}-{m:02}-{dd:02} {hh:02}:{mm:02}:{ss:02}.{micros:06}"
+    ))
+}
+
+/// Howard Hinnant's `civil_from_days`: days since the Unix epoch to y/m/d, or
+/// `None` when the arithmetic does not fit.
+fn civil_from_days(z: i64) -> Option<(i64, u32, u32)> {
+    let z = z.checked_add(719_468)?;
+    let era = z.checked_div_euclid(146_097)?;
+    let doe = z.checked_rem_euclid(146_097)?;
+    // RCA-EXC-2: 0 <= doe < 146_097, so every term below is under 1_000_000.
     let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
-    let y = yoe + era * 400;
+    let y = era.checked_mul(400)?.checked_add(yoe)?;
     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
     let mp = (5 * doy + 2) / 153;
-    let d = (doy - (153 * mp + 2) / 5 + 1) as u32;
-    let m = if mp < 10 { mp + 3 } else { mp - 9 } as u32;
-    (if m <= 2 { y + 1 } else { y }, m, d)
+    let d = u32::try_from(doy - (153 * mp + 2) / 5 + 1).ok()?;
+    let m = u32::try_from(if mp < 10 { mp + 3 } else { mp - 9 }).ok()?;
+    Some((if m <= 2 { y.checked_add(1)? } else { y }, m, d))
 }
 
 /// The rows one resource turns into, rendered as bound statements.
@@ -2860,7 +2878,7 @@ impl InsertPlan {
         }
 
         for (ti, rows) in by_table {
-            let t = &rm.tables[ti as usize];
+            let t = &rm.tables[fhir_sqlite_map::model::index(ti)];
             match t.kind {
                 TableKind::Base => {
                     let r = rows[0];
@@ -3165,7 +3183,15 @@ impl SqliteStore {
                 v
             }
         };
-        let count = count.clamp(1, 1000);
+        // Spec P6.3: a page holds at most `MAX_HISTORY_PAGE` entries. A count
+        // below 1 is refused, not raised to 1: an unusable page size is the
+        // caller's error, not a figure to repair.
+        if count < 1 {
+            return Err(StoreError::Unsupported(format!(
+                "history count must be at least 1, got {count}"
+            )));
+        }
+        let count = count.min(MAX_HISTORY_PAGE);
         let schema = self.map.schema.clone();
         let since = since.map(str::to_string);
         let conn = self.conn.clone();
@@ -3895,7 +3921,9 @@ impl SqliteStore {
                     &format!("DELETE FROM \"{s}\".\"{hist}\" WHERE \"id\" = ?1"),
                     [&id],
                 )
-                .store()? as u64;
+                .store()?;
+            let erased = u64::try_from(erased)
+                .map_err(|_| StoreError::Other("erased row count exceeds u64".to_string()))?;
 
             let tomb_version = last_version + 1;
             let pre = crate::chain::preimage(&id, tomb_version, &ts, "X", None, &audit.actor);
@@ -4222,7 +4250,7 @@ impl SqliteStore {
                 let TargetKind::Reference { c_type, c_id, .. } = &t.kind else {
                     continue;
                 };
-                let table = &rm.tables[t.table as usize].name;
+                let table = &rm.tables[fhir_sqlite_map::model::index(t.table)].name;
                 let id_col = if t.table == 0 { "id" } else { "rid" };
                 for chunk in ids.chunks(900) {
                     let marks = (1..=chunk.len())
@@ -4572,4 +4600,35 @@ fn query_access_records(
         })
         .store()?;
     rows.collect::<Result<_, _>>().store()
+}
+
+#[cfg(test)]
+mod utc_micros_tests {
+    use super::*;
+    use std::time::{Duration, UNIX_EPOCH};
+
+    #[test]
+    fn the_epoch_renders_as_itself() {
+        assert_eq!(utc_micros(UNIX_EPOCH), "1970-01-01 00:00:00.000000");
+    }
+
+    #[test]
+    fn a_leap_day_renders_with_fixed_width_micros() {
+        let t = UNIX_EPOCH + Duration::new(951_868_799, 123_456_000);
+        assert_eq!(utc_micros(t), "2000-02-29 23:59:59.123456");
+    }
+
+    #[test]
+    fn a_clock_before_the_epoch_renders_as_the_declared_fallback() {
+        let t = UNIX_EPOCH - Duration::from_secs(1);
+        assert_eq!(utc_micros(t), UTC_MICROS_FALLBACK);
+        assert_eq!(UTC_MICROS_FALLBACK, "1970-01-01 00:00:00.000000");
+    }
+
+    #[test]
+    fn civil_from_days_is_exact_and_refuses_what_does_not_fit() {
+        assert_eq!(civil_from_days(0), Some((1970, 1, 1)));
+        assert_eq!(civil_from_days(-1), Some((1969, 12, 31)));
+        assert_eq!(civil_from_days(i64::MAX), None);
+    }
 }

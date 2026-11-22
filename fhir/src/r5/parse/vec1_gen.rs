@@ -142,7 +142,7 @@ pub fn apply_file(text: &str, fields: &[Vec1Field]) -> (String, usize) {
             lines[idx - 1] = String::new();
         }
         // Drop `Default` from this struct's derive line.
-        let derive_idx = ((*start).saturating_sub(6)..*start)
+        let derive_idx = (derive_window_start(*start)..*start)
             .find(|&l| lines[l].contains("#[derive(") && lines[l].contains("Default"));
         if let Some(l) = derive_idx {
             lines[l] = lines[l].replace("Default, ", "").replace(", Default", "");
@@ -266,9 +266,29 @@ pub fn apply_group(group: &str) -> usize {
     total
 }
 
+/// First line searched for a struct's `#[derive(...)]`: six lines above it.
+///
+/// Fallback: line 0. A struct within six lines of the top of the file has its
+/// derive no higher than the first line, so the window starts there.
+#[expect(
+    clippy::manual_saturating_arithmetic,
+    reason = "RCA-INT-4: checked_sub with a declared 0 fallback is the required form"
+)]
+fn derive_window_start(struct_line: usize) -> usize {
+    struct_line.checked_sub(6).unwrap_or(0)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn derive_window_starts_six_lines_up_or_at_the_top() {
+        assert_eq!(derive_window_start(10), 4);
+        assert_eq!(derive_window_start(6), 0);
+        assert_eq!(derive_window_start(5), 0);
+        assert_eq!(derive_window_start(0), 0);
+    }
 
     #[test]
     fn plan_finds_known_fields() {

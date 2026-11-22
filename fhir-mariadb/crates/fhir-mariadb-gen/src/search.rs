@@ -7,6 +7,7 @@
 use std::collections::HashMap;
 use std::path::Path;
 
+use fhir_mariadb_map::model::index;
 use fhir_mariadb_map::model::{
     Elem, ElemKind, Prim, RelMap, ResourceMap, SearchDef, SearchTarget, SearchTy, TargetKind,
 };
@@ -141,7 +142,14 @@ fn split_top(s: &str, sep: char) -> Vec<&str> {
     for (i, c) in s.char_indices() {
         match c {
             '(' => depth += 1,
-            ')' => depth = depth.saturating_sub(1),
+            ')' => {
+                // Fallback: depth stays 0. Nesting depth cannot go below zero, so
+                // a stray ')' at depth 0 leaves it there and the text splits as
+                // if the ')' were absent.
+                if let Some(shallower) = depth.checked_sub(1) {
+                    depth = shallower;
+                }
+            }
             c if c == sep && depth == 0 => {
                 out.push(&s[start..i]);
                 start = i + 1;
@@ -578,7 +586,7 @@ pub fn add_norm_columns(map: &mut RelMap) {
             if assigned.contains_key(&key) {
                 continue;
             }
-            let t = &mut rm.tables[table as usize];
+            let t = &mut rm.tables[index(table)];
             if let Some((_, existing)) = t.norm_cols.iter().find(|(src, _)| *src == col) {
                 assigned.insert(key, existing.clone());
                 continue;
@@ -589,7 +597,7 @@ pub fn add_norm_columns(map: &mut RelMap) {
                 .find(|c| c.name == col)
                 .map(|c| c.path.clone())
                 .unwrap_or_default();
-            let name = regs[table as usize].claim(&format!("{col}_norm"));
+            let name = regs[index(table)].claim(&format!("{col}_norm"));
             t.cols.push(Column {
                 name: name.clone(),
                 ty: ColTy::TextC,
@@ -736,7 +744,7 @@ pub fn add_adjunct_columns(map: &mut RelMap) {
             if !bounded && !digest {
                 continue;
             }
-            let t = &mut rm.tables[table as usize];
+            let t = &mut rm.tables[index(table)];
             if t.adjunct_cols.iter().any(|a| a.source == col) {
                 continue;
             }
@@ -751,8 +759,8 @@ pub fn add_adjunct_columns(map: &mut RelMap) {
                 continue;
             }
             let path = src.path.clone();
-            let idx = bounded.then(|| regs[table as usize].claim(&format!("{col}_idx")));
-            let dig = digest.then(|| regs[table as usize].claim(&format!("{col}_h")));
+            let idx = bounded.then(|| regs[index(table)].claim(&format!("{col}_idx")));
+            let dig = digest.then(|| regs[index(table)].claim(&format!("{col}_h")));
             if let Some(n) = &idx {
                 t.cols.push(Column {
                     name: n.clone(),
@@ -866,5 +874,22 @@ mod adjunct_rules {
             any, TEXT_ADJUNCTS,
             "TEXT_ADJUNCTS says {TEXT_ADJUNCTS} but needs_adjunct says {any}"
         );
+    }
+}
+
+#[cfg(test)]
+mod split_top_tests {
+    use super::*;
+
+    #[test]
+    fn split_top_ignores_separators_inside_parens() {
+        assert_eq!(split_top("a(b|c)|d", '|'), vec!["a(b|c)", "d"]);
+    }
+
+    #[test]
+    fn split_top_floors_depth_at_zero_for_a_stray_close_paren() {
+        // Fallback: 0. The stray ')' leaves depth at 0, so the '|' after it
+        // still splits; a wrapped or saturated-high depth would swallow it.
+        assert_eq!(split_top("a)|b", '|'), vec!["a)", "b"]);
     }
 }

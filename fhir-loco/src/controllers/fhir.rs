@@ -710,6 +710,48 @@ async fn conditional_delete(
 /// `SV2.16`: more included resources than this refuses the request.
 const INCLUDE_CAP: i64 = 1000;
 
+/// Spec P6.3: `_count` defaults to 50 and is at most 1000.
+const DEFAULT_COUNT: i64 = 50;
+const MAX_COUNT: i64 = 1000;
+
+/// A page size from a `_count` query value.
+///
+/// Fallback: `DEFAULT_COUNT` (P6.3's default) for a value that is not a
+/// positive integer. A value above the cap is limited to `MAX_COUNT` (P6.3's
+/// maximum).
+fn page_count(raw: &str) -> i64 {
+    match raw.parse::<i64>() {
+        Ok(n) if n >= 1 => n.min(MAX_COUNT), // P6.3: the maximum
+        _ => DEFAULT_COUNT,                  // P6.3: the default
+    }
+}
+
+#[cfg(test)]
+mod page_count_tests {
+    use super::*;
+
+    #[test]
+    fn in_range_values_pass_through() {
+        assert_eq!(page_count("1"), 1);
+        assert_eq!(page_count("200"), 200);
+        assert_eq!(page_count("1000"), 1000);
+    }
+
+    #[test]
+    fn above_the_cap_is_the_cap() {
+        assert_eq!(page_count("1001"), MAX_COUNT);
+        assert_eq!(page_count("9223372036854775807"), 1000);
+    }
+
+    #[test]
+    fn not_a_positive_integer_is_the_default() {
+        for raw in ["0", "-5", "abc", "", "1.5", "99999999999999999999"] {
+            assert_eq!(page_count(raw), DEFAULT_COUNT, "{raw:?}");
+        }
+        assert_eq!(DEFAULT_COUNT, 50);
+    }
+}
+
 /// Parse and validate one `_include`/`_revinclude` value (`SV2.16`):
 /// `<type>:<param>` with an optional third segment. Everything invalid is
 /// refused **by name** — a silently dropped include returns less than the
@@ -802,7 +844,7 @@ async fn search(
     let mut revincludes: Vec<String> = Vec::new();
     for (k, v) in params {
         match k.as_str() {
-            "_count" => count = v.parse().unwrap_or(50).clamp(1, 1000),
+            "_count" => count = page_count(&v),
             "_offset" => offset = v.parse().unwrap_or(0).max(0),
             "_total" => want_total = v != "none",
             "_include" => includes.push(v),
@@ -1027,7 +1069,7 @@ async fn scoped_history(
     let mut since: Option<String> = None;
     for (k, v) in params {
         match k.as_str() {
-            "_count" => count = v.parse().unwrap_or(50).clamp(1, 1000),
+            "_count" => count = page_count(&v),
             "_since" => {
                 // A malformed instant silently compared as text would return
                 // wrong slices while looking right (SV2.17).

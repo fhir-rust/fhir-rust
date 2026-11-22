@@ -1113,7 +1113,8 @@ impl MsSqlStore {
                         .map_err(db_err)?;
                 }
                 total += n;
-                if (n as i64) < BATCH {
+                // A count that does not fit an `i64` is certainly not below BATCH.
+                if i64::try_from(n).is_ok_and(|n| n < BATCH) {
                     break;
                 }
             }
@@ -1999,7 +2000,10 @@ impl MsSqlStore {
                 .await
                 .map_err(db_err)?
                 .and_then(|r| r.get::<i32, _>(0))
-                .unwrap_or(0) as u64;
+                // Fallback: 0 versions erased when the count is absent (no
+                // row) or negative, which `COUNT(*)` never is.
+                .and_then(|n| u64::try_from(n).ok())
+                .unwrap_or(0);
 
             // The `M3.17` append-only trigger's escape hatch (`ddl.rs`,
             // `append_only_triggers`): `SESSION_CONTEXT` is connection-scoped,
@@ -2193,7 +2197,11 @@ impl MsSqlStore {
             .into_row()
             .await
             .map_err(db_err)?;
-        Ok(row.and_then(|r| r.get::<i32, _>(0)).unwrap_or(0) as usize)
+        // Fallback: 0 for an absent or negative count; `COUNT(*)` is neither.
+        Ok(row
+            .and_then(|r| r.get::<i32, _>(0))
+            .and_then(|n| usize::try_from(n).ok())
+            .unwrap_or(0))
     }
 
     /// How many triggers this store's schema currently has — the enforcement
@@ -2218,7 +2226,11 @@ impl MsSqlStore {
             .into_row()
             .await
             .map_err(db_err)?;
-        Ok(row.and_then(|r| r.get::<i32, _>(0)).unwrap_or(0) as usize)
+        // Fallback: 0 for an absent or negative count; `COUNT(*)` is neither.
+        Ok(row
+            .and_then(|r| r.get::<i32, _>(0))
+            .and_then(|n| usize::try_from(n).ok())
+            .unwrap_or(0))
     }
 
     /// Run arbitrary SQL against this store's pool. Test/dev convenience —
@@ -2684,35 +2696,57 @@ pub fn surrogate_key(parts: &[&str]) -> [u8; 32] {
     use sha2::{Digest, Sha256};
     let mut h = Sha256::new();
     for p in parts {
-        h.update((p.len() as u64).to_le_bytes());
+        // The length prefix frames the part. Fallback: `u64::MAX` for a length
+        // with no `u64`, which no real part has, so it still never equals a
+        // genuine prefix.
+        h.update(u64::try_from(p.len()).unwrap_or(u64::MAX).to_le_bytes());
         h.update(p.as_bytes());
     }
     h.finalize().into()
 }
 
 fn utc_micros(t: std::time::SystemTime) -> String {
-    let dur = t.duration_since(std::time::UNIX_EPOCH).unwrap_or_default();
-    let secs = dur.as_secs() as i64;
-    let micros = dur.subsec_micros();
-    let (y, mo, d) = civil_from_days(secs.div_euclid(86400));
-    let s = secs.rem_euclid(86400);
-    let (h, mi, se) = (s / 3600, (s % 3600) / 60, s % 60);
-    format!("{y:04}-{mo:02}-{d:02}T{h:02}:{mi:02}:{se:02}.{micros:06}")
+    render_utc_micros(t).unwrap_or_else(|| UTC_MICROS_FALLBACK.to_string())
 }
 
-/// Howard Hinnant's `civil_from_days`, the same algorithm every port's
-/// timestamp formatting uses.
-fn civil_from_days(z: i64) -> (i64, u32, u32) {
-    let z = z + 719_468;
-    let era = if z >= 0 { z } else { z - 146_096 } / 146_097;
-    let doe = (z - era * 146_097) as u64;
-    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146_096) / 365;
-    let y = yoe as i64 + era * 400;
+/// Fallback for [`utc_micros`] (RCA-NONE-3): the Unix epoch, rendered.
+///
+/// Why it is correct: a clock before 1970 has no `Duration` since the epoch
+/// and has always rendered as the epoch, so the stored text stays fixed width
+/// and comparable. A date outside `i64` days cannot come from a real clock;
+/// it renders the same way rather than panicking.
+const UTC_MICROS_FALLBACK: &str = "1970-01-01T00:00:00.000000";
+
+/// The fixed-width UTC rendering, or `None` when the instant is before the epoch
+/// or outside the range the calendar arithmetic can express.
+fn render_utc_micros(t: std::time::SystemTime) -> Option<String> {
+    let d = t.duration_since(std::time::UNIX_EPOCH).ok()?;
+    let secs = i64::try_from(d.as_secs()).ok()?;
+    let micros = d.subsec_micros();
+    let days = secs.checked_div_euclid(86_400)?;
+    let sod = secs.checked_rem_euclid(86_400)?;
+    let (y, m, dd) = civil_from_days(days)?;
+    // RCA-EXC-2: 0 <= sod < 86_400, and the divisors are nonzero constants.
+    let (hh, mm, ss) = (sod / 3600, (sod % 3600) / 60, sod % 60);
+    Some(format!(
+        "{y:04}-{m:02}-{dd:02}T{hh:02}:{mm:02}:{ss:02}.{micros:06}"
+    ))
+}
+
+/// Howard Hinnant's `civil_from_days`: days since the Unix epoch to y/m/d, or
+/// `None` when the arithmetic does not fit.
+fn civil_from_days(z: i64) -> Option<(i64, u32, u32)> {
+    let z = z.checked_add(719_468)?;
+    let era = z.checked_div_euclid(146_097)?;
+    let doe = z.checked_rem_euclid(146_097)?;
+    // RCA-EXC-2: 0 <= doe < 146_097, so every term below is under 1_000_000.
+    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
+    let y = era.checked_mul(400)?.checked_add(yoe)?;
     let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
     let mp = (5 * doy + 2) / 153;
-    let d = (doy - (153 * mp + 2) / 5 + 1) as u32;
-    let m = if mp < 10 { mp + 3 } else { mp - 9 } as u32;
-    (if m <= 2 { y + 1 } else { y }, m, d)
+    let d = u32::try_from(doy - (153 * mp + 2) / 5 + 1).ok()?;
+    let m = u32::try_from(if mp < 10 { mp + 3 } else { mp - 9 }).ok()?;
+    Some((if m <= 2 { y.checked_add(1)? } else { y }, m, d))
 }
 
 /// Write one shredded resource's rows: the base row, the element tables, and
@@ -2762,7 +2796,7 @@ async fn write_shredded(
         by_table.entry(r.table).or_default().push(r);
     }
     for (ti, rows) in by_table {
-        let t = &rm.tables[ti as usize];
+        let t = &rm.tables[fhir_mssql_map::model::index(ti)];
         let mut names: Vec<String> = Vec::new();
         for r in &rows {
             for (n, _) in &r.cols {
@@ -2893,4 +2927,35 @@ async fn write_shredded(
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod utc_micros_tests {
+    use super::*;
+    use std::time::{Duration, UNIX_EPOCH};
+
+    #[test]
+    fn the_epoch_renders_as_itself() {
+        assert_eq!(utc_micros(UNIX_EPOCH), "1970-01-01T00:00:00.000000");
+    }
+
+    #[test]
+    fn a_leap_day_renders_with_fixed_width_micros() {
+        let t = UNIX_EPOCH + Duration::new(951_868_799, 123_456_000);
+        assert_eq!(utc_micros(t), "2000-02-29T23:59:59.123456");
+    }
+
+    #[test]
+    fn a_clock_before_the_epoch_renders_as_the_declared_fallback() {
+        let t = UNIX_EPOCH - Duration::from_secs(1);
+        assert_eq!(utc_micros(t), UTC_MICROS_FALLBACK);
+        assert_eq!(UTC_MICROS_FALLBACK, "1970-01-01T00:00:00.000000");
+    }
+
+    #[test]
+    fn civil_from_days_is_exact_and_refuses_what_does_not_fit() {
+        assert_eq!(civil_from_days(0), Some((1970, 1, 1)));
+        assert_eq!(civil_from_days(-1), Some((1969, 12, 31)));
+        assert_eq!(civil_from_days(i64::MAX), None);
+    }
 }

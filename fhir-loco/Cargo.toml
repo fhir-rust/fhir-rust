@@ -92,6 +92,10 @@ serial_test = { version = "4.0.1" }
 rstest = { version = "0.28" }
 insta = { version = "1.49", features = ["redactions", "yaml", "filters"] }
 
+[profile.release]
+# RCA-ENF-4: a plain operator the lints miss panics instead of wrapping silently.
+overflow-checks = true
+
 # cargo-mutants builds every mutant once in a throwaway copy of the tree: no debug information and no
 # incremental state make each build quicker and smaller. `.cargo/mutants.toml` selects it.
 [profile.mutants]

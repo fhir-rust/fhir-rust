@@ -9,7 +9,7 @@ use std::collections::{BTreeMap, HashMap};
 use serde_json::{Map, Value};
 
 use crate::error::ShredError;
-use crate::model::{Elem, ElemKind, Prim, PrimCol, ResourceMap};
+use crate::model::{Elem, ElemKind, Prim, PrimCol, ResourceMap, index};
 use crate::shred::{DeepRow, ExtRow};
 use crate::value::{LeafVal, unflatten};
 
@@ -29,6 +29,35 @@ pub struct ReconIn {
     pub ext: Vec<ExtRow>,
     pub deep: Vec<DeepRow>,
     pub contained: Vec<(i16, Value)>,
+}
+
+/// How many ordinals the lane (`neg`: negative, else positive) of one parent's
+/// child ordinals holds, when they run `1..=n` without a gap.
+///
+/// The kids index only contains direct children (parent = ords); deeper
+/// descendants of recursive tables have longer parents.
+fn contiguous_lane(ix: &[i16], neg: bool, path: &str) -> Result<i16, ShredError> {
+    let mut sorted: Vec<i16> = Vec::new();
+    for o in ix
+        .iter()
+        .copied()
+        .filter(|o| if neg { *o < 0 } else { *o > 0 })
+    {
+        // `i16::MIN` has no positive twin: stored data, so an integrity error.
+        let abs = o
+            .checked_abs()
+            .ok_or_else(|| ShredError::integrity(format!("ordinal out of range in {path}")))?;
+        sorted.push(abs);
+    }
+    sorted.sort_unstable();
+    let n = i16::try_from(sorted.len())
+        .map_err(|_| ShredError::integrity(format!("too many ordinals in {path}")))?;
+    for (want, got) in (1..=n).zip(sorted.iter()) {
+        if want != *got {
+            return Err(ShredError::integrity(format!("ordinal gap in {path}")));
+        }
+    }
+    Ok(n)
 }
 
 pub fn reconstruct(
@@ -100,7 +129,12 @@ pub fn reconstruct(
         deep,
         contained: &input.contained,
         rows_used: 0,
-        rows_total: input.tables.iter().map(Vec::len).sum(),
+        rows_total: input
+            .tables
+            .iter()
+            .map(Vec::len)
+            .try_fold(0_usize, usize::checked_add)
+            .ok_or_else(|| ShredError::integrity("stored row count overflows usize"))?,
     };
 
     if !rc.rows[0].contains_key(&[][..]) {
@@ -119,11 +153,18 @@ pub fn reconstruct(
     }
 
     if rc.rows_used != rc.rows_total {
-        return Err(ShredError::integrity(format!(
-            "{} of {} stored rows unconsumed — ordinal gap or map mismatch",
-            rc.rows_total - rc.rows_used,
-            rc.rows_total
-        )));
+        return Err(ShredError::integrity(
+            match rc.rows_total.checked_sub(rc.rows_used) {
+                Some(unconsumed) => format!(
+                    "{unconsumed} of {} stored rows unconsumed — ordinal gap or map mismatch",
+                    rc.rows_total
+                ),
+                None => format!(
+                    "{} rows consumed but only {} stored — map mismatch",
+                    rc.rows_used, rc.rows_total
+                ),
+            },
+        ));
     }
     if let Some((p, o)) = rc.ext.keys().next() {
         return Err(ShredError::integrity(format!(
@@ -201,7 +242,7 @@ impl<'a> Rc<'a> {
             }
         }
 
-        let row: Option<&InRow> = self.rows[table as usize].get(ords).copied();
+        let row: Option<&InRow> = self.rows[index(table)].get(ords).copied();
         let rm = self.rm;
         for elem in &rm.node(node).elems {
             self.emit_elem(elem, row, table, ords, jpath, &mut out)?;
@@ -272,7 +313,7 @@ impl<'a> Rc<'a> {
                     if indexes == 0 {
                         return Ok(());
                     }
-                    let mut arr = Vec::with_capacity(indexes as usize);
+                    let mut arr = Vec::with_capacity(index(indexes));
                     for i in 1..=indexes {
                         let o = plus(ords, if elem.neg_lane { -i } else { i });
                         self.take_row(t, &o).ok_or_else(|| {
@@ -353,30 +394,14 @@ impl<'a> Rc<'a> {
         neg: bool,
         path: &str,
     ) -> Result<i16, ShredError> {
-        let Some(ix) = self.kids[t as usize].get(ords) else {
+        let Some(ix) = self.kids[index(t)].get(ords) else {
             return Ok(0);
         };
-        // The kids index only contains direct children (parent = ords);
-        // deeper descendants of recursive tables have longer parents.
-        let lane: Vec<i16> = ix
-            .iter()
-            .copied()
-            .filter(|o| if neg { *o < 0 } else { *o > 0 })
-            .map(i16::abs)
-            .collect();
-        let mut sorted = lane.clone();
-        sorted.sort_unstable();
-        let n = sorted.len() as i16;
-        for (want, got) in (1..=n).zip(sorted.iter()) {
-            if want != *got {
-                return Err(ShredError::integrity(format!("ordinal gap in {path}")));
-            }
-        }
-        Ok(n)
+        contiguous_lane(ix, neg, path)
     }
 
     fn take_row(&mut self, t: u32, ords: &[i16]) -> Option<&'a InRow> {
-        let r = self.rows[t as usize].get(ords).copied();
+        let r = self.rows[index(t)].get(ords).copied();
         if r.is_some() {
             self.rows_used += 1;
         }
@@ -393,7 +418,7 @@ impl<'a> Rc<'a> {
         out: &mut Map<String, Value>,
     ) -> Result<(), ShredError> {
         let epath = jp(jpath, &elem.json);
-        let max_row = self.kids[t as usize]
+        let max_row = self.kids[index(t)]
             .get(ords)
             .and_then(|v| v.last().copied())
             .unwrap_or(0);
@@ -406,8 +431,10 @@ impl<'a> Rc<'a> {
         if len == 0 {
             return Ok(());
         }
-        let mut vals = Vec::with_capacity(len as usize);
-        let mut pexts = Vec::with_capacity(len as usize);
+        let cap = usize::try_from(len)
+            .map_err(|_| ShredError::integrity(format!("negative ordinal in {epath}")))?;
+        let mut vals = Vec::with_capacity(cap);
+        let mut pexts = Vec::with_capacity(cap);
         let mut any_val = false;
         let mut any_ext = false;
         for i in 1..=len {
@@ -513,4 +540,40 @@ fn prim_json(prim: Prim, text: &str) -> Result<Value, ShredError> {
             Value::String(text.to_string())
         }
     })
+}
+
+#[cfg(test)]
+mod lane_tests {
+    use super::*;
+
+    #[test]
+    fn contiguous_lane_counts_a_gapless_positive_lane() {
+        assert_eq!(contiguous_lane(&[3, 1, 2], false, "p").unwrap(), 3);
+        assert_eq!(contiguous_lane(&[], false, "p").unwrap(), 0);
+    }
+
+    #[test]
+    fn contiguous_lane_counts_a_gapless_negative_lane() {
+        assert_eq!(contiguous_lane(&[-2, -1, 5], true, "p").unwrap(), 2);
+    }
+
+    #[test]
+    fn contiguous_lane_refuses_a_gap_by_path() {
+        let err = contiguous_lane(&[1, 3], false, "Patient.name").unwrap_err();
+        assert!(
+            err.to_string().contains("ordinal gap in Patient.name"),
+            "{err}"
+        );
+    }
+
+    #[test]
+    fn contiguous_lane_refuses_i16_min_instead_of_panicking() {
+        // `i16::MIN.abs()` panics in debug and returns `i16::MIN` in release.
+        let err = contiguous_lane(&[i16::MIN], true, "Patient.name").unwrap_err();
+        assert!(
+            err.to_string()
+                .contains("ordinal out of range in Patient.name"),
+            "{err}"
+        );
+    }
 }
