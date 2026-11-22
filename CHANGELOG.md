@@ -22,6 +22,15 @@ onward; everything before that date is unsigned and stays that way
 History before 2026-08-01 belongs to the separate projects this monorepo was
 assembled from, and lives in the per-family changelogs above.
 
+## 2026-11-22 — invalid input is rejected, never replaced (RCA-IN-2)
+
+Behavior changes (RCA-IN-7; `spec/rust-checked-arithmetic/index.md`):
+
+- `fhir-loco`: a supplied `_count` outside 1 to 1000 or not an integer, a `_offset` below 0 or not an integer, and a `_total` other than `none`, `estimate` or `accurate` now return HTTP 400 naming the parameter; before, they were defaulted to 50, clamped or treated as "total wanted". Absent parameters keep their defaults. Invalid `FHIR_LOCO_ADMIN_BIND`, `FHIR_LOCO_EXPORT_TTL_SECS` (was: 3600) and `FHIR_LOCO_TLS_TERMINATED_UPSTREAM` now stop startup; non-Unicode settings are errors, not "unset". New public module `fhir_loco::config`; `admin::spawn_if_configured` now returns `Result<(), String>`.
+- `history_page` (PostgreSQL, SQLite): a `count` above 1000 now returns `StoreError::Unsupported` instead of being capped (below 1 already was).
+- Six ports: a number or quantity search value that is not a finite decimal returns `StoreError::Unsupported` instead of being cast to 0 by the database. MySQL/MariaDB and SQLite reads of a missing or malformed stored ordinal image fail instead of reading as empty.
+- `fhir-store`: `ChainKey::from_env` returns an error when the key or key id is set but not Unicode (was: unkeyed / default id).
+
 ## 2026-10-16 — dependency refresh; all publishable crates patch-bumped
 
 Maintenance release across the model, `fhir-store`, the six database ports and `fhir-loco`: dependencies updated (including `hmac` 0.13, `sha2` 0.11, `syn` 3, `bb8` 0.9, `rusqlite` 0.40), 19 Dependabot updates applied directly, and `RUSTSEC-2024-0449` (unmaintained, via `loco-rs`) recorded in `fhir-loco/deny.toml`. No API changes. The five reserved `0.0.x` model crates are unchanged. Per-crate detail is in each family changelog.

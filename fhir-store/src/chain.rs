@@ -198,11 +198,38 @@ impl ChainKey {
     /// # Errors
     /// If the key is present but unusable.
     pub fn from_env(prefix: &str) -> Result<Option<Self>, String> {
-        let Ok(hex) = std::env::var(format!("{prefix}_CHAIN_KEY")) else {
+        let key_name = format!("{prefix}_CHAIN_KEY");
+        let id_name = format!("{prefix}_CHAIN_KEY_ID");
+        Self::from_settings(
+            &key_name,
+            std::env::var_os(&key_name),
+            &id_name,
+            std::env::var_os(&id_name),
+        )
+    }
+
+    /// The settings behind [`Self::from_env`]. A value that is set but not
+    /// Unicode is an error, never "absent" (RCA-IN-4): treating an unusable
+    /// key as unset would silently weaken the chain to unkeyed.
+    fn from_settings(
+        key_name: &str,
+        key: Option<std::ffi::OsString>,
+        id_name: &str,
+        id: Option<std::ffi::OsString>,
+    ) -> Result<Option<Self>, String> {
+        let Some(hex) = key else {
             return Ok(None);
         };
-        let id =
-            std::env::var(format!("{prefix}_CHAIN_KEY_ID")).unwrap_or_else(|_| "k1".to_string());
+        let hex = hex
+            .into_string()
+            .map_err(|_| format!("{key_name} is set but is not valid Unicode"))?;
+        let id = match id {
+            // RCA-IN-3: absent only (the default key id "k1", documented above)
+            None => "k1".to_string(),
+            Some(v) => v
+                .into_string()
+                .map_err(|_| format!("{id_name} is set but is not valid Unicode"))?,
+        };
         Self::from_hex(&id, &hex).map(Some)
     }
 
@@ -416,6 +443,31 @@ pub fn digests_equal(a: &[u8], b: &[u8]) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn from_settings_absent_is_unkeyed_and_unusable_is_an_error() {
+        use std::ffi::OsString;
+        assert!(
+            ChainKey::from_settings("K", None, "I", None)
+                .unwrap()
+                .is_none()
+        );
+        let key = Some(OsString::from("11".repeat(32)));
+        let ok = ChainKey::from_settings("K", key.clone(), "I", None)
+            .unwrap()
+            .expect("key");
+        assert_eq!(ok.id(), "k1");
+        assert!(ChainKey::from_settings("K", Some("zz".into()), "I", None).is_err());
+        #[cfg(unix)]
+        {
+            use std::os::unix::ffi::OsStringExt;
+            let bad = OsString::from_vec(vec![0x66, 0xff]);
+            let e = ChainKey::from_settings("K", Some(bad.clone()), "I", None).unwrap_err();
+            assert_eq!(e, "K is set but is not valid Unicode");
+            let e = ChainKey::from_settings("K", key, "I", Some(bad)).unwrap_err();
+            assert_eq!(e, "I is set but is not valid Unicode");
+        }
+    }
 
     #[test]
     fn the_two_algorithms_disagree_on_the_same_input() {

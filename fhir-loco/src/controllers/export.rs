@@ -60,25 +60,25 @@ fn jobs() -> &'static Mutex<HashMap<String, Job>> {
 /// Where export files live: `FHIR_LOCO_EXPORT_DIR`, defaulting to a sibling
 /// of the database file so tests and deployments stay self-contained.
 fn export_root() -> PathBuf {
-    if let Ok(dir) = std::env::var("FHIR_LOCO_EXPORT_DIR") {
+    if let Some(dir) = std::env::var_os("FHIR_LOCO_EXPORT_DIR") {
         return PathBuf::from(dir);
     }
-    let db = std::env::var("FHIR_LOCO_DB").unwrap_or_else(|_| "fhir.sqlite".to_string());
-    PathBuf::from(format!("{db}.exports"))
+    // RCA-IN-3: absent only (the database file's default name, as in app.rs)
+    let mut db = std::env::var_os("FHIR_LOCO_DB").unwrap_or_else(|| "fhir.sqlite".into());
+    db.push(".exports");
+    PathBuf::from(db)
 }
 
-fn ttl() -> std::time::Duration {
-    let secs = std::env::var("FHIR_LOCO_EXPORT_TTL_SECS")
-        .ok()
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(3600);
-    std::time::Duration::from_secs(secs)
+/// The export lifetime. `FHIR_LOCO_EXPORT_TTL_SECS` is validated at startup
+/// (RCA-IN-4); an invalid value found here is an error, never the default.
+fn ttl() -> Result<std::time::Duration, String> {
+    crate::config::export_ttl_secs().map(std::time::Duration::from_secs)
 }
 
 /// Remove jobs past their TTL, and their files. Exported PHI is a disclosure
 /// with a lifetime; nothing here may outlive it silently.
-fn sweep_expired() {
-    let ttl = ttl();
+fn sweep_expired() -> Result<(), String> {
+    let ttl = ttl()?;
     let mut jobs = jobs().lock().expect("registry");
     let expired: Vec<String> = jobs
         .iter()
@@ -92,6 +92,7 @@ fn sweep_expired() {
             tracing::info!(job = %id, "export job expired and was removed");
         }
     }
+    Ok(())
 }
 
 /// `GET /{version}/$export` — kick-off.
@@ -164,7 +165,15 @@ async fn kickoff(
     types.sort();
     types.dedup();
 
-    sweep_expired();
+    if let Err(message) = sweep_expired() {
+        tracing::error!(error = %message, "export configuration is invalid");
+        return outcome(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "error",
+            "exception",
+            "the export service is misconfigured",
+        );
+    }
 
     let id = uuid::Uuid::new_v4().to_string();
     let dir = export_root().join(&id);

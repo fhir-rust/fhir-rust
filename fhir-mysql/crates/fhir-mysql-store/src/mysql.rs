@@ -1286,6 +1286,16 @@ impl MySqlStore {
     }
 }
 
+/// The ordinal image in column `idx`. A NULL, missing or malformed one is
+/// corrupt stored data (RCA-IN-6) and fails the read, never an empty list.
+fn ords_col(row: &mysql_async::Row, idx: usize) -> Result<Vec<i16>, StoreError> {
+    let image: String = row
+        .get_opt(idx)
+        .ok_or_else(|| StoreError::Other(format!("ords column {idx} is missing")))?
+        .map_err(|e| StoreError::Other(format!("ords column {idx}: {e}")))?;
+    parse_ords(&image)
+}
+
 fn leaf_from_cols(
     kind: &str,
     text: Option<String>,
@@ -2269,8 +2279,7 @@ async fn recon_with_map(
                     let mut ords = Vec::new();
                     let mut off = 0usize;
                     if t.kind == TableKind::Elem {
-                        let img: String = row.get(0).unwrap_or_default();
-                        ords = parse_ords(&img)?;
+                        ords = ords_col(&row, 0)?;
                         off = 1;
                     }
                     let mut cols = std::collections::HashMap::new();
@@ -2302,7 +2311,7 @@ async fn recon_with_map(
                 for r in rows {
                     input.ext.push(fhir_mysql_map::shred::ExtRow {
                         path: r.get(0).unwrap_or_default(),
-                        ords: parse_ords(&r.get::<String, _>(1).unwrap_or_default())?,
+                        ords: ords_col(&r, 1)?,
                         modifier: r.get::<i64, _>(2).unwrap_or(0) != 0,
                         ext_ord: r.get(3).unwrap_or(0),
                         url: r.get(4).unwrap_or(None),
@@ -2330,7 +2339,7 @@ async fn recon_with_map(
                 for r in rows {
                     input.deep.push(fhir_mysql_map::shred::DeepRow {
                         path: r.get(0).unwrap_or_default(),
-                        ords: parse_ords(&r.get::<String, _>(1).unwrap_or_default())?,
+                        ords: ords_col(&r, 1)?,
                         leaf: r.get(2).unwrap_or_default(),
                         val: leaf_from_cols(
                             &r.get::<String, _>(3).unwrap_or_default(),

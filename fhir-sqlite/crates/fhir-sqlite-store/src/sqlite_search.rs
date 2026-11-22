@@ -410,7 +410,7 @@ fn target_pred(
             date_pred(&lo_c, hi_c.as_deref(), value, binds)
         }
         TargetKind::Number { col } => {
-            let (op, num) = num_prefix(value);
+            let (op, num) = num_prefix(value)?;
             Ok(format!(
                 "CAST(«c».\"{col}\" AS REAL) {op} CAST({} AS REAL)",
                 b(binds, num)
@@ -425,7 +425,7 @@ fn target_pred(
             let num = parts.next().unwrap_or("");
             let sys = parts.next();
             let unit = parts.next();
-            let (op, num) = num_prefix(num);
+            let (op, num) = num_prefix(num)?;
             let mut pred = format!(
                 "CAST(«c».\"{vcol}\" AS REAL) {op} CAST({} AS REAL)",
                 b(binds, num)
@@ -565,8 +565,13 @@ fn date_prefix(v: &str) -> (&str, &str) {
     }
 }
 
-fn num_prefix(v: &str) -> (&'static str, &str) {
-    match v.get(..2) {
+/// Split a number search value into its comparison operator and the number.
+///
+/// A number that is not a finite decimal is refused by name (RCA-IN-2): the
+/// database would otherwise cast it to 0 (or fail obscurely) and answer a
+/// different question than the one asked.
+fn num_prefix(v: &str) -> Result<(&'static str, &str), StoreError> {
+    let (op, num) = match v.get(..2) {
         Some("eq") => ("=", &v[2..]),
         Some("ne") => ("<>", &v[2..]),
         Some("lt") => ("<", &v[2..]),
@@ -574,6 +579,12 @@ fn num_prefix(v: &str) -> (&'static str, &str) {
         Some("ge") => (">=", &v[2..]),
         Some("le") => ("<=", &v[2..]),
         _ => ("=", v),
+    };
+    match num.parse::<f64>() {
+        Ok(n) if n.is_finite() => Ok((op, num)),
+        _ => Err(StoreError::Unsupported(format!(
+            "invalid number value {num:?}"
+        ))),
     }
 }
 
@@ -748,8 +759,13 @@ mod tests {
 
         assert_eq!(date_prefix("ge2024"), ("ge", "2024"));
         assert_eq!(date_prefix("2024"), ("eq", "2024"));
-        assert_eq!(num_prefix("ne2.5"), ("<>", "2.5"));
-        assert_eq!(num_prefix("ap2.5"), ("=", "ap2.5"));
+        assert_eq!(num_prefix("ne2.5").unwrap(), ("<>", "2.5"));
+        // RCA-TEST-8: a malformed or non-finite number is refused by name, not
+        // cast to 0 by the database.
+        for bad in ["ap2.5", "abc", "", "eq", "inf", "NaN", "1e999", "2.5x"] {
+            let err = num_prefix(bad).expect_err(bad);
+            assert!(err.to_string().starts_with("invalid number value"), "{err}");
+        }
     }
 
     #[test]
@@ -1185,7 +1201,7 @@ mod tests {
         };
         assert_eq!(pred(folded, "", None, &[]).unwrap().1, [""]);
         assert_eq!(bool_token_as_bind("other"), "other");
-        assert_eq!(num_prefix("eq2.5"), ("=", "2.5"));
+        assert_eq!(num_prefix("eq2.5").unwrap(), ("=", "2.5"));
     }
 
     #[test]

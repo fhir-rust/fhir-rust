@@ -1610,15 +1610,14 @@ impl Store {
             }
             None => self.map.resources.keys().map(String::as_str).collect(),
         };
-        // Spec P6.3: a page holds at most `MAX_HISTORY_PAGE` entries. A count
-        // below 1 is refused, not raised to 1: an unusable page size is the
-        // caller's error, not a figure to repair.
-        if count < 1 {
+        // Spec P6.3: a page holds 1 to `MAX_HISTORY_PAGE` entries. A count
+        // outside that range is refused, never raised, lowered or capped
+        // (RCA-IN-2): it is the caller's error, and the message names it.
+        if !(1..=MAX_HISTORY_PAGE).contains(&count) {
             return Err(StoreError::Unsupported(format!(
-                "history count must be at least 1, got {count}"
+                "history count must be between 1 and {MAX_HISTORY_PAGE}, got {count}"
             )));
         }
-        let count = count.min(MAX_HISTORY_PAGE);
         let s = &self.map.schema;
         let client = self.pool.get().await?;
         let mut out: Vec<(String, String, HistEntry)> = Vec::new();

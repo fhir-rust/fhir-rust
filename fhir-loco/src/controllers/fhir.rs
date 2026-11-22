@@ -710,20 +710,49 @@ async fn conditional_delete(
 /// `SV2.16`: more included resources than this refuses the request.
 const INCLUDE_CAP: i64 = 1000;
 
-/// Spec P6.3: `_count` defaults to 50 and is at most 1000.
+/// Spec P6.3: `_count` defaults to 50 (when absent) and is at most 1000.
+// RCA-IN-3: absent only (P6.3: the default page size)
 const DEFAULT_COUNT: i64 = 50;
 const MAX_COUNT: i64 = 1000;
 
-/// A page size from a `_count` query value.
+/// A page size from a supplied `_count` query value.
 ///
-/// Fallback: `DEFAULT_COUNT` (P6.3's default) for a value that is not a
-/// positive integer. A value above the cap is limited to `MAX_COUNT` (P6.3's
-/// maximum).
-fn page_count(raw: &str) -> i64 {
+/// A value that is not an integer from 1 to `MAX_COUNT` is an error naming
+/// the parameter (RCA-IN-2): never replaced by the default, lowered to the
+/// cap or raised to 1. `DEFAULT_COUNT` applies only when `_count` is absent.
+fn page_count(raw: &str) -> Result<i64, String> {
     match raw.parse::<i64>() {
-        Ok(n) if n >= 1 => n.min(MAX_COUNT), // P6.3: the maximum
-        _ => DEFAULT_COUNT,                  // P6.3: the default
+        Ok(n) if (1..=MAX_COUNT).contains(&n) => Ok(n),
+        _ => Err(format!(
+            "_count must be an integer from 1 to {MAX_COUNT}, got {raw:?} (P6.3)"
+        )),
     }
+}
+
+/// An offset from a supplied `_offset` query value: an integer of 0 or more.
+fn page_offset(raw: &str) -> Result<i64, String> {
+    match raw.parse::<i64>() {
+        Ok(n) if n >= 0 => Ok(n),
+        _ => Err(format!(
+            "_offset must be an integer of 0 or more, got {raw:?} (P6.3)"
+        )),
+    }
+}
+
+/// Whether a supplied `_total` value asks for a total: `none`, `estimate` or
+/// `accurate`; anything else is an error.
+fn parse_total(raw: &str) -> Result<bool, String> {
+    match raw {
+        "none" => Ok(false),
+        "estimate" | "accurate" => Ok(true),
+        _ => Err(format!(
+            "_total must be none, estimate or accurate, got {raw:?} (P6.3)"
+        )),
+    }
+}
+
+fn invalid_param(message: &str) -> AxumResponse {
+    outcome(StatusCode::BAD_REQUEST, "error", "invalid", message)
 }
 
 #[cfg(test)]
@@ -732,23 +761,48 @@ mod page_count_tests {
 
     #[test]
     fn in_range_values_pass_through() {
-        assert_eq!(page_count("1"), 1);
-        assert_eq!(page_count("200"), 200);
-        assert_eq!(page_count("1000"), 1000);
+        assert_eq!(page_count("1"), Ok(1));
+        assert_eq!(page_count("200"), Ok(200));
+        assert_eq!(page_count("1000"), Ok(1000));
     }
 
     #[test]
-    fn above_the_cap_is_the_cap() {
-        assert_eq!(page_count("1001"), MAX_COUNT);
-        assert_eq!(page_count("9223372036854775807"), 1000);
-    }
-
-    #[test]
-    fn not_a_positive_integer_is_the_default() {
-        for raw in ["0", "-5", "abc", "", "1.5", "99999999999999999999"] {
-            assert_eq!(page_count(raw), DEFAULT_COUNT, "{raw:?}");
+    fn out_of_range_or_malformed_is_an_error_naming_the_parameter() {
+        for raw in [
+            "0",
+            "-5",
+            "1001",
+            "9223372036854775807",
+            "abc",
+            "",
+            "1.5",
+            "99999999999999999999",
+        ] {
+            let err = page_count(raw).expect_err(raw);
+            assert!(err.starts_with("_count must be"), "{raw:?}: {err}");
+            assert!(err.contains(&format!("{raw:?}")), "{err}");
         }
-        assert_eq!(DEFAULT_COUNT, 50);
+    }
+
+    #[test]
+    fn offset_accepts_zero_and_up_and_rejects_the_rest() {
+        assert_eq!(page_offset("0"), Ok(0));
+        assert_eq!(page_offset("25"), Ok(25));
+        for raw in ["-1", "x", "", "1.5", "99999999999999999999"] {
+            let err = page_offset(raw).expect_err(raw);
+            assert!(err.starts_with("_offset must be"), "{raw:?}: {err}");
+        }
+    }
+
+    #[test]
+    fn total_accepts_the_three_codes_and_rejects_the_rest() {
+        assert_eq!(parse_total("none"), Ok(false));
+        assert_eq!(parse_total("estimate"), Ok(true));
+        assert_eq!(parse_total("accurate"), Ok(true));
+        for raw in ["", "yes", "NONE", "true"] {
+            let err = parse_total(raw).expect_err(raw);
+            assert!(err.starts_with("_total must be"), "{raw:?}: {err}");
+        }
     }
 }
 
@@ -836,17 +890,26 @@ async fn search(
     // `_count`/`_offset`/`_total` are FHIR control parameters, not search
     // criteria; passing them through would look like an unknown search
     // parameter and fail the whole request.
-    let mut count: i64 = 50;
+    let mut count: i64 = DEFAULT_COUNT; // RCA-IN-3: absent only (P6.3)
     let mut offset: i64 = 0;
-    let mut want_total = false;
+    let mut total = false;
     let mut criteria: Vec<(String, String)> = Vec::new();
     let mut includes: Vec<String> = Vec::new();
     let mut revincludes: Vec<String> = Vec::new();
     for (k, v) in params {
         match k.as_str() {
-            "_count" => count = page_count(&v),
-            "_offset" => offset = v.parse().unwrap_or(0).max(0),
-            "_total" => want_total = v != "none",
+            "_count" => match page_count(&v) {
+                Ok(n) => count = n,
+                Err(m) => return invalid_param(&m),
+            },
+            "_offset" => match page_offset(&v) {
+                Ok(n) => offset = n,
+                Err(m) => return invalid_param(&m),
+            },
+            "_total" => match parse_total(&v) {
+                Ok(t) => total = t,
+                Err(m) => return invalid_param(&m),
+            },
             "_include" => includes.push(v),
             "_revinclude" => revincludes.push(v),
             // Iteration is transitive closure; refusing by name beats
@@ -863,7 +926,7 @@ async fn search(
         }
     }
     let page = match store
-        .search_full(&rtype, &criteria, count, offset, want_total)
+        .search_full(&rtype, &criteria, count, offset, total)
         .await
     {
         Ok(p) => p,
@@ -1065,11 +1128,14 @@ async fn scoped_history(
         Ok(s) => s,
         Err(r) => return r,
     };
-    let mut count: i64 = 50;
+    let mut count: i64 = DEFAULT_COUNT; // RCA-IN-3: absent only (P6.3)
     let mut since: Option<String> = None;
     for (k, v) in params {
         match k.as_str() {
-            "_count" => count = page_count(&v),
+            "_count" => match page_count(&v) {
+                Ok(n) => count = n,
+                Err(m) => return invalid_param(&m),
+            },
             "_since" => {
                 // A malformed instant silently compared as text would return
                 // wrong slices while looking right (SV2.17).

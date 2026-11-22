@@ -212,17 +212,15 @@ async fn metrics() -> Response {
 /// Off by default: a second listener nobody asked for is attack surface. When
 /// set, the value is a socket address — loopback unless the deployment
 /// deliberately chooses otherwise, the same posture as `SV4.4`.
-pub fn spawn_if_configured() {
-    let Ok(bind) = std::env::var("FHIR_LOCO_ADMIN_BIND") else {
-        return;
+///
+/// # Errors
+/// When `FHIR_LOCO_ADMIN_BIND` is set but is not a socket address: startup
+/// stops rather than running without the admin plane (RCA-IN-4).
+pub fn spawn_if_configured() -> Result<(), String> {
+    let Some(bind) = crate::config::env_opt("FHIR_LOCO_ADMIN_BIND")? else {
+        return Ok(()); // RCA-IN-3: absent only (the admin plane is off unless set)
     };
-    let addr: SocketAddr = match bind.parse() {
-        Ok(a) => a,
-        Err(e) => {
-            tracing::error!(%bind, error = %e, "FHIR_LOCO_ADMIN_BIND is not a socket address");
-            return;
-        }
-    };
+    let addr = parse_bind(&bind)?;
     tokio::spawn(async move {
         match tokio::net::TcpListener::bind(addr).await {
             Ok(listener) => {
@@ -234,12 +232,28 @@ pub fn spawn_if_configured() {
             Err(e) => tracing::error!(%addr, error = %e, "admin listener could not bind"),
         }
     });
+    Ok(())
+}
+
+/// A socket address from `FHIR_LOCO_ADMIN_BIND`, or an error naming it.
+fn parse_bind(bind: &str) -> Result<SocketAddr, String> {
+    bind.parse()
+        .map_err(|e| format!("FHIR_LOCO_ADMIN_BIND is not a socket address, got {bind:?}: {e}"))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use tower::ServiceExt;
+
+    #[test]
+    fn admin_bind_is_a_socket_address_or_an_error_naming_it() {
+        assert!(parse_bind("127.0.0.1:9100").is_ok());
+        for bad in ["", "9100", "localhost", "127.0.0.1:99999"] {
+            let err = parse_bind(bad).expect_err(bad);
+            assert!(err.starts_with("FHIR_LOCO_ADMIN_BIND is not a socket address"));
+        }
+    }
 
     #[test]
     fn whole_micros_truncates_and_refuses_what_is_not_a_u64() {

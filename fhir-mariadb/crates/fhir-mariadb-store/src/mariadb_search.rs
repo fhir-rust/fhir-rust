@@ -382,7 +382,7 @@ fn target_pred(
             date_pred(&lo_c, hi_c.as_deref(), value, binds)
         }
         TargetKind::Number { col } => {
-            let (op, num) = num_prefix(value);
+            let (op, num) = num_prefix(value)?;
             Ok(format!(
                 "CAST(«c».`{col}` AS DECIMAL(65,30)) {op} CAST({} AS DECIMAL(65,30))",
                 b(binds, num)
@@ -397,7 +397,7 @@ fn target_pred(
             let num = parts.next().unwrap_or("");
             let sys = parts.next();
             let unit = parts.next();
-            let (op, num) = num_prefix(num);
+            let (op, num) = num_prefix(num)?;
             let mut pred = format!(
                 "CAST(«c».`{vcol}` AS DECIMAL(65,30)) {op} CAST({} AS DECIMAL(65,30))",
                 b(binds, num)
@@ -535,8 +535,13 @@ fn date_prefix(v: &str) -> (&str, &str) {
     }
 }
 
-fn num_prefix(v: &str) -> (&'static str, &str) {
-    match v.get(..2) {
+/// Split a number search value into its comparison operator and the number.
+///
+/// A number that is not a finite decimal is refused by name (RCA-IN-2): the
+/// database would otherwise cast it to 0 (or fail obscurely) and answer a
+/// different question than the one asked.
+fn num_prefix(v: &str) -> Result<(&'static str, &str), StoreError> {
+    let (op, num) = match v.get(..2) {
         Some("eq") => ("=", &v[2..]),
         Some("ne") => ("<>", &v[2..]),
         Some("lt") => ("<", &v[2..]),
@@ -544,6 +549,12 @@ fn num_prefix(v: &str) -> (&'static str, &str) {
         Some("ge") => (">=", &v[2..]),
         Some("le") => ("<=", &v[2..]),
         _ => ("=", v),
+    };
+    match num.parse::<f64>() {
+        Ok(n) if n.is_finite() => Ok((op, num)),
+        _ => Err(StoreError::Unsupported(format!(
+            "invalid number value {num:?}"
+        ))),
     }
 }
 

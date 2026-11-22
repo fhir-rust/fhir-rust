@@ -56,8 +56,8 @@ impl Hooks for App {
         // acknowledgement that TLS terminates upstream. Refusing here, before
         // anything is served, is the point — the same
         // decide-deliberately-or-not-at-all shape as O10.7's database rule.
-        let acknowledged = std::env::var("FHIR_LOCO_TLS_TERMINATED_UPSTREAM")
-            .is_ok_and(|v| v == "true" || v == "1");
+        let acknowledged = crate::config::env_flag("FHIR_LOCO_TLS_TERMINATED_UPSTREAM")
+            .map_err(loco_rs::Error::Message)?;
         if let Err(e) = crate::auth::listener_posture(&ctx.config.server.binding, acknowledged) {
             return Err(loco_rs::Error::Message(e));
         }
@@ -72,10 +72,13 @@ impl Hooks for App {
             Err(e) => return Err(loco_rs::Error::Message(format!("authentication: {e}"))),
         }
 
-        let db = std::env::var("FHIR_LOCO_DB").unwrap_or_else(|_| "fhir.sqlite".to_string());
-        let assets = std::env::var("FHIR_LOCO_ASSETS").unwrap_or_else(|_| "assets".to_string());
-        let backend = std::env::var("FHIR_LOCO_BACKEND").unwrap_or_else(|_| "sqlite".to_string());
-        let pg_dsn = std::env::var("FHIR_LOCO_PG_DSN").ok();
+        let db = crate::config::env_or("FHIR_LOCO_DB", "fhir.sqlite")
+            .map_err(loco_rs::Error::Message)?;
+        let assets =
+            crate::config::env_or("FHIR_LOCO_ASSETS", "assets").map_err(loco_rs::Error::Message)?;
+        let backend = crate::config::env_or("FHIR_LOCO_BACKEND", "sqlite")
+            .map_err(loco_rs::Error::Message)?;
+        let pg_dsn = crate::config::env_opt("FHIR_LOCO_PG_DSN").map_err(loco_rs::Error::Message)?;
         let cfg = match backend.as_str() {
             "sqlite" => crate::store::BackendConfig::Sqlite {
                 db_path: &db,
@@ -108,7 +111,9 @@ impl Hooks for App {
         // (SV4.3): operational endpoints must be exposable to an operations
         // network without exposing the FHIR API's PHI to it. Off unless
         // FHIR_LOCO_ADMIN_BIND is set.
-        crate::admin::spawn_if_configured();
+        // Validate the export lifetime now, so a bad setting stops startup.
+        crate::config::export_ttl_secs().map_err(loco_rs::Error::Message)?;
+        crate::admin::spawn_if_configured().map_err(loco_rs::Error::Message)?;
         Ok(())
     }
 

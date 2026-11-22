@@ -110,27 +110,25 @@ async fn installed_checksum_distinguishes_installed_from_absent() {
     );
 }
 
-/// A page size below 1 is refused (P6.3); one above the cap is limited to it.
+/// A page size outside 1..=1000 is refused, never altered (P6.3, RCA-IN-2).
 #[tokio::test]
-async fn history_page_refuses_a_count_below_one_and_caps_a_huge_one() {
+async fn history_page_refuses_a_count_outside_one_to_the_cap() {
     let Some(store) = seeded("count_bounds").await else {
         eprintln!("skipping: set FHIR_POSTGRESQL_TEST_DB to run");
         return;
     };
-    for bad in [0_i64, -1, i64::MIN] {
+    for bad in [0_i64, -1, i64::MIN, 1001, i64::MAX] {
         let err = store
             .history_page(None, bad, None)
             .await
             .expect_err("refused");
         assert_eq!(
             err.to_string(),
-            format!("history count must be at least 1, got {bad}")
+            format!("history count must be between 1 and 1000, got {bad}")
         );
     }
-    // The cap is 1000 and there are only four entries: a huge count serves all.
-    let all = store
-        .history_page(None, i64::MAX, None)
-        .await
-        .expect("capped");
-    assert_eq!(all.len(), 4);
+    // The bounds themselves are accepted: there are four entries.
+    for ok in [1_i64, 1000] {
+        assert!(store.history_page(None, ok, None).await.is_ok(), "{ok}");
+    }
 }

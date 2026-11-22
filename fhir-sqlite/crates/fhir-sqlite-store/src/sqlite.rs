@@ -2327,6 +2327,14 @@ fn fetch_recon_input(
     Ok(input)
 }
 
+/// Parse a stored ordinal image; a malformed one is corrupt stored data
+/// (RCA-IN-6) and fails the read, never an empty ordinal list.
+fn ords_from_image(idx: usize, image: &str) -> rusqlite::Result<Vec<i16>> {
+    parse_ords(image).map_err(|e| {
+        rusqlite::Error::FromSqlConversionFailure(idx, rusqlite::types::Type::Text, Box::new(e))
+    })
+}
+
 fn query_recon_rows(
     statement: &mut rusqlite::Statement<'_>,
     id: &str,
@@ -2339,7 +2347,7 @@ fn query_recon_rows(
             let mut offset = 0usize;
             if want_ords {
                 let image: String = row.get(0)?;
-                ords = parse_ords(&image).unwrap_or_default();
+                ords = ords_from_image(0, &image)?;
                 offset = 1;
             }
             let mut values = std::collections::HashMap::new();
@@ -2363,7 +2371,7 @@ fn query_ext_rows(
         .query_map([id], |row| {
             Ok(fhir_sqlite_map::shred::ExtRow {
                 path: row.get(0)?,
-                ords: parse_ords(&row.get::<_, String>(1)?).unwrap_or_default(),
+                ords: ords_from_image(1, &row.get::<_, String>(1)?)?,
                 modifier: row.get::<_, i64>(2)? != 0,
                 ext_ord: row.get(3)?,
                 url: row.get(4)?,
@@ -2388,7 +2396,7 @@ fn query_deep_rows(
         .query_map([id], |row| {
             Ok(fhir_sqlite_map::shred::DeepRow {
                 path: row.get(0)?,
-                ords: parse_ords(&row.get::<_, String>(1)?).unwrap_or_default(),
+                ords: ords_from_image(1, &row.get::<_, String>(1)?)?,
                 leaf: row.get(2)?,
                 val: leaf_from_cols(
                     &row.get::<_, String>(3)?,
@@ -3183,15 +3191,14 @@ impl SqliteStore {
                 v
             }
         };
-        // Spec P6.3: a page holds at most `MAX_HISTORY_PAGE` entries. A count
-        // below 1 is refused, not raised to 1: an unusable page size is the
-        // caller's error, not a figure to repair.
-        if count < 1 {
+        // Spec P6.3: a page holds 1 to `MAX_HISTORY_PAGE` entries. A count
+        // outside that range is refused, never raised, lowered or capped
+        // (RCA-IN-2): it is the caller's error, and the message names it.
+        if !(1..=MAX_HISTORY_PAGE).contains(&count) {
             return Err(StoreError::Unsupported(format!(
-                "history count must be at least 1, got {count}"
+                "history count must be between 1 and {MAX_HISTORY_PAGE}, got {count}"
             )));
         }
-        let count = count.min(MAX_HISTORY_PAGE);
         let schema = self.map.schema.clone();
         let since = since.map(str::to_string);
         let conn = self.conn.clone();

@@ -96,6 +96,7 @@ impl Audit {
     pub fn cli() -> Self {
         let who = std::env::var("USER")
             .or_else(|_| std::env::var("USERNAME"))
+            // RCA-IN-3: absent only (no USER/USERNAME: the actor is "unknown")
             .unwrap_or_else(|_| "unknown".to_string());
         Audit {
             actor: format!("cli:{who}"),

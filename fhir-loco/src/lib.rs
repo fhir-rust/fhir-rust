@@ -13,6 +13,7 @@
 pub mod admin;
 pub mod app;
 pub mod auth;
+pub mod config;
 pub mod controllers;
 pub mod data;
 pub mod initializers;

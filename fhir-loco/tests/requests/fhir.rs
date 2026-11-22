@@ -389,6 +389,43 @@ async fn history_shows_every_version_including_the_deletion() {
     .await;
 }
 
+/// RCA-TEST-8: a supplied paging value that is out of range or malformed is a
+/// 400 naming the parameter, never the default, a clamp or a fallback.
+#[tokio::test]
+#[serial]
+async fn invalid_paging_parameters_are_rejected_not_replaced() {
+    store_ready().await;
+    request::<App, _, _>(|request, _ctx| async move {
+        for (path, name) in [
+            ("/r5/Observation?_count=0", "_count"),
+            ("/r5/Observation?_count=-1", "_count"),
+            ("/r5/Observation?_count=1001", "_count"),
+            ("/r5/Observation?_count=abc", "_count"),
+            ("/r5/Observation?_count=", "_count"),
+            ("/r5/Observation?_offset=-1", "_offset"),
+            ("/r5/Observation?_offset=abc", "_offset"),
+            ("/r5/Observation?_total=maybe", "_total"),
+            ("/r5/_history?_count=0", "_count"),
+            ("/r5/_history?_count=1001", "_count"),
+            ("/r5/_history?_count=abc", "_count"),
+        ] {
+            let res = request.get(path).await;
+            assert_eq!(res.status_code(), 400, "{path}");
+            assert!(res.text().contains(name), "{path}: {}", res.text());
+        }
+        // Boundaries and absence are accepted.
+        for path in [
+            "/r5/Observation?_count=1",
+            "/r5/Observation?_count=1000",
+            "/r5/Observation?_offset=0",
+            "/r5/Observation",
+        ] {
+            assert_eq!(request.get(path).await.status_code(), 200, "{path}");
+        }
+    })
+    .await;
+}
+
 #[tokio::test]
 #[serial]
 async fn search_returns_a_bundle_and_respects_paging() {
