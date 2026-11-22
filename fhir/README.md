@@ -151,10 +151,11 @@ builders, the element metadata table, date/time parsing, and the REST client.
 
 ## Quick start
 
-Build a `Patient`, serialize to canonical FHIR JSON, and parse it back:
+Build a `Patient`, serialize it to canonical FHIR JSON through `Resource`, and
+parse it back:
 
 ```rust
-use fhir::r5::resources::Patient;
+use fhir::r5::resources::{Patient, Resource};
 use fhir::r5::coded::Coded;
 use fhir::r5::codes::AdministrativeGender;
 use fhir::r5::types::{Boolean, HumanName, String as FhirString};
@@ -165,15 +166,18 @@ let patient = Patient {
     gender: Some(Coded::Known(AdministrativeGender::Male)),
     name: vec![HumanName {
         family: Some(FhirString("Chalmers".to_string())),
-        given: vec![FhirString("Peter".to_string())],
+        given: vec![FhirString("Peter".to_string())].into(),   // a PrimVec
         ..Default::default()
     }],
     ..Default::default()
 };
 
-let json = serde_json::to_string_pretty(&patient).unwrap();
-let parsed: Patient = serde_json::from_str(&json).unwrap();
-assert_eq!(parsed, patient);
+// Serialize through `Resource`, which writes "resourceType": "Patient". A bare
+// `Patient` serializes only its own fields, which is not a complete resource.
+let resource = Resource::Patient(Box::new(patient));
+let json = serde_json::to_string_pretty(&resource).unwrap();
+let parsed: Resource = serde_json::from_str(&json).unwrap();
+assert_eq!(parsed, resource);
 ```
 
 ## How the model maps to Rust
@@ -191,6 +195,7 @@ through `serde_json` (or any serde format).
   | `0..1`           | `Option<T>`      |
   | `1..1`           | `T`              |
   | `0..*`           | `Vec<T>`         |
+  | `0..*` primitive | `PrimVec<T>`     |
   | `1..*`           | `Vec1<T>`        |
 
 - **`value[x]` choice elements** are one generated enum per element (e.g.
