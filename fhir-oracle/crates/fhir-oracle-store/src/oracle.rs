@@ -30,7 +30,7 @@
 //!    table string. Fixed by taking one pre-qualified `target: &str`.
 //! 4. **Timestamp binding relied on session NLS settings (`ORA-01843`).**
 //!    Plain-string binds leaned on Oracle's implicit conversion, which reads
-//!    `NLS_TIMESTAMP_FORMAT`, not ISO 8601. Fixed with real `chrono`-typed
+//!    `NLS_TIMESTAMP_FORMAT`, not ISO 8601. Fixed with real `oracle::sql_type::Timestamp`-typed
 //!    binds (`Bound::Timestamp`, `Bound::CalDate`).
 //! 5. **A boolean bound as text in token search (`ORA-01722`)**, found by
 //!    `tests/oracle_store.rs` itself — see `oracle_search.rs`'s module doc.
@@ -1395,9 +1395,9 @@ impl OracleStore {
                     // itself — see `fhir-mssql`'s analogous comment on
                     // `hist_entry`, which this port could not confirm live.
                     let last_updated = row
-                        .get::<usize, Option<chrono::NaiveDateTime>>(2)
+                        .get::<usize, Option<oracle::sql_type::Timestamp>>(2)
                         .unwrap_or(None)
-                        .map(|d| d.format("%Y-%m-%dT%H:%M:%S%.6f").to_string())
+                        .map(|d| fmt_ora_micros(&d))
                         .unwrap_or_default();
                     let op: String = row.get::<usize, Option<String>>(3).unwrap_or(None).unwrap_or_default();
                     let resource: Option<String> = row.get(4).unwrap_or(None);
@@ -1887,8 +1887,8 @@ fn bind_to_bound(b: crate::oracle_search::Bind) -> Bound {
 /// `ORA-01843: An invalid month was specified` — Oracle's implicit
 /// string-to-timestamp conversion uses the session's `NLS_TIMESTAMP_FORMAT`,
 /// not ISO 8601, unlike SQL Server's `DATETIME2` (`M14.10` there). Binding
-/// real `chrono` values instead sidesteps session format settings entirely,
-/// the same reasoning `fhir-mssql`'s `chrono`-typed reads already rely on.
+/// real `oracle::sql_type::Timestamp` values instead sidesteps session format
+/// settings entirely, the same reasoning `fhir-mssql`'s typed reads rely on.
 ///
 /// Otherwise only three variants, unlike `fhir-mssql`'s four: this store
 /// never needs a typed-NULL workaround the way tiberius did (`Bound::Str`
@@ -1902,8 +1902,8 @@ enum Bound {
     Str(Option<String>),
     I64(Option<i64>),
     Bytes(Option<Vec<u8>>),
-    Timestamp(Option<chrono::NaiveDateTime>),
-    CalDate(Option<chrono::NaiveDate>),
+    Timestamp(Option<oracle::sql_type::Timestamp>),
+    CalDate(Option<oracle::sql_type::Timestamp>),
 }
 
 impl ToSql for Bound {
@@ -1936,13 +1936,46 @@ impl ToSql for Bound {
 /// turn into a null bind rather than a hard failure — an offset-bearing
 /// instant (`+02:00`) is a shape this has not been run against and this
 /// store would rather store nothing than store the wrong instant.
-fn parse_ts(s: &str) -> Option<chrono::NaiveDateTime> {
+fn parse_ts(s: &str) -> Option<oracle::sql_type::Timestamp> {
     let s = s.strip_suffix('Z').unwrap_or(s);
-    chrono::NaiveDateTime::parse_from_str(s, "%Y-%m-%dT%H:%M:%S%.f").ok()
+    let d: jiff::civil::DateTime = s.parse().ok()?;
+    to_ora_ts(d)
 }
 
-fn parse_date(s: &str) -> Option<chrono::NaiveDate> {
-    chrono::NaiveDate::parse_from_str(s, "%Y-%m-%d").ok()
+fn parse_date(s: &str) -> Option<oracle::sql_type::Timestamp> {
+    let d: jiff::civil::Date = s.parse().ok()?;
+    to_ora_ts(d.to_datetime(jiff::civil::Time::midnight()))
+}
+
+fn to_ora_ts(d: jiff::civil::DateTime) -> Option<oracle::sql_type::Timestamp> {
+    oracle::sql_type::Timestamp::new(
+        d.year() as i32,
+        d.month() as u32,
+        d.day() as u32,
+        d.hour() as u32,
+        d.minute() as u32,
+        d.second() as u32,
+        d.subsec_nanosecond() as u32,
+    )
+    .ok()
+}
+
+/// `%Y-%m-%d` of an Oracle `DATE`/`TIMESTAMP` value.
+fn fmt_ora_date(t: &oracle::sql_type::Timestamp) -> String {
+    format!("{:04}-{:02}-{:02}", t.year(), t.month(), t.day())
+}
+
+/// `%Y-%m-%dT%H:%M:%S.ffffff` — six fixed fractional digits, matching
+/// `utc_micros` byte-for-byte.
+fn fmt_ora_micros(t: &oracle::sql_type::Timestamp) -> String {
+    format!(
+        "{}T{:02}:{:02}:{:02}.{:06}",
+        fmt_ora_date(t),
+        t.hour(),
+        t.minute(),
+        t.second(),
+        t.nanosecond() / 1_000
+    )
 }
 
 /// The correctly-typed NULL for an arbitrary data column, chosen the same
@@ -2078,13 +2111,13 @@ fn cell_text(row: &Row, idx: usize, ty: ColTy) -> Result<Option<String>, StoreEr
             .map_err(db_err)?
             .map(|b| b.iter().map(|x| format!("{x:02x}")).collect())),
         ColTy::Date => Ok(row
-            .get::<usize, Option<chrono::NaiveDate>>(idx)
+            .get::<usize, Option<oracle::sql_type::Timestamp>>(idx)
             .map_err(db_err)?
-            .map(|d| d.format("%Y-%m-%d").to_string())),
+            .map(|d| fmt_ora_date(&d))),
         ColTy::Timestamptz => Ok(row
-            .get::<usize, Option<chrono::NaiveDateTime>>(idx)
+            .get::<usize, Option<oracle::sql_type::Timestamp>>(idx)
             .map_err(db_err)?
-            .map(|d| d.format("%Y-%m-%dT%H:%M:%S%.6f").to_string())),
+            .map(|d| fmt_ora_micros(&d))),
         ColTy::Numeric | ColTy::Text | ColTy::TextC | ColTy::TextIdx | ColTy::Jsonb => {
             row.get::<usize, Option<String>>(idx).map_err(db_err)
         }
@@ -2133,9 +2166,9 @@ fn civil_from_days(z: i64) -> (i64, u32, u32) {
 fn hist_entry(r: &Row) -> Result<crate::HistEntry, StoreError> {
     let version_id: i64 = r.get::<usize, Option<i64>>(0).unwrap_or(None).unwrap_or(0);
     let last_updated = r
-        .get::<usize, Option<chrono::NaiveDateTime>>(1)
+        .get::<usize, Option<oracle::sql_type::Timestamp>>(1)
         .unwrap_or(None)
-        .map(|d| d.format("%Y-%m-%dT%H:%M:%S%.6f").to_string())
+        .map(|d| fmt_ora_micros(&d))
         .unwrap_or_default();
     let op: String = r
         .get::<usize, Option<String>>(2)

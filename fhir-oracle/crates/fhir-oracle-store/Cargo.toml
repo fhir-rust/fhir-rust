@@ -26,10 +26,9 @@ serde_json.workspace = true
 thiserror.workspace = true
 tokio = { workspace = true, features = ["rt-multi-thread"] }
 oracle.workspace = true
-# Only for rendering the DATE/TIMESTAMP(6) columns the `oracle` crate's
-# `chrono` feature converts to — not for anything this store decides on its
-# own. Mirrors `fhir-mssql-store`'s identical comment on the same dependency.
-chrono = { version = "0.4", default-features = false, features = ["std"] }
+# Parses the ISO-8601 strings shred/utc_micros produce into `oracle`'s own
+# `sql_type::Timestamp` (no chrono needed).
+jiff = { version = "0.2", default-features = false, features = ["std"] }
 tracing.workspace = true
 sha2.workspace = true
 sha3.workspace = true

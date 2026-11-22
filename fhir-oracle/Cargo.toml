@@ -44,9 +44,9 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal", "syn
 # the host — ODPI-C loads `libclntsh` via `dlopen` at connection time, not
 # link time — which is also why the store could be written before Instant
 # Client was available and connected live once it was; see
-# `spec/databases/audit.md` **F-68** (superseding **F-66**). `chrono` for
-# TIMESTAMP(6)/DATE columns, matching every other port's driver choice.
-oracle = { version = "0.6", features = ["chrono"] }
+# `spec/databases/audit.md` **F-68** (superseding **F-66**). `oracle`'s own
+# `sql_type::Timestamp` for TIMESTAMP(6)/DATE columns (no chrono).
+oracle = { version = "0.6" }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 

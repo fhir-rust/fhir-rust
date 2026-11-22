@@ -38,4 +38,4 @@ sha2.workspace = true
 # this is not a new architectural question, just this crate's own copy of a
 # path already verified to work. Synchronous, unlike `fhir-mssql-map`'s
 # `tiberius` dev-dependency, so no tokio dev-dependency is needed here.
-oracle = { workspace = true, features = ["chrono"] }
+oracle.workspace = true
