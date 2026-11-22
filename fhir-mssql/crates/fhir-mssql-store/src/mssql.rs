@@ -1850,8 +1850,8 @@ impl MsSqlStore {
                 // create, an update and a delete is what confirms the two
                 // formatters agree, not just that each compiles.
                 let last_updated = r
-                    .get::<chrono::NaiveDateTime, _>(2)
-                    .map(|d| d.format("%Y-%m-%dT%H:%M:%S%.6f").to_string())
+                    .get::<jiff::civil::DateTime, _>(2)
+                    .map(|d| fmt_micros(&d))
                     .unwrap_or_default();
                 let op: &str = r.get(3).unwrap_or_default();
                 let resource: Option<&str> = r.get(4);
@@ -2424,6 +2424,21 @@ fn check_mac(
     }
 }
 
+/// `%Y-%m-%dT%H:%M:%S.ffffff` — fixed six fractional digits, matching what
+/// `utc_micros` writes into the audit-chain pre-image.
+fn fmt_micros(d: &jiff::civil::DateTime) -> String {
+    format!(
+        "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}.{:06}",
+        d.year(),
+        d.month(),
+        d.day(),
+        d.hour(),
+        d.minute(),
+        d.second(),
+        d.subsec_nanosecond() / 1_000
+    )
+}
+
 fn hist_entry(r: &Row) -> Result<crate::HistEntry, StoreError> {
     let version_id: i64 = r.get(0).unwrap_or(0);
     // `[last_updated]` is `DATETIME2(6)`, not `NVARCHAR` — the same class of
@@ -2431,8 +2446,8 @@ fn hist_entry(r: &Row) -> Result<crate::HistEntry, StoreError> {
     // live server: the very first `history()` call panicked with `Row::get`
     // trying to interpret a `DateTime2` as a `String`.
     let last_updated = r
-        .get::<chrono::NaiveDateTime, _>(1)
-        .map(|d| d.format("%Y-%m-%dT%H:%M:%S%.6f").to_string())
+        .get::<jiff::civil::DateTime, _>(1)
+        .map(|d| fmt_micros(&d))
         .unwrap_or_default();
     let op: &str = r.get(2).unwrap_or_default();
     let raw: Option<&str> = r.get(3);
@@ -2651,13 +2666,12 @@ fn cell_text(row: &Row, idx: usize, ty: ColTy, name: &str) -> Result<Option<Stri
         }
         // Derived sort columns (`_sort`): reconstruction ignores them, but
         // they are selected alongside everything else and still have to
-        // render rather than panic. `chrono`'s `Display` for `NaiveDate` and
-        // `NaiveDateTime` is already ISO-8601, matching what `value.rs`
-        // wrote.
-        ColumnData::Date(Some(_)) => row.get::<chrono::NaiveDate, _>(idx).map(|d| d.to_string()),
+        // render rather than panic. `jiff`'s `Display` for `civil::Date` is
+        // already ISO-8601, matching what `value.rs` wrote.
+        ColumnData::Date(Some(_)) => row.get::<jiff::civil::Date, _>(idx).map(|d| d.to_string()),
         ColumnData::DateTime2(Some(_)) => row
-            .get::<chrono::NaiveDateTime, _>(idx)
-            .map(|d| d.format("%Y-%m-%dT%H:%M:%S%.6f").to_string()),
+            .get::<jiff::civil::DateTime, _>(idx)
+            .map(|d| fmt_micros(&d)),
         _ => return Err(bad()),
     })
 }
