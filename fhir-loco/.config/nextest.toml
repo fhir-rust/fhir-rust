@@ -1,0 +1,39 @@
+# cargo-nextest configuration for the fhir-loco workspace. Opt-in and local: CI keeps
+# using `cargo test`. Run `cargo nextest run` from this directory; nextest does
+# not run doctests, so also run `cargo test --doc`.
+
+[profile.default]
+# Report every failure, never stop at the first.
+fail-fast = false
+# Retries stay off: a retry hides a flaky test. Do not enable them here.
+retries = 0
+status-level = "pass"
+final-status-level = "fail"
+# Flag a test after 60s and kill it after 10 periods (10 minutes).
+slow-timeout = { period = "60s", terminate-after = 10 }
+# Left to `cargo test`: the request suite (tests/requests/*). It shares a
+# process-global store and a scratch database that every test process wipes and
+# rebuilds (~30-60s each under load), so it must be serial and takes ~17 minutes
+# under nextest against ~25s under cargo test. `requests::home::can_get_home`
+# also fails alone: it relies on an earlier test in the same process having set
+# FHIR_LOCO_PASETO_PUBLIC_KEY. `--profile ci` runs everything anyway
+# (and `cargo test` remains the quick way).
+default-filter = 'not (package(fhir-loco) & test(/^requests::/))'
+
+[profile.ci]
+default-filter = "all()"
+retries = 0
+fail-fast = false
+status-level = "fail"
+final-status-level = "fail"
+slow-timeout = { period = "60s", terminate-after = 10 }
+
+# fhir-loco's request suite (run only under --profile ci) shares a process-global store and wipes and
+# rebuilds target/test-scratch/ in every process, so its tests must not run
+# concurrently with one another.
+[test-groups]
+loco-scratch = { max-threads = 1 }
+
+[[profile.default.overrides]]
+filter = 'package(fhir-loco)'
+test-group = "loco-scratch"

@@ -1,0 +1,31 @@
+# cargo-nextest configuration for the fhir-mariadb workspace. Opt-in and local: CI keeps
+# using `cargo test`. Run `cargo nextest run` from this directory; nextest does
+# not run doctests, so also run `cargo test --doc`.
+
+[profile.default]
+# Report every failure, never stop at the first.
+fail-fast = false
+# Retries stay off: a retry hides a flaky test. Do not enable them here.
+retries = 0
+status-level = "pass"
+final-status-level = "fail"
+# Flag a test after 60s and kill it after 10 periods (10 minutes).
+slow-timeout = { period = "60s", terminate-after = 10 }
+
+[profile.ci]
+retries = 0
+fail-fast = false
+status-level = "fail"
+final-status-level = "fail"
+slow-timeout = { period = "60s", terminate-after = 10 }
+
+# cargo test runs test binaries one after another; nextest runs tests from
+# different binaries at the same time. The live suites share one mariadb server and
+# schema, so they are serialised across binaries. They still need their DSN or
+# the scripts/db.sh container, and skip or fail exactly as under cargo test.
+[test-groups]
+live-db = { max-threads = 1 }
+
+[[profile.default.overrides]]
+filter = 'package(/^fhir-mariadb-(store|map)$/)'
+test-group = "live-db"

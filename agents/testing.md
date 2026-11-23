@@ -43,6 +43,33 @@ connected to nothing — the 0.00s was the only tell.
 live GitHub Actions job since 2026-08-12. Its GitHub live job does set
 `FHIR_ORACLE_REQUIRE_DB`.
 
+## Faster local runs with cargo-nextest
+
+Optional and local; CI still runs `cargo test`. Each of the nine workspaces
+(`fhir/`, `fhir-store/`, `fhir-loco/`, the six ports) has a
+`.config/nextest.toml`, so from the workspace directory:
+
+```sh
+cargo nextest run --no-fail-fast   # unit and integration tests, one process each
+cargo test --doc                   # nextest does not run doctests: run both
+```
+
+Retries are off (a retry hides a flaky test); `--profile ci` is the same with
+less status output. nextest runs tests from different binaries at once, so
+the live-server suites of the five server ports (`*-store`, `*-map`) share one
+`live-db` group with `max-threads = 1`. They still need their DSN or
+`scripts/db.sh` and skip or fail exactly as under `cargo test`.
+That serialisation costs time with no server present: `fhir-mysql` took ~200s
+under nextest against ~110s under `cargo test` (`fhir-sqlite` and
+`fhir-postgresql` were faster under nextest).
+
+**`fhir-loco`'s request suite (`requests::*`, 24 of 56 tests) is excluded from
+the default profile** and left to `cargo test`: it shares a process-global
+store and a scratch database that every test process rebuilds, so under
+nextest it must run serially and took ~17 minutes against ~25 seconds, and
+`requests::home::can_get_home` fails alone because it relies on an earlier
+test having set `FHIR_LOCO_PASETO_PUBLIC_KEY`. `--profile ci` runs all 56.
+
 ## The four rules that are easy to break
 
 **A test must be able to fail** (`T11.10`). Verify it by mutation: revert the
