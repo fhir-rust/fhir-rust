@@ -8,37 +8,7 @@
 # Any unpatched advisory fails the build. When one has no fix yet, add it
 # here with a dated note rather than lowering the bar globally.
 yanked = "deny"
-ignore = [
-    # RUSTSEC-2026-0194, -0195 — two denial-of-service defects in quick-xml
-    # 0.39.4: quadratic run time checking a start tag for duplicate attribute
-    # names, and unbounded namespace-declaration allocation in `NsReader`.
-    #
-    #   quick-xml 0.39.4
-    #     <- opendal-core 0.57.0   (a hard dependency, not a service feature)
-    #        <- opendal 0.57.0
-    #           <- loco-rs 1.0.1
-    #              <- fhir-store
-    #
-    # NOT reachable through a feature knob: quick-xml is unconditional in
-    # opendal-core, so it cannot be turned off from here.
-    #
-    # Blocked upstream, and precisely so. The fix is quick-xml >= 0.41.0;
-    # opendal-core 0.58.0 requires exactly that, and loco-rs 1.0.1 pins
-    # `opendal ^0.57`. One loco release that allows opendal 0.58 clears both.
-    # Verified 2026-08-02 against the crates.io index.
-    #
-    # Exposure, stated with its limit. These fire on parsing hostile XML.
-    # This service parses FHIR **JSON**, and loco enables only opendal's
-    # `services-fs` and `services-memory` backends — not `services-s3`,
-    # `-azblob` or `-gcs`, whose responses are the XML opendal parses. So
-    # nothing here is known to feed XML to quick-xml. That is a feature-level
-    # argument, not an audit of opendal's source: it has NOT been proven that
-    # no code path under fs/memory reaches the parser.
-    #
-    # Re-check on every loco-rs release. Remove this entry, do not extend it.
-    "RUSTSEC-2026-0194",
-    "RUSTSEC-2026-0195",
-]
+ignore = []
 
 [licenses]
 # Permissive licences only. Anything copyleft in a linked dependency would
