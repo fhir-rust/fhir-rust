@@ -49,7 +49,7 @@ fn bearer(subject: &str) -> String {
 /// twice in one test binary is impossible, so tests coexist in one database and
 /// keep out of each other's way by using distinct resource ids rather than
 /// distinct databases.
-async fn store_ready() {
+pub(super) async fn store_ready() {
     static ONCE: OnceLock<()> = OnceLock::new();
     if ONCE.get().is_some() {
         return;

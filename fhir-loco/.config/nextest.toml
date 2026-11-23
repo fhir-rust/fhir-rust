@@ -14,10 +14,8 @@ slow-timeout = { period = "60s", terminate-after = 10 }
 # Left to `cargo test`: the request suite (tests/requests/*). It shares a
 # process-global store and a scratch database that every test process wipes and
 # rebuilds (~30-60s each under load), so it must be serial and takes ~17 minutes
-# under nextest against ~25s under cargo test. `requests::home::can_get_home`
-# also fails alone: it relies on an earlier test in the same process having set
-# FHIR_LOCO_PASETO_PUBLIC_KEY. `--profile ci` runs everything anyway
-# (and `cargo test` remains the quick way).
+# under nextest against ~25s under cargo test. `--profile ci` runs everything
+# anyway (and `cargo test` remains the quick way).
 default-filter = 'not (package(fhir-loco) & test(/^requests::/))'
 
 [profile.ci]
