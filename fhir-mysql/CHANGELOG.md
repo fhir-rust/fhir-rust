@@ -12,6 +12,17 @@
 > releases, and because a changelog is a historical record. What is specific to
 > this port is stated where it differs.
 
+## Unreleased
+
+**Behaviour change: corrupt stored values now fail the read (RCA-IN-6).** The
+store used to replace a stored column that was missing or would not decode with
+a default (`""`, `0`, `'?'`, an empty leaf). Reads of history, `vread`, audit
+verification, countersigns, and extension, deep and contained rows now return a
+store error naming the column. NULL stays a value only for NULL-able columns
+(`resource`, `url`, `v_text`, `v_num`, `v_bool`, the hash and MAC columns). An
+unknown `v_kind`, a leaf whose kind column is NULL, a `COUNT`/`EXISTS` probe
+that returns no row, and a history `op` that is not one character are errors.
+
 ## 0.6.2 — 2026-10-16
 
 Maintenance release; no behaviour change. Dependencies refreshed (`hmac` 0.13, `sha2` 0.11, `sha3` 0.12, `getrandom` 0.4, `serde_json` 1.0.154, `tokio`, `zeroize`).

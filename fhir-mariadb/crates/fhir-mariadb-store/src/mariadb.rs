@@ -349,7 +349,7 @@ impl MariaDbStore {
             )
             .await
             .map_err(db_err)?;
-        if meta_exists.unwrap_or(0) == 0 {
+        if count_of(meta_exists, "information_schema.tables count")? == 0 {
             return Err(StoreError::Other(format!("schema {s} is not installed")));
         }
         let old_hex: String = conn
@@ -390,7 +390,7 @@ impl MariaDbStore {
                     )
                     .await
                     .map_err(db_err)?;
-                if has.unwrap_or(0) != 0 {
+                if count_of(has, "EXISTS probe")? != 0 {
                     data_bearing.push(format!("{t}.{col} → {nt}"));
                 }
             }
@@ -590,7 +590,7 @@ impl MariaDbStore {
                     )
                     .await
                     .map_err(db_err)?;
-                if has.unwrap_or(0) != 0 {
+                if count_of(has, "EXISTS probe")? != 0 {
                     return Err(StoreError::Other(format!(
                         "re-shred left data behind in {t}.{col} (destined for {nt}); \
                          nothing has been dropped — rerun to resume"
@@ -815,7 +815,7 @@ impl MariaDbStore {
             )
             .await
             .map_err(db_err)?;
-        Ok(usize::try_from(n.unwrap_or(0)).unwrap_or(0))
+        count_usize(n, "information_schema count")
     }
 
     /// How many append-only triggers the installed schema has.
@@ -832,7 +832,7 @@ impl MariaDbStore {
             )
             .await
             .map_err(db_err)?;
-        Ok(usize::try_from(n.unwrap_or(0)).unwrap_or(0))
+        count_usize(n, "information_schema count")
     }
 
     /// Drop the schema and everything in it.
@@ -1296,18 +1296,64 @@ fn ords_col(row: &mysql_async::Row, idx: usize) -> Result<Vec<i16>, StoreError> 
     parse_ords(&image)
 }
 
+/// Rebuild a leaf value from its `(v_kind, v_text, v_num, v_bool)` columns.
+///
+/// `v_kind` is NOT NULL; the three value columns are NULL-able but the kind
+/// says which one must be present. A kind whose column is NULL, or an unknown
+/// kind, is corrupt stored data (RCA-IN-6) and fails the read.
 fn leaf_from_cols(
     kind: &str,
     text: Option<String>,
     num: Option<String>,
     b: Option<i64>,
-) -> fhir_mariadb_map::value::LeafVal {
+) -> Result<fhir_mariadb_map::value::LeafVal, StoreError> {
     use fhir_mariadb_map::value::LeafVal;
-    match kind {
-        "s" => LeafVal::Str(text.unwrap_or_default()),
-        "n" => LeafVal::Num(num.unwrap_or_default()),
-        "b" => LeafVal::Bool(b.unwrap_or(0) != 0),
-        _ => LeafVal::Null,
+    let missing = |col: &str| StoreError::Other(format!("leaf kind {kind:?} without {col}"));
+    Ok(match kind {
+        "s" => LeafVal::Str(text.ok_or_else(|| missing("v_text"))?),
+        "n" => LeafVal::Num(num.ok_or_else(|| missing("v_num"))?),
+        "b" => LeafVal::Bool(match b.ok_or_else(|| missing("v_bool"))? {
+            0 => false,
+            1 => true,
+            other => return Err(StoreError::Other(format!("bad v_bool {other}"))),
+        }),
+        "z" => LeafVal::Null,
+        other => return Err(StoreError::Other(format!("unknown leaf kind {other:?}"))),
+    })
+}
+
+/// Column `idx` decoded as `T`. A missing column or one that does not decode
+/// is corrupt stored data (RCA-IN-6) and fails the read, never a default. Ask
+/// for `Option<_>` only where the schema permits NULL: a NULL in a NOT NULL
+/// column then fails to decode instead of becoming an empty value.
+fn col<T: mysql_async::prelude::FromValue>(
+    row: &mysql_async::Row,
+    idx: usize,
+    name: &str,
+) -> Result<T, StoreError> {
+    row.get_opt(idx)
+        .ok_or_else(|| StoreError::Other(format!("column {name} ({idx}) is missing")))?
+        .map_err(|e| StoreError::Other(format!("column {name} ({idx}): {e}")))
+}
+
+/// A `COUNT(*)` / `EXISTS` scalar. The query always yields a row, so `None`
+/// means the engine returned nothing at all, which is not zero (RCA-IN-6).
+fn count_of(n: Option<i64>, what: &str) -> Result<i64, StoreError> {
+    n.ok_or_else(|| StoreError::Other(format!("{what}: no row returned")))
+}
+
+/// [`count_of`] as a `usize`; a negative count is corrupt, not zero.
+fn count_usize(n: Option<i64>, what: &str) -> Result<usize, StoreError> {
+    let n = count_of(n, what)?;
+    usize::try_from(n).map_err(|_| StoreError::Other(format!("{what}: negative count {n}")))
+}
+
+/// The one-letter `op` code of a history row (`CHAR(1) NOT NULL`).
+fn op_char(op: &str) -> Result<char, StoreError> {
+    let mut it = op.chars();
+    match (it.next(), it.next()) {
+        (Some(c), None) => Ok(c),
+        _ => Err(StoreError::Other(format!("bad history op {op:?}"))),
     }
 }
 
@@ -1384,8 +1430,8 @@ impl MariaDbStore {
             .map_err(db_err)?;
         let mut out = Vec::with_capacity(rows.len());
         for r in rows {
-            let version_id: i64 = r.get(0).unwrap_or(0);
-            let raw: Option<String> = r.get(3).unwrap_or(None);
+            let version_id: i64 = col(&r, 0, "version_id")?;
+            let raw: Option<String> = col(&r, 3, "resource")?;
             let resource = match raw {
                 Some(t) => Some(
                     serde_json::from_str(&t)
@@ -1395,13 +1441,8 @@ impl MariaDbStore {
             };
             out.push(crate::HistEntry {
                 version_id,
-                last_updated: r.get::<String, _>(1).unwrap_or_default(),
-                op: r
-                    .get::<String, _>(2)
-                    .unwrap_or_default()
-                    .chars()
-                    .next()
-                    .unwrap_or('?'),
+                last_updated: col(&r, 1, "last_updated")?,
+                op: op_char(&col::<String>(&r, 2, "op")?)?,
                 resource,
             });
         }
@@ -1432,7 +1473,7 @@ impl MariaDbStore {
             .await
             .map_err(db_err)?;
         let Some(r) = row else { return Ok(None) };
-        let raw: Option<String> = r.get(3).unwrap_or(None);
+        let raw: Option<String> = col(&r, 3, "resource")?;
         let resource = match raw {
             Some(t) => Some(
                 serde_json::from_str(&t)
@@ -1441,14 +1482,9 @@ impl MariaDbStore {
             None => None,
         };
         Ok(Some(crate::HistEntry {
-            version_id: r.get(0).unwrap_or(version_id),
-            last_updated: r.get::<String, _>(1).unwrap_or_default(),
-            op: r
-                .get::<String, _>(2)
-                .unwrap_or_default()
-                .chars()
-                .next()
-                .unwrap_or('?'),
+            version_id: col(&r, 0, "version_id")?,
+            last_updated: col(&r, 1, "last_updated")?,
+            op: op_char(&col::<String>(&r, 2, "op")?)?,
             resource,
         }))
     }
@@ -1573,11 +1609,11 @@ impl MariaDbStore {
         for r in cs {
             countersigns.insert(
                 (
-                    r.get(0).unwrap_or_default(),
-                    r.get(1).unwrap_or_default(),
-                    r.get(2).unwrap_or(0),
+                    col(&r, 0, "rtype")?,
+                    col(&r, 1, "id")?,
+                    col(&r, 2, "version_id")?,
                 ),
-                r.get(3).unwrap_or_default(),
+                col(&r, 3, "row_mac")?,
             );
         }
 
@@ -1602,17 +1638,17 @@ impl MariaDbStore {
             let mut prior_3: Option<Vec<u8>> = None;
 
             for r in rows {
-                let id: String = r.get(0).unwrap_or_default();
-                let version_id: i64 = r.get(1).unwrap_or(0);
-                let ts: String = r.get(2).unwrap_or_default();
-                let op: String = r.get(3).unwrap_or_default();
-                let resource: Option<String> = r.get(4).unwrap_or(None);
-                let actor: String = r.get(5).unwrap_or_default();
-                let prev_256: Option<Vec<u8>> = r.get(6).unwrap_or(None);
-                let row_256: Option<Vec<u8>> = r.get(7).unwrap_or(None);
-                let prev_3: Option<Vec<u8>> = r.get(8).unwrap_or(None);
-                let row_3: Option<Vec<u8>> = r.get(9).unwrap_or(None);
-                let row_mac: Option<String> = r.get(10).unwrap_or(None);
+                let id: String = col(&r, 0, "id")?;
+                let version_id: i64 = col(&r, 1, "version_id")?;
+                let ts: String = col(&r, 2, "last_updated")?;
+                let op: String = col(&r, 3, "op")?;
+                let resource: Option<String> = col(&r, 4, "resource")?;
+                let actor: String = col(&r, 5, "actor")?;
+                let prev_256: Option<Vec<u8>> = col(&r, 6, "prev_hash")?;
+                let row_256: Option<Vec<u8>> = col(&r, 7, "row_hash")?;
+                let prev_3: Option<Vec<u8>> = col(&r, 8, "prev_hash_sha3")?;
+                let row_3: Option<Vec<u8>> = col(&r, 9, "row_hash_sha3")?;
+                let row_mac: Option<String> = col(&r, 10, "row_mac")?;
 
                 if id != cur {
                     cur.clone_from(&id);
@@ -1897,7 +1933,7 @@ impl MariaDbStore {
             ))
             .await
             .map_err(db_err)?;
-        Ok(n.unwrap_or(0))
+        count_of(n, "access log count")
     }
 
     /// Erase one resource and its history (GDPR Art. 17, spec M3.18).
@@ -2311,18 +2347,24 @@ async fn recon_with_map(
                     .map_err(db_err)?;
                 for r in rows {
                     input.ext.push(fhir_mariadb_map::shred::ExtRow {
-                        path: r.get(0).unwrap_or_default(),
+                        path: col(&r, 0, "path")?,
                         ords: ords_col(&r, 1)?,
-                        modifier: r.get::<i64, _>(2).unwrap_or(0) != 0,
-                        ext_ord: r.get(3).unwrap_or(0),
-                        url: r.get(4).unwrap_or(None),
-                        leaf: r.get(5).unwrap_or_default(),
+                        modifier: match col::<i64>(&r, 2, "modifier")? {
+                            0 => false,
+                            1 => true,
+                            other => {
+                                return Err(StoreError::Other(format!("bad modifier {other}")));
+                            }
+                        },
+                        ext_ord: col(&r, 3, "ext_ord")?,
+                        url: col(&r, 4, "url")?,
+                        leaf: col(&r, 5, "leaf")?,
                         val: leaf_from_cols(
-                            &r.get::<String, _>(6).unwrap_or_default(),
-                            r.get(7).unwrap_or(None),
-                            r.get(8).unwrap_or(None),
-                            r.get(9).unwrap_or(None),
-                        ),
+                            &col::<String>(&r, 6, "v_kind")?,
+                            col(&r, 7, "v_text")?,
+                            col(&r, 8, "v_num")?,
+                            col(&r, 9, "v_bool")?,
+                        )?,
                     });
                 }
             }
@@ -2339,15 +2381,15 @@ async fn recon_with_map(
                     .map_err(db_err)?;
                 for r in rows {
                     input.deep.push(fhir_mariadb_map::shred::DeepRow {
-                        path: r.get(0).unwrap_or_default(),
+                        path: col(&r, 0, "path")?,
                         ords: ords_col(&r, 1)?,
-                        leaf: r.get(2).unwrap_or_default(),
+                        leaf: col(&r, 2, "leaf")?,
                         val: leaf_from_cols(
-                            &r.get::<String, _>(3).unwrap_or_default(),
-                            r.get(4).unwrap_or(None),
-                            r.get(5).unwrap_or(None),
-                            r.get(6).unwrap_or(None),
-                        ),
+                            &col::<String>(&r, 3, "v_kind")?,
+                            col(&r, 4, "v_text")?,
+                            col(&r, 5, "v_num")?,
+                            col(&r, 6, "v_bool")?,
+                        )?,
                     });
                 }
             }
@@ -2360,10 +2402,10 @@ async fn recon_with_map(
                     .await
                     .map_err(db_err)?;
                 for r in rows {
-                    let raw: String = r.get(1).unwrap_or_default();
+                    let raw: String = col(&r, 1, "resource")?;
                     let v = serde_json::from_str(&raw)
                         .map_err(|e| StoreError::Other(format!("contained: {e}")))?;
-                    input.contained.push((r.get(0).unwrap_or(0), v));
+                    input.contained.push((col(&r, 0, "ord")?, v));
                 }
             }
             TableKind::History => {}
@@ -2409,5 +2451,58 @@ mod utc_micros_tests {
         assert_eq!(civil_from_days(0), Some((1970, 1, 1)));
         assert_eq!(civil_from_days(-1), Some((1969, 12, 31)));
         assert_eq!(civil_from_days(i64::MAX), None);
+    }
+}
+
+#[cfg(test)]
+mod stored_column_tests {
+    use super::*;
+
+    #[test]
+    fn a_leaf_whose_kind_column_is_null_is_corrupt_not_empty() {
+        assert!(leaf_from_cols("s", None, None, None).is_err());
+        assert!(leaf_from_cols("n", Some("1".into()), None, None).is_err());
+        assert!(leaf_from_cols("b", None, None, None).is_err());
+    }
+
+    #[test]
+    fn an_unknown_or_malformed_leaf_is_rejected() {
+        assert!(leaf_from_cols("q", None, None, None).is_err());
+        assert!(leaf_from_cols("b", None, None, Some(2)).is_err());
+    }
+
+    #[test]
+    fn a_well_formed_leaf_round_trips() {
+        use fhir_mariadb_map::value::LeafVal;
+        assert_eq!(
+            leaf_from_cols("s", Some("".into()), None, None).unwrap(),
+            LeafVal::Str(String::new())
+        );
+        assert_eq!(
+            leaf_from_cols("n", None, Some("1.50".into()), None).unwrap(),
+            LeafVal::Num("1.50".into())
+        );
+        assert_eq!(
+            leaf_from_cols("b", None, None, Some(0)).unwrap(),
+            LeafVal::Bool(false)
+        );
+        assert_eq!(
+            leaf_from_cols("z", None, None, None).unwrap(),
+            LeafVal::Null
+        );
+    }
+
+    #[test]
+    fn a_missing_count_is_an_error_not_zero() {
+        assert!(count_of(None, "x").is_err());
+        assert!(count_usize(Some(-1), "x").is_err());
+        assert_eq!(count_usize(Some(3), "x").unwrap(), 3);
+    }
+
+    #[test]
+    fn an_op_code_must_be_exactly_one_character() {
+        assert_eq!(op_char("U").unwrap(), 'U');
+        assert!(op_char("").is_err());
+        assert!(op_char("UP").is_err());
     }
 }
