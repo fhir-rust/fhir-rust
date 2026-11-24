@@ -876,6 +876,109 @@ async fn a_write_without_a_token_is_refused() {
     .await;
 }
 
+/// SV2.6 + SV2.3 + SV3.2 + SV3.8: a rejected credential is a `401` that carries
+/// an `OperationOutcome` as `application/fhir+json`, like every other error —
+/// not a bare text body — and it never echoes the token the caller sent
+/// (SV2.7). A client written against FHIR parses error bodies as FHIR.
+///
+/// One case per way SV3.2 says a token can be bad (missing, malformed,
+/// tampered, expired) plus SV3.8's token without a `sub`, each on a write and
+/// an export route, since each calls `audit_from` independently.
+#[tokio::test]
+#[serial]
+async fn every_rejected_credential_is_a_401_operation_outcome() {
+    use pasetors::claims::Claims;
+    store_ready().await;
+
+    let sign = |claims: &Claims| {
+        pasetors::public::sign(&issuer().secret, claims, None, None).expect("sign test token")
+    };
+
+    let expired = {
+        let mut c = Claims::new().expect("claims");
+        c.subject("dr-who").expect("sub");
+        c.expiration("2000-01-01T00:00:00+00:00").expect("exp");
+        sign(&c)
+    };
+    let no_subject = sign(&Claims::new().expect("claims"));
+    let tampered = {
+        let good = bearer("dr-who");
+        // Flip one character inside the signed payload.
+        let mut bytes = good.into_bytes();
+        let i = "Bearer v4.public.".len() + 10;
+        bytes[i] = if bytes[i] == b'A' { b'B' } else { b'A' };
+        String::from_utf8(bytes).expect("ascii")
+    };
+
+    // (label, Authorization header value or None for no header)
+    let cases: Vec<(&str, Option<String>)> = vec![
+        ("no header", None),
+        (
+            "malformed token",
+            Some("Bearer v4.public.not-a-token".into()),
+        ),
+        ("not a bearer scheme", Some("Basic dXNlcjpwYXNz".into())),
+        ("tampered payload", Some(tampered)),
+        ("expired", Some(format!("Bearer {expired}"))),
+        ("no sub claim", Some(format!("Bearer {no_subject}"))),
+    ];
+
+    request::<App, _, _>(|request, _ctx| async move {
+        for (label, header) in &cases {
+            for route in ["POST /r5/Observation", "GET /r5/$export"] {
+                let (method, path) = route.split_once(' ').expect("route");
+                let mut req = if method == "POST" {
+                    request.post(path).json(
+                        &serde_json::json!({"resourceType": "Observation", "status": "final"}),
+                    )
+                } else {
+                    request.get(path).add_header("prefer", "respond-async")
+                };
+                req = req.add_header("content-type", FHIR_JSON);
+                if let Some(h) = header {
+                    req = req.add_header("authorization", h);
+                }
+                let res = req.await;
+                let ctx = format!("{label} on {route}");
+
+                assert_eq!(res.status_code(), 401, "{ctx}: status");
+                assert_eq!(
+                    res.headers()
+                        .get("www-authenticate")
+                        .map(|v| v.to_str().unwrap()),
+                    Some("Bearer"),
+                    "{ctx}: www-authenticate"
+                );
+                let content_type = res
+                    .headers()
+                    .get("content-type")
+                    .map(|v| v.to_str().unwrap().to_string())
+                    .unwrap_or_default();
+                assert!(
+                    content_type.starts_with(FHIR_JSON),
+                    "{ctx}: SV2.3 content type was {content_type:?}"
+                );
+                let text = res.text();
+                let body = body_of(&text);
+                assert_eq!(
+                    body["resourceType"], "OperationOutcome",
+                    "{ctx}: SV2.6 body was {text}"
+                );
+                assert_eq!(body["issue"][0]["code"], "login", "{ctx}: issue code");
+                if let Some(h) = header {
+                    if let Some((_, token)) = h.split_once(' ') {
+                        assert!(
+                            !text.contains(token),
+                            "{ctx}: SV2.7 the response echoed the credential"
+                        );
+                    }
+                }
+            }
+        }
+    })
+    .await;
+}
+
 /// SV2.14: `If-None-Exist` conditional create — all four outcomes the spec
 /// table names. The store makes search-then-create indivisible; these assert
 /// the HTTP layer preserves each verdict rather than flattening them.

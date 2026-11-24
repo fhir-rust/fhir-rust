@@ -9,6 +9,16 @@ This file did not exist before 2026-08-29. This crate is the FHIR® REST
 surface — it inherited the name `fhir-store` briefly before being renamed
 (**F-37**), and had no changelog under either name.
 
+## Unreleased
+
+Fixed: a rejected credential (`401`) now carries an `OperationOutcome` as
+`application/fhir+json` (`SV2.6`, `SV2.3`) instead of a `text/plain` body; the
+`WWW-Authenticate: Bearer` header is unchanged. New test
+`every_rejected_credential_is_a_401_operation_outcome` covers a missing,
+malformed, tampered, expired, wrong-scheme and subject-less token on the
+create and `$export` routes, and that the response does not echo the token
+(`SV2.7`). Mutation-verified: without the fix it fails on the content type.
+
 ## 0.3.8 — 2026-11-15
 
 Maintenance release. Manifest requirements raised: `loco-rs` 1.2 -> 1.3, `tokio` 1.53 -> 1.54, `rstest` 0.27 -> 0.28; lockfile refresh.
