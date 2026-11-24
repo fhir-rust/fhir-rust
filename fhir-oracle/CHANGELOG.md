@@ -27,6 +27,20 @@
 
 ## Unreleased (0.6.2)
 
+**Behaviour change: corrupt stored values now fail the read (RCA-IN-6).** The
+store used to replace a stored column that was missing or would not decode with
+a default (`""`, `0`, `'?'`, an empty leaf), and treat any error reading the
+chain tip as "no history". Reads of history, `vread`, audit verification,
+countersigns, search ids and counts, and extension, deep and contained rows
+now return a store error naming the column. NULL stays a value only for
+NULL-able columns; the one deliberate exception is a string leaf whose
+`v_text` is NULL, which is the empty string because Oracle stores `''` as NULL
+(marked `RCA-IN-3: absent only`). An unknown `v_kind`, a number or boolean
+leaf with no value, a boolean column other than 0 or 1, a `COUNT` that returns
+no row, and a history `op` that is not one character are errors. The next
+`version_id` is `1` only on `NoDataFound` (no history yet); any other error
+reading the chain tip, or an unreadable tip, is an error, not `0 + 1`.
+
 `get` reconstructs a resource under a single serializable transaction
 (db:R4.5, M14.19). Oracle 26ai Free 23.26.2.0.0 verified reads after schema
 installation and during concurrent writes.

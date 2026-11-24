@@ -114,6 +114,78 @@ fn db_err(e: oracle::Error) -> StoreError {
     StoreError::Db(e.to_string())
 }
 
+/// Column `idx` decoded as `Option<T>`: `None` is SQL NULL, which is a value
+/// only for NULL-able columns, and a column that does not decode is an error
+/// (RCA-IN-6), never a default. Oracle stores `''` as NULL, so a NULL in a
+/// column that may legitimately hold an empty string is the caller's to
+/// interpret, marked `// RCA-IN-3: absent only`.
+fn col_opt<T: oracle::sql_type::FromSql>(
+    row: &Row,
+    idx: usize,
+    name: &str,
+) -> Result<Option<T>, StoreError> {
+    row.get::<usize, Option<T>>(idx)
+        .map_err(|e| StoreError::Other(format!("column {name} ({idx}): {e}")))
+}
+
+/// Column `idx` of a NOT NULL column decoded as `T`. A NULL is corrupt stored
+/// data (RCA-IN-6) and fails the read. Oracle rejects `''` in a NOT NULL
+/// column at write time, so no legitimate row reads back as NULL here.
+fn col<T: oracle::sql_type::FromSql>(row: &Row, idx: usize, name: &str) -> Result<T, StoreError> {
+    col_opt(row, idx, name)?
+        .ok_or_else(|| StoreError::Other(format!("column {name} ({idx}) is NULL")))
+}
+
+/// A `COUNT(*)` scalar. The query always yields a row, so a NULL means the
+/// engine returned nothing, which is not zero (RCA-IN-6); a negative count is
+/// corrupt too.
+fn count_of(row: &Row, what: &str) -> Result<i64, StoreError> {
+    let n: i64 = col(row, 0, what)?;
+    if n < 0 {
+        return Err(StoreError::Other(format!("{what}: negative count {n}")));
+    }
+    Ok(n)
+}
+
+/// The version after the chain tip's `version_id`, with the tip's hashes. A
+/// history table with no row for the id is legitimately empty (version 1,
+/// no links); any other failure, an undecodable tip, or overflow is an error.
+fn chain_tip(prev_row: Result<Row, oracle::Error>) -> Result<ChainTip, StoreError> {
+    match prev_row {
+        Ok(r) => {
+            let v: i64 = col(&r, 0, "version_id")?;
+            Ok((
+                v.checked_add(1).ok_or_else(|| {
+                    StoreError::Other(format!("version_id {v} cannot be incremented"))
+                })?,
+                col_opt(&r, 1, "row_hash")?,
+                col_opt(&r, 2, "row_hash_sha3")?,
+            ))
+        }
+        // RCA-IN-3: absent only
+        Err(e) if e.kind() == oracle::ErrorKind::NoDataFound => Ok((1, None, None)),
+        Err(e) => Err(db_err(e)),
+    }
+}
+
+/// The one-letter `op` code of a history row (`CHAR(1) NOT NULL`).
+fn op_char(op: &str) -> Result<char, StoreError> {
+    let mut it = op.chars();
+    match (it.next(), it.next()) {
+        (Some(c), None) => Ok(c),
+        _ => Err(StoreError::Other(format!("bad history op {op:?}"))),
+    }
+}
+
+/// A `NUMBER(1)` boolean column: 0 or 1, anything else is corrupt.
+fn flag(v: i64, name: &str) -> Result<bool, StoreError> {
+    match v {
+        0 => Ok(false),
+        1 => Ok(true),
+        other => Err(StoreError::Other(format!("bad {name} {other}"))),
+    }
+}
+
 fn join_err(e: tokio::task::JoinError) -> StoreError {
     StoreError::Other(format!("blocking task panicked: {e}"))
 }
@@ -243,7 +315,7 @@ fn read_meta_chunked(
         &[&key],
     );
     let base: Option<String> = match row {
-        Ok(r) => r.get::<usize, Option<String>>(0).unwrap_or(None),
+        Ok(r) => col_opt(&r, 0, "value")?,
         Err(_) => None,
     };
     let Some(base) = base else { return Ok(None) };
@@ -422,7 +494,7 @@ impl OracleStore {
                 &[&"checksum"],
             );
             match row {
-                Ok(r) => Ok(r.get::<usize, Option<String>>(0).unwrap_or(None)),
+                Ok(r) => col_opt(&r, 0, "value"),
                 Err(_) => Ok(None),
             }
         })
@@ -877,9 +949,10 @@ impl OracleStore {
                 &[],
             );
             if let Ok(rows) = fks {
-                for row in rows.flatten() {
-                    let cname: String = row.get(0).unwrap_or_default();
-                    let tname: String = row.get(1).unwrap_or_default();
+                for row in rows {
+                    let row = row.map_err(db_err)?;
+                    let cname: String = col(&row, 0, "constraint_name")?;
+                    let tname: String = col(&row, 1, "table_name")?;
                     let _ = conn.execute(
                         &format!(
                             "ALTER TABLE {s}.{} DROP CONSTRAINT {}",
@@ -899,8 +972,9 @@ impl OracleStore {
             // later re-shred collided with that residue (ORA-00001).
             let tables = conn.query("SELECT table_name FROM user_tables", &[]);
             if let Ok(rows) = tables {
-                for row in rows.flatten() {
-                    let tname: String = row.get(0).unwrap_or_default();
+                for row in rows {
+                    let row = row.map_err(db_err)?;
+                    let tname: String = col(&row, 0, "table_name")?;
                     let _ = conn.execute(
                         &format!("DROP TABLE {s}.{} CASCADE CONSTRAINTS", quote_ident(&tname)),
                         &[],
@@ -1008,14 +1082,7 @@ fn put_in_tx(
         ),
         &[&id],
     );
-    let (version_id, prev_256, prev_3): ChainTip = match prev_row {
-        Ok(r) => (
-            r.get::<usize, Option<i64>>(0).unwrap_or(None).unwrap_or(0) + 1,
-            r.get::<usize, Option<Vec<u8>>>(1).unwrap_or(None),
-            r.get::<usize, Option<Vec<u8>>>(2).unwrap_or(None),
-        ),
-        Err(_) => (1, None, None),
-    };
+    let (version_id, prev_256, prev_3): ChainTip = chain_tip(prev_row)?;
 
     let existed = conn
         .query_row(
@@ -1282,14 +1349,7 @@ fn delete_in_tx(
         ),
         &[&id],
     );
-    let (version_id, prev_256, prev_3): ChainTip = match prev_row {
-        Ok(r) => (
-            r.get::<usize, Option<i64>>(0).unwrap_or(None).unwrap_or(0) + 1,
-            r.get::<usize, Option<Vec<u8>>>(1).unwrap_or(None),
-            r.get::<usize, Option<Vec<u8>>>(2).unwrap_or(None),
-        ),
-        Err(_) => (1, None, None),
-    };
+    let (version_id, prev_256, prev_3): ChainTip = chain_tip(prev_row)?;
 
     let ts = utc_micros(std::time::SystemTime::now());
     let pre = crate::chain::preimage(id, version_id, &ts, "D", None, &audit.actor);
@@ -1357,11 +1417,12 @@ impl OracleStore {
             let mut countersigns: std::collections::HashMap<(String, String, i64), String> =
                 std::collections::HashMap::new();
             if let Ok(rows) = conn.query(&format!("SELECT \"rtype\",\"id\",\"version_id\",\"row_mac\" FROM {cs_table}"), &[]) {
-                for row in rows.flatten() {
-                    let rtype: String = row.get::<usize, Option<String>>(0).unwrap_or(None).unwrap_or_default();
-                    let id: String = row.get::<usize, Option<String>>(1).unwrap_or(None).unwrap_or_default();
-                    let version_id: i64 = row.get::<usize, Option<i64>>(2).unwrap_or(None).unwrap_or(0);
-                    let row_mac: String = row.get::<usize, Option<String>>(3).unwrap_or(None).unwrap_or_default();
+                for row in rows {
+                    let row = row.map_err(db_err)?;
+                    let rtype: String = col(&row, 0, "rtype")?;
+                    let id: String = col(&row, 1, "id")?;
+                    let version_id: i64 = col(&row, 2, "version_id")?;
+                    let row_mac: String = col(&row, 3, "row_mac")?;
                     countersigns.insert((rtype, id, version_id), row_mac);
                 }
             }
@@ -1388,25 +1449,25 @@ impl OracleStore {
 
                 for row in rows {
                     let row = row.map_err(db_err)?;
-                    let id: String = row.get::<usize, Option<String>>(0).unwrap_or(None).unwrap_or_default();
-                    let version_id: i64 = row.get::<usize, Option<i64>>(1).unwrap_or(None).unwrap_or(0);
+                    let id: String = col(&row, 0, "id")?;
+                    let version_id: i64 = col(&row, 1, "version_id")?;
                     // TIMESTAMP(6) formatted to match `utc_micros`'s own
                     // output exactly, or every row fails to verify against
                     // itself — see `fhir-mssql`'s analogous comment on
                     // `hist_entry`, which this port could not confirm live.
-                    let last_updated = row
-                        .get::<usize, Option<oracle::sql_type::Timestamp>>(2)
-                        .unwrap_or(None)
-                        .map(|d| fmt_ora_micros(&d))
-                        .unwrap_or_default();
-                    let op: String = row.get::<usize, Option<String>>(3).unwrap_or(None).unwrap_or_default();
-                    let resource: Option<String> = row.get(4).unwrap_or(None);
-                    let actor: String = row.get::<usize, Option<String>>(5).unwrap_or(None).unwrap_or_default();
-                    let prev_256: Option<Vec<u8>> = row.get(6).unwrap_or(None);
-                    let row_256: Option<Vec<u8>> = row.get(7).unwrap_or(None);
-                    let prev_3: Option<Vec<u8>> = row.get(8).unwrap_or(None);
-                    let row_3: Option<Vec<u8>> = row.get(9).unwrap_or(None);
-                    let row_mac: Option<String> = row.get(10).unwrap_or(None);
+                    let last_updated = fmt_ora_micros(&col::<oracle::sql_type::Timestamp>(
+                        &row,
+                        2,
+                        "last_updated",
+                    )?);
+                    let op: String = col(&row, 3, "op")?;
+                    let resource: Option<String> = col_opt(&row, 4, "resource")?;
+                    let actor: String = col(&row, 5, "actor")?;
+                    let prev_256: Option<Vec<u8>> = col_opt(&row, 6, "prev_hash")?;
+                    let row_256: Option<Vec<u8>> = col_opt(&row, 7, "row_hash")?;
+                    let prev_3: Option<Vec<u8>> = col_opt(&row, 8, "prev_hash_sha3")?;
+                    let row_3: Option<Vec<u8>> = col_opt(&row, 9, "row_hash_sha3")?;
+                    let row_mac: Option<String> = col_opt(&row, 10, "row_mac")?;
 
                     if id != cur {
                         cur.clone_from(&id);
@@ -1566,14 +1627,15 @@ impl OracleStore {
                 // trigger delete) — untested here, but taken as the safer
                 // default rather than trusting a post-delete row count this
                 // port has never run either way.
-                let versions_erased: i64 = conn
-                    .query_row(
-                        &format!("SELECT COUNT(*) FROM {hist} WHERE \"id\" = :1"),
-                        &[&id],
-                    )
-                    .ok()
-                    .and_then(|r| r.get::<usize, Option<i64>>(0).unwrap_or(None))
-                    .unwrap_or(0);
+                let versions_erased: i64 = count_of(
+                    &conn
+                        .query_row(
+                            &format!("SELECT COUNT(*) FROM {hist} WHERE \"id\" = :1"),
+                            &[&id],
+                        )
+                        .map_err(db_err)?,
+                    "erased version count",
+                )?;
 
                 // The `M3.17` append-only trigger's escape hatch (`M14.29`):
                 // `CLIENT_INFO` is connection-scoped, not transaction-scoped,
@@ -1748,10 +1810,7 @@ impl OracleStore {
             let row = conn
                 .query_row(&format!("SELECT COUNT(*) FROM {log}"), &[])
                 .map_err(db_err)?;
-            Ok(row
-                .get::<usize, Option<i64>>(0)
-                .unwrap_or(None)
-                .unwrap_or(0))
+            count_of(&row, "access log count")
         })
         .await
         .map_err(join_err)?
@@ -1843,7 +1902,7 @@ impl OracleStore {
                 let row = conn
                     .query_row(&q.count_sql, &refs)
                     .map_err(|e| StoreError::Other(format!("count: {e}\n{}", q.count_sql)))?;
-                row.get::<usize, Option<i64>>(0).unwrap_or(None)
+                Some(count_of(&row, "search count")?)
             } else {
                 None
             };
@@ -1856,11 +1915,7 @@ impl OracleStore {
             let mut ids = Vec::new();
             for row in rows {
                 let row = row.map_err(|e| StoreError::Other(format!("search: {e}\n{}", q.sql)))?;
-                ids.push(
-                    row.get::<usize, Option<String>>(0)
-                        .unwrap_or(None)
-                        .unwrap_or_default(),
-                );
+                ids.push(col(&row, 0, "id")?);
             }
             Ok(crate::SearchOutcome { ids, total })
         })
@@ -2065,29 +2120,36 @@ fn parse_ords(s: &str) -> Result<Vec<i16>, StoreError> {
         .collect()
 }
 
+/// Rebuild a leaf value from its `(v_kind, v_text, v_num, v_bool)` columns.
+///
+/// `v_kind` is NOT NULL; the three value columns are NULL-able but the kind
+/// says which one must be present. A kind whose column is NULL, or an unknown
+/// kind, is corrupt stored data (RCA-IN-6) and fails the read. The exception
+/// is a string leaf: Oracle stores `''` as NULL, so `v_text` NULL under kind
+/// `s` is the empty string.
 fn leaf_from_cols(
     kind: &str,
     text: Option<String>,
     num: Option<String>,
     b: Option<bool>,
-) -> fhir_oracle_map::value::LeafVal {
+) -> Result<fhir_oracle_map::value::LeafVal, StoreError> {
     use fhir_oracle_map::value::LeafVal;
-    match kind {
+    let missing = |col: &str| StoreError::Other(format!("leaf kind {kind:?} without {col}"));
+    Ok(match kind {
+        // RCA-IN-3: absent only (Oracle's `''` is NULL)
         "s" => LeafVal::Str(text.unwrap_or_default()),
-        "n" => LeafVal::Num(num.unwrap_or_default()),
-        "b" => LeafVal::Bool(b.unwrap_or(false)),
-        _ => LeafVal::Null,
-    }
+        "n" => LeafVal::Num(num.ok_or_else(|| missing("v_num"))?),
+        "b" => LeafVal::Bool(b.ok_or_else(|| missing("v_bool"))?),
+        "z" => LeafVal::Null,
+        other => return Err(StoreError::Other(format!("unknown leaf kind {other:?}"))),
+    })
 }
 
 /// `ords` is `RAW(255)` holding the same ASCII text image every other port
 /// stores (`M14.13`), not `VARCHAR2` — mirrors `fhir-mssql`'s `VARBINARY`
 /// choice and its own `ords_bytes_to_str`.
 fn ords_bytes_to_string(row: &Row, idx: usize) -> Result<String, StoreError> {
-    let bytes: Vec<u8> = row
-        .get::<usize, Option<Vec<u8>>>(idx)
-        .unwrap_or(None)
-        .unwrap_or_default();
+    let bytes: Vec<u8> = col(row, idx, "ords")?;
     String::from_utf8(bytes).map_err(|e| StoreError::Other(format!("ords not utf8: {e}")))
 }
 
@@ -2186,17 +2248,10 @@ fn civil_from_days(z: i64) -> Option<(i64, u32, u32)> {
 }
 
 fn hist_entry(r: &Row) -> Result<crate::HistEntry, StoreError> {
-    let version_id: i64 = r.get::<usize, Option<i64>>(0).unwrap_or(None).unwrap_or(0);
-    let last_updated = r
-        .get::<usize, Option<oracle::sql_type::Timestamp>>(1)
-        .unwrap_or(None)
-        .map(|d| fmt_ora_micros(&d))
-        .unwrap_or_default();
-    let op: String = r
-        .get::<usize, Option<String>>(2)
-        .unwrap_or(None)
-        .unwrap_or_default();
-    let raw: Option<String> = r.get(3).unwrap_or(None);
+    let version_id: i64 = col(r, 0, "version_id")?;
+    let last_updated = fmt_ora_micros(&col::<oracle::sql_type::Timestamp>(r, 1, "last_updated")?);
+    let op: String = col(r, 2, "op")?;
+    let raw: Option<String> = col_opt(r, 3, "resource")?;
     let resource = match raw {
         Some(t) => Some(
             serde_json::from_str(&t)
@@ -2207,7 +2262,7 @@ fn hist_entry(r: &Row) -> Result<crate::HistEntry, StoreError> {
     Ok(crate::HistEntry {
         version_id,
         last_updated,
-        op: op.chars().next().unwrap_or('?'),
+        op: op_char(&op)?,
         resource,
     })
 }
@@ -2258,7 +2313,8 @@ fn convert_path_columns(
             &[],
         )
         .map_err(db_err)?;
-    for row in rows.flatten() {
+    for row in rows {
+        let row = row.map_err(db_err)?;
         let t: String = row.get(0).map_err(db_err)?;
         let c: String = row.get(1).map_err(db_err)?;
         let dt: String = row.get(2).map_err(db_err)?;
@@ -2266,6 +2322,7 @@ fn convert_path_columns(
         let ch: Option<u32> = row.get(4).map_err(db_err)?;
         let e = tables.entry(t).or_default();
         if c == "path" {
+            // RCA-IN-3: absent only (`char_length` is NULL for a non-character type)
             e.path = Some((dt, nn, ch.unwrap_or(0)));
         } else {
             e.path_new = true;
@@ -2525,35 +2582,20 @@ fn recon_with_map(
                     .map_err(db_err)?;
                 for row in rows {
                     let row = row.map_err(db_err)?;
-                    let path: String = row
-                        .get::<usize, Option<String>>(0)
-                        .unwrap_or(None)
-                        .unwrap_or_default();
+                    let path: String = col(&row, 0, "path")?;
                     let ords = parse_ords(&ords_bytes_to_string(&row, 1)?)?;
-                    let modifier = row
-                        .get::<usize, Option<i64>>(2)
-                        .unwrap_or(None)
-                        .unwrap_or(0)
-                        != 0;
-                    let ext_ord = i16::try_from(
-                        row.get::<usize, Option<i64>>(3)
-                            .unwrap_or(None)
-                            .unwrap_or(0),
-                    )
-                    .map_err(|_| StoreError::Other("ext_ord out of range".to_string()))?;
-                    let url: Option<String> = row.get(4).unwrap_or(None);
-                    let leaf: String = row
-                        .get::<usize, Option<String>>(5)
-                        .unwrap_or(None)
-                        .unwrap_or_default();
-                    let kind: String = row
-                        .get::<usize, Option<String>>(6)
-                        .unwrap_or(None)
-                        .unwrap_or_default();
-                    let text: Option<String> = row.get(7).unwrap_or(None);
-                    let num: Option<String> = row.get(8).unwrap_or(None);
-                    let b: Option<i64> = row.get(9).unwrap_or(None);
-                    let val = leaf_from_cols(&kind, text, num, b.map(|v| v != 0));
+                    let modifier = flag(col(&row, 2, "modifier")?, "modifier")?;
+                    let ext_ord = i16::try_from(col::<i64>(&row, 3, "ext_ord")?)
+                        .map_err(|_| StoreError::Other("ext_ord out of range".to_string()))?;
+                    let url: Option<String> = col_opt(&row, 4, "url")?;
+                    let leaf: String = col(&row, 5, "leaf")?;
+                    let kind: String = col(&row, 6, "v_kind")?;
+                    let text: Option<String> = col_opt(&row, 7, "v_text")?;
+                    let num: Option<String> = col_opt(&row, 8, "v_num")?;
+                    let b: Option<bool> = col_opt::<i64>(&row, 9, "v_bool")?
+                        .map(|v| flag(v, "v_bool"))
+                        .transpose()?;
+                    let val = leaf_from_cols(&kind, text, num, b)?;
                     input.ext.push(fhir_oracle_map::shred::ExtRow {
                         path,
                         ords,
@@ -2577,23 +2619,16 @@ fn recon_with_map(
                     .map_err(db_err)?;
                 for row in rows {
                     let row = row.map_err(db_err)?;
-                    let path: String = row
-                        .get::<usize, Option<String>>(0)
-                        .unwrap_or(None)
-                        .unwrap_or_default();
+                    let path: String = col(&row, 0, "path")?;
                     let ords = parse_ords(&ords_bytes_to_string(&row, 1)?)?;
-                    let leaf: String = row
-                        .get::<usize, Option<String>>(2)
-                        .unwrap_or(None)
-                        .unwrap_or_default();
-                    let kind: String = row
-                        .get::<usize, Option<String>>(3)
-                        .unwrap_or(None)
-                        .unwrap_or_default();
-                    let text: Option<String> = row.get(4).unwrap_or(None);
-                    let num: Option<String> = row.get(5).unwrap_or(None);
-                    let b: Option<i64> = row.get(6).unwrap_or(None);
-                    let val = leaf_from_cols(&kind, text, num, b.map(|v| v != 0));
+                    let leaf: String = col(&row, 2, "leaf")?;
+                    let kind: String = col(&row, 3, "v_kind")?;
+                    let text: Option<String> = col_opt(&row, 4, "v_text")?;
+                    let num: Option<String> = col_opt(&row, 5, "v_num")?;
+                    let b: Option<bool> = col_opt::<i64>(&row, 6, "v_bool")?
+                        .map(|v| flag(v, "v_bool"))
+                        .transpose()?;
+                    let val = leaf_from_cols(&kind, text, num, b)?;
                     input.deep.push(fhir_oracle_map::shred::DeepRow {
                         path,
                         ords,
@@ -2611,16 +2646,9 @@ fn recon_with_map(
                     .map_err(db_err)?;
                 for row in rows {
                     let row = row.map_err(db_err)?;
-                    let ord: i16 = i16::try_from(
-                        row.get::<usize, Option<i64>>(0)
-                            .unwrap_or(None)
-                            .unwrap_or(0),
-                    )
-                    .map_err(|_| StoreError::Other("contained ord out of range".to_string()))?;
-                    let raw: String = row
-                        .get::<usize, Option<String>>(1)
-                        .unwrap_or(None)
-                        .unwrap_or_default();
+                    let ord: i16 = i16::try_from(col::<i64>(&row, 0, "ord")?)
+                        .map_err(|_| StoreError::Other("contained ord out of range".to_string()))?;
+                    let raw: String = col(&row, 1, "resource")?;
                     let v: serde_json::Value = serde_json::from_str(&raw)
                         .map_err(|e| StoreError::Other(format!("contained: {e}")))?;
                     input.contained.push((ord, v));
@@ -2837,5 +2865,70 @@ mod utc_micros_tests {
         assert_eq!(civil_from_days(0), Some((1970, 1, 1)));
         assert_eq!(civil_from_days(-1), Some((1969, 12, 31)));
         assert_eq!(civil_from_days(i64::MAX), None);
+    }
+}
+
+#[cfg(test)]
+mod stored_column_tests {
+    use super::*;
+
+    #[test]
+    fn a_number_or_bool_leaf_without_its_column_is_corrupt_not_empty() {
+        assert!(leaf_from_cols("n", Some("1".into()), None, None).is_err());
+        assert!(leaf_from_cols("b", None, None, None).is_err());
+    }
+
+    #[test]
+    fn a_string_leaf_with_null_text_is_the_empty_string() {
+        use fhir_oracle_map::value::LeafVal;
+        // Oracle stores '' as NULL.
+        assert_eq!(
+            leaf_from_cols("s", None, None, None).unwrap(),
+            LeafVal::Str(String::new())
+        );
+    }
+
+    #[test]
+    fn an_unknown_leaf_kind_is_rejected() {
+        assert!(leaf_from_cols("q", None, None, None).is_err());
+    }
+
+    #[test]
+    fn a_well_formed_leaf_round_trips() {
+        use fhir_oracle_map::value::LeafVal;
+        assert_eq!(
+            leaf_from_cols("n", None, Some("1.50".into()), None).unwrap(),
+            LeafVal::Num("1.50".into())
+        );
+        assert_eq!(
+            leaf_from_cols("b", None, None, Some(false)).unwrap(),
+            LeafVal::Bool(false)
+        );
+        assert_eq!(
+            leaf_from_cols("z", None, None, None).unwrap(),
+            LeafVal::Null
+        );
+    }
+
+    #[test]
+    fn a_bool_column_must_be_zero_or_one() {
+        assert!(!flag(0, "x").unwrap());
+        assert!(flag(1, "x").unwrap());
+        assert!(flag(2, "x").is_err());
+    }
+
+    #[test]
+    fn an_empty_history_starts_at_version_one_and_other_errors_propagate() {
+        let none = oracle::Error::new(oracle::ErrorKind::NoDataFound, "no data found");
+        assert_eq!(chain_tip(Err(none)).unwrap(), (1, None, None));
+        let other = oracle::Error::new(oracle::ErrorKind::InternalError, "boom");
+        assert!(chain_tip(Err(other)).is_err());
+    }
+
+    #[test]
+    fn an_op_code_must_be_exactly_one_character() {
+        assert_eq!(op_char("U").unwrap(), 'U');
+        assert!(op_char("").is_err());
+        assert!(op_char("UP").is_err());
     }
 }
