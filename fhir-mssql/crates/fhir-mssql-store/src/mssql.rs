@@ -45,7 +45,7 @@
 use std::sync::Arc;
 
 use fhir_mssql_map::model::{ColTy, RelMap};
-use mssql_driver::{ColumnData, Row};
+use mssql_driver::{ColumnData, FromSql, Row};
 
 use crate::StoreError;
 use crate::pool::{self, Pool};
@@ -55,6 +55,60 @@ type ChainTip = (i64, Option<Vec<u8>>, Option<Vec<u8>>);
 
 fn db_err(e: mssql_driver::error::Error) -> StoreError {
     StoreError::Db(e.to_string())
+}
+
+/// Column `idx` decoded as `T`. A column that does not decode, or is NULL, is
+/// corrupt stored data (RCA-IN-6) and fails the read, never a default. Use
+/// [`col_opt`] only where the schema permits NULL.
+fn col<'a, T: FromSql<'a>>(row: &'a Row, idx: usize, name: &str) -> Result<T, StoreError> {
+    col_opt(row, idx, name)?
+        .ok_or_else(|| StoreError::Other(format!("column {name} ({idx}) is NULL")))
+}
+
+/// Column `idx` decoded as `Option<T>`: `None` is SQL NULL, which is a value
+/// only for NULL-able columns. A column that does not decode is an error.
+fn col_opt<'a, T: FromSql<'a>>(
+    row: &'a Row,
+    idx: usize,
+    name: &str,
+) -> Result<Option<T>, StoreError> {
+    row.try_get::<T, _>(idx)
+        .map_err(|e| StoreError::Other(format!("column {name} ({idx}): {e}")))
+}
+
+/// A `COUNT(*)` / `EXISTS` scalar. The query always yields a row, so a
+/// missing row or NULL means the engine returned nothing, which is not zero
+/// (RCA-IN-6).
+fn count_of(row: Option<Row>, what: &str) -> Result<i32, StoreError> {
+    let r = row.ok_or_else(|| StoreError::Other(format!("{what}: no row returned")))?;
+    col(&r, 0, what)
+}
+
+/// [`count_of`] as a `usize`; a negative count is corrupt, not zero.
+fn count_usize(row: Option<Row>, what: &str) -> Result<usize, StoreError> {
+    let n = count_of(row, what)?;
+    usize::try_from(n).map_err(|_| StoreError::Other(format!("{what}: negative count {n}")))
+}
+
+/// The version after the chain tip's `version_id`. A history table with no
+/// row for the id is legitimately empty (version 1); a tip row whose
+/// `version_id` is unreadable is an error, and so is overflow.
+fn next_version(tip: Option<i64>) -> Result<i64, StoreError> {
+    match tip {
+        None => Ok(1), // RCA-IN-3: absent only
+        Some(v) => v
+            .checked_add(1)
+            .ok_or_else(|| StoreError::Other(format!("version_id {v} cannot be incremented"))),
+    }
+}
+
+/// The one-letter `op` code of a history row (`CHAR(1) NOT NULL`).
+fn op_char(op: &str) -> Result<char, StoreError> {
+    let mut it = op.chars();
+    match (it.next(), it.next()) {
+        (Some(c), None) => Ok(c),
+        _ => Err(StoreError::Other(format!("bad history op {op:?}"))),
+    }
 }
 
 fn pool_err(e: bb8::RunError<mssql_driver::error::Error>) -> StoreError {
@@ -430,9 +484,8 @@ impl MsSqlStore {
             .map_err(db_err)?
             .into_row()
             .await
-            .map_err(db_err)?
-            .and_then(|r| r.get::<i32, _>(0))
-            .unwrap_or(0);
+            .map_err(db_err)?;
+        let meta_exists = count_of(meta_exists, "sys.tables count")?;
         if meta_exists == 0 {
             return Err(StoreError::Other(format!(
                 "schema {schema_name} is not installed"
@@ -471,7 +524,7 @@ impl MsSqlStore {
         let moved = moved_columns(&old_map, &self.map);
         let mut data_bearing: Vec<String> = Vec::new();
         for (t, col, nt) in &moved {
-            let has: i32 = conn
+            let has = conn
                 .query(
                     format!(
                         "SELECT CASE WHEN EXISTS (SELECT 1 FROM {esc}.[{t}] \
@@ -483,9 +536,8 @@ impl MsSqlStore {
                 .map_err(db_err)?
                 .into_row()
                 .await
-                .map_err(db_err)?
-                .and_then(|r| r.get::<i32, _>(0))
-                .unwrap_or(0);
+                .map_err(db_err)?;
+            let has = count_of(has, "EXISTS probe")?;
             if has != 0 {
                 data_bearing.push(format!("{t}.{col} → {nt}"));
             }
@@ -683,8 +735,8 @@ impl MsSqlStore {
                         .await
                         .map_err(db_err)?;
                     let Some(row) = row else { continue };
-                    let version_id: i64 = row.get(0).unwrap_or(0);
-                    let ts: String = row.get::<&str, _>(1).unwrap_or_default().to_string();
+                    let version_id: i64 = col(&row, 0, "version_id")?;
+                    let ts: String = col::<&str>(&row, 1, "last_updated")?.to_string();
                     conn.execute(
                         format!("DELETE FROM {s_q}.{base_q} WHERE [id] = @P1"),
                         &[&id.as_str()],
@@ -725,9 +777,8 @@ impl MsSqlStore {
                     .map_err(db_err)?
                     .into_row()
                     .await
-                    .map_err(db_err)?
-                    .and_then(|r| r.get::<i32, _>(0))
-                    .unwrap_or(0);
+                    .map_err(db_err)?;
+                let has = count_of(has, "COUNT probe")?;
                 if has != 0 {
                     return Err(StoreError::Other(format!(
                         "re-shred left data behind in {t}.{col} (destined for {nt}); \
@@ -802,12 +853,10 @@ impl MsSqlStore {
             .map_err(db_err)?;
         let mut todo: Vec<String> = Vec::new();
         for r in &rows {
-            let Some(table) = r.get::<&str, _>(0) else {
-                continue;
-            };
+            let table: &str = col(r, 0, "table name")?;
             // sys.columns.max_length is bytes: -1 for MAX, two per
-            // character for NVARCHAR(n).
-            let max_length: i16 = r.get(1).unwrap_or(-1);
+            // character for NVARCHAR(n). NOT NULL, so a NULL is corrupt.
+            let max_length: i16 = col(r, 1, "max_length")?;
             let installed = if max_length < 0 {
                 None
             } else {
@@ -842,9 +891,10 @@ impl MsSqlStore {
                 .await
                 .map_err(db_err)?;
             if let Some(r) = over {
-                let n: i32 = r.get(0).unwrap_or(0);
+                let n: i32 = col(&r, 0, "COUNT(*)")?;
                 if n > 0 {
-                    let longest: i32 = r.get(1).unwrap_or(0);
+                    // MAX is NULL only when no row matched; here n > 0.
+                    let longest: i32 = col(&r, 1, "MAX(LEN(path))")?;
                     return Err(StoreError::Other(format!(
                         "{tq} holds {n} row(s) whose [path] exceeds \
                          path_bound {bound} (longest: {longest} characters); \
@@ -1236,11 +1286,11 @@ impl MsSqlStore {
             .map_err(db_err)?;
         let (version_id, prev_256, prev_3): ChainTip = match prev_row {
             Some(r) => (
-                r.get::<i64, _>(0).unwrap_or(0) + 1,
-                r.get::<&[u8], _>(1).map(<[u8]>::to_vec),
-                r.get::<&[u8], _>(2).map(<[u8]>::to_vec),
+                next_version(Some(col(&r, 0, "version_id")?))?,
+                col_opt::<&[u8]>(&r, 1, "row_hash")?.map(<[u8]>::to_vec),
+                col_opt::<&[u8]>(&r, 2, "row_hash_sha3")?.map(<[u8]>::to_vec),
             ),
-            None => (1, None, None),
+            None => (next_version(None)?, None, None),
         };
 
         let existed = conn
@@ -1476,18 +1526,18 @@ async fn read_resource_rows(
                 for r in rows {
                     let ords_img = ords_bytes_to_str(&r, 1)?;
                     input.ext.push(fhir_mssql_map::shred::ExtRow {
-                        path: r.get::<&str, _>(0).unwrap_or_default().to_string(),
+                        path: col::<&str>(&r, 0, "path")?.to_string(),
                         ords: parse_ords(ords_img)?,
-                        modifier: r.get::<bool, _>(2).unwrap_or(false),
-                        ext_ord: r.get::<i16, _>(3).unwrap_or(0),
-                        url: r.get::<&str, _>(4).map(str::to_string),
-                        leaf: r.get::<&str, _>(5).unwrap_or_default().to_string(),
+                        modifier: col(&r, 2, "modifier")?,
+                        ext_ord: col(&r, 3, "ext_ord")?,
+                        url: col_opt::<&str>(&r, 4, "url")?.map(str::to_string),
+                        leaf: col::<&str>(&r, 5, "leaf")?.to_string(),
                         val: leaf_from_cols(
-                            r.get::<&str, _>(6).unwrap_or_default(),
-                            r.get::<&str, _>(7).map(str::to_string),
-                            r.get::<&str, _>(8).map(str::to_string),
-                            r.get::<bool, _>(9),
-                        ),
+                            col(&r, 6, "v_kind")?,
+                            col_opt::<&str>(&r, 7, "v_text")?.map(str::to_string),
+                            col_opt::<&str>(&r, 8, "v_num")?.map(str::to_string),
+                            col_opt(&r, 9, "v_bool")?,
+                        )?,
                     });
                 }
             }
@@ -1508,15 +1558,15 @@ async fn read_resource_rows(
                 for r in rows {
                     let ords_img = ords_bytes_to_str(&r, 1)?;
                     input.deep.push(fhir_mssql_map::shred::DeepRow {
-                        path: r.get::<&str, _>(0).unwrap_or_default().to_string(),
+                        path: col::<&str>(&r, 0, "path")?.to_string(),
                         ords: parse_ords(ords_img)?,
-                        leaf: r.get::<&str, _>(2).unwrap_or_default().to_string(),
+                        leaf: col::<&str>(&r, 2, "leaf")?.to_string(),
                         val: leaf_from_cols(
-                            r.get::<&str, _>(3).unwrap_or_default(),
-                            r.get::<&str, _>(4).map(str::to_string),
-                            r.get::<&str, _>(5).map(str::to_string),
-                            r.get::<bool, _>(6),
-                        ),
+                            col(&r, 3, "v_kind")?,
+                            col_opt::<&str>(&r, 4, "v_text")?.map(str::to_string),
+                            col_opt::<&str>(&r, 5, "v_num")?.map(str::to_string),
+                            col_opt(&r, 6, "v_bool")?,
+                        )?,
                     });
                 }
             }
@@ -1532,10 +1582,10 @@ async fn read_resource_rows(
                     .await
                     .map_err(db_err)?;
                 for r in rows {
-                    let raw: &str = r.get(1).unwrap_or_default();
+                    let raw: &str = col(&r, 1, "resource")?;
                     let v = serde_json::from_str(raw)
                         .map_err(|e| StoreError::Other(format!("contained: {e}")))?;
-                    input.contained.push((r.get::<i16, _>(0).unwrap_or(0), v));
+                    input.contained.push((col(&r, 0, "ord")?, v));
                 }
             }
             TableKind::History => {}
@@ -1716,11 +1766,11 @@ impl MsSqlStore {
             .map_err(db_err)?;
         let (version_id, prev_256, prev_3): ChainTip = match prev_row {
             Some(r) => (
-                r.get::<i64, _>(0).unwrap_or(0) + 1,
-                r.get::<&[u8], _>(1).map(<[u8]>::to_vec),
-                r.get::<&[u8], _>(2).map(<[u8]>::to_vec),
+                next_version(Some(col(&r, 0, "version_id")?))?,
+                col_opt::<&[u8]>(&r, 1, "row_hash")?.map(<[u8]>::to_vec),
+                col_opt::<&[u8]>(&r, 2, "row_hash_sha3")?.map(<[u8]>::to_vec),
             ),
-            None => (1, None, None),
+            None => (next_version(None)?, None, None),
         };
 
         conn.execute(format!("DELETE FROM {s}.{base} WHERE [id] = @P1"), &[&id])
@@ -1807,10 +1857,10 @@ impl MsSqlStore {
             .await
             .map_err(db_err)?;
         for r in &cs {
-            let rtype: &str = r.get(0).unwrap_or_default();
-            let id: &str = r.get(1).unwrap_or_default();
-            let version_id: i64 = r.get(2).unwrap_or(0);
-            let row_mac: &str = r.get(3).unwrap_or_default();
+            let rtype: &str = col(r, 0, "rtype")?;
+            let id: &str = col(r, 1, "id")?;
+            let version_id: i64 = col(r, 2, "version_id")?;
+            let row_mac: &str = col(r, 3, "row_mac")?;
             countersigns.insert(
                 (rtype.to_string(), id.to_string(), version_id),
                 row_mac.to_string(),
@@ -1840,8 +1890,8 @@ impl MsSqlStore {
             let mut tip: std::collections::HashMap<String, ChainTip> =
                 std::collections::HashMap::new();
             for r in &rows {
-                let id: &str = r.get(0).unwrap_or_default();
-                let version_id: i64 = r.get(1).unwrap_or(0);
+                let id: &str = col(r, 0, "id")?;
+                let version_id: i64 = col(r, 1, "version_id")?;
                 // `DATETIME2(6)`, not `NVARCHAR` — see `hist_entry`. The
                 // reformatted string MUST reproduce exactly what `put`/
                 // `delete` wrote into the chain pre-image (`utc_micros`'s
@@ -1850,18 +1900,15 @@ impl MsSqlStore {
                 // live server: `verify_audit` returning zero breaks after a
                 // create, an update and a delete is what confirms the two
                 // formatters agree, not just that each compiles.
-                let last_updated = r
-                    .get::<jiff::civil::DateTime, _>(2)
-                    .map(|d| fmt_micros(&d))
-                    .unwrap_or_default();
-                let op: &str = r.get(3).unwrap_or_default();
-                let resource: Option<&str> = r.get(4);
-                let actor: &str = r.get(5).unwrap_or_default();
-                let stored_prev_256: Option<&[u8]> = r.get(6);
-                let stored_row_256: Option<&[u8]> = r.get(7);
-                let stored_prev_3: Option<&[u8]> = r.get(8);
-                let stored_row_3: Option<&[u8]> = r.get(9);
-                let row_mac: Option<&str> = r.get(10);
+                let last_updated = fmt_micros(&col::<jiff::civil::DateTime>(r, 2, "last_updated")?);
+                let op: &str = col(r, 3, "op")?;
+                let resource: Option<&str> = col_opt(r, 4, "resource")?;
+                let actor: &str = col(r, 5, "actor")?;
+                let stored_prev_256: Option<&[u8]> = col_opt(r, 6, "prev_hash")?;
+                let stored_row_256: Option<&[u8]> = col_opt(r, 7, "row_hash")?;
+                let stored_prev_3: Option<&[u8]> = col_opt(r, 8, "prev_hash_sha3")?;
+                let stored_row_3: Option<&[u8]> = col_opt(r, 9, "row_hash_sha3")?;
+                let row_mac: Option<&str> = col_opt(r, 10, "row_mac")?;
 
                 let (expect_prev_256, expect_prev_3) = tip
                     .get(id)
@@ -1989,7 +2036,7 @@ impl MsSqlStore {
             // A row count is exactly the kind of number `W16.10` requires be
             // trustworthy, so it is not taken from a value that this store's
             // own trigger design makes ambiguous.
-            let versions_erased: u64 = conn
+            let erased_row = conn
                 .query(
                     format!("SELECT COUNT(*) FROM {s}.{hist} WHERE [id] = @P1"),
                     &[&id],
@@ -1998,12 +2045,9 @@ impl MsSqlStore {
                 .map_err(db_err)?
                 .into_row()
                 .await
-                .map_err(db_err)?
-                .and_then(|r| r.get::<i32, _>(0))
-                // Fallback: 0 versions erased when the count is absent (no
-                // row) or negative, which `COUNT(*)` never is.
-                .and_then(|n| u64::try_from(n).ok())
-                .unwrap_or(0);
+                .map_err(db_err)?;
+            let versions_erased = u64::try_from(count_of(erased_row, "erased version count")?)
+                .map_err(|_| StoreError::Other("erased version count is negative".into()))?;
 
             // The `M3.17` append-only trigger's escape hatch (`ddl.rs`,
             // `append_only_triggers`): `SESSION_CONTEXT` is connection-scoped,
@@ -2175,7 +2219,7 @@ impl MsSqlStore {
             .into_row()
             .await
             .map_err(db_err)?;
-        Ok(row.and_then(|r| r.get::<i32, _>(0)).unwrap_or(0).into())
+        Ok(count_of(row, "access log count")?.into())
     }
 
     /// How many tables this store's schema currently has. Test/dev
@@ -2197,11 +2241,7 @@ impl MsSqlStore {
             .into_row()
             .await
             .map_err(db_err)?;
-        // Fallback: 0 for an absent or negative count; `COUNT(*)` is neither.
-        Ok(row
-            .and_then(|r| r.get::<i32, _>(0))
-            .and_then(|n| usize::try_from(n).ok())
-            .unwrap_or(0))
+        count_usize(row, "sys count")
     }
 
     /// How many triggers this store's schema currently has — the enforcement
@@ -2226,11 +2266,7 @@ impl MsSqlStore {
             .into_row()
             .await
             .map_err(db_err)?;
-        // Fallback: 0 for an absent or negative count; `COUNT(*)` is neither.
-        Ok(row
-            .and_then(|r| r.get::<i32, _>(0))
-            .and_then(|n| usize::try_from(n).ok())
-            .unwrap_or(0))
+        count_usize(row, "sys count")
     }
 
     /// Run arbitrary SQL against this store's pool. Test/dev convenience —
@@ -2361,8 +2397,8 @@ impl MsSqlStore {
             .map_err(|e| StoreError::Other(format!("search: {e}\n{}", q.sql)))?;
         let ids: Vec<String> = rows
             .iter()
-            .map(|r| r.get::<&str, _>(0).unwrap_or_default().to_string())
-            .collect();
+            .map(|r| col::<&str>(r, 0, "id").map(str::to_string))
+            .collect::<Result<_, _>>()?;
         Ok(crate::SearchOutcome { ids, total })
     }
 }
@@ -2452,17 +2488,14 @@ fn fmt_micros(d: &jiff::civil::DateTime) -> String {
 }
 
 fn hist_entry(r: &Row) -> Result<crate::HistEntry, StoreError> {
-    let version_id: i64 = r.get(0).unwrap_or(0);
+    let version_id: i64 = col(r, 0, "version_id")?;
     // `[last_updated]` is `DATETIME2(6)`, not `NVARCHAR` — the same class of
     // bug `cell_text` exists to avoid, caught here by running this against a
     // live server: the very first `history()` call panicked with `Row::get`
     // trying to interpret a `DateTime2` as a `String`.
-    let last_updated = r
-        .get::<jiff::civil::DateTime, _>(1)
-        .map(|d| fmt_micros(&d))
-        .unwrap_or_default();
-    let op: &str = r.get(2).unwrap_or_default();
-    let raw: Option<&str> = r.get(3);
+    let last_updated = fmt_micros(&col::<jiff::civil::DateTime>(r, 1, "last_updated")?);
+    let op: &str = col(r, 2, "op")?;
+    let raw: Option<&str> = col_opt(r, 3, "resource")?;
     let resource = match raw {
         Some(t) => Some(
             serde_json::from_str(t)
@@ -2473,7 +2506,7 @@ fn hist_entry(r: &Row) -> Result<crate::HistEntry, StoreError> {
     Ok(crate::HistEntry {
         version_id,
         last_updated,
-        op: op.chars().next().unwrap_or('?'),
+        op: op_char(op)?,
         resource,
     })
 }
@@ -2603,19 +2636,26 @@ fn parse_ords(s: &str) -> Result<Vec<i16>, StoreError> {
         .collect()
 }
 
+/// Rebuild a leaf value from its `(v_kind, v_text, v_num, v_bool)` columns.
+///
+/// `v_kind` is NOT NULL; the three value columns are NULL-able but the kind
+/// says which one must be present. A kind whose column is NULL, or an unknown
+/// kind, is corrupt stored data (RCA-IN-6) and fails the read.
 fn leaf_from_cols(
     kind: &str,
     text: Option<String>,
     num: Option<String>,
     b: Option<bool>,
-) -> fhir_mssql_map::value::LeafVal {
+) -> Result<fhir_mssql_map::value::LeafVal, StoreError> {
     use fhir_mssql_map::value::LeafVal;
-    match kind {
-        "s" => LeafVal::Str(text.unwrap_or_default()),
-        "n" => LeafVal::Num(num.unwrap_or_default()),
-        "b" => LeafVal::Bool(b.unwrap_or(false)),
-        _ => LeafVal::Null,
-    }
+    let missing = |col: &str| StoreError::Other(format!("leaf kind {kind:?} without {col}"));
+    Ok(match kind {
+        "s" => LeafVal::Str(text.ok_or_else(|| missing("v_text"))?),
+        "n" => LeafVal::Num(num.ok_or_else(|| missing("v_num"))?),
+        "b" => LeafVal::Bool(b.ok_or_else(|| missing("v_bool"))?),
+        "z" => LeafVal::Null,
+        other => return Err(StoreError::Other(format!("unknown leaf kind {other:?}"))),
+    })
 }
 
 /// `[ords]` on `Ext`/`Deep` is `VARBINARY(255)` (`M14.9`): the same ASCII
@@ -2629,7 +2669,7 @@ fn leaf_from_cols(
 /// text that merely happens to be stored as bytes, and hex-encoding it would
 /// silently corrupt every `ords` path on read.
 fn ords_bytes_to_str(row: &Row, idx: usize) -> Result<&str, StoreError> {
-    let bytes: &[u8] = row.get(idx).unwrap_or_default();
+    let bytes: &[u8] = col(row, idx, "ords")?;
     std::str::from_utf8(bytes)
         .map_err(|_| StoreError::Other(format!("column {idx}: ords image is not valid UTF-8")))
 }
@@ -2957,5 +2997,63 @@ mod utc_micros_tests {
         assert_eq!(civil_from_days(0), Some((1970, 1, 1)));
         assert_eq!(civil_from_days(-1), Some((1969, 12, 31)));
         assert_eq!(civil_from_days(i64::MAX), None);
+    }
+}
+
+#[cfg(test)]
+mod stored_column_tests {
+    use super::*;
+
+    #[test]
+    fn a_leaf_whose_kind_column_is_null_is_corrupt_not_empty() {
+        assert!(leaf_from_cols("s", None, None, None).is_err());
+        assert!(leaf_from_cols("n", Some("1".into()), None, None).is_err());
+        assert!(leaf_from_cols("b", None, None, None).is_err());
+    }
+
+    #[test]
+    fn an_unknown_leaf_kind_is_rejected() {
+        assert!(leaf_from_cols("q", None, None, None).is_err());
+    }
+
+    #[test]
+    fn a_well_formed_leaf_round_trips() {
+        use fhir_mssql_map::value::LeafVal;
+        assert_eq!(
+            leaf_from_cols("s", Some("".into()), None, None).unwrap(),
+            LeafVal::Str(String::new())
+        );
+        assert_eq!(
+            leaf_from_cols("n", None, Some("1.50".into()), None).unwrap(),
+            LeafVal::Num("1.50".into())
+        );
+        assert_eq!(
+            leaf_from_cols("b", None, None, Some(false)).unwrap(),
+            LeafVal::Bool(false)
+        );
+        assert_eq!(
+            leaf_from_cols("z", None, None, None).unwrap(),
+            LeafVal::Null
+        );
+    }
+
+    #[test]
+    fn a_missing_count_row_is_an_error_not_zero() {
+        assert!(count_of(None, "x").is_err());
+        assert!(count_usize(None, "x").is_err());
+    }
+
+    #[test]
+    fn an_empty_history_starts_at_version_one_and_a_tip_increments() {
+        assert_eq!(next_version(None).unwrap(), 1);
+        assert_eq!(next_version(Some(4)).unwrap(), 5);
+        assert!(next_version(Some(i64::MAX)).is_err());
+    }
+
+    #[test]
+    fn an_op_code_must_be_exactly_one_character() {
+        assert_eq!(op_char("U").unwrap(), 'U');
+        assert!(op_char("").is_err());
+        assert!(op_char("UP").is_err());
     }
 }
