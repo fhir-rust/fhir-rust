@@ -9,6 +9,10 @@ This file did not exist before 2026-08-29. This crate is the FHIR® REST
 surface — it inherited the name `fhir-store` briefly before being renamed
 (**F-37**), and had no changelog under either name.
 
+## 0.3.9 — 2026-11-24
+
+Version bump only: the tree had diverged from the published 0.3.8 (O10.11); no behaviour change beyond what is already in the source.
+
 ## 0.3.8 — 2026-11-15
 
 Maintenance release. Manifest requirements raised: `loco-rs` 1.2 -> 1.3, `tokio` 1.53 -> 1.54, `rstest` 0.27 -> 0.28; lockfile refresh.

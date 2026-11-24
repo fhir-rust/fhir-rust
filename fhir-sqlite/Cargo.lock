@@ -324,7 +324,6 @@ dependencies = [
  "sha2",
  "sha3",
  "subtle",
- "thiserror",
  "zeroize",
 ]
 

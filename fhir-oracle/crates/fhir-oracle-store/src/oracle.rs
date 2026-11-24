@@ -2582,7 +2582,9 @@ fn recon_with_map(
                     .map_err(db_err)?;
                 for row in rows {
                     let row = row.map_err(db_err)?;
-                    let path: String = col(&row, 0, "path")?;
+                    // RCA-IN-3: absent only. A root-level attach path is `""`, which
+                    // Oracle stores as NULL (`M14.39`), so NULL is the empty path.
+                    let path: String = col_opt(&row, 0, "path")?.unwrap_or_default();
                     let ords = parse_ords(&ords_bytes_to_string(&row, 1)?)?;
                     let modifier = flag(col(&row, 2, "modifier")?, "modifier")?;
                     let ext_ord = i16::try_from(col::<i64>(&row, 3, "ext_ord")?)
@@ -2619,7 +2621,9 @@ fn recon_with_map(
                     .map_err(db_err)?;
                 for row in rows {
                     let row = row.map_err(db_err)?;
-                    let path: String = col(&row, 0, "path")?;
+                    // RCA-IN-3: absent only. A root-level attach path is `""`, which
+                    // Oracle stores as NULL (`M14.39`), so NULL is the empty path.
+                    let path: String = col_opt(&row, 0, "path")?.unwrap_or_default();
                     let ords = parse_ords(&ords_bytes_to_string(&row, 1)?)?;
                     let leaf: String = col(&row, 2, "leaf")?;
                     let kind: String = col(&row, 3, "v_kind")?;

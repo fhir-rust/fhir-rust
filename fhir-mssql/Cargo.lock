@@ -248,7 +248,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-mssql-gen"
-version = "0.6.2"
+version = "0.6.3"
 dependencies = [
  "fhir-mssql-map",
  "flate2",
@@ -260,7 +260,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-mssql-map"
-version = "0.6.2"
+version = "0.6.3"
 dependencies = [
  "flate2",
  "fnv",
@@ -276,7 +276,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-mssql-store"
-version = "0.6.2"
+version = "0.6.3"
 dependencies = [
  "bb8",
  "fhir-mssql-gen",
@@ -309,7 +309,6 @@ dependencies = [
  "sha2",
  "sha3",
  "subtle",
- "thiserror",
  "zeroize",
 ]
 

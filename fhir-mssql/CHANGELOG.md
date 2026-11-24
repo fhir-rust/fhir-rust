@@ -26,6 +26,8 @@
 
 ## Unreleased
 
+**0.6.3** (workspace version): bumped because `fhir-mssql-map`, `-gen` and `-store` had diverged from the published 0.6.2 (O10.11).
+
 **Behaviour change: corrupt stored values now fail the read (RCA-IN-6).** The
 store used to replace a stored column that was missing or would not decode with
 a default (`""`, `0`, `'?'`, an empty leaf, `-1`). Reads of history, `vread`,
