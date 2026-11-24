@@ -62,7 +62,8 @@ requirement, and it is the document to read before choosing one.
 > own engine and attributes every `serve`/endpoint to `fhir-loco`
 > (**F-56**). The [conformance matrix](spec/databases/conformance-matrix.md) is
 > the status document to trust, and [`spec/audit.md`](spec/databases/audit.md)
-> currently lists none open.
+> currently lists one open finding, **F-103** (live cross-script search
+> coverage for `L15a` is incomplete in each port's live suite).
 
 ## Also here: the model crate
 
