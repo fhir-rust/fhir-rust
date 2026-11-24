@@ -63,12 +63,13 @@ That serialisation costs time with no server present: `fhir-mysql` took ~200s
 under nextest against ~110s under `cargo test` (`fhir-sqlite` and
 `fhir-postgresql` were faster under nextest).
 
-**`fhir-loco`'s request suite (`requests::*`, 24 of 56 tests) is excluded from
-the default profile** and left to `cargo test`: it shares a process-global
-store and a scratch database that every test process rebuilds, so under
-nextest it must run serially and took ~17 minutes against ~25 seconds, and
-`requests::home::can_get_home` fails alone because it relies on an earlier
-test having set `FHIR_LOCO_PASETO_PUBLIC_KEY`. `--profile ci` runs all 56.
+**`fhir-loco`'s request suite (`requests::*`, 24 of 56 tests) runs under
+nextest too**: the default profile has no filter, so nothing is silently
+skipped. The suite shares a process-global store and a scratch database that
+every test process rebuilds, so it runs serially (`loco-scratch` group,
+`max-threads = 1`) and takes ~17 minutes against ~25 seconds under
+`cargo test`. Prefer `cargo test` for quick local runs of this crate.
+`requests::home::can_get_home` is order-independent (commit `22ba5e5`).
 
 ## The four rules that are easy to break
 
