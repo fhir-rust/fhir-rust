@@ -325,7 +325,7 @@ prefix collision between them.
 
 ## License
 
-`MIT OR Apache-2.0 OR BSD-3-Clause OR GPL-2.0-only OR GPL-3.0-only OR OGL-UK-3.0 OR CC-BY-NC-SA-4.0` — declared
+`MIT OR Apache-2.0 OR BSD-3-Clause OR GPL-2.0-only OR GPL-3.0-only OR OGL-UK-3.0 OR CC-BY-SA-4.0` — declared
 identically by all 34 crates in the repository, across all four families. `OR`
 means you choose; no obligation from one option carries into another.
 

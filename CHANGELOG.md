@@ -22,6 +22,15 @@ onward; everything before that date is unsigned and stays that way
 History before 2026-08-01 belongs to the separate projects this monorepo was
 assembled from, and lives in the per-family changelogs above.
 
+## 2026-11-24 — CC-BY-NC-SA-4.0 replaced by CC-BY-SA-4.0
+
+The seventh option of the licence expression is now `CC-BY-SA-4.0` (Creative
+Commons Attribution Share Alike 4.0 International) instead of
+`CC-BY-NC-SA-4.0`: the grant no longer restricts commercial use. Every
+`license` field, `LICENSE.md`, the `LICENSES/` directory
+(`LICENSES/cc-by-sa-4.0/index.md`), `CITATION.cff` and the docs were updated;
+no version was bumped or published by this change.
+
 ## 2026-11-22 — invalid input is rejected, never replaced (RCA-IN-2)
 
 Behavior changes (RCA-IN-7; `spec/rust-checked-arithmetic/index.md`):
