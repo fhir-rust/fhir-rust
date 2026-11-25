@@ -140,6 +140,13 @@ pub enum TargetKind {
         c_type: String,
         c_id: String,
         c_url: String,
+        /// Resource types the parameter is restricted to, from a
+        /// `where(resolve() is T)` in its expression (`Observation?patient`
+        /// is the subject *when it is a Patient*). Empty = unrestricted.
+        /// Searches re-apply it even for a bare id, which would otherwise
+        /// match `Group/x` for `patient=x`.
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        types: Vec<String>,
     },
     Uri {
         col: String,

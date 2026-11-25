@@ -472,6 +472,7 @@ fn target_pred(
             c_type,
             c_id,
             c_url,
+            types,
         } => {
             let ty_c = format!("«c».{}", quote_ident(c_type));
             let id_c = format!("«c».{}", quote_ident(c_id));
@@ -479,6 +480,11 @@ fn target_pred(
             if value.contains("://") || value.starts_with("urn:") || value.starts_with('#') {
                 Ok(format!("{url_c} = {}", bind(binds, value)))
             } else if let Some((ty, id)) = value.split_once('/') {
+                // A parameter restricted to some target types (`patient` →
+                // Patient) cannot match a reference of another type.
+                if !types.is_empty() && !types.iter().any(|t| t == ty) {
+                    return Ok("1 = 0".to_string());
+                }
                 Ok(format!(
                     "({ty_c} = {} AND {id_c} = {})",
                     bind(binds, ty),
@@ -486,12 +492,28 @@ fn target_pred(
                 ))
             } else {
                 let tymod = modifier.filter(|m| m.chars().next().is_some_and(char::is_uppercase));
+                if let Some(ty) = tymod
+                    && !types.is_empty()
+                    && !types.iter().any(|t| t == ty)
+                {
+                    return Ok("1 = 0".to_string());
+                }
                 match tymod {
                     Some(ty) => Ok(format!(
                         "({ty_c} = {} AND {id_c} = {})",
                         bind(binds, ty),
                         bind(binds, value)
                     )),
+                    // Bare id: keep the stored type restriction, or `patient=x`
+                    // would also match `Group/x` (clinical-safety audit).
+                    None if !types.is_empty() => {
+                        let ins: Vec<String> = types.iter().map(|t| bind(binds, t)).collect();
+                        Ok(format!(
+                            "({ty_c} IN ({}) AND {id_c} = {})",
+                            ins.join(", "),
+                            bind(binds, value)
+                        ))
+                    }
                     None => Ok(format!("{id_c} = {}", bind(binds, value))),
                 }
             }

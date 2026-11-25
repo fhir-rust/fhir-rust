@@ -2030,3 +2030,63 @@ async fn conditional_create_is_idempotent_and_refuses_ambiguity() {
 
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+/// Clinical-safety audit 2026-11-25: `patient=shared` must find only
+/// observations whose subject is a *Patient*, not `Group/shared`; `subject`
+/// stays broad; a precision-bearing quantity and an ignored modifier behave
+/// as the specification says.
+#[tokio::test]
+async fn patient_search_keeps_its_target_type_and_quantities_use_precision() {
+    let Some((dir, store)) = fresh("patient-type", "r5").await else {
+        return;
+    };
+    let audit = fhir_sqlite_store::Audit::default();
+    for (id, subject, status, value) in [
+        ("lab-p", "Patient/shared", "final", "5.04"),
+        ("lab-g", "Group/shared", "entered-in-error", "5.00"),
+        ("lab-out", "Patient/other", "preliminary", "5.06"),
+    ] {
+        let doc = serde_json::json!({
+            "resourceType": "Observation", "id": id, "status": status,
+            "code": { "text": "Synthetic assay" },
+            "subject": { "reference": subject },
+            "valueQuantity": { "value": value.parse::<f64>().unwrap(), "system": "http://unitsofmeasure.org", "code": "mg" }
+        });
+        store.put(&doc, &audit).await.expect("seed");
+    }
+    let ids = |k: &str, v: &str| {
+        let store = &store;
+        let q = vec![(k.to_string(), v.to_string())];
+        async move {
+            store
+                .search_full("Observation", &q, 10, 0, &[], false)
+                .await
+                .map(|r| r.ids)
+        }
+    };
+
+    assert_eq!(ids("patient", "shared").await.unwrap(), ["lab-p"]);
+    assert_eq!(ids("patient", "Patient/shared").await.unwrap(), ["lab-p"]);
+    assert!(ids("patient", "Group/shared").await.unwrap().is_empty());
+    let mut both = ids("subject", "shared").await.unwrap();
+    both.sort();
+    assert_eq!(both, ["lab-g", "lab-p"], "subject is not restricted");
+
+    // 5.0 means [4.95, 5.05): 5.04 and 5.00 match, 5.06 does not.
+    let mut q = ids("value-quantity", "5.0|http://unitsofmeasure.org|mg")
+        .await
+        .unwrap();
+    q.sort();
+    assert_eq!(q, ["lab-g", "lab-p"]);
+    assert!(
+        ids("value-quantity", "5.0|http://unitsofmeasure.org|kg")
+            .await
+            .unwrap()
+            .is_empty()
+    );
+
+    // An ignored modifier is refused, never run as its opposite.
+    assert!(ids("status:not", "entered-in-error").await.is_err());
+
+    let _ = std::fs::remove_dir_all(&dir);
+}

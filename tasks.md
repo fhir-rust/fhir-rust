@@ -523,7 +523,7 @@ filed in `spec/databases/audit.md`.
 
 Reproduced on SQLite and PostgreSQL 18.7, R4 and R5 maps, synthetic data.
 
-- [ ] **Patient search must keep the target type.** `Observation?patient=shared`
+- [~] **Patient search must keep the target type.** *Landed 2026-11-25 in all six ports: `TargetKind::Reference` carries `types` from `where(resolve() is T)`, the six store `target_pred`s apply them to bare ids and `Type/id`, maps regenerated (R4, R5). Verified: sqlite end to end (full workspace green), other five lib + assets_current + roundtrip. NOT done: R3 (its expressions carry no restriction; could use SearchParameter `target`), HTTP-level test on both backends, live-engine runs on the other five, mutation check.* `Observation?patient=shared`
       returns an Observation whose subject is `Group/shared`: the generator
       drops the FHIRPath type restriction and bare IDs compare ID alone
       (cf. F-38). Carry permitted target types into compiled search targets

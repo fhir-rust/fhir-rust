@@ -196,6 +196,7 @@ fn compile_alt(
     let mut table: u32 = 0;
     let mut node = rm.root;
     let mut leaf: Option<&Elem> = None;
+    let mut ref_types: Vec<String> = Vec::new();
     let mut i = 0usize;
     while i < segs.len() {
         let seg = &segs[i];
@@ -230,6 +231,16 @@ fn compile_alt(
                 return Err(format!(
                     "where() value restriction cannot be dropped: {seg:?}"
                 ));
+            }
+            // Record `resolve() is T` so the target keeps it: the stored
+            // reference type can re-apply it, but only if the query is told
+            // to (clinical-safety audit 2026-11-25: `patient=x` matched
+            // `Group/x`). Other lenient forms record nothing.
+            if let Some(t) = a.strip_prefix("resolve() is ")
+                && !t.is_empty()
+                && t.chars().all(|c| c.is_ascii_alphanumeric())
+            {
+                ref_types.push(t.to_string());
             }
             continue; // typed-reference restriction — genuinely lenient
         }
@@ -290,7 +301,16 @@ fn compile_alt(
     let Some(elem) = leaf else {
         return Err(format!("empty path {alt:?}"));
     };
-    targets_for(rm, table, node, elem, ty).map_err(|n| format!("{alt:?}: {n}"))
+    let mut targets =
+        targets_for(rm, table, node, elem, ty).map_err(|n| format!("{alt:?}: {n}"))?;
+    if !ref_types.is_empty() {
+        for t in &mut targets {
+            if let TargetKind::Reference { types, .. } = &mut t.kind {
+                *types = ref_types.clone();
+            }
+        }
+    }
+    Ok(targets)
 }
 
 /// Derive targets from the element a path landed on.
@@ -378,6 +398,7 @@ fn targets_for(
                 c_type: rc.c_type.clone(),
                 c_id: rc.c_id.clone(),
                 c_url: rc.c_url.clone(),
+                types: Vec::new(),
             },
         ),
         _ => Err(format!("cannot compile {:?} parameter here", ty)),
@@ -529,6 +550,7 @@ fn group_targets(
                         c_type: r.c_type,
                         c_id: r.c_id,
                         c_url: r.c_url,
+                        types: Vec::new(),
                     },
                 }]);
             }
@@ -690,6 +712,7 @@ pub fn add_adjunct_columns(map: &mut RelMap) {
                         c_type,
                         c_id,
                         c_url,
+                        ..
                     } => (vec![c_type, c_id, c_url], (false, true)),
                     // Date, Number and Quantity target derived sort columns of
                     // bounded numeric or temporal type. They are indexable and
