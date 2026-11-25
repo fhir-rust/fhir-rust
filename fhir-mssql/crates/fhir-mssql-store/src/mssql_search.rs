@@ -433,10 +433,11 @@ fn target_pred(
         }
         TargetKind::Number { col } => {
             let (op, num) = num_prefix(value)?;
-            Ok(format!(
-                "CAST(«c».{} AS FLOAT) {op} CAST({} AS FLOAT)",
-                quote_ident(col),
-                bind(binds, num)
+            Ok(numeric_pred(
+                &format!("CAST(«c».{} AS FLOAT)", quote_ident(col)),
+                op,
+                num,
+                |v| format!("CAST({} AS FLOAT)", bind(binds, v)),
             ))
         }
         TargetKind::Quantity {
@@ -449,10 +450,11 @@ fn target_pred(
             let sys = parts.next();
             let unit = parts.next();
             let (op, num) = num_prefix(num)?;
-            let mut pred = format!(
-                "CAST(«c».{} AS FLOAT) {op} CAST({} AS FLOAT)",
-                quote_ident(vcol),
-                bind(binds, num)
+            let mut pred = numeric_pred(
+                &format!("CAST(«c».{} AS FLOAT)", quote_ident(vcol)),
+                op,
+                num,
+                |v| format!("CAST({} AS FLOAT)", bind(binds, v)),
             );
             if let (Some(sys), Some(sc)) = (sys.filter(|s| !s.is_empty()), system) {
                 pred = format!(
@@ -605,6 +607,54 @@ fn num_prefix(v: &str) -> Result<(&'static str, &str), StoreError> {
         _ => Err(StoreError::Unsupported(format!(
             "invalid number value {num:?}"
         ))),
+    }
+}
+
+/// FHIR search precision: a number written `5.0` stands for the interval
+/// [4.95, 5.05), so an `eq` query matches 5.04 and an `ne` query excludes it
+/// (clinical-safety audit 2026-11-25). Returns the decimal bounds as strings,
+/// computed with integer arithmetic so no float rounding is involved; `None`
+/// for exponent notation or values too long to hold, which keep exact
+/// comparison.
+fn precision_bounds(num: &str) -> Option<(String, String)> {
+    let (neg, body) = match num.strip_prefix('-') {
+        Some(r) => (true, r),
+        None => (false, num.strip_prefix('+').unwrap_or(num)),
+    };
+    let (int, frac) = body.split_once('.').unwrap_or((body, ""));
+    let digits_only = |s: &str| s.bytes().all(|c| c.is_ascii_digit());
+    if (int.is_empty() && frac.is_empty()) || !digits_only(int) || !digits_only(frac) {
+        return None;
+    }
+    let digits = format!("{int}{frac}");
+    if digits.len() > 30 {
+        return None;
+    }
+    let n: i128 = digits.parse().ok()?;
+    let n = if neg { -n } else { n };
+    let scale = frac.len() + 1;
+    let fmt = |m: i128| {
+        let sign = if m < 0 { "-" } else { "" };
+        let abs = format!("{:0>w$}", m.unsigned_abs(), w = scale + 1);
+        let (i, f) = abs.split_at(abs.len() - scale);
+        format!("{sign}{i}.{f}")
+    };
+    Some((fmt((2 * n - 1) * 5), fmt((2 * n + 1) * 5)))
+}
+
+/// `lhs op num`, with `eq`/`ne` widened to the precision interval. `bind`
+/// pushes a value and returns its placeholder in the dialect's numeric cast.
+fn numeric_pred(lhs: &str, op: &str, num: &str, mut bind: impl FnMut(&str) -> String) -> String {
+    match (op, precision_bounds(num)) {
+        ("=", Some((lo, hi))) => {
+            let (l, h) = (bind(&lo), bind(&hi));
+            format!("({lhs} >= {l} AND {lhs} < {h})")
+        }
+        ("<>", Some((lo, hi))) => {
+            let (l, h) = (bind(&lo), bind(&hi));
+            format!("({lhs} < {l} OR {lhs} >= {h})")
+        }
+        _ => format!("{lhs} {op} {}", bind(num)),
     }
 }
 

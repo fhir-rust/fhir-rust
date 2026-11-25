@@ -535,7 +535,7 @@ Reproduced on SQLite and PostgreSQL 18.7, R4 and R5 maps, synthetic data.
       implemented, test the complement over repeating codings and missing
       values. Then publish which name/modifier pairs are supported
       (`doc/fhir-feature-support.md`).
-- [~] **Quantity equality uses query precision.** *`eq`/`ne` on Number and Quantity widened to the precision interval 2026-11-25 in fhir-sqlite and fhir-postgresql only (`precision_bounds`/`numeric_pred`, unit-tested on sqlite; PostgreSQL compile-checked, no live run). mysql, mariadb, mssql, oracle still use exact `=`; lt/gt/ge/le unchanged; exponent notation keeps exact comparison.* `5.0|ucum|mg` must match
+- [~] **Quantity equality uses query precision.** *`eq`/`ne` on Number and Quantity widened to the precision interval 2026-11-25 in all six store crates (`precision_bounds`/`numeric_pred`; unit-tested on sqlite, compile-checked and lib-tested elsewhere, no live-engine run except sqlite's own suite). Still to do: live-engine tests per port, and a mutation check; lt/gt/ge/le unchanged; exponent notation keeps exact comparison.* `5.0|ucum|mg` must match
       4.95 <= v < 5.05 (5.04 mg). SQLite casts to REAL, PostgreSQL uses
       numeric `=`; both miss. Tests for `5`, `5.0`, `5.00`, exact endpoints,
       different-unit control. Unit conversion is a separate capability.
