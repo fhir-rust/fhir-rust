@@ -210,6 +210,40 @@ for b in "${GEN_BINS[@]}"; do
   done
 done
 
+# Discovery pass (audit: gpt-6-2-astra-high, finding 2). The lists above name
+# files the baseline already has; a file added to only ONE port's gen/src or
+# gen/tests — say through an editor's "New File" — is on no list and used to
+# escape the comparison entirely. Take the union of relative paths across all
+# six generators and require each to exist, and agree, in every port.
+LISTED=" "
+for m in "${GEN_MODULES[@]}"; do LISTED="$LISTED gen/src/$m.rs "; done
+for m in "${GEN_TESTS[@]}"; do LISTED="$LISTED gen/tests/$m.rs "; done
+for b in "${GEN_BINS[@]}"; do LISTED="$LISTED gen/src/bin/$b.rs "; done
+
+discovered=$(
+  for p in "$BASELINE" "${PORTS[@]}"; do
+    for sub in src tests; do
+      d="$p/crates/$p-gen/$sub"
+      [ -d "$d" ] && (cd "$d" && find . -name '*.rs' -type f | sed "s#^\./#gen/$sub/#")
+    done
+  done | sort -u
+)
+while IFS= read -r rel; do
+  [ -n "$rel" ] || continue
+  case "$LISTED" in *" $rel "*) continue ;; esac
+  sub="${rel#gen/}"
+  base="$BASELINE/crates/$BASELINE-gen/$sub"
+  if [ ! -f "$base" ]; then
+    printf '  %-16s %-28s MISSING   (baseline; present in another port)\n' "$BASELINE" "$rel"
+    missing=$((missing + 1))
+    fail=1
+    continue
+  fi
+  for p in "${PORTS[@]}"; do
+    check_one "$base" "$p" "$p/crates/$p-gen/$sub" "$rel"
+  done
+done <<< "$discovered"
+
 echo
 if [ "$exempted" -gt 0 ]; then
   echo "  ---"

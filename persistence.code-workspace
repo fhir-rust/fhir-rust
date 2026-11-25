@@ -1,0 +1,67 @@
+{
+  "folders": [{ "path": "." }],
+  "settings": {
+    "rust-analyzer.linkedProjects": ["fhir-store/Cargo.toml"]
+  },
+  "extensions": {
+    "recommendations": ["rust-lang.rust-analyzer", "vadimcn.vscode-lldb"]
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "Core · format check",
+        "type": "process", "command": "cargo", "args": ["fmt", "--all", "--check"],
+        "options": { "cwd": "${workspaceFolder}/fhir-store" },
+        "problemMatcher": []
+      },
+      {
+        "label": "Core · Clippy",
+        "type": "process", "command": "cargo",
+        "args": ["clippy", "--all-targets", "--locked", "--", "-D", "warnings"],
+        "options": { "cwd": "${workspaceFolder}/fhir-store" },
+        "problemMatcher": { "base": "$rustc", "fileLocation": ["relative", "${workspaceFolder}/fhir-store"] }
+      },
+      {
+        "label": "Core · unit tests",
+        "type": "process", "command": "cargo", "args": ["test", "--locked", "--lib"],
+        "options": { "cwd": "${workspaceFolder}/fhir-store" },
+        "group": "test",
+        "problemMatcher": { "base": "$rustc", "fileLocation": ["relative", "${workspaceFolder}/fhir-store"] }
+      },
+      {
+        "label": "Ports · compare shared code",
+        "type": "process", "command": "./scripts/check-shared-core.sh", "args": ["--diff"],
+        "options": { "cwd": "${workspaceFolder}" },
+        "problemMatcher": []
+      },
+      {
+        "label": "PostgreSQL store · live (needs a running disposable container)",
+        "type": "process", "command": "cargo",
+        "args": ["test", "--locked", "-p", "fhir-postgresql-store", "--test", "live", "--", "--nocapture"],
+        "options": {
+          "cwd": "${workspaceFolder}/fhir-postgresql",
+          "env": { "FHIR_POSTGRESQL_REQUIRE_DB": "1" }
+        },
+        "problemMatcher": { "base": "$rustc", "fileLocation": ["relative", "${workspaceFolder}/fhir-postgresql"] }
+      }
+    ]
+  },
+  "launch": {
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Debug audit preimage",
+        "type": "lldb",
+        "request": "launch",
+        "cargo": {
+          "args": ["test", "--no-run", "--lib", "--locked"],
+          "cwd": "${workspaceFolder}/fhir-store",
+          "env": { "CARGO_PROFILE_TEST_DEBUG": "2" }
+        },
+        "args": ["chain::tests::preimage_format_is_stable", "--exact"],
+        "cwd": "${workspaceFolder}/fhir-store"
+      }
+    ]
+  }
+}

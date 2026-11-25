@@ -113,7 +113,8 @@ questions this project most wants answered.
 
 **Six files that look like six files are one file.** `shred.rs`,
 `reconstruct.rs`, `fold.rs`, `canon.rs`, `model.rs`, `value.rs`, `error.rs`, and
-everything under `gen/` **including its tests** — 100 files in total — are
+everything under `gen/` **including its tests** — every file `scripts/check-shared-core.sh`
+compares, a count it reports on each run — are
 identical across all six database ports, modulo the crate name. Editing one is a
 **divergence, not a fix**, and it will be rejected.
 
@@ -130,6 +131,28 @@ exemption list is empty and should stay that way.
 
 A corollary worth internalising: **`grep` will find the same string six times.**
 A finding that appears in all six ports is usually one finding.
+
+## Opening the repository in VS Code
+
+There is no Cargo workspace at the root: it holds nine independent Cargo
+projects, and rust-analyzer opened there selects all of them. Open the family
+you intend to change.
+
+| Work | Open | First check or navigation target |
+| --- | --- | --- |
+| Audit chain and shared types | `code fhir-store` | `cargo test --locked --lib`; follow `a_changed_preimage_changes_both` to `preimage` |
+| Relational mapping and reconstruction | `code fhir-sqlite` | edit in the map, gen or store package; for shared code also run `./scripts/check-shared-core.sh` |
+| Model for a release | `code fhir` | R5 is the default; for R4 only: `cargo check --locked -p fhir --no-default-features --features r4` |
+| HTTP requests and backend selection | `code fhir-loco` | a request test under `tests/requests/`, then `src/store.rs` |
+
+To see root specs and scripts beside the persistence core, open
+`persistence.code-workspace` (a pilot). It links only `fhir-store/Cargo.toml`,
+and carries tasks whose working directories match CI and a **Debug audit
+preimage** CodeLLDB launch (builds the test with `CARGO_PROFILE_TEST_DEBUG=2`
+so `version_id` and `actor` are visible). The live-PostgreSQL task fails, not
+skips, without a database: start one first with
+`fhir-postgresql/scripts/db.sh up`. The HTTP-over-PostgreSQL check is separate:
+`cd fhir-loco && cargo test --locked --test pg_backend -- --ignored --nocapture`.
 
 ## The five rules
 

@@ -7,8 +7,11 @@
 //! `OnceLock` and the backend is chosen at boot, so a postgres-backed process
 //! cannot share a process with the sqlite-backed suite.
 //!
-//! Needs a live server (`fhir-postgresql/scripts/db.sh up`) and
-//! `FHIR_LOCO_TEST_PG=1`; skipped otherwise. Connection details follow the
+//! Needs a live server (`fhir-postgresql/scripts/db.sh up`). The test is
+//! `#[ignore]`d, so plain `cargo test` reports it as ignored rather than
+//! silently passing; run it with
+//! `cargo test --locked --test pg_backend -- --ignored --nocapture`, which
+//! fails if no database is reachable. CI does exactly that. Connection details follow the
 //! `PG*` environment (`PGHOST`/`PGPORT`/`PGUSER`/`PGPASSWORD`/`PGSSLMODE`),
 //! same as the store's own live suite.
 
@@ -39,12 +42,8 @@ fn bearer(subject: &str) -> String {
 }
 
 #[tokio::test]
+#[ignore = "needs a live PostgreSQL (PG* env); run with --ignored"]
 async fn crud_and_search_round_trip_on_the_postgres_backend() {
-    if std::env::var("FHIR_LOCO_TEST_PG").is_err() {
-        eprintln!("skipping: set FHIR_LOCO_TEST_PG=1 (and PG* env) to run");
-        return;
-    }
-
     // Install a small R5 schema through the library, the way an operator
     // would — this service deliberately does not own installation.
     let assets = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))

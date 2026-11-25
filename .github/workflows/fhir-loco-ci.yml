@@ -14,12 +14,14 @@ on:
     paths:
       - 'fhir-loco/**'
       - 'fhir-sqlite/**'
+      - 'fhir-postgresql/**'
       - 'fhir-store/**'
       - '.github/workflows/fhir-loco-ci.yml'
   pull_request:
     paths:
       - 'fhir-loco/**'
       - 'fhir-sqlite/**'
+      - 'fhir-postgresql/**'
       - 'fhir-store/**'
       - '.github/workflows/fhir-loco-ci.yml'
   workflow_dispatch:
@@ -66,6 +68,53 @@ jobs:
       # agreement test (F-57), PASETO auth, and the production-config boot
       # tests (F-59) all run here.
       - run: cargo test
+
+  postgres-backend:
+    name: HTTP over PostgreSQL 18 (live)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: fhir
+          POSTGRES_PASSWORD: fhir
+          POSTGRES_DB: fhir
+          POSTGRES_INITDB_ARGS: >-
+            -c max_locks_per_transaction=512
+            -c max_parallel_maintenance_workers=0
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U fhir"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+          --shm-size=1g
+    env:
+      PGHOST: localhost
+      PGPORT: "5432"
+      PGUSER: fhir
+      PGPASSWORD: fhir
+      PGDATABASE: fhir
+      # The service speaks plaintext by design; the store defaults to `require`.
+      PGSSLMODE: disable
+    steps:
+      - uses: actions/checkout@v4
+      - name: Free disk space (unused preinstalled runner bloat)
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc \
+            /usr/local/.ghcup /usr/local/share/boost /opt/hostedtoolcache/CodeQL \
+            /opt/az "$AGENT_TOOLSDIRECTORY" 2>/dev/null || true
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: fhir-loco
+          key: pg-backend
+      # The test is #[ignore]d so a plain `cargo test` cannot pass it
+      # vacuously; --ignored makes it run, and fail without a database. It
+      # drops and recreates its schema, so the database must be disposable.
+      - run: cargo test --locked --test pg_backend -- --ignored --nocapture
 
   msrv:
     name: Minimum supported Rust version
