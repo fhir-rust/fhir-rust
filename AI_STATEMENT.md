@@ -176,7 +176,7 @@ against.
 
 ## 9. Licensing and provenance of AI output
 
-The project is licensed under a five-way choice ([`LICENSE.md`](LICENSE.md)). An
+The project is licensed under a seven-way choice ([`LICENSE.md`](LICENSE.md)). An
 AI tool's output does not launder anyone's copyright; the full provenance of
 generated text is generally not knowable; and prompting alone is not treated as
 authorship. In practice: contributions of substantially copied third-party

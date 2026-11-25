@@ -98,7 +98,7 @@ There is no succession plan that a document can create. What exists instead:
   project has no release cadence and no support commitment, this is a smaller
   change from the status quo than it would be for a mature project — which is
   itself a statement about the status quo.
-- **The work is not lost.** The licence is a five-way permissive/copyleft
+- **The work is not lost.** The licence is a seven-way permissive/copyleft
   choice ([`LICENSE.md`](LICENSE.md)), the history is public, every gate is a
   committed script (`scripts/check-shared-core.sh`,
   `scripts/check-published-match.sh`, `scripts/check-doc-examples.sh`), and

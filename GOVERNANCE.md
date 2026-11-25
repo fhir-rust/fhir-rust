@@ -119,7 +119,7 @@ below.
 
 ## Forking
 
-The licence is a five-way choice ([`LICENSE.md`](LICENSE.md)), the history is
+The licence is a seven-way choice ([`LICENSE.md`](LICENSE.md)), the history is
 public, every gate is a committed script, and every design decision is in the
 tree with its reasoning. **A fork is a complete and legitimate continuation**,
 and this project's position is that it should be taken rather than waited on —
