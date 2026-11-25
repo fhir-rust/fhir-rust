@@ -409,6 +409,18 @@ fn target_pred(
     cols: &[fhir_oracle_map::model::Column],
     binds: &mut Vec<Bind>,
 ) -> Result<String, StoreError> {
+    // Only string and reference targets give a modifier a meaning here. On
+    // every other kind the modifier used to be dropped silently, so
+    // `status:not=x` ran as `status=x` and returned the opposite set
+    // (clinical-safety audit 2026-11-25). Refuse it instead; `:not` can be
+    // implemented later as a whole-resource complement.
+    if let Some(m) = modifier
+        && !matches!(t.kind, TargetKind::Str { .. } | TargetKind::Reference { .. })
+    {
+        return Err(StoreError::Unsupported(format!(
+            "unsupported modifier :{m}"
+        )));
+    }
     match &t.kind {
         TargetKind::Str { col, norm } => {
             // `norm` (the folded companion) is always `ColTy::TextC` —

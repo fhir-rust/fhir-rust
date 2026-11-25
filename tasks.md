@@ -490,6 +490,84 @@ says what already exists, so none is re-derived from scratch:
       (same resources in, same search results, history and reconstruction
       out). Mutation-verify it (`T11.10`, `L16`).
 
+## Engineering and clinical-safety audits (imported 2026-11-25)
+
+Two external audits against commit `1a00c40`, both now deleted from
+`docs/audits/` and recorded here. Non-normative: findings are unverified until
+filed in `spec/databases/audit.md`.
+
+### Engineering audit (VS Code contributor workflow)
+
+- [x] **HTTP check runs against PostgreSQL when either side changes** — done
+      2026-11-25: `fhir-loco-ci.yml` triggers on `fhir-postgresql/**` and has
+      a `postgres-backend` job (PostgreSQL 18 service); `pg_backend` is
+      `#[ignore]` and run with `--ignored`, so it fails without a database.
+      Still to verify: a hosted run, and the failure with the service
+      removed.
+- [x] **Shared-core gate discovers generator files** — done 2026-11-25:
+      `check-shared-core.sh` compares the union of `gen/src` and `gen/tests`
+      paths across all six ports; verified with a PostgreSQL-only file and a
+      SQLite-only file. `CONTRIBUTING.md` no longer hardcodes a file count.
+- [~] **Focused VS Code opening path** — `CONTRIBUTING.md` table and a
+      `persistence.code-workspace` pilot (linked project, tasks, CodeLLDB
+      "Debug audit preimage") written 2026-11-25. Unverified interactively:
+      Go to Definition on `preimage`, diagnostic click-through, breakpoint
+      showing `version_id = 3`, `actor = "clinician"`, cold-index timing,
+      Windows/Linux. Do not add a blanket `**/target/**` exclude (it hides
+      tracked `fhir/src/r5/parse/all/target/`).
+- [ ] Optional: R4-only rust-analyzer preset for `fhir/`
+      (`cargo.noDefaultFeatures` + `features = ["r4"]`); measure time to first
+      Go to Definition before adding more presets.
+
+### Clinical information safety audit
+
+Reproduced on SQLite and PostgreSQL 18.7, R4 and R5 maps, synthetic data.
+
+- [ ] **Patient search must keep the target type.** `Observation?patient=shared`
+      returns an Observation whose subject is `Group/shared`: the generator
+      drops the FHIRPath type restriction and bare IDs compare ID alone
+      (cf. F-38). Carry permitted target types into compiled search targets
+      and bundled maps; `subject` stays broad. Shared generator change in all
+      six ports; HTTP test on both backends.
+- [~] **Reject or implement `:not` (and other unsupported modifiers).** *Rejection landed 2026-11-25 in all six store `target_pred`s (modifier on a non-string, non-reference target → `Unsupported` → HTTP 400); unit-tested on sqlite only, other five compile-checked; no HTTP-level test or live-engine run yet; `:not` itself still unimplemented.*
+      `status:not=entered-in-error` returns exactly the `entered-in-error`
+      records. Smallest safe fix: explicit 400 OperationOutcome. If
+      implemented, test the complement over repeating codings and missing
+      values. Then publish which name/modifier pairs are supported
+      (`doc/fhir-feature-support.md`).
+- [~] **Quantity equality uses query precision.** *`eq`/`ne` on Number and Quantity widened to the precision interval 2026-11-25 in fhir-sqlite and fhir-postgresql only (`precision_bounds`/`numeric_pred`, unit-tested on sqlite; PostgreSQL compile-checked, no live run). mysql, mariadb, mssql, oracle still use exact `=`; lt/gt/ge/le unchanged; exponent notation keeps exact comparison.* `5.0|ucum|mg` must match
+      4.95 <= v < 5.05 (5.04 mg). SQLite casts to REAL, PostgreSQL uses
+      numeric `=`; both miss. Tests for `5`, `5.0`, `5.00`, exact endpoints,
+      different-unit control. Unit conversion is a separate capability.
+- [ ] **Enforce minimum cardinality at write (V9.1).** An Observation without
+      `code` (1..1) is accepted. Carry min cardinality in the map, enforce in
+      the shared shredder, HTTP 4xx OperationOutcome naming
+      `Observation.code`, nothing committed on rejection. Fix the SQLite
+      `history_page.rs` fixture that relies on a code-less Observation.
+      Provide a read-only inventory for existing databases; never invent a
+      code.
+- [ ] File the four findings in `spec/databases/audit.md`; update the feature
+      matrix and the README "Production today" PostgreSQL recommendation;
+      revert each fix in isolation to show its test fails.
+- [ ] **Clinical acceptance suite** (synthetic, reviewer-signed): corrected
+      result is current while `vread` gives the earlier one; allergy
+      none-known / unavailable / missing section stay distinct; medication
+      order status/intent/negation survive readback and lossy conversion is
+      surfaced; same MRN under two assigning systems never merges.
+- [ ] **Pilot profile pinning.** One exchange profile with FHIR release, IG
+      package and terminology versions pinned; record structural, profile,
+      terminology and clinical-review results independently.
+- [ ] **PHI inventory correction.** `PHI.md` says PHI is only in the
+      database, but bulk export writes NDJSON files; expiry runs only at
+      export kickoff over an in-memory registry, so a restart can orphan
+      files. Document location/retention/backups; reconcile on restart and
+      on a timer; prove with an export that expires across a restart.
+- [ ] **Erasure and access wording.** "Can I erase a patient?" should state
+      that purge acts on one resource type+ID and leaves a tombstone
+      (M3.18); wider record disposition, consent and patient-context policy
+      belong to the deployer (SMART scopes). Privacy lead verifies reads,
+      searches with includes, history and exports.
+
 ## Trademarks
 
 HL7®, and FHIR® are the registered trademarks of Health Level Seven

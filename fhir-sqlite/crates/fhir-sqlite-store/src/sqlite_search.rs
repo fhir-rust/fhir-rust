@@ -312,6 +312,18 @@ fn target_pred(
         binds.push(v.to_string());
         format!("?{}", binds.len())
     };
+    // Only string and reference targets give a modifier a meaning here. On
+    // every other kind the modifier used to be dropped silently, so
+    // `status:not=x` ran as `status=x` and returned the opposite set
+    // (clinical-safety audit 2026-11-25). Refuse it instead; `:not` can be
+    // implemented later as a whole-resource complement.
+    if let Some(m) = modifier
+        && !matches!(t.kind, TargetKind::Str { .. } | TargetKind::Reference { .. })
+    {
+        return Err(StoreError::Unsupported(format!(
+            "unsupported modifier :{m}"
+        )));
+    }
     match &t.kind {
         TargetKind::Str { col, norm } => {
             let c = format!("«c».\"{col}\"");
@@ -411,9 +423,12 @@ fn target_pred(
         }
         TargetKind::Number { col } => {
             let (op, num) = num_prefix(value)?;
-            Ok(format!(
-                "CAST(«c».\"{col}\" AS REAL) {op} CAST({} AS REAL)",
-                b(binds, num)
+            Ok(numeric_pred(
+                &format!("CAST(«c».\"{col}\" AS REAL)"),
+                op,
+                num,
+                binds,
+                |n| format!("CAST(?{n} AS REAL)"),
             ))
         }
         TargetKind::Quantity {
@@ -426,9 +441,12 @@ fn target_pred(
             let sys = parts.next();
             let unit = parts.next();
             let (op, num) = num_prefix(num)?;
-            let mut pred = format!(
-                "CAST(«c».\"{vcol}\" AS REAL) {op} CAST({} AS REAL)",
-                b(binds, num)
+            let mut pred = numeric_pred(
+                &format!("CAST(«c».\"{vcol}\" AS REAL)"),
+                op,
+                num,
+                binds,
+                |n| format!("CAST(?{n} AS REAL)"),
             );
             if let (Some(sys), Some(sc)) = (sys.filter(|s| !s.is_empty()), system) {
                 pred = format!("({pred} AND «c».\"{sc}\" = {})", b(binds, sys));
@@ -585,6 +603,64 @@ fn num_prefix(v: &str) -> Result<(&'static str, &str), StoreError> {
         _ => Err(StoreError::Unsupported(format!(
             "invalid number value {num:?}"
         ))),
+    }
+}
+
+/// FHIR search precision: a number written `5.0` stands for the interval
+/// [4.95, 5.05), so an `eq` query matches 5.04 and an `ne` query excludes it
+/// (clinical-safety audit 2026-11-25). Returns the decimal bounds as strings,
+/// computed with integer arithmetic so no float rounding is involved; `None`
+/// for exponent notation or values too long to hold, which keep exact
+/// comparison.
+fn precision_bounds(num: &str) -> Option<(String, String)> {
+    let (neg, body) = match num.strip_prefix('-') {
+        Some(r) => (true, r),
+        None => (false, num.strip_prefix('+').unwrap_or(num)),
+    };
+    let (int, frac) = body.split_once('.').unwrap_or((body, ""));
+    let digits_only = |s: &str| s.bytes().all(|c| c.is_ascii_digit());
+    if (int.is_empty() && frac.is_empty()) || !digits_only(int) || !digits_only(frac) {
+        return None;
+    }
+    let digits = format!("{int}{frac}");
+    if digits.len() > 30 {
+        return None;
+    }
+    let n: i128 = digits.parse().ok()?;
+    let n = if neg { -n } else { n };
+    let scale = frac.len() + 1;
+    let fmt = |m: i128| {
+        let sign = if m < 0 { "-" } else { "" };
+        let abs = format!("{:0>w$}", m.unsigned_abs(), w = scale + 1);
+        let (i, f) = abs.split_at(abs.len() - scale);
+        format!("{sign}{i}.{f}")
+    };
+    Some((fmt((2 * n - 1) * 5), fmt((2 * n + 1) * 5)))
+}
+
+/// `lhs op num`, with `eq`/`ne` widened to the precision interval. `rhs`
+/// renders a bound placeholder in the dialect's numeric cast.
+fn numeric_pred(
+    lhs: &str,
+    op: &str,
+    num: &str,
+    binds: &mut Vec<String>,
+    rhs: impl Fn(usize) -> String,
+) -> String {
+    let mut bind = |v: &str| {
+        binds.push(v.to_string());
+        rhs(binds.len())
+    };
+    match (op, precision_bounds(num)) {
+        ("=", Some((lo, hi))) => {
+            let (l, h) = (bind(&lo), bind(&hi));
+            format!("({lhs} >= {l} AND {lhs} < {h})")
+        }
+        ("<>", Some((lo, hi))) => {
+            let (l, h) = (bind(&lo), bind(&hi));
+            format!("({lhs} < {l} OR {lhs} >= {h})")
+        }
+        _ => format!("{lhs} {op} {}", bind(num)),
     }
 }
 
@@ -816,6 +892,30 @@ mod tests {
     }
 
     #[test]
+    fn eq_uses_the_precision_of_the_query() {
+        assert_eq!(precision_bounds("5.0"), Some(("4.95".into(), "5.05".into())));
+        assert_eq!(precision_bounds("5"), Some(("4.5".into(), "5.5".into())));
+        assert_eq!(precision_bounds("5.00"), Some(("4.995".into(), "5.005".into())));
+        assert_eq!(precision_bounds("-0.5"), Some(("-0.55".into(), "-0.45".into())));
+        assert_eq!(precision_bounds("0"), Some(("-0.5".into(), "0.5".into())));
+        assert_eq!(precision_bounds("1e3"), None);
+    }
+
+    #[test]
+    fn modifiers_are_refused_where_they_would_be_ignored() {
+        // `status:not=x` must not run as `status=x` (clinical-safety audit).
+        let token = TargetKind::Token {
+            system: None,
+            code: "code".into(),
+        };
+        for m in ["not", "text", "missing"] {
+            let err = pred(token.clone(), "final", Some(m), &[]).unwrap_err();
+            assert!(err.to_string().contains("unsupported modifier"), "{m}");
+        }
+        assert!(pred(token, "final", None, &[]).is_ok());
+    }
+
+    #[test]
     fn string_token_number_and_uri_targets_preserve_fhir_semantics() {
         let string = TargetKind::Str {
             col: "value".into(),
@@ -878,7 +978,6 @@ mod tests {
         assert_eq!(pred(bare, "sys|yes", None, &cols).unwrap().0, "FALSE");
 
         for (value, op, number) in [
-            ("2", "=", "2"),
             ("lt2", "<", "2"),
             ("gt2", ">", "2"),
             ("ge2", ">=", "2"),
@@ -889,6 +988,10 @@ mod tests {
             assert!(sql.contains(&format!(" AS REAL) {op} CAST(")));
             assert_eq!(binds, [number]);
         }
+        // `eq` widens to the precision interval: 2 means [1.5, 2.5).
+        let (sql, binds) = pred(TargetKind::Number { col: "n".into() }, "2", None, &[]).unwrap();
+        assert!(sql.contains(" >= CAST(?1 AS REAL)") && sql.contains(" < CAST(?2 AS REAL)"));
+        assert_eq!(binds, ["1.5", "2.5"]);
         assert_eq!(
             pred(TargetKind::Uri { col: "url".into() }, "urn:test", None, &[]).unwrap(),
             ("«c».\"url\" = ?1".into(), vec!["urn:test".into()])
@@ -920,7 +1023,7 @@ mod tests {
             pred(quantity.clone(), "ge5|UCUM|mg", None, &[]).unwrap().1,
             ["5", "UCUM", "mg"]
         );
-        assert_eq!(pred(quantity, "5||mg", None, &[]).unwrap().1, ["5", "mg"]);
+        assert_eq!(pred(quantity, "5||mg", None, &[]).unwrap().1, ["4.5", "5.5", "mg"]);
         let (sql, binds) = pred(
             TargetKind::Quantity {
                 value: "value".into(),
@@ -932,8 +1035,8 @@ mod tests {
             &[],
         )
         .unwrap();
-        assert!(sql.contains("\"code\" = ?2"));
-        assert_eq!(binds, ["5", "mg"]);
+        assert!(sql.contains("\"code\" = ?3"));
+        assert_eq!(binds, ["4.5", "5.5", "mg"]);
         assert_eq!(
             pred(
                 TargetKind::Quantity {
@@ -947,7 +1050,7 @@ mod tests {
             )
             .unwrap()
             .1,
-            ["5"]
+            ["4.5", "5.5"]
         );
         assert_eq!(
             pred(
@@ -962,7 +1065,7 @@ mod tests {
             )
             .unwrap()
             .1,
-            ["5"]
+            ["4.5", "5.5"]
         );
 
         let reference = TargetKind::Reference {

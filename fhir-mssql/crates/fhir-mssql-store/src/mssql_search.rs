@@ -328,6 +328,18 @@ fn target_pred(
     modifier: Option<&str>,
     binds: &mut Vec<String>,
 ) -> Result<String, StoreError> {
+    // Only string and reference targets give a modifier a meaning here. On
+    // every other kind the modifier used to be dropped silently, so
+    // `status:not=x` ran as `status=x` and returned the opposite set
+    // (clinical-safety audit 2026-11-25). Refuse it instead; `:not` can be
+    // implemented later as a whole-resource complement.
+    if let Some(m) = modifier
+        && !matches!(t.kind, TargetKind::Str { .. } | TargetKind::Reference { .. })
+    {
+        return Err(StoreError::Unsupported(format!(
+            "unsupported modifier :{m}"
+        )));
+    }
     match &t.kind {
         TargetKind::Str { col, norm } => {
             let c = format!("«c».{}", quote_ident(col));
