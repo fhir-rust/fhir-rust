@@ -203,6 +203,10 @@ type-/system-level history, multi-port wiring, is tracked in that crate's
 | [F-104](#f-104) | Medium | Engine-native backup documentation lacks a repeatable store-level recovery drill. | SQLite has a regression test. PostgreSQL, MySQL, MariaDB, SQL Server-compatible Edge, and Oracle verified locally (T11.16). |
 | [F-105](#f-105) | **High** | `fhir-sqlite` `history_page` compared an RFC 3339 `since` as text against stored `YYYY-MM-DD HH:MM:SS.ffffff` stamps; `' ' < 'T'` dropped every version on the cutoff's own date | **fixed** 2026-11-26 — `since_cutoff` normalises; regression test mutation-verified |
 | [F-106](#f-106) | Medium | `fhir-sqlite` `get_versioned` read the body and the version in two lock acquisitions, pairing an older body with a newer version under concurrent writes (db:R4.5) | **fixed** 2026-11-26 — one snapshot (`read_current`); concurrency test fails the old code 2/2 |
+| [F-108](#f-108-to-f-111) | **High** | Reference search ignored the parameter's target type: `Observation?patient=shared` matched `subject = Group/shared` (generator dropped `where(resolve() is Patient)`; bare ids compared id alone, cf. F-38) | **fixed** 2026-11-25 in all six ports (R4, R5 maps); SQLite mutation-verified 2026-11-26; R3, HTTP-level and five live engines open |
+| [F-109](#f-108-to-f-111) | **High** | A modifier on a token/number/date/quantity target was dropped silently: `status:not=entered-in-error` returned exactly the `entered-in-error` records | **fixed** (refused as `Unsupported`, HTTP 400) 2026-11-25 in all six ports; SQLite mutation-verified 2026-11-26; `:not` itself unimplemented |
+| [F-110](#f-108-to-f-111) | **High** | Number/Quantity `eq`/`ne` compared exactly instead of over the query's precision: `5.0|ucum|mg` missed 5.04 mg | **fixed** 2026-11-25 in all six ports; SQLite mutation-verified 2026-11-26; live engines other than SQLite open |
+| [F-111](#f-108-to-f-111) | **High** | Minimum cardinality is not enforced at write (V9.1): an Observation without `code` (1..1) is accepted | **open** — shared-core change in all six ports, awaiting go-ahead |
 | [F-107](#f-107) | Medium | `fhir-sqlite` `status` turned any SQL error into `Unknown` (`.ok()`) and ran outside the transaction its comment claimed | **fixed** 2026-11-26 — one deferred transaction, `.optional()`; fault-injection test mutation-verified |
 
 ## What remains, and why
@@ -6288,6 +6292,44 @@ denies `patient`, then `patient_history`); restoring `.ok()` on the first
 query makes it see `Ok(Unknown)`. PostgreSQL's `status` already used one
 snapshot and `query_opt`; mysql, mariadb, mssql and oracle have no
 `status`.
+
+## F-108 to F-111
+
+**Clinical information safety audit, 2026-11-25.** An external audit
+reproduced four defects on SQLite and PostgreSQL 18.7, R4 and R5 maps,
+synthetic data; filed here 2026-11-26 from `tasks.md`.
+
+- **F-108 — reference search ignored the target type.** The generator
+  dropped the FHIRPath restriction in `Observation.subject.where(resolve() is
+  Patient)`, and a bare id compared the id column alone, so
+  `patient=shared` matched `Group/shared`. Fixed 2026-11-25:
+  `TargetKind::Reference` carries `types`; each store's `target_pred` applies
+  them to bare ids and `Type/id`; maps regenerated. `subject` stays broad.
+  Open: R3 (its expressions carry no restriction), an HTTP-level test on
+  both backends, live runs on the five server engines.
+- **F-109 — an ignored modifier ran as its opposite.** On non-string,
+  non-reference targets the modifier was discarded, so `status:not=x` ran
+  as `status=x`. Fixed 2026-11-25 by refusing it (`Unsupported` → 400).
+  Open: implementing `:not` as a whole-resource complement, publishing the
+  supported name/modifier pairs.
+- **F-110 — numeric equality ignored precision.** SQLite cast to REAL and
+  PostgreSQL used numeric `=`, so `5.0` missed `5.04`. Fixed 2026-11-25:
+  `precision_bounds`/`numeric_pred` widen `eq` to `[4.95, 5.05)` and `ne`
+  to its complement; `lt`/`gt`/`ge`/`le` and exponent notation unchanged.
+  Open: live-engine tests per port.
+- **F-111 — minimum cardinality not enforced (V9.1).** Open. Needs min
+  cardinality in the map, enforcement in the shared shredder in all six
+  ports, a 4xx naming the element, nothing committed on rejection, and a
+  read-only inventory of existing rows; never invent a value.
+
+**Evidence for F-108–F-110 (SQLite, 2026-11-26).**
+`tests/sqlite_store.rs`
+`patient_search_keeps_its_target_type_and_quantities_use_precision` was run
+with each fix reverted in isolation (`T11.10`): without the bare-id type
+restriction `patient=shared` returned `["lab-g", "lab-p"]`; without the
+precision interval `5.0|…|mg` returned only `["lab-g"]` (5.04 missed);
+without the modifier refusal `status:not` succeeded. Restored, it passes.
+The other five ports were not mutation-tested.
 
 ---
 

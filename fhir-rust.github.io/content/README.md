@@ -223,7 +223,7 @@ Full walkthroughs: [`doc/`](doc/index.md).
 
 | If you want | Use |
 | --- | --- |
-| Production today, with the full test suite behind it | `fhir-postgresql` |
+| Production today, with the full test suite behind it | `fhir-postgresql` — but read [F-108–F-111](spec/databases/audit.md#f-108-to-f-111) first: the search fixes are not yet live-tested on PostgreSQL, and no port enforces minimum cardinality at write |
 | Embedded, no server, a single file | `fhir-sqlite` |
 | An existing MySQL or MariaDB estate | `fhir-mysql`, `fhir-mariadb` |
 | SQL Server or Oracle | supported, Store level — `fhir-mssql`, `fhir-oracle`; see the [matrix](spec/databases/conformance-matrix.md) for remaining gaps (no `conditional_create_audited`/`put_audited`/`transact_audited` on mssql; Oracle racing writers and `search_page` concurrency remain unverified) |

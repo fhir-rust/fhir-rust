@@ -88,10 +88,14 @@ column is `ColTy::Bool`.
 | `delete` | • | • | • | • | • | • |
 | `delete_audited` | • | • | — | — | — | — |
 | `history` | • | • | • | • | • | • |
-| `history_page` (type/system) | • | • | — | — | — | — | added 2026-08-10 for `fhir-loco`'s `SV2.17`; merged per-type history, newest first, `_since` at-or-after. pg's landed with the multi-port wiring (`SV1.10`), live-tested |
+| `history_page` (type/system) | • | • | — | — | — | — | added 2026-08-10 for `fhir-loco`'s `SV2.17`; merged per-type history, newest first, `_since` at-or-after. pg's landed with the multi-port wiring (`SV1.10`), live-tested. sqlite's `_since` dropped same-day versions until 2026-11-26 (**F-105**) |
 | `vread` | • | • | • | • | • | • |
 | `search` / `search_full` | • | • | • | • | • | • |
 | `search_page` (cursor) | • | • | • | • | • | ~ |
+| search: reference target type (**F-108**) | ~ | • | ~ | ~ | ~ | ~ | landed in all six 2026-11-25 (R4, R5 maps; R3 open). sqlite `•`: end-to-end test, mutation-verified 2026-11-26. Elsewhere `~`: lib-tested, no live-engine run |
+| search: unsupported modifier refused (**F-109**) | ~ | • | ~ | ~ | ~ | ~ | refused as `Unsupported` (HTTP 400) rather than ignored; `:not` itself unimplemented. Evidence as the row above |
+| search: number/quantity `eq`/`ne` at query precision (**F-110**) | ~ | • | ~ | ~ | ~ | ~ | `5.0` means `[4.95, 5.05)`; ordering prefixes and exponent notation unchanged. Evidence as above |
+| minimum cardinality enforced at write (V9.1, **F-111**) | — | — | — | — | — | — | open: an Observation without `code` is accepted on every port |
 | `transact_audited` | • | ~ | — | — | — | — |
 | `conditional_create` | • | • | — | — | — | — |
 | `conditional_delete` | • | • | — | — | — | — |

@@ -565,9 +565,14 @@ Reproduced on SQLite and PostgreSQL 18.7, R4 and R5 maps, synthetic data.
       `history_page.rs` fixture that relies on a code-less Observation.
       Provide a read-only inventory for existing databases; never invent a
       code.
-- [ ] File the four findings in `spec/databases/audit.md`; update the feature
+- [~] File the four findings in `spec/databases/audit.md`; update the feature
       matrix and the README "Production today" PostgreSQL recommendation;
-      revert each fix in isolation to show its test fails.
+      revert each fix in isolation to show its test fails. *Filed as
+      **F-108**–**F-111** 2026-11-26; F-108–F-110 mutation-verified on
+      SQLite (each reverted fix fails
+      `patient_search_keeps_its_target_type_and_quantities_use_precision`);
+      other five ports not mutation-tested. Matrix rows added and the README
+      "Production today" row now points at F-108–F-111 (2026-11-26).*
 - [ ] **Clinical acceptance suite** (synthetic, reviewer-signed): corrected
       result is current while `vread` gives the earlier one; allergy
       none-known / unavailable / missing section stay distinct; medication
@@ -576,12 +581,24 @@ Reproduced on SQLite and PostgreSQL 18.7, R4 and R5 maps, synthetic data.
 - [ ] **Pilot profile pinning.** One exchange profile with FHIR release, IG
       package and terminology versions pinned; record structural, profile,
       terminology and clinical-review results independently.
-- [ ] **PHI inventory correction.** `PHI.md` says PHI is only in the
+- [~] **PHI inventory correction.** *2026-11-26: `PHI.md` names the export
+      files, their location, lifetime and the deployer's backup duty;
+      `export::start_retention` (called from `before_run`) deletes job
+      directories orphaned by a restart (UUID names only) and sweeps on a
+      timer every `min(TTL, 60 s)`. Unit test
+      `orphaned_export_directories_are_removed_and_nothing_else`,
+      mutation-verified (UUID guard, live-job guard). NOT done: an
+      end-to-end export that expires across a real process restart.* `PHI.md` says PHI is only in the
       database, but bulk export writes NDJSON files; expiry runs only at
       export kickoff over an in-memory registry, so a restart can orphan
       files. Document location/retention/backups; reconcile on restart and
       on a timer; prove with an export that expires across a restart.
-- [ ] **Erasure and access wording.** "Can I erase a patient?" should state
+- [~] **Erasure and access wording.** *2026-11-26: `PHI.md`'s answer and a new
+      "Erasure" section state purge's one-resource scope, the tombstone, and
+      what it does not reach (referencing resources, access log, backups,
+      exports, policy; checked against SQLite `purge`). NOT done: the privacy
+      lead's verification across reads, `_include` searches, history and
+      exports.* "Can I erase a patient?" should state
       that purge acts on one resource type+ID and leaves a tombstone
       (M3.18); wider record disposition, consent and patient-context policy
       belong to the deployer (SMART scopes). Privacy lead verifies reads,
@@ -608,10 +625,9 @@ were not rerun for this triage.
       (layer removed → `200` on `/r5/Patient/gate-1`). 24 tokenless reads in
       `tests/requests/fhir.rs` and 6 in `tests/pg_backend.rs` now carry a
       token. Full SQLite request suite green (28). NOT run: `pg_backend`
-      (no PostgreSQL here; compiles only). **Owner decision needed:**
-      `/{version}/metadata` was left outside the gate (no PHI; SMART
-      discovery expects it public), which is narrower than SV3.1's literal
-      "every request" — amend SV3.1 (e.g. `SV3.1a`) or gate it.*
+      (no PostgreSQL here; compiles only). **Decided 2026-11-26 (owner): gate
+      `/{version}/metadata` too** — SV3.1 unchanged; the test now asserts
+      401 for it without a token.*
       `read`, `vread`, `search`, `history`/`type_history`/
       `system_history` (`fhir-loco/src/controllers/fhir.rs`) never gate on
       `auth::audit_from`; only `disclose` calls it, and on failure it logs

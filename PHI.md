@@ -18,10 +18,10 @@ of it.
 | Does this software send data anywhere? | **No.** It opens no network connection except to the database you configure. |
 | Does it phone home, or collect telemetry or analytics? | **No.** There is no such code in the repository. |
 | Does it embed or call an AI model? | **No.** See [`AI_STATEMENT.md`](AI_STATEMENT.md) §1. |
-| Does it hold PHI? | Only in the database *you* run, in tables *you* created. The libraries hold data in memory for the duration of a call. |
+| Does it hold PHI? | In the database *you* run, in tables *you* created — and, if you run [`fhir-loco`](fhir-loco/) and use Bulk Data `$export`, in NDJSON files on its disk (see below). The libraries hold data in memory for the duration of a call. |
 | Does it write PHI to logs? | **Not at default level** — `O10.2`, and `T11.7` tests it. |
 | Does it record who accessed a record? | **Yes**, deliberately — and that record contains identifiers. See below. |
-| Can I erase a patient? | Yes — `M3.18`, erasure with a tombstone, mapped to GDPR Art. 17. |
+| Can I erase a patient? | **One resource at a time.** `purge` (`M3.18`, mapped to GDPR Art. 17) removes one resource type + id — its live row and its history — and leaves a tombstone saying who erased it, when and why. It does not follow references: the patient's Observations, Encounters and so on are separate resources you must find and purge yourself. Access-log rows naming the id, backups, replicas, WAL archives and `$export` files are untouched. Deciding what a patient's record *is*, consent, and patient-context access (e.g. SMART scopes) belong to your deployment. See [Erasure](#erasure-what-purge-does-and-does-not-reach). |
 | Is the database connection encrypted? | **Verifying by default on PostgreSQL, MySQL, MariaDB, and SQL Server** — `O10.7` satisfied on all four (SQL Server since **F-67** closed 2026-08-29). SQLite has no connection; Oracle's transport security is undecided (`M14.22`). |
 | Is it a medical device? | **No**, and it cannot make your deployment compliant. See "What this is not". |
 | Who do I contact? | [`SECURITY.md`](SECURITY.md) for anything sensitive; [`MAINTAINERS.md`](MAINTAINERS.md) otherwise. |
@@ -36,6 +36,49 @@ Four families, and their PHI posture genuinely differs:
 | [`fhir-store/`](fhir-store/) — the persistence core | audit chain, attribution and disclosure record types | Links no driver and opens no socket. It defines the shapes; it does not move data. |
 | `fhir-<engine>/` — the six database ports | shred resources into relational tables in **your** database | The only family that stores anything. It connects to one database, the one whose DSN you supply. |
 | [`fhir-loco/`](fhir-loco/) — the HTTP surface | a FHIR REST API over one store | Accepts network connections. This is the only component that listens on a socket, and the only one with an authentication story. |
+
+## Exported files (`fhir-loco` `$export`)
+
+A Bulk Data export is the largest disclosure this software makes, and it is
+written to disk: one NDJSON file per resource type, under
+`FHIR_LOCO_EXPORT_DIR/<job-id>/` (default: `<FHIR_LOCO_DB>.exports/`, beside
+the database file). Every file fetch is disclosure-logged.
+
+- **Lifetime.** A job and its files are deleted `FHIR_LOCO_EXPORT_TTL_SECS`
+  after kick-off (default 3600), by a sweep that runs every `min(TTL, 60 s)`,
+  and on `DELETE` of the status URL.
+- **Restarts.** The job registry is in memory. At boot, every job directory
+  (a UUID-named subdirectory) left by a previous process is deleted, since no
+  status URL can reach it any more. Other names in that directory are never
+  touched.
+- **What you must still do.** The directory is yours: put it on encrypted
+  storage with the database's access controls, and keep it out of backups
+  (or apply the same retention to them) — files copied out of it before the
+  sweep are beyond this software's reach.
+
+## Erasure: what `purge` does and does not reach
+
+`purge <Type> <id> --reason <text>` (`M3.18`) deletes that resource's live
+row and every history row, and writes one tombstone recording who purged
+what, when, why, and the chain it terminated, so the audit chain shows a
+deliberate hole rather than a silent one. It is scoped to exactly one
+resource:
+
+- **Not a patient's whole record.** A Patient's Observations, Conditions,
+  Encounters, DocumentReferences and so on are separate resources. Finding
+  them (for example by searching each type on `patient=`/`subject=`) and
+  deciding which to erase is a disposition decision for your deployment.
+- **Not the access log.** Disclosure rows (`PR12.5`) naming the id stay;
+  their retention is yours (see above).
+- **Not copies.** Backups, replicas, WAL or binary-log archives, and
+  `$export` files still hold the data until they age out or you remove it.
+- **Not policy.** Consent, legal holds, and patient-context access control
+  (who may read *this* patient, e.g. SMART scopes) are outside these
+  libraries; `fhir-loco` authenticates callers but does not authorize them
+  (`SV3.10`).
+
+Have your privacy lead verify the result against reads, searches with
+`_include`, history and exports before relying on it.
 
 ## What it does *not* do
 

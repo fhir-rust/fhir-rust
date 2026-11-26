@@ -201,6 +201,13 @@ type-/system-level history, multi-port wiring, is tracked in that crate's
 | [F-89](#f-89) | Medium | The mysql/mariadb DDL test harness was unportable and **masked real errors**: it passed MariaDB's `--skip-ssl-verify-server-cert` to whatever client exists (Oracle's mysql 8 client rejects it), assumed a utf8mb4 default charset (the runner's client defaults utf8mb3 → ERROR 1253 on the collation probe), and on any early client exit reported the stdin `Broken pipe` instead of reading the client's stderr — hiding whatever the real failure was | **fixed** 2026-08-10 — client-flavor-gated TLS flag, explicit `--default-character-set=utf8mb4`, and EPIPE falls through to collect stderr, so the next failure names itself |
 | [F-103](#f-103) | Medium | L8 promised unchanged keys across CJK scripts. Live cross-script search coverage is incomplete. | **open** for L15a after correcting L8 |
 | [F-104](#f-104) | Medium | Engine-native backup documentation lacks a repeatable store-level recovery drill. | SQLite has a regression test. PostgreSQL, MySQL, MariaDB, SQL Server-compatible Edge, and Oracle verified locally (T11.16). |
+| [F-105](#f-105) | **High** | `fhir-sqlite` `history_page` compared an RFC 3339 `since` as text against stored `YYYY-MM-DD HH:MM:SS.ffffff` stamps; `' ' < 'T'` dropped every version on the cutoff's own date | **fixed** 2026-11-26 — `since_cutoff` normalises; regression test mutation-verified |
+| [F-106](#f-106) | Medium | `fhir-sqlite` `get_versioned` read the body and the version in two lock acquisitions, pairing an older body with a newer version under concurrent writes (db:R4.5) | **fixed** 2026-11-26 — one snapshot (`read_current`); concurrency test fails the old code 2/2 |
+| [F-108](#f-108-to-f-111) | **High** | Reference search ignored the parameter's target type: `Observation?patient=shared` matched `subject = Group/shared` (generator dropped `where(resolve() is Patient)`; bare ids compared id alone, cf. F-38) | **fixed** 2026-11-25 in all six ports (R4, R5 maps); SQLite mutation-verified 2026-11-26; R3, HTTP-level and five live engines open |
+| [F-109](#f-108-to-f-111) | **High** | A modifier on a token/number/date/quantity target was dropped silently: `status:not=entered-in-error` returned exactly the `entered-in-error` records | **fixed** (refused as `Unsupported`, HTTP 400) 2026-11-25 in all six ports; SQLite mutation-verified 2026-11-26; `:not` itself unimplemented |
+| [F-110](#f-108-to-f-111) | **High** | Number/Quantity `eq`/`ne` compared exactly instead of over the query's precision: `5.0|ucum|mg` missed 5.04 mg | **fixed** 2026-11-25 in all six ports; SQLite mutation-verified 2026-11-26; live engines other than SQLite open |
+| [F-111](#f-108-to-f-111) | **High** | Minimum cardinality is not enforced at write (V9.1): an Observation without `code` (1..1) is accepted | **open** — shared-core change in all six ports, awaiting go-ahead |
+| [F-107](#f-107) | Medium | `fhir-sqlite` `status` turned any SQL error into `Unknown` (`.ok()`) and ran outside the transaction its comment claimed | **fixed** 2026-11-26 — one deferred transaction, `.optional()`; fault-injection test mutation-verified |
 
 ## What remains, and why
 
@@ -6234,6 +6241,95 @@ The installed checksum, current and earlier versions, every disclosure field,
 search result, and keyed audit chain matched. Wrong material under the same key
 ID flagged both HMACs, and the later deletion was absent. A checked-in drill,
 full-R5 exercise, and RMAN or point-in-time recovery remain open.
+
+## F-105
+
+**SQLite `since` dropped same-day history.** Found 2026-11-26 verifying an
+external production audit at `648bf92`. `render_utc_micros` stores
+`last_updated` as `2026-11-26 19:56:04.000000`; `fhir-loco` validates
+`_since` as RFC 3339 and passes it on unchanged (`2026-11-26T19:56:00Z`).
+`history_page` bound it into `"last_updated" >= ?1`, a text comparison in
+which the space sorts below `T`, so every version written on the cutoff's
+date — whatever its time — compared low and was omitted. The method's doc
+comment claimed stored stamps were RFC 3339. PostgreSQL casts to
+`timestamptz` and is unaffected; the other four ports have no `since` path.
+
+Fixed by `since_cutoff` (`fhir-sqlite-store/src/sqlite.rs`): an RFC 3339
+instant is converted to the stored form with its offset applied and a
+sub-microsecond fraction rounded up (so at-or-after never admits an earlier
+version); the stored form passes through; anything else is `Unsupported`.
+Evidence: unit test `since_cutoff_normalises_rfc3339_to_the_stored_form`;
+`tests/history_page.rs`
+`an_rfc3339_since_earlier_the_same_day_admits_that_days_versions`, which
+returns 0 of 4 versions with the conversion removed (`T11.10`).
+
+## F-106
+
+**SQLite `get_versioned` could pair a body with another write's version.**
+Found 2026-11-26 with **F-105**. `get_versioned` called `get` and then
+`status`, each its own `spawn_blocking` and lock acquisition, so a write
+from another connection between them returned an older body with a newer
+`version_id` — the pair `fhir-loco` sends as `meta.versionId` and the
+ETag, and a client sends back as `If-Match` (db:R4.5). Fixed by reading
+`version_id` from the base row inside the reconstruction's own deferred
+transaction (`read_current`, now the body of `get` too). Evidence:
+`tests/concurrency.rs` `get_versioned_pairs_a_body_with_its_own_version`
+(second handle, 150 racing writes). With the old two-call body restored it
+failed 2 of 2 runs ("body is generation 0 but was paired with version 6").
+PostgreSQL's `get` already returns `Got` from one snapshot; it has no
+equivalent concurrency test.
+
+## F-107
+
+**SQLite `status` reported read failures as `Unknown`.** Found 2026-11-26.
+Both queries ended in `.ok()`, so any SQL error became "never existed" —
+an HTTP 404 from `fhir-loco` for a resource the store could not read. Its
+comment promised "one read transaction over both tables"; the statements
+ran on the bare connection. Fixed with a deferred `unchecked_transaction`
+and `.optional().store()?`. Evidence: unit test
+`status_reports_a_failed_read_as_an_error_not_unknown` (rusqlite authorizer
+denies `patient`, then `patient_history`); restoring `.ok()` on the first
+query makes it see `Ok(Unknown)`. PostgreSQL's `status` already used one
+snapshot and `query_opt`; mysql, mariadb, mssql and oracle have no
+`status`.
+
+## F-108 to F-111
+
+**Clinical information safety audit, 2026-11-25.** An external audit
+reproduced four defects on SQLite and PostgreSQL 18.7, R4 and R5 maps,
+synthetic data; filed here 2026-11-26 from `tasks.md`.
+
+- **F-108 — reference search ignored the target type.** The generator
+  dropped the FHIRPath restriction in `Observation.subject.where(resolve() is
+  Patient)`, and a bare id compared the id column alone, so
+  `patient=shared` matched `Group/shared`. Fixed 2026-11-25:
+  `TargetKind::Reference` carries `types`; each store's `target_pred` applies
+  them to bare ids and `Type/id`; maps regenerated. `subject` stays broad.
+  Open: R3 (its expressions carry no restriction), an HTTP-level test on
+  both backends, live runs on the five server engines.
+- **F-109 — an ignored modifier ran as its opposite.** On non-string,
+  non-reference targets the modifier was discarded, so `status:not=x` ran
+  as `status=x`. Fixed 2026-11-25 by refusing it (`Unsupported` → 400).
+  Open: implementing `:not` as a whole-resource complement, publishing the
+  supported name/modifier pairs.
+- **F-110 — numeric equality ignored precision.** SQLite cast to REAL and
+  PostgreSQL used numeric `=`, so `5.0` missed `5.04`. Fixed 2026-11-25:
+  `precision_bounds`/`numeric_pred` widen `eq` to `[4.95, 5.05)` and `ne`
+  to its complement; `lt`/`gt`/`ge`/`le` and exponent notation unchanged.
+  Open: live-engine tests per port.
+- **F-111 — minimum cardinality not enforced (V9.1).** Open. Needs min
+  cardinality in the map, enforcement in the shared shredder in all six
+  ports, a 4xx naming the element, nothing committed on rejection, and a
+  read-only inventory of existing rows; never invent a value.
+
+**Evidence for F-108–F-110 (SQLite, 2026-11-26).**
+`tests/sqlite_store.rs`
+`patient_search_keeps_its_target_type_and_quantities_use_precision` was run
+with each fix reverted in isolation (`T11.10`): without the bare-id type
+restriction `patient=shared` returned `["lab-g", "lab-p"]`; without the
+precision interval `5.0|…|mg` returned only `["lab-g"]` (5.04 missed);
+without the modifier refusal `status:not` succeeded. Restored, it passes.
+The other five ports were not mutation-tested.
 
 ---
 
