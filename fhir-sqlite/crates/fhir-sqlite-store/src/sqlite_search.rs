@@ -318,7 +318,10 @@ fn target_pred(
     // (clinical-safety audit 2026-11-25). Refuse it instead; `:not` can be
     // implemented later as a whole-resource complement.
     if let Some(m) = modifier
-        && !matches!(t.kind, TargetKind::Str { .. } | TargetKind::Reference { .. })
+        && !matches!(
+            t.kind,
+            TargetKind::Str { .. } | TargetKind::Reference { .. }
+        )
     {
         return Err(StoreError::Unsupported(format!(
             "unsupported modifier :{m}"
@@ -915,10 +918,19 @@ mod tests {
 
     #[test]
     fn eq_uses_the_precision_of_the_query() {
-        assert_eq!(precision_bounds("5.0"), Some(("4.95".into(), "5.05".into())));
+        assert_eq!(
+            precision_bounds("5.0"),
+            Some(("4.95".into(), "5.05".into()))
+        );
         assert_eq!(precision_bounds("5"), Some(("4.5".into(), "5.5".into())));
-        assert_eq!(precision_bounds("5.00"), Some(("4.995".into(), "5.005".into())));
-        assert_eq!(precision_bounds("-0.5"), Some(("-0.55".into(), "-0.45".into())));
+        assert_eq!(
+            precision_bounds("5.00"),
+            Some(("4.995".into(), "5.005".into()))
+        );
+        assert_eq!(
+            precision_bounds("-0.5"),
+            Some(("-0.55".into(), "-0.45".into()))
+        );
         assert_eq!(precision_bounds("0"), Some(("-0.5".into(), "0.5".into())));
         assert_eq!(precision_bounds("1e3"), None);
     }
@@ -936,9 +948,24 @@ mod tests {
         assert_eq!(sql, "(«c».\"t\" IN (?1) AND «c».\"i\" = ?2)");
         assert_eq!(binds, ["Patient", "shared"]);
         // An explicit other type can never match; the right one still does.
-        assert_eq!(pred(patient_only.clone(), "Group/shared", None, &[]).unwrap().0, "1 = 0");
-        assert_eq!(pred(patient_only.clone(), "x", Some("Group"), &[]).unwrap().0, "1 = 0");
-        assert!(pred(patient_only, "Patient/shared", None, &[]).unwrap().0.contains("AND"));
+        assert_eq!(
+            pred(patient_only.clone(), "Group/shared", None, &[])
+                .unwrap()
+                .0,
+            "1 = 0"
+        );
+        assert_eq!(
+            pred(patient_only.clone(), "x", Some("Group"), &[])
+                .unwrap()
+                .0,
+            "1 = 0"
+        );
+        assert!(
+            pred(patient_only, "Patient/shared", None, &[])
+                .unwrap()
+                .0
+                .contains("AND")
+        );
     }
 
     #[test]
@@ -1063,7 +1090,10 @@ mod tests {
             pred(quantity.clone(), "ge5|UCUM|mg", None, &[]).unwrap().1,
             ["5", "UCUM", "mg"]
         );
-        assert_eq!(pred(quantity, "5||mg", None, &[]).unwrap().1, ["4.5", "5.5", "mg"]);
+        assert_eq!(
+            pred(quantity, "5||mg", None, &[]).unwrap().1,
+            ["4.5", "5.5", "mg"]
+        );
         let (sql, binds) = pred(
             TargetKind::Quantity {
                 value: "value".into(),
