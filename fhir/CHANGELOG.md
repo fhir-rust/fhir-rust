@@ -5,6 +5,17 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Security (fhir-core, feature `client`)
+
+- `next_page` and `search_all` refuse a `next` link whose scheme, host or
+  port differs from the base URL, instead of sending the bearer token to
+  wherever the server's Bundle pointed (R13.9). Relative links now resolve
+  against the base URL.
+- `search_all` checks `max_pages` before each request, so it no longer
+  issues one request past its budget.
+
 ## 4.2.4 / 3.3.3 (fhir-core) / 1.6.1 (fhir-derive-macros) / 4.2.3 (fhir-r5, fhir-r6) / 4.2.2 (fhir-r2, r3, r4, r4b) — 2026-10-16
 
 Maintenance release; no API change. Dependencies refreshed (`cargo update`, `syn` 3, `quick-xml` 0.42, `serde_json` 1.0.154, `insta` 1.49, `serial_test` 4), and the Dependabot lockfile bumps (`tokio` 1.53, `zeroize` 1.9) applied.

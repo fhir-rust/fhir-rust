@@ -166,3 +166,121 @@ async fn error_status_parses_operation_outcome() {
         other => panic!("expected Outcome, got {other:?}"),
     }
 }
+
+/// A searchset whose `next` link is `next`.
+fn page_linking_to(next: &str) -> ::serde_json::Value {
+    ::serde_json::json!({
+        "resourceType": "Bundle", "type": "searchset",
+        "link": [{ "relation": "next", "url": next }]
+    })
+}
+
+/// R13.9: the bearer token must not follow a `next` link to another origin.
+/// Mutation-verified (R13.18): with `same_origin` bypassed, the foreign
+/// server receives the request and its `expect(0)` fails.
+#[tokio::test]
+async fn a_cross_origin_next_link_is_refused_and_gets_no_token() {
+    let home = MockServer::start().await;
+    let elsewhere = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/Patient"))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(page_linking_to(&format!(
+                "{}/Patient?page=2",
+                elsewhere.uri()
+            ))),
+        )
+        .mount(&home)
+        .await;
+    Mock::given(method("GET"))
+        .respond_with(ResponseTemplate::new(200))
+        .expect(0)
+        .mount(&elsewhere)
+        .await;
+
+    let client = Client::new(home.uri()).with_bearer_token(|| Some("secret".to_string()));
+    let first = client.search("Patient", &[]).await.unwrap();
+    let err = client.next_page(&first).await.expect_err("must refuse");
+    let ReleaseClientError::Url(msg) = &err else {
+        panic!("expected a Url error, got {err:?}");
+    };
+    assert!(msg.contains("origin"), "{msg}");
+    assert!(
+        !msg.contains("page=2"),
+        "the link's query must not be echoed: {msg}"
+    );
+}
+
+/// A same-origin `next` link, absolute or relative, is followed with the token.
+#[tokio::test]
+async fn a_same_origin_next_link_is_followed_with_the_token() {
+    use wiremock::matchers::{header, query_param};
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/Patient"))
+        .and(query_param("page", "2"))
+        .and(header("authorization", "Bearer secret"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(page_linking_to("/Patient?page=3")))
+        .expect(1)
+        .mount(&server)
+        .await;
+    Mock::given(method("GET"))
+        .and(path("/Patient"))
+        .and(query_param("page", "3"))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(::serde_json::json!({
+                "resourceType": "Bundle", "type": "searchset"
+            })),
+        )
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let client = Client::new(server.uri()).with_bearer_token(|| Some("secret".to_string()));
+    let first: fhir::r5::resources::Bundle =
+        ::serde_json::from_value(page_linking_to(&format!("{}/Patient?page=2", server.uri())))
+            .unwrap();
+    let second = client.next_page(&first).await.unwrap().expect("page 2");
+    let third = client
+        .next_page(&second)
+        .await
+        .unwrap()
+        .expect("page 3 (relative link)");
+    assert!(client.next_page(&third).await.unwrap().is_none());
+}
+
+/// R13.9 "bounded": `max_pages` is the number of requests, not one fewer.
+/// Against a server whose paging never ends, `search_all(.., 2)` must issue
+/// exactly two requests. Mutation-verified: checking the budget after the
+/// request (the previous order) makes this see three.
+#[tokio::test]
+async fn search_all_spends_exactly_its_page_budget() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/Patient"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .set_body_json(page_linking_to(&format!("{}/Patient?more=1", server.uri()))),
+        )
+        .expect(2)
+        .mount(&server)
+        .await;
+
+    let client = Client::new(server.uri());
+    let pages = client.search_all("Patient", &[], 2).await.unwrap();
+    assert_eq!(pages.len(), 2);
+    let one = MockServer::start().await;
+    Mock::given(method("GET"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .set_body_json(page_linking_to(&format!("{}/Patient?more=1", one.uri()))),
+        )
+        .expect(1)
+        .mount(&one)
+        .await;
+    let pages = Client::new(one.uri())
+        .search_all("Patient", &[], 1)
+        .await
+        .unwrap();
+    assert_eq!(pages.len(), 1);
+}

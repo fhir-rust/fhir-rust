@@ -71,6 +71,13 @@ stated rather than implied.
   traversal) as a bounded iterator, and MUST provide an authorization hook
   (bearer token supplier) so credentials are not smuggled through a
   hand-built `reqwest::Client`.
+- **R13.9a** Paging MUST NOT carry credentials off the base URL's origin. A
+  `next` link is resolved against the base URL and refused unless its scheme,
+  host and port match it; the refusal names only the origin, never the link's
+  query (R13.10). `max_pages` bounds the number of requests, not the number
+  kept. *Added 2026-11-26 to match `fhir-core`'s `same_origin` and
+  `search_all` after an external audit found both gaps; tests in
+  `tests/client_r5.rs`.*
 - **R13.10** The client MUST NOT log or `Debug`-print resource content or
   credentials. `ReleaseClientError::Status` carries a raw body today; it MUST
   be truncated and marked as potentially containing PHI.

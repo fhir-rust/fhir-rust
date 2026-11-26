@@ -563,9 +563,43 @@ impl<R: Release> ReleaseClient<R> {
         let Some(next) = R::next_link(bundle) else {
             return Ok(None);
         };
-        // The link is a server-supplied absolute URL; it is used as given.
+        let next = self.same_origin(&next)?;
         let resp = self.send(self.http.get(next)).await?;
         Ok(Some(self.json(resp).await?))
+    }
+
+    /// Resolve a server-supplied `next` link against the base URL, and refuse
+    /// it unless it has the base URL's scheme, host and port.
+    ///
+    /// Every request carries the bearer token (R13.9), and the link is
+    /// whatever the responding server — or anything that tampered with the
+    /// Bundle — wrote. Following it to another origin would hand that origin
+    /// the credential. Refused, not followed without the token: a page from
+    /// an origin the caller never named is not one it asked for. The error
+    /// names only the origin, never the link's query, which can carry search
+    /// parameters (R13.10).
+    fn same_origin(&self, next: &str) -> Result<reqwest::Url, ReleaseClientError<R>> {
+        let base = reqwest::Url::parse(&self.base_url)
+            .map_err(|e| ReleaseClientError::Url(format!("{}: {e}", self.base_url)))?;
+        let url = base
+            .join(next)
+            .map_err(|e| ReleaseClientError::Url(format!("next link is not a URL: {e}")))?;
+        let origin = |u: &reqwest::Url| {
+            (
+                u.scheme().to_string(),
+                u.host_str().map(str::to_ascii_lowercase),
+                u.port_or_known_default(),
+            )
+        };
+        if origin(&url) != origin(&base) {
+            return Err(ReleaseClientError::Url(format!(
+                "next link points at {} rather than the base URL's origin {}; \
+                 not following it with credentials",
+                url.origin().ascii_serialization(),
+                base.origin().ascii_serialization()
+            )));
+        }
+        Ok(url)
     }
 
     /// Search and follow `next` links, collecting up to `max_pages` bundles.
@@ -581,11 +615,18 @@ impl<R: Release> ReleaseClient<R> {
         let mut pages = Vec::new();
         let mut current = self.search(resource_type, params).await?;
         loop {
+            // The budget is checked before the request, not after: fetching a
+            // page only to discard it would spend one request past
+            // `max_pages` on every call that reaches the bound.
+            if pages.len() + 1 >= max_pages {
+                pages.push(current);
+                return Ok(pages);
+            }
             let next = self.next_page(&current).await?;
             pages.push(current);
             match next {
-                Some(b) if pages.len() < max_pages => current = b,
-                _ => return Ok(pages),
+                Some(b) => current = b,
+                None => return Ok(pages),
             }
         }
     }
