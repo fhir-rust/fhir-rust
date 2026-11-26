@@ -18,7 +18,9 @@ surface — it inherited the name `fhir-store` briefly before being renamed
   handlers (`read`, `vread`, `search`, the three history scopes) previously
   checked the token only inside the disclosure logger, which recorded the
   attempt and then returned the resource. Refused attempts are still written
-  to the access log (`PR12.5`). `/{version}/metadata` stays public.
+  to the access log (`PR12.5`). `/{version}/metadata` is gated too: SV3.1's
+  "every request" applies to the CapabilityStatement (owner decision
+  2026-11-26).
 
 ### Fixed
 

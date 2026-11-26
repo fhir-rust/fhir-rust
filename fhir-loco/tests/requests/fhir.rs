@@ -100,7 +100,10 @@ fn body_of(text: &str) -> serde_json::Value {
 async fn metadata_lists_what_is_actually_served() {
     store_ready().await;
     request::<App, _, _>(|request, _ctx| async move {
-        let res = request.get("/r5/metadata").await;
+        let res = request
+            .get("/r5/metadata")
+            .add_header("authorization", &bearer("dr-who"))
+            .await;
         assert_eq!(res.status_code(), 200);
         assert_eq!(
             res.headers()
@@ -139,7 +142,13 @@ async fn metadata_lists_what_is_actually_served() {
 async fn metadata_declares_every_interaction_the_router_serves() {
     store_ready().await;
     request::<App, _, _>(|request, _ctx| async move {
-        let body = body_of(&request.get("/r5/metadata").await.text());
+        let body = body_of(
+            &request
+                .get("/r5/metadata")
+                .add_header("authorization", &bearer("dr-who"))
+                .await
+                .text(),
+        );
         let res = &body["rest"][0]["resource"];
         let patient = res
             .as_array()
@@ -610,7 +619,10 @@ async fn includes_are_refused_by_name_never_dropped() {
 async fn metadata_declares_search_includes() {
     store_ready().await;
     request::<App, _, _>(|request, _ctx| async move {
-        let res = request.get("/r5/metadata").await;
+        let res = request
+            .get("/r5/metadata")
+            .add_header("authorization", &bearer("dr-who"))
+            .await;
         let body = body_of(&res.text());
         let resources = body["rest"][0]["resource"].as_array().expect("resources");
         let patient = resources
@@ -746,7 +758,13 @@ async fn type_and_system_history_serve_the_stated_slice() {
 async fn metadata_declares_history_scopes() {
     store_ready().await;
     request::<App, _, _>(|request, _ctx| async move {
-        let body = body_of(&request.get("/r5/metadata").await.text());
+        let body = body_of(
+            &request
+                .get("/r5/metadata")
+                .add_header("authorization", &bearer("dr-who"))
+                .await
+                .text(),
+        );
         let rest = &body["rest"][0];
         let system: Vec<&str> = rest["interaction"]
             .as_array()
@@ -895,9 +913,8 @@ async fn every_read_without_a_valid_token_is_refused() {
                 .await;
             assert_eq!(res.status_code(), 401, "forged token: {path}");
         }
-        // The CapabilityStatement stays public: clients learn how to
-        // authenticate from it.
-        assert_eq!(request.get("/r5/metadata").await.status_code(), 200);
+        // The CapabilityStatement is gated too (SV3.1, owner decision 2026-11-26).
+        assert_eq!(request.get("/r5/metadata").await.status_code(), 401);
     })
     .await;
     // Every refused attempt on a mounted version is still a disclosure row.
@@ -1160,7 +1177,10 @@ async fn conditional_create_serves_all_four_outcomes() {
 async fn metadata_declares_conditional_create() {
     store_ready().await;
     request::<App, _, _>(|request, _ctx| async move {
-        let res = request.get("/r5/metadata").await;
+        let res = request
+            .get("/r5/metadata")
+            .add_header("authorization", &bearer("dr-who"))
+            .await;
         assert_eq!(res.status_code(), 200);
         let body = body_of(&res.text());
         let resources = body["rest"][0]["resource"]
@@ -1296,7 +1316,10 @@ async fn conditional_delete_serves_all_outcomes() {
 async fn metadata_declares_conditional_delete() {
     store_ready().await;
     request::<App, _, _>(|request, _ctx| async move {
-        let res = request.get("/r5/metadata").await;
+        let res = request
+            .get("/r5/metadata")
+            .add_header("authorization", &bearer("dr-who"))
+            .await;
         assert_eq!(res.status_code(), 200);
         let body = body_of(&res.text());
         let resources = body["rest"][0]["resource"]
@@ -1474,7 +1497,13 @@ async fn export_kickoff_refuses_rather_than_ignores() {
 async fn metadata_declares_the_export_operation() {
     store_ready().await;
     request::<App, _, _>(|request, _ctx| async move {
-        let body = body_of(&request.get("/r5/metadata").await.text());
+        let body = body_of(
+            &request
+                .get("/r5/metadata")
+                .add_header("authorization", &bearer("dr-who"))
+                .await
+                .text(),
+        );
         let ops = body["rest"][0]["operation"].as_array().expect("operations");
         assert!(
             ops.iter().any(|o| o["name"] == "export"),

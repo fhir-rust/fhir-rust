@@ -1312,15 +1312,9 @@ pub(crate) async fn require_credential(
     next.run(request).await
 }
 
-/// `/metadata`, outside the credential gate: the CapabilityStatement holds
-/// no PHI, and clients discover how to authenticate from it (SMART). This
-/// is a narrower reading than `SV3.1`'s "every request"; see `tasks.md`.
-pub fn metadata_routes() -> Routes {
-    Routes::new().add("/{version}/metadata", get(metadata))
-}
-
 pub fn routes() -> Routes {
     Routes::new()
+        .add("/{version}/metadata", get(metadata))
         .add("/{version}", post(system_post))
         .add("/{version}/_history", get(system_history))
         .add(
