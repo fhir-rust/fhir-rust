@@ -22,7 +22,14 @@ migration, audit-MAC, auxiliary-row, server-surface, corruption, and checkpoint
 tests raise the measured suite to at least 97.71% (3,671/3,757 production lines,
 measured 2026-11-20 on macOS arm64); the ordinal parser also honours its
 documented whitespace tolerance, and malformed calendar dates are rejected
-instead of being normalized into a different date.
+instead of being normalized into a different date. Re-measured 2026-11-26 on
+macOS arm64: 98.92% (4,307/4,354).
+
+Fixed: `history_page`'s `since` compared an RFC 3339 instant as text against
+stored `YYYY-MM-DD HH:MM:SS.ffffff` stamps, so every version on the cutoff's
+own date was dropped. It is now converted to the stored form (offset applied),
+and a malformed one is refused. `get_versioned` reads body and version in one
+snapshot instead of `get` followed by `status`.
 
 ## 0.6.4 — 2026-11-15
 

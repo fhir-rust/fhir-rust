@@ -201,6 +201,9 @@ type-/system-level history, multi-port wiring, is tracked in that crate's
 | [F-89](#f-89) | Medium | The mysql/mariadb DDL test harness was unportable and **masked real errors**: it passed MariaDB's `--skip-ssl-verify-server-cert` to whatever client exists (Oracle's mysql 8 client rejects it), assumed a utf8mb4 default charset (the runner's client defaults utf8mb3 → ERROR 1253 on the collation probe), and on any early client exit reported the stdin `Broken pipe` instead of reading the client's stderr — hiding whatever the real failure was | **fixed** 2026-08-10 — client-flavor-gated TLS flag, explicit `--default-character-set=utf8mb4`, and EPIPE falls through to collect stderr, so the next failure names itself |
 | [F-103](#f-103) | Medium | L8 promised unchanged keys across CJK scripts. Live cross-script search coverage is incomplete. | **open** for L15a after correcting L8 |
 | [F-104](#f-104) | Medium | Engine-native backup documentation lacks a repeatable store-level recovery drill. | SQLite has a regression test. PostgreSQL, MySQL, MariaDB, SQL Server-compatible Edge, and Oracle verified locally (T11.16). |
+| [F-105](#f-105) | **High** | `fhir-sqlite` `history_page` compared an RFC 3339 `since` as text against stored `YYYY-MM-DD HH:MM:SS.ffffff` stamps; `' ' < 'T'` dropped every version on the cutoff's own date | **fixed** 2026-11-26 — `since_cutoff` normalises; regression test mutation-verified |
+| [F-106](#f-106) | Medium | `fhir-sqlite` `get_versioned` read the body and the version in two lock acquisitions, pairing an older body with a newer version under concurrent writes (db:R4.5) | **fixed** 2026-11-26 — one snapshot (`read_current`); concurrency test fails the old code 2/2 |
+| [F-107](#f-107) | Medium | `fhir-sqlite` `status` turned any SQL error into `Unknown` (`.ok()`) and ran outside the transaction its comment claimed | **fixed** 2026-11-26 — one deferred transaction, `.optional()`; fault-injection test mutation-verified |
 
 ## What remains, and why
 
@@ -6234,6 +6237,57 @@ The installed checksum, current and earlier versions, every disclosure field,
 search result, and keyed audit chain matched. Wrong material under the same key
 ID flagged both HMACs, and the later deletion was absent. A checked-in drill,
 full-R5 exercise, and RMAN or point-in-time recovery remain open.
+
+## F-105
+
+**SQLite `since` dropped same-day history.** Found 2026-11-26 verifying an
+external production audit at `648bf92`. `render_utc_micros` stores
+`last_updated` as `2026-11-26 19:56:04.000000`; `fhir-loco` validates
+`_since` as RFC 3339 and passes it on unchanged (`2026-11-26T19:56:00Z`).
+`history_page` bound it into `"last_updated" >= ?1`, a text comparison in
+which the space sorts below `T`, so every version written on the cutoff's
+date — whatever its time — compared low and was omitted. The method's doc
+comment claimed stored stamps were RFC 3339. PostgreSQL casts to
+`timestamptz` and is unaffected; the other four ports have no `since` path.
+
+Fixed by `since_cutoff` (`fhir-sqlite-store/src/sqlite.rs`): an RFC 3339
+instant is converted to the stored form with its offset applied and a
+sub-microsecond fraction rounded up (so at-or-after never admits an earlier
+version); the stored form passes through; anything else is `Unsupported`.
+Evidence: unit test `since_cutoff_normalises_rfc3339_to_the_stored_form`;
+`tests/history_page.rs`
+`an_rfc3339_since_earlier_the_same_day_admits_that_days_versions`, which
+returns 0 of 4 versions with the conversion removed (`T11.10`).
+
+## F-106
+
+**SQLite `get_versioned` could pair a body with another write's version.**
+Found 2026-11-26 with **F-105**. `get_versioned` called `get` and then
+`status`, each its own `spawn_blocking` and lock acquisition, so a write
+from another connection between them returned an older body with a newer
+`version_id` — the pair `fhir-loco` sends as `meta.versionId` and the
+ETag, and a client sends back as `If-Match` (db:R4.5). Fixed by reading
+`version_id` from the base row inside the reconstruction's own deferred
+transaction (`read_current`, now the body of `get` too). Evidence:
+`tests/concurrency.rs` `get_versioned_pairs_a_body_with_its_own_version`
+(second handle, 150 racing writes). With the old two-call body restored it
+failed 2 of 2 runs ("body is generation 0 but was paired with version 6").
+PostgreSQL's `get` already returns `Got` from one snapshot; it has no
+equivalent concurrency test.
+
+## F-107
+
+**SQLite `status` reported read failures as `Unknown`.** Found 2026-11-26.
+Both queries ended in `.ok()`, so any SQL error became "never existed" —
+an HTTP 404 from `fhir-loco` for a resource the store could not read. Its
+comment promised "one read transaction over both tables"; the statements
+ran on the bare connection. Fixed with a deferred `unchecked_transaction`
+and `.optional().store()?`. Evidence: unit test
+`status_reports_a_failed_read_as_an_error_not_unknown` (rusqlite authorizer
+denies `patient`, then `patient_history`); restoring `.ok()` on the first
+query makes it see `Ok(Unknown)`. PostgreSQL's `status` already used one
+snapshot and `query_opt`; mysql, mariadb, mssql and oracle have no
+`status`.
 
 ---
 

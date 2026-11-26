@@ -1277,10 +1277,6 @@ mod tests {
         let mut statement = connection.prepare("SELECT X'00', 'p1'").unwrap();
         assert!(query_reference_rows(&mut statement, &[]).is_err());
 
-        assert_eq!(active_version(crate::ResourceStatus::Active(7)), Some(7));
-        assert_eq!(active_version(crate::ResourceStatus::Deleted(8)), None);
-        assert_eq!(active_version(crate::ResourceStatus::Unknown), None);
-
         let mut statement = connection
             .prepare(
                 "SELECT 1, 'ts', '', '{\"resourceType\":\"Patient\"}' \
@@ -1771,6 +1767,35 @@ mod tests {
         std::fs::write(reused.join("old"), b"old").unwrap();
         let reused = scratch("reused");
         assert!(!reused.join("old").exists());
+    }
+
+    /// A read the engine refuses is an error, never `Unknown`: `status` used
+    /// `.ok()`, which turned any failure into "never existed" (HTTP 404).
+    /// Mutation-verified: restoring `.ok()` on either query makes the
+    /// matching assertion see `Ok(Unknown)`.
+    #[tokio::test(flavor = "current_thread")]
+    async fn status_reports_a_failed_read_as_an_error_not_unknown() {
+        let dir = scratch("status-errors");
+        let store = SqliteStore::open(dir.join("fhir.sqlite"), bundled_map("r5"))
+            .await
+            .unwrap();
+        store.init("status-errors").await.unwrap();
+        assert!(matches!(
+            store.status("Patient", "nobody").await,
+            Ok(crate::ResourceStatus::Unknown)
+        ));
+        for denied in ["patient", "patient_history"] {
+            {
+                let mut c = store.conn.lock().await;
+                deny_reads_from(&mut c, denied);
+            }
+            let got = store.status("Patient", "nobody").await;
+            assert!(got.is_err(), "denied {denied}: {got:?}");
+            {
+                let mut c = store.conn.lock().await;
+                allow_all(&mut c);
+            }
+        }
     }
 
     #[tokio::test(flavor = "current_thread")]
@@ -2676,6 +2701,12 @@ impl SqliteStore {
         rtype: &str,
         id: &str,
     ) -> Result<Option<serde_json::Value>, StoreError> {
+        Ok(self.read_current(rtype, id).await?.map(|g| g.resource))
+    }
+
+    /// The current resource and its `version_id`, both read inside one
+    /// snapshot — the body of [`Self::get`] and of [`Self::get_versioned`].
+    async fn read_current(&self, rtype: &str, id: &str) -> Result<Option<crate::Got>, StoreError> {
         self.attach().await?;
         let rm = self
             .map
@@ -2687,7 +2718,8 @@ impl SqliteStore {
         let id = id.to_string();
         let conn = self.conn.clone();
 
-        tokio::task::spawn_blocking(move || -> Result<Option<serde_json::Value>, StoreError> {
+        tokio::task::spawn_blocking(move || -> Result<Option<crate::Got>, StoreError> {
+            use rusqlite::OptionalExtension as _;
             let guard = conn.blocking_lock();
 
             // R4.5: one snapshot for the whole reconstruction.
@@ -2714,16 +2746,20 @@ impl SqliteStore {
             let s = escape_ident(&schema);
             let base = &rm.base_table().name;
 
-            let present: i64 = c
+            // The version comes from the same snapshot as the body: read
+            // separately, a write between the two paired an older body with a
+            // newer version, which a caller then sends back as its `If-Match`.
+            let version_id: Option<i64> = c
                 .query_row(
-                    &format!("SELECT count(*) FROM \"{s}\".\"{base}\" WHERE \"id\" = ?1"),
+                    &format!("SELECT \"version_id\" FROM \"{s}\".\"{base}\" WHERE \"id\" = ?1"),
                     [&id],
                     |r| r.get(0),
                 )
+                .optional()
                 .store()?;
-            if present == 0 {
+            let Some(version_id) = version_id else {
                 return Ok(None);
-            }
+            };
 
             let input = fetch_recon_input(c, &s, &rm, &id)?;
             // `?` rather than flattening to `Other`, and here it matters more
@@ -2732,8 +2768,11 @@ impl SqliteStore {
             // that says stored data went unread — exactly what F-20 produced —
             // and a generic string makes it indistinguishable from an I/O
             // hiccup (audit F-23).
-            let v = fhir_sqlite_map::reconstruct::reconstruct(&rm, &input, Some(&id))?;
-            Ok(Some(v))
+            let resource = fhir_sqlite_map::reconstruct::reconstruct(&rm, &input, Some(&id))?;
+            Ok(Some(crate::Got {
+                resource,
+                version_id,
+            }))
         })
         .await
         .map_err(join_err)?
@@ -2828,6 +2867,129 @@ fn render_utc_micros(t: std::time::SystemTime) -> Option<String> {
     Some(format!(
         "{y:04}-{m:02}-{dd:02} {hh:02}:{mm:02}:{ss:02}.{micros:06}"
     ))
+}
+
+/// A `_since` cutoff in the form `last_updated` is stored in, so that the
+/// textual `>=` in [`SqliteStore::history_page`] is a chronological one.
+///
+/// Stored stamps are `YYYY-MM-DD HH:MM:SS.ffffff` UTC ([`render_utc_micros`]);
+/// callers pass RFC 3339 (`fhir-loco`'s `_since`, `SV2.17`). Compared as
+/// given, `' '` sorts below `'T'`, so every version on the cutoff's own date
+/// compared low and was dropped. An RFC 3339 instant is converted (offset
+/// applied; a fraction finer than a microsecond rounds *up*, so at-or-after
+/// never admits a version before the cutoff). The stored form passes through.
+/// Anything else is refused rather than compared as text.
+fn since_cutoff(v: &str) -> Result<String, StoreError> {
+    if is_stored_instant(v) {
+        return Ok(v.to_string());
+    }
+    let refuse = || {
+        StoreError::Unsupported(format!(
+            "history since must be an RFC 3339 instant with an offset, got {v:?}"
+        ))
+    };
+    let (secs, micros) = parse_rfc3339_micros(v).ok_or_else(refuse)?;
+    // Nothing is stored before the epoch (`UTC_MICROS_FALLBACK`), so an
+    // earlier cutoff admits everything, exactly as the epoch does.
+    let Ok(secs) = u64::try_from(secs) else {
+        return Ok(UTC_MICROS_FALLBACK.to_string());
+    };
+    std::time::UNIX_EPOCH
+        .checked_add(std::time::Duration::new(secs, micros * 1000))
+        .and_then(render_utc_micros)
+        .ok_or_else(refuse)
+}
+
+/// Whether `v` is already in the stored `YYYY-MM-DD HH:MM:SS.ffffff` form.
+fn is_stored_instant(v: &str) -> bool {
+    v.len() == 26
+        && v.bytes().enumerate().all(|(i, c)| match i {
+            4 | 7 => c == b'-',
+            10 => c == b' ',
+            13 | 16 => c == b':',
+            19 => c == b'.',
+            _ => c.is_ascii_digit(),
+        })
+}
+
+/// An RFC 3339 instant (`YYYY-MM-DDTHH:MM:SS[.f+](Z|±HH:MM)`) as seconds
+/// since the epoch and microseconds, or `None` if it is not one — including a
+/// calendar date that does not exist, such as February 30th.
+fn parse_rfc3339_micros(v: &str) -> Option<(i64, u32)> {
+    fn digits(s: &str) -> Option<i64> {
+        (!s.is_empty() && s.bytes().all(|c| c.is_ascii_digit()))
+            .then(|| s.parse().ok())
+            .flatten()
+    }
+    let b = v.as_bytes();
+    if b.len() < 20
+        || b[4] != b'-'
+        || b[7] != b'-'
+        || !matches!(b[10], b'T' | b't')
+        || b[13] != b':'
+        || b[16] != b':'
+    {
+        return None;
+    }
+    let field = |r: std::ops::Range<usize>| v.get(r).and_then(digits);
+    let (y, mo, d) = (field(0..4)?, field(5..7)?, field(8..10)?);
+    let (h, mi, s) = (field(11..13)?, field(14..16)?, field(17..19)?);
+    let mut rest = v.get(19..)?;
+    let mut micros: i64 = 0;
+    if let Some(f) = rest.strip_prefix('.') {
+        let n = f.bytes().take_while(u8::is_ascii_digit).count();
+        let frac = f.get(..n).filter(|x| !x.is_empty())?;
+        let head: String = frac.chars().chain(std::iter::repeat('0')).take(6).collect();
+        micros = digits(&head)?;
+        if frac.bytes().skip(6).any(|c| c != b'0') {
+            micros += 1;
+        }
+        rest = f.get(n..)?;
+    }
+    let offset = match rest {
+        "Z" | "z" => 0,
+        _ => {
+            let sign = match rest.as_bytes().first()? {
+                b'+' => 1,
+                b'-' => -1,
+                _ => return None,
+            };
+            if rest.len() != 6 || rest.as_bytes()[3] != b':' {
+                return None;
+            }
+            let (oh, om) = (digits(rest.get(1..3)?)?, digits(rest.get(4..6)?)?);
+            if oh > 23 || om > 59 {
+                return None;
+            }
+            sign * (oh * 3600 + om * 60)
+        }
+    };
+    if !(1..=12).contains(&mo) || !(1..=31).contains(&d) || h > 23 || mi > 59 || s > 59 {
+        return None;
+    }
+    let (mo, d) = (u32::try_from(mo).ok()?, u32::try_from(d).ok()?);
+    let days = days_from_civil(y, mo, d);
+    if civil_from_days(days) != Some((y, mo, d)) {
+        return None;
+    }
+    let mut secs = days * 86_400 + h * 3600 + mi * 60 + s - offset;
+    if micros == 1_000_000 {
+        secs += 1;
+        micros = 0;
+    }
+    Some((secs, u32::try_from(micros).ok()?))
+}
+
+/// Howard Hinnant's `days_from_civil`, the inverse of [`civil_from_days`],
+/// for the four-digit years an RFC 3339 instant can name.
+fn days_from_civil(y: i64, m: u32, d: u32) -> i64 {
+    let y = if m <= 2 { y - 1 } else { y };
+    let era = y.div_euclid(400);
+    let yoe = y - era * 400;
+    let (m, d) = (i64::from(m), i64::from(d));
+    let doy = (153 * (if m > 2 { m - 3 } else { m + 9 }) + 2) / 5 + d - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    era * 146_097 + doe - 719_468
 }
 
 /// Howard Hinnant's `civil_from_days`: days since the Unix epoch to y/m/d, or
@@ -3169,9 +3331,11 @@ impl SqliteStore {
     ///
     /// Returns at most `count` `(rtype, id, entry)` rows, ordered by
     /// `last_updated` then `version_id`, both descending. `since` keeps
-    /// versions written **at or after** that instant (FHIR `_since`),
-    /// compared textually — every stored `last_updated` is RFC 3339 UTC
-    /// from one writer, so lexical and chronological order agree. There is
+    /// versions written **at or after** that instant (FHIR `_since`). It is
+    /// an RFC 3339 instant (or the stored form), normalised by
+    /// [`since_cutoff`] to the fixed-width UTC text every stored
+    /// `last_updated` uses, so the textual comparison is chronological; a
+    /// malformed one is `Unsupported`. There is
     /// no cursor: the result is the newest `count` entries, an honest
     /// slice rather than an approximate page.
     pub async fn history_page(
@@ -3200,7 +3364,7 @@ impl SqliteStore {
             )));
         }
         let schema = self.map.schema.clone();
-        let since = since.map(str::to_string);
+        let since = since.map(since_cutoff).transpose()?;
         let conn = self.conn.clone();
         tokio::task::spawn_blocking(
             move || -> Result<Vec<(String, String, crate::HistEntry)>, StoreError> {
@@ -4024,18 +4188,11 @@ impl SqliteStore {
         rtype: &str,
         id: &str,
     ) -> Result<Option<crate::Got>, StoreError> {
-        let Some(resource) = self.get(rtype, id).await? else {
-            return Ok(None);
-        };
-        // The row was read a moment ago; if it is gone now the read is stale
-        // rather than wrong, and reporting absence is the honest answer.
-        let Some(version_id) = active_version(self.status(rtype, id).await?) else {
-            return Ok(None);
-        };
-        Ok(Some(crate::Got {
-            resource,
-            version_id,
-        }))
+        // One snapshot for body and version. This used to be `get` then
+        // `status`, two statements with the connection lock released between
+        // them, so a concurrent update could pair an older body with a newer
+        // version.
+        self.read_current(rtype, id).await
     }
 
     /// Several resources at once, preserving order and absence.
@@ -4071,18 +4228,26 @@ impl SqliteStore {
         let conn = self.conn.clone();
 
         tokio::task::spawn_blocking(move || -> Result<crate::ResourceStatus, StoreError> {
-            let c = conn.blocking_lock();
-            let s = escape_ident(&schema);
+            use rusqlite::OptionalExtension as _;
+            let guard = conn.blocking_lock();
             // One read transaction over both tables: a delete landing between
             // two independent statements would report Unknown for a resource
-            // that is merely gone, which is a 404 where a 410 is owed.
+            // that is merely gone, which is a 404 where a 410 is owed. Deferred,
+            // as in `get`: read-only, snapshot pinned at the first statement.
+            let tx = guard.unchecked_transaction().store()?;
+            let c = &*tx;
+            let s = escape_ident(&schema);
+            // `.optional()`, not `.ok()`: no row is "absent", but a failed
+            // read is an error. `.ok()` reported any SQL failure as Unknown —
+            // a 404 for a resource the store simply could not read.
             let live: Option<i64> = c
                 .query_row(
                     &format!("SELECT \"version_id\" FROM \"{s}\".\"{base}\" WHERE \"id\" = ?1"),
                     [&id],
                     |r| r.get(0),
                 )
-                .ok();
+                .optional()
+                .store()?;
             if let Some(v) = live {
                 return Ok(crate::ResourceStatus::Active(v));
             }
@@ -4095,7 +4260,8 @@ impl SqliteStore {
                     [&id],
                     |r| r.get(0),
                 )
-                .ok();
+                .optional()
+                .store()?;
             Ok(match tomb {
                 Some(v) => crate::ResourceStatus::Deleted(v),
                 None => crate::ResourceStatus::Unknown,
@@ -4391,13 +4557,6 @@ fn query_audit_rows(statement: &mut rusqlite::Statement<'_>) -> Result<Vec<Audit
     rows.collect::<Result<_, _>>().store()
 }
 
-fn active_version(status: crate::ResourceStatus) -> Option<i64> {
-    match status {
-        crate::ResourceStatus::Active(version) => Some(version),
-        crate::ResourceStatus::Deleted(_) | crate::ResourceStatus::Unknown => None,
-    }
-}
-
 // ----------------------------------------------------------- conditional ops
 
 impl SqliteStore {
@@ -4630,6 +4789,68 @@ mod utc_micros_tests {
         let t = UNIX_EPOCH - Duration::from_secs(1);
         assert_eq!(utc_micros(t), UTC_MICROS_FALLBACK);
         assert_eq!(UTC_MICROS_FALLBACK, "1970-01-01 00:00:00.000000");
+    }
+
+    #[test]
+    fn since_cutoff_normalises_rfc3339_to_the_stored_form() {
+        let ok = |v: &str| since_cutoff(v).expect(v);
+        assert_eq!(ok("2026-11-26T19:56:00Z"), "2026-11-26 19:56:00.000000");
+        assert_eq!(ok("2026-11-26t19:56:00z"), "2026-11-26 19:56:00.000000");
+        assert_eq!(
+            ok("2026-11-26T21:56:00+02:00"),
+            "2026-11-26 19:56:00.000000"
+        );
+        assert_eq!(
+            ok("2026-11-26T00:30:00-01:00"),
+            "2026-11-26 01:30:00.000000"
+        );
+        assert_eq!(
+            ok("2026-01-01T00:30:00+01:00"),
+            "2025-12-31 23:30:00.000000"
+        );
+        assert_eq!(ok("2024-02-29T12:00:00.5Z"), "2024-02-29 12:00:00.500000");
+        // Finer than a microsecond rounds up, never down, and carries.
+        assert_eq!(
+            ok("2026-11-26T19:56:00.0000001Z"),
+            "2026-11-26 19:56:00.000001"
+        );
+        assert_eq!(
+            ok("2026-11-26T19:56:00.1234560Z"),
+            "2026-11-26 19:56:00.123456"
+        );
+        assert_eq!(
+            ok("2026-11-26T19:56:59.9999995Z"),
+            "2026-11-26 19:57:00.000000"
+        );
+        // The stored form passes through; before the epoch is the epoch.
+        assert_eq!(
+            ok("2026-11-26 19:56:00.123456"),
+            "2026-11-26 19:56:00.123456"
+        );
+        assert_eq!(ok("1969-12-31T23:59:59Z"), UTC_MICROS_FALLBACK);
+        for bad in [
+            "yesterday",
+            "2026-11-26",
+            "2026-11-26T19:56:00",
+            "2026-11-26 19:56:00Z",
+            "2026-02-30T00:00:00Z",
+            "2026-13-01T00:00:00Z",
+            "2026-11-26T24:00:00Z",
+            "2026-11-26T19:56:00.Z",
+            "2026-11-26T19:56:00+2:00",
+            "2026-11-26T19:56:00+24:00",
+            "2026-11-26T19:56:00Zjunk",
+        ] {
+            assert!(since_cutoff(bad).is_err(), "{bad} must be refused");
+        }
+    }
+
+    #[test]
+    fn days_from_civil_inverts_civil_from_days() {
+        for days in [-719_468, -1, 0, 1, 19_723, 20_418, 2_932_896] {
+            let (y, m, d) = civil_from_days(days).expect("fits");
+            assert_eq!(days_from_civil(y, m, d), days, "{y}-{m}-{d}");
+        }
     }
 
     #[test]

@@ -119,6 +119,63 @@ async fn system_level_history_spans_types_and_respects_count_and_since() {
     assert!(none.is_empty());
 }
 
+/// An RFC 3339 `_since` — what `fhir-loco` passes — earlier the same day
+/// as every stored version must admit them all. Stored stamps use a space
+/// where RFC 3339 has `T`, and `' ' < 'T'`, so comparing as given dropped
+/// every same-day version. Mutation-verified: binding `since` unconverted in
+/// `history_page` makes the first assertion see nothing.
+#[tokio::test]
+async fn an_rfc3339_since_earlier_the_same_day_admits_that_days_versions() {
+    let Some(store) = seeded("since_rfc3339").await else {
+        eprintln!("skipping: no r5 relmap asset");
+        return;
+    };
+    let all = store.history_page(None, 100, None).await.expect("page");
+    let oldest = all.last().expect("seeded").2.last_updated.clone();
+    let newest = all[0].2.last_updated.clone();
+    let midnight = format!("{}T00:00:00Z", &oldest[..10]);
+    if oldest[..10] == newest[..10] {
+        let same_day = store
+            .history_page(None, 100, Some(&midnight))
+            .await
+            .expect("page");
+        assert_eq!(
+            same_day.len(),
+            all.len(),
+            "since {midnight} must admit them all"
+        );
+    }
+    // The newest stamp as RFC 3339, in UTC and with an offset, is the boundary.
+    let as_rfc = format!("{}T{}Z", &newest[..10], &newest[11..]);
+    let at = store
+        .history_page(None, 100, Some(&as_rfc))
+        .await
+        .expect("page");
+    assert!(
+        !at.is_empty(),
+        "at-or-after includes the boundary: {as_rfc}"
+    );
+    assert!(at.iter().all(|r| r.2.last_updated >= newest));
+    let hh: u32 = newest[11..13].parse().expect("hour");
+    if hh < 23 {
+        let offset = format!("{}T{:02}{}+01:00", &newest[..10], hh + 1, &newest[13..]);
+        let same = store
+            .history_page(None, 100, Some(&offset))
+            .await
+            .expect("page");
+        assert_eq!(
+            same.len(),
+            at.len(),
+            "{offset} is the same instant as {as_rfc}"
+        );
+    }
+    let err = store
+        .history_page(None, 100, Some("yesterday"))
+        .await
+        .expect_err("a malformed since is refused, not compared as text");
+    assert!(err.to_string().contains("RFC 3339"), "{err}");
+}
+
 /// A page size outside 1..=1000 is refused, never altered (P6.3, RCA-IN-2).
 #[tokio::test]
 async fn history_page_refuses_a_count_outside_one_to_the_cap() {

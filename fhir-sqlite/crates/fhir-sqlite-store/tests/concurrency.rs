@@ -227,6 +227,100 @@ async fn reads_never_tear_under_concurrent_writes() {
     );
 }
 
+/// `get_versioned` must return a body and the version it was read at — the
+/// pair a caller turns into an `If-Match`. It used to be `get` followed by
+/// `status`, two calls with the lock released between them, so a write
+/// landing in the gap paired an older body with a newer version.
+///
+/// Generation `n` is written as version `n + 1` (the seed is generation 0,
+/// version 1), so every read can check the pairing itself. A second handle,
+/// as above, so the store's own mutex is not what makes it pass.
+/// Mutation-verified: restoring `get` then `status` fails this with a version
+/// ahead of its body.
+#[tokio::test]
+async fn get_versioned_pairs_a_body_with_its_own_version() {
+    let Some((store, db)) = fresh("pairing").await else {
+        eprintln!("skipping: no r5 relmap asset");
+        return;
+    };
+    store
+        .put(&patient("pair", 0), &Audit::cli())
+        .await
+        .expect("seed");
+    let reader_store = second_handle(&db).await;
+    let barrier = Arc::new(tokio::sync::Barrier::new(2));
+    let done = Arc::new(std::sync::atomic::AtomicBool::new(false));
+
+    let writer = tokio::spawn({
+        let store = store.clone();
+        let barrier = barrier.clone();
+        let done = done.clone();
+        async move {
+            barrier.wait().await;
+            for n in 1..=150 {
+                store
+                    .put(&patient("pair", n), &Audit::cli())
+                    .await
+                    .expect("write");
+            }
+            done.store(true, std::sync::atomic::Ordering::Release);
+        }
+    });
+
+    let reader = tokio::spawn({
+        let barrier = barrier.clone();
+        let done = done.clone();
+        async move {
+            let mut versions = std::collections::HashSet::new();
+            let check = |got: Option<fhir_sqlite_store::Got>,
+                         versions: &mut std::collections::HashSet<i64>| {
+                let got = got.expect("the resource is never absent");
+                let n = generation(&got.resource).expect("generation");
+                let expected = i64::try_from(n).expect("fits") + 1;
+                assert_eq!(
+                    got.version_id, expected,
+                    "body is generation {n} but was paired with version {}",
+                    got.version_id
+                );
+                versions.insert(got.version_id);
+            };
+            check(
+                reader_store
+                    .get_versioned("Patient", "pair")
+                    .await
+                    .expect("read"),
+                &mut versions,
+            );
+            barrier.wait().await;
+            while !done.load(std::sync::atomic::Ordering::Acquire) {
+                check(
+                    reader_store
+                        .get_versioned("Patient", "pair")
+                        .await
+                        .expect("read"),
+                    &mut versions,
+                );
+                tokio::task::yield_now().await;
+            }
+            check(
+                reader_store
+                    .get_versioned("Patient", "pair")
+                    .await
+                    .expect("read"),
+                &mut versions,
+            );
+            versions.len()
+        }
+    });
+
+    writer.await.expect("writer");
+    let distinct = reader.await.expect("reader");
+    assert!(
+        distinct > 1,
+        "the reader saw only one version, so it never raced the writer (T11.12)"
+    );
+}
+
 /// Racing conditional creates must yield exactly one resource.
 ///
 /// This is the race the `write_gate` exists for: a conditional create is a
