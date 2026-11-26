@@ -10,6 +10,25 @@ a documented history of false `[x]` claims (**F-27**); read the
 [conformance matrix](spec/databases/conformance-matrix.md) and each port's
 dialect annex for what works. Nothing here speaks for a port.
 
+## Coverage — 2026-11-26 (macOS arm64, cargo-llvm-cov 0.9.1)
+
+- [x] **`fhir-sqlite-store` above 95%:** **98.92%** lines (4,307/4,354;
+      `sqlite.rs` 98.67%, `sqlite_search.rs` 99.71%), full suite serial
+      (`sqlite_store` 34, `upgrade` 14, all green; ~60 min instrumented),
+      integration-test sources excluded as in `scripts/coverage.sh`. The
+      100% item below stays open: 47 lines remain.
+
+- [x] **`fhir-store` line coverage above 95%.** Was 91.73% (366/399); now
+      **99.32%** (435/438). Covered: `ChainKey::from_env`/`KeyRing::from_env`
+      with an unset prefix, retired-key parsing split into
+      `KeyRing::push_retired` (ordering, blank entries, malformed `id=hex`,
+      bad hex; mutation-verified), an unreadable key path, and
+      `Audit::cli_as`. A decorative loop in
+      `digests_are_reproducible_but_the_mac_is_not` (its `guess` was never
+      used) became one real assertion. Remaining: line 386, the
+      `if let Some` push in `KeyRing::from_env` with a key set, which needs
+      env mutation (`unsafe` under `forbid(unsafe_code)`).
+
 ## Work in progress handoff — 2026-11-20
 
 - [~] **Raise `fhir-sqlite-store` production line coverage to 100%.** The last
@@ -567,6 +586,164 @@ Reproduced on SQLite and PostgreSQL 18.7, R4 and R5 maps, synthetic data.
       (M3.18); wider record disposition, consent and patient-context policy
       belong to the deployer (SMART scopes). Privacy lead verifies reads,
       searches with includes, history and exports.
+
+## Production and quality audits (imported 2026-11-26)
+
+Two external audits, both deleted from `docs/audits/` and recorded here.
+Non-normative until filed in `spec/databases/audit.md` (or the
+`fhir-loco` spec). The GPT audit's summary referred to "16 prioritized work
+items" in a full report that was never in the file; only its six headline
+findings arrived, and all six were **verified against source 2026-11-26** at
+`648bf92` (file:line below). Live-engine suites and the HTTP request suite
+were not rerun for this triage.
+
+### Production audit (GPT, against `648bf92`) — release blockers
+
+- [~] **P0 — authenticate every FHIR read before store access (SV3.1).**
+      *Landed 2026-11-26: `fhir::require_credential` layered over
+      `fhir::routes()` and `export::routes()` (401 before any handler; the
+      refused attempt is still disclosure-logged). Test
+      `every_read_without_a_valid_token_is_refused` walks ten read/export
+      paths with no token and a foreign-issuer token; mutation-verified
+      (layer removed → `200` on `/r5/Patient/gate-1`). 24 tokenless reads in
+      `tests/requests/fhir.rs` and 6 in `tests/pg_backend.rs` now carry a
+      token. Full SQLite request suite green (28). NOT run: `pg_backend`
+      (no PostgreSQL here; compiles only). **Owner decision needed:**
+      `/{version}/metadata` was left outside the gate (no PHI; SMART
+      discovery expects it public), which is narrower than SV3.1's literal
+      "every request" — amend SV3.1 (e.g. `SV3.1a`) or gate it.*
+      `read`, `vread`, `search`, `history`/`type_history`/
+      `system_history` (`fhir-loco/src/controllers/fhir.rs`) never gate on
+      `auth::audit_from`; only `disclose` calls it, and on failure it logs
+      actor `"unauthenticated"` and the handler **returns the resource
+      anyway**. Mutations and export are gated; reads are not. Fix: one
+      router-level layer (or extractor) that refuses with 401 before any
+      handler runs, except `/metadata` if SV3 says so; keep the
+      rejected-attempt disclosure. Test: a table over every route in
+      `routes()` asserting 401 without a token and with a wrong-key token,
+      and fix the existing request test that reads without a credential.
+      Mutation-verify by removing the layer (`T11.10`).
+- [ ] **P0 — no clinical content without a recorded disclosure (PR12.5).**
+      `disclose` (`fhir.rs`, "A logging failure is reported but never
+      fails the request") and the export file handler send PHI after
+      `log_access` fails. That doc comment is a deliberate choice that
+      contradicts PR12.5's "every read appends an access record"; decide in
+      the spec (fail-closed default, perhaps an explicit opt-out), then make
+      `disclose` return `Result` and answer 503 OperationOutcome on
+      failure. Test with a store whose access-log insert fails (the SQLite
+      authorizer fault injection already exists).
+- [~] **P0 for credentialed paging — client leaks the bearer to any origin.**
+      *Landed 2026-11-26: `ReleaseClient::same_origin` resolves the link
+      against `base_url` and refuses (`ReleaseClientError::Url`, origin only,
+      no query echoed) any other scheme/host/port; `search_all` checks the
+      budget before each request. Tests in `fhir/tests/client_r5.rs`
+      (cross-origin refused and the foreign server gets no request;
+      same-origin absolute and relative links followed with the token;
+      `max_pages` 2 and 1 issue exactly 2 and 1 requests); both fixes
+      mutation-verified. Spec: `R13.9a` added in
+      `fhir/spec/13-assurance.md`. Found
+      while gating, pre-existing at HEAD: `RUSTDOCFLAGS=-D warnings cargo doc
+      -p fhir-core` fails with "redundant explicit link target" under any
+      feature set, with no source span (likely macro-generated docs); the
+      workspace-wide `cargo doc --no-deps` gate in `fhir/CLAUDE.md` passes,
+      so this only bites a per-crate doc build. Also
+      the `fhir-core/src/lib.rs` `client` doctest (line 72) cannot compile
+      under `-p fhir-core` because the facade's `client` feature is off.*
+      `fhir/fhir-core/src/client.rs` `next_page` sends
+      `self.http.get(next)` through `send`, which attaches the bearer, for
+      whatever URL the server's `next` link names. Require same scheme +
+      host + port as `base_url` (else a typed error, no request). Also
+      `search_all` calls `next_page` *before* checking `max_pages`, so it
+      issues one request past the budget; check first. Tests: a foreign
+      `next` host gets no request and no token; `max_pages = 1` issues
+      exactly one request.
+
+### Production audit — correctness
+
+*The three SQLite store findings below are filed as **F-105**–**F-107** in
+`spec/databases/audit.md` (2026-11-26). The `fhir-loco` and client
+findings belong to those families' specs, not the database register.*
+
+- [~] **Read pairs a body with a version fetched separately.**
+      *2026-11-26: `fhir-loco` now reads through one
+      `AnyStore::get_versioned` (`read`, conditional-create's existing
+      branch), and `vread` reads once. PostgreSQL's `get` already returned
+      `Got` from one snapshot; `SqliteStore::get_versioned` (and `get`) now
+      read `version_id` inside the reconstruction's own transaction
+      (`read_current`) instead of a later `status` call. Full SQLite store
+      and fhir-loco suites green. Test
+      `get_versioned_pairs_a_body_with_its_own_version` (second handle, 150
+      racing writes) — the old `get`+`status` fails it 2/2 runs ("generation 0
+      paired with version 6"). PostgreSQL has no equivalent test.*
+- [x] **`SqliteStore::status` says one transaction, takes none, and hides
+      errors.** *Fixed 2026-11-26: deferred `unchecked_transaction` over
+      both queries, `.optional().store()?` instead of `.ok()`; test
+      `status_reports_a_failed_read_as_an_error_not_unknown` (authorizer
+      denies `patient`, then `patient_history`), mutation-verified. Checked the
+      other ports: PostgreSQL already uses one snapshot and `query_opt`;
+      mysql, mariadb, mssql and oracle have no `status`.* Its comment claims "one read transaction over both tables",
+      but the two `query_row`s run on the bare connection, and each `.ok()`
+      turns any SQL error into "absent" — so a failing read reports
+      `Unknown` (HTTP 404) rather than an error. Wrap in
+      `unchecked_transaction` and use `.optional()` (found 2026-11-26). `read` calls
+      `store.get` then `store.status`; a concurrent update between them
+      yields an older body with a newer ETag/`meta.versionId` (a lost-update
+      hazard for `If-Match`). `vread` likewise queries twice. Return body
+      and version from one store call (one snapshot).
+- [x] **Read replaces stored `meta`.** *Fixed 2026-11-26:
+      `stamp_version` merges `versionId` into stored `meta`; test
+      `a_read_keeps_stored_meta_and_adds_the_version` (security label kept,
+      ETag equals `meta.versionId`), mutation-verified. SQLite backend only;
+      PostgreSQL backend not run here.* `read` does
+      `obj.insert("meta", {versionId})`, discarding stored
+      `meta.security`, `meta.tag`, `meta.profile` — security labels are
+      clinical-safety data. Merge `versionId` (and `lastUpdated`) into the
+      stored `meta` instead. Test: a resource with a security label reads
+      back with it.
+- [x] **SQLite `_since` drops same-day history.** *Fixed 2026-11-26:
+      `since_cutoff` converts an RFC 3339 instant (offset applied, sub-µs
+      rounds up) to the stored form, passes the stored form through, and
+      refuses anything else as `Unsupported`. Unit tests (offsets, day
+      rollover, leap day, rounding carry, 11 malformed forms) and
+      `an_rfc3339_since_earlier_the_same_day_admits_that_days_versions`,
+      mutation-verified (unconverted: 0 of 4 versions).* Stored `last_updated` is
+      `YYYY-MM-DD HH:MM:SS.ffffff` (space; `render_utc_micros`), but
+      `history_page` compares it textually to the caller's RFC 3339
+      `_since` (`T`). `' '` < `'T'`, so every version on the cutoff's
+      date compares low and is omitted. The `history_page` doc comment's
+      "every stored `last_updated` is RFC 3339" is wrong. Normalise
+      `_since` to the stored form (UTC, offset applied, six fractional
+      digits) before binding; test cutoffs earlier the same day, with an
+      offset, and with fractional seconds. Checked 2026-11-26: SQLite only —
+      PostgreSQL casts `($1::text)::timestamptz`, and the other four ports
+      have no `_since` path.
+
+### Quality-improvement audit (Mistral Medium 3.5) — triage
+
+A generic checklist, not source-verified by its author; several items are
+already done or contradict settled decisions. Kept here only where they add
+something.
+
+- **Already done / superseded:** coverage measurement and thresholds
+  (`fhir-sqlite/scripts/coverage.sh`, `bin/test-coverage`), shared-core gate
+  over `gen/tests` (F-48, 2026-11-25), mutation testing as policy (`T11.10`),
+  fuzzing (`fhir-sqlite/fuzz`), CI gates (`gates.yml`), comparison page
+  (`COMPARISONS.md`), citation (`CITATION.cff`), pagination and `$export`
+  (`fhir-loco`), PASETO auth (its "implement SMART" item is SV3.10's
+  deliberate non-goal).
+- **Rejected:** retry/circuit-breaker/rate-limit layers in the store
+  libraries (`C0.17`: no server concerns in a port); translations and
+  social-media accounts before the outreach prerequisites (`PM-70`–`PM-75`).
+- [ ] Machine-readable conformance: generate the CapabilityStatement's
+      supported-search table from the same source as
+      `doc/fhir-feature-support.md` so the two cannot drift.
+- [ ] Concurrency tests beyond PostgreSQL (row-lock / If-Match races) for
+      each server port's live suite.
+- [ ] Unit or integration test for the five live server-engine suites in CI
+      is already required (`FHIR_<PORT>_REQUIRE_DB=1`); verify each job
+      actually ran green on the last push before claiming it.
+- [ ] Outreach items (awesome-rust, chat.fhir.org, JOSS) belong to
+      `help/outreach/index.md`; add them there only after its prerequisites.
 
 ## Trademarks
 
