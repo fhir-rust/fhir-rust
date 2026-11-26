@@ -95,6 +95,71 @@ fn sweep_expired() -> Result<(), String> {
     Ok(())
 }
 
+/// Remove export directories under `root` that no live job owns.
+///
+/// The registry is in memory, so after a restart every directory a previous
+/// process left is unreachable — no status URL resolves to it — yet still
+/// holds exported PHI on disk with nothing left to expire it. Only
+/// subdirectories named as a job id (a UUID) are touched: a misconfigured
+/// `FHIR_LOCO_EXPORT_DIR` pointing somewhere shared must not cost anyone
+/// their files. Returns how many were removed. A missing root is zero.
+fn remove_orphans(
+    root: &std::path::Path,
+    live: &std::collections::HashSet<String>,
+) -> std::io::Result<usize> {
+    let entries = match std::fs::read_dir(root) {
+        Ok(e) => e,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(0),
+        Err(e) => return Err(e),
+    };
+    let mut removed = 0;
+    for entry in entries {
+        let entry = entry?;
+        let name = entry.file_name();
+        let Some(name) = name.to_str() else { continue };
+        if uuid::Uuid::parse_str(name).is_err()
+            || live.contains(name)
+            || !entry.file_type()?.is_dir()
+        {
+            continue;
+        }
+        std::fs::remove_dir_all(entry.path())?;
+        removed += 1;
+    }
+    Ok(removed)
+}
+
+/// At boot: delete what a previous process left behind (see
+/// [`remove_orphans`]), then sweep expired jobs on a timer — every
+/// `min(ttl, 60 s)` — rather than only when the next kick-off happens to
+/// arrive, which on a quiet server could be never.
+///
+/// # Errors
+/// If the TTL is invalid or the export directory cannot be read; both stop
+/// the boot, because the alternative is PHI on disk with no lifetime.
+pub fn start_retention() -> Result<(), String> {
+    let ttl = ttl()?;
+    let root = export_root();
+    let live: std::collections::HashSet<String> =
+        jobs().lock().expect("registry").keys().cloned().collect();
+    let removed = remove_orphans(&root, &live)
+        .map_err(|e| format!("export directory {}: {e}", root.display()))?;
+    if removed > 0 {
+        tracing::warn!(removed, "removed export files orphaned by a restart");
+    }
+    let every = ttl.min(std::time::Duration::from_secs(60));
+    tokio::spawn(async move {
+        let mut tick = tokio::time::interval(every);
+        loop {
+            tick.tick().await;
+            if let Err(message) = sweep_expired() {
+                tracing::error!(error = %message, "export sweep failed");
+            }
+        }
+    });
+    Ok(())
+}
+
 /// `GET /{version}/$export` — kick-off.
 #[debug_handler]
 async fn kickoff(
@@ -449,4 +514,46 @@ pub fn routes() -> Routes {
         .add("/{version}/$export-status/{id}", get(status).delete(cancel))
         .add("/{version}/$export-file/{id}/{rtype}", get(file))
         .layer(axum::middleware::from_fn(super::fhir::require_credential))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::remove_orphans;
+
+    /// Orphaned job directories go; live jobs, non-UUID names and plain
+    /// files stay. Mutation-verified: dropping the UUID check removes
+    /// `keep-me`, dropping the live check removes the live job.
+    #[test]
+    fn orphaned_export_directories_are_removed_and_nothing_else() {
+        let root = std::env::temp_dir().join(format!("fhir-loco-orphans-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        let orphan = uuid::Uuid::new_v4().to_string();
+        let live = uuid::Uuid::new_v4().to_string();
+        let stray_file = uuid::Uuid::new_v4().to_string();
+        for d in [&orphan, &live, &"keep-me".to_string()] {
+            std::fs::create_dir_all(root.join(d)).expect("dir");
+            std::fs::write(root.join(d).join("Patient.ndjson"), "{}\n").expect("file");
+        }
+        std::fs::write(root.join(&stray_file), "x").expect("file");
+
+        let live_set = std::iter::once(live.clone()).collect();
+        assert_eq!(remove_orphans(&root, &live_set).expect("sweep"), 1);
+        assert!(!root.join(&orphan).exists(), "the orphan is removed");
+        assert!(root.join(&live).exists(), "a live job is kept");
+        assert!(
+            root.join("keep-me").exists(),
+            "a non-job name is never touched"
+        );
+        assert!(
+            root.join(&stray_file).exists(),
+            "a plain file is never touched"
+        );
+
+        let missing = root.join("absent");
+        assert_eq!(
+            remove_orphans(&missing, &live_set).expect("missing root"),
+            0
+        );
+        std::fs::remove_dir_all(&root).ok();
+    }
 }

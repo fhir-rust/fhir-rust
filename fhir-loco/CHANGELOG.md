@@ -22,6 +22,10 @@ surface — it inherited the name `fhir-store` briefly before being renamed
 
 ### Fixed
 
+- Exported NDJSON files no longer outlive a restart: at boot, job
+  directories left by a previous process are deleted (UUID-named ones
+  only), and expired jobs are swept on a timer rather than only at the next
+  kick-off.
 - A read keeps the stored `meta` (`security`, `tag`, `profile`) and adds
   `versionId` to it, instead of replacing `meta` with `{versionId}`.
 - `read` and conditional create take body and version from one store call;

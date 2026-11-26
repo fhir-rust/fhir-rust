@@ -113,6 +113,9 @@ impl Hooks for App {
         // FHIR_LOCO_ADMIN_BIND is set.
         // Validate the export lifetime now, so a bad setting stops startup.
         crate::config::export_ttl_secs().map_err(loco_rs::Error::Message)?;
+        // Exported PHI has a lifetime across restarts too: remove what a
+        // previous process orphaned, then expire on a timer.
+        crate::controllers::export::start_retention().map_err(loco_rs::Error::Message)?;
         crate::admin::spawn_if_configured().map_err(loco_rs::Error::Message)?;
         Ok(())
     }
