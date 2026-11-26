@@ -95,13 +95,17 @@ async fn crud_and_search_round_trip_on_the_postgres_backend() {
             .await;
         assert!(res.status_code().is_success(), "create: {}", res.text());
 
-        let res = request.get("/r5/Patient/pg-1").await;
+        let res = request
+            .get("/r5/Patient/pg-1")
+            .add_header("authorization", &bearer("dr-pg"))
+            .await;
         assert_eq!(res.status_code(), 200);
         let body: serde_json::Value = serde_json::from_str(&res.text()).expect("json");
         assert_eq!(body["name"][0]["family"], "Postgres");
 
         let res = request
             .get("/r5/Patient?family=Postgres&_total=accurate")
+            .add_header("authorization", &bearer("dr-pg"))
             .await;
         assert_eq!(res.status_code(), 200);
         let body: serde_json::Value = serde_json::from_str(&res.text()).expect("json");
@@ -110,7 +114,10 @@ async fn crud_and_search_round_trip_on_the_postgres_backend() {
 
         // Type-level history on the second backend (SV2.17 over pg's
         // history_page).
-        let res = request.get("/r5/Patient/_history").await;
+        let res = request
+            .get("/r5/Patient/_history")
+            .add_header("authorization", &bearer("dr-pg"))
+            .await;
         assert_eq!(res.status_code(), 200);
         let body: serde_json::Value = serde_json::from_str(&res.text()).expect("json");
         assert_eq!(body["type"], "history");
@@ -136,7 +143,10 @@ async fn crud_and_search_round_trip_on_the_postgres_backend() {
             "conditional delete on the second backend: {}",
             res.text()
         );
-        let res = request.get("/r5/Patient/pg-2").await;
+        let res = request
+            .get("/r5/Patient/pg-2")
+            .add_header("authorization", &bearer("dr-pg"))
+            .await;
         assert_eq!(res.status_code(), 410, "the match must actually be gone");
         // No match is idempotent here too, not an error.
         let res = request
@@ -152,9 +162,15 @@ async fn crud_and_search_round_trip_on_the_postgres_backend() {
         assert!(res.status_code().is_success());
         // Deleted answers 410, never-existed 404 — the distinction is the
         // store's; the second backend must preserve it too.
-        let res = request.get("/r5/Patient/pg-1").await;
+        let res = request
+            .get("/r5/Patient/pg-1")
+            .add_header("authorization", &bearer("dr-pg"))
+            .await;
         assert_eq!(res.status_code(), 410);
-        let res = request.get("/r5/Patient/never-was").await;
+        let res = request
+            .get("/r5/Patient/never-was")
+            .add_header("authorization", &bearer("dr-pg"))
+            .await;
         assert_eq!(res.status_code(), 404);
     })
     .await;

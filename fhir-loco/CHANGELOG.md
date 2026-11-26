@@ -9,6 +9,24 @@ This file did not exist before 2026-08-29. This crate is the FHIR® REST
 surface — it inherited the name `fhir-store` briefly before being renamed
 (**F-37**), and had no changelog under either name.
 
+## Unreleased
+
+### Security
+
+- Every FHIR and `$export` route now refuses a request without a verified
+  PASETO credential with `401` before any handler runs (`SV3.1`). The read
+  handlers (`read`, `vread`, `search`, the three history scopes) previously
+  checked the token only inside the disclosure logger, which recorded the
+  attempt and then returned the resource. Refused attempts are still written
+  to the access log (`PR12.5`). `/{version}/metadata` stays public.
+
+### Fixed
+
+- A read keeps the stored `meta` (`security`, `tag`, `profile`) and adds
+  `versionId` to it, instead of replacing `meta` with `{versionId}`.
+- `read` and conditional create take body and version from one store call;
+  `vread` reads once instead of twice.
+
 ## 0.3.9 — 2026-11-24
 
 Version bump only: the tree had diverged from the published 0.3.8 (O10.11); no behaviour change beyond what is already in the source.

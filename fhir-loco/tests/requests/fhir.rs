@@ -180,7 +180,10 @@ async fn metadata_declares_every_interaction_the_router_serves() {
 async fn an_unmounted_version_says_what_is_mounted() {
     store_ready().await;
     request::<App, _, _>(|request, _ctx| async move {
-        let res = request.get("/r3/Patient/anything").await;
+        let res = request
+            .get("/r3/Patient/anything")
+            .add_header("authorization", &bearer("dr-who"))
+            .await;
         assert_eq!(res.status_code(), 404);
         let body = body_of(&res.text());
         assert_eq!(body["resourceType"], "OperationOutcome");
@@ -224,7 +227,10 @@ async fn create_read_update_delete_round_trip() {
 
         // Read. The decimal must survive the whole path — HTTP in, shredded
         // into relational tables, reconstructed, HTTP out.
-        let res = request.get(&format!("/r5/Observation/{id}")).await;
+        let res = request
+            .get(&format!("/r5/Observation/{id}"))
+            .add_header("authorization", &bearer("dr-who"))
+            .await;
         assert_eq!(res.status_code(), 200);
         let body = body_of(&res.text());
         assert_eq!(
@@ -278,7 +284,10 @@ async fn create_read_update_delete_round_trip() {
 
         // Gone, not missing. A caller that once held this record must be able
         // to tell the difference.
-        let res = request.get(&format!("/r5/Observation/{id}")).await;
+        let res = request
+            .get(&format!("/r5/Observation/{id}"))
+            .add_header("authorization", &bearer("dr-who"))
+            .await;
         assert_eq!(res.status_code(), 410);
     })
     .await;
@@ -348,7 +357,10 @@ async fn history_shows_every_version_including_the_deletion() {
             204
         );
 
-        let res = request.get(&format!("/r5/Observation/{id}/_history")).await;
+        let res = request
+            .get(&format!("/r5/Observation/{id}/_history"))
+            .add_header("authorization", &bearer("dr-who"))
+            .await;
         assert_eq!(res.status_code(), 200);
         let body = body_of(&res.text());
         assert_eq!(body["type"], "history");
@@ -366,6 +378,7 @@ async fn history_shows_every_version_including_the_deletion() {
         // vread reaches a version the live tables no longer hold...
         let res = request
             .get(&format!("/r5/Observation/{id}/_history/1"))
+            .add_header("authorization", &bearer("dr-who"))
             .await;
         assert_eq!(res.status_code(), 200);
         assert_eq!(body_of(&res.text())["status"], "final");
@@ -373,6 +386,7 @@ async fn history_shows_every_version_including_the_deletion() {
         assert_eq!(
             request
                 .get(&format!("/r5/Observation/{id}/_history/3"))
+                .add_header("authorization", &bearer("dr-who"))
                 .await
                 .status_code(),
             410
@@ -381,6 +395,7 @@ async fn history_shows_every_version_including_the_deletion() {
         assert_eq!(
             request
                 .get(&format!("/r5/Observation/{id}/_history/99"))
+                .add_header("authorization", &bearer("dr-who"))
                 .await
                 .status_code(),
             404
@@ -409,7 +424,10 @@ async fn invalid_paging_parameters_are_rejected_not_replaced() {
             ("/r5/_history?_count=1001", "_count"),
             ("/r5/_history?_count=abc", "_count"),
         ] {
-            let res = request.get(path).await;
+            let res = request
+                .get(path)
+                .add_header("authorization", &bearer("dr-who"))
+                .await;
             assert_eq!(res.status_code(), 400, "{path}");
             assert!(res.text().contains(name), "{path}: {}", res.text());
         }
@@ -420,7 +438,15 @@ async fn invalid_paging_parameters_are_rejected_not_replaced() {
             "/r5/Observation?_offset=0",
             "/r5/Observation",
         ] {
-            assert_eq!(request.get(path).await.status_code(), 200, "{path}");
+            assert_eq!(
+                request
+                    .get(path)
+                    .add_header("authorization", &bearer("dr-who"))
+                    .await
+                    .status_code(),
+                200,
+                "{path}"
+            );
         }
     })
     .await;
@@ -445,6 +471,7 @@ async fn search_returns_a_bundle_and_respects_paging() {
 
         let res = request
             .get("/r5/Observation?status=registered&_total=accurate")
+            .add_header("authorization", &bearer("dr-who"))
             .await;
         assert_eq!(res.status_code(), 200);
         let body = body_of(&res.text());
@@ -457,6 +484,7 @@ async fn search_returns_a_bundle_and_respects_paging() {
         // a client cannot tell how far it has to page.
         let res = request
             .get("/r5/Observation?status=registered&_count=2&_total=accurate")
+            .add_header("authorization", &bearer("dr-who"))
             .await;
         let body = body_of(&res.text());
         assert_eq!(body["entry"].as_array().map(Vec::len), Some(2));
@@ -465,6 +493,7 @@ async fn search_returns_a_bundle_and_respects_paging() {
         // Control parameters must not be mistaken for search criteria.
         let res = request
             .get("/r5/Observation?status=registered&_offset=2")
+            .add_header("authorization", &bearer("dr-who"))
             .await;
         assert_eq!(res.status_code(), 200);
         assert_eq!(
@@ -512,6 +541,7 @@ async fn include_and_revinclude_resolve_references() {
         // match from the inclusion (SV2.16).
         let res = request
             .get("/r5/Patient?family=Includeme&_include=Patient:general-practitioner")
+            .add_header("authorization", &bearer("dr-who"))
             .await;
         assert_eq!(res.status_code(), 200);
         let body = body_of(&res.text());
@@ -526,6 +556,7 @@ async fn include_and_revinclude_resolve_references() {
         // without failing the search.
         let res = request
             .get("/r5/Patient?family=Includeme&_include=Patient:general-practitioner:Organization")
+            .add_header("authorization", &bearer("dr-who"))
             .await;
         let body = body_of(&res.text());
         assert_eq!(body["entry"].as_array().map(Vec::len), Some(1), "{body}");
@@ -533,6 +564,7 @@ async fn include_and_revinclude_resolve_references() {
         // _revinclude finds what points here.
         let res = request
             .get("/r5/Patient?family=Includeme&_revinclude=Encounter:subject")
+            .add_header("authorization", &bearer("dr-who"))
             .await;
         assert_eq!(res.status_code(), 200);
         let body = body_of(&res.text());
@@ -558,7 +590,10 @@ async fn includes_are_refused_by_name_never_dropped() {
             ("_revinclude=Nonexistent:subject", "unknown resource type"),
             ("_include=Patient", "expected <type>:<param>"),
         ] {
-            let res = request.get(&format!("/r5/Patient?{query}")).await;
+            let res = request
+                .get(&format!("/r5/Patient?{query}"))
+                .add_header("authorization", &bearer("dr-who"))
+                .await;
             assert_eq!(res.status_code(), 400, "{query} must refuse");
             let body = res.text();
             assert!(
@@ -632,7 +667,10 @@ async fn type_and_system_history_serve_the_stated_slice() {
 
         // Type-level: only that type, newest first, the deletion present as
         // an entry with no resource.
-        let res = request.get("/r5/Basic/_history").await;
+        let res = request
+            .get("/r5/Basic/_history")
+            .add_header("authorization", &bearer("dr-who"))
+            .await;
         assert_eq!(res.status_code(), 200);
         let body = body_of(&res.text());
         assert_eq!(body["type"], "history");
@@ -646,7 +684,10 @@ async fn type_and_system_history_serve_the_stated_slice() {
         assert_eq!(entries[1]["request"]["method"], "POST");
 
         // System-level spans types; _count bounds it.
-        let res = request.get("/r5/_history?_count=100").await;
+        let res = request
+            .get("/r5/_history?_count=100")
+            .add_header("authorization", &bearer("dr-who"))
+            .await;
         assert_eq!(res.status_code(), 200);
         let body = body_of(&res.text());
         let entries = body["entry"].as_array().expect("entries");
@@ -665,7 +706,10 @@ async fn type_and_system_history_serve_the_stated_slice() {
             types.contains("Patient") && types.contains("Basic"),
             "system history must span types: {types:?}"
         );
-        let res = request.get("/r5/_history?_count=1").await;
+        let res = request
+            .get("/r5/_history?_count=1")
+            .add_header("authorization", &bearer("dr-who"))
+            .await;
         assert_eq!(
             body_of(&res.text())["entry"].as_array().map(Vec::len),
             Some(1)
@@ -675,15 +719,22 @@ async fn type_and_system_history_serve_the_stated_slice() {
         // parameters are refused by name, never dropped (SV2.17).
         let res = request
             .get("/r5/_history?_since=9999-01-01T00:00:00Z")
+            .add_header("authorization", &bearer("dr-who"))
             .await;
         assert_eq!(
             body_of(&res.text())["entry"].as_array().map(Vec::len),
             Some(0)
         );
-        let res = request.get("/r5/_history?_since=yesterday").await;
+        let res = request
+            .get("/r5/_history?_since=yesterday")
+            .add_header("authorization", &bearer("dr-who"))
+            .await;
         assert_eq!(res.status_code(), 400);
         assert!(res.text().contains("RFC 3339"));
-        let res = request.get("/r5/Basic/_history?_at=2026").await;
+        let res = request
+            .get("/r5/Basic/_history?_at=2026")
+            .add_header("authorization", &bearer("dr-who"))
+            .await;
         assert_eq!(res.status_code(), 400);
         assert!(res.text().contains("_at"), "{}", res.text());
     })
@@ -779,7 +830,10 @@ async fn reads_are_recorded_as_disclosures() {
             .get("/r5/Observation/definitely-not-here")
             .add_header("authorization", &bearer("nurse"))
             .await;
-        request.get("/r5/Observation?status=final").await;
+        request
+            .get("/r5/Observation?status=final")
+            .add_header("authorization", &bearer("dr-who"))
+            .await;
     })
     .await;
     let after = disclosure_count().await;
@@ -787,6 +841,117 @@ async fn reads_are_recorded_as_disclosures() {
         after >= before + 2,
         "a failed read and a search should both be disclosures: {before} -> {after}"
     );
+}
+
+/// `SV3.1`: no FHIR read is answered without a verified credential.
+///
+/// The read handlers once looked at the token only inside `disclose`, which
+/// records a rejected attempt and carries on — so an unauthenticated `GET`
+/// returned the resource. This walks every read route the router serves (and
+/// the export routes), with no token and with a token from another issuer.
+/// Mutation-verified (`T11.10`): removing the `require_credential` layer from
+/// `fhir::routes` turns the reads below into `200`s.
+#[tokio::test]
+#[serial]
+async fn every_read_without_a_valid_token_is_refused() {
+    use pasetors::claims::Claims;
+    use pasetors::keys::Generate;
+    store_ready().await;
+    let before = disclosure_count().await;
+    request::<App, _, _>(|request, _ctx| async move {
+        // A resource that exists, so a leak would be a 200 with its body.
+        let res = request
+            .put("/r5/Patient/gate-1")
+            .add_header("content-type", FHIR_JSON)
+            .add_header("authorization", &bearer("dr-who"))
+            .json(&serde_json::json!({"resourceType": "Patient", "id": "gate-1"}))
+            .await;
+        assert!(res.status_code().is_success(), "{}", res.text());
+
+        let attacker =
+            pasetors::keys::AsymmetricKeyPair::<pasetors::version4::V4>::generate().expect("kp");
+        let mut claims = Claims::new().expect("claims");
+        claims.subject("dr-who").expect("sub");
+        let forged = pasetors::public::sign(&attacker.secret, &claims, None, None).expect("sign");
+
+        for path in [
+            "/r5/Patient/gate-1",
+            "/r5/Patient/gate-1/_history",
+            "/r5/Patient/gate-1/_history/1",
+            "/r5/Patient",
+            "/r5/Patient?_id=gate-1",
+            "/r5/Patient/_history",
+            "/r5/_history",
+            "/r5/$export",
+            "/r5/$export-status/x",
+            "/r5/$export-file/x/Patient",
+        ] {
+            let res = request.get(path).await;
+            assert_eq!(res.status_code(), 401, "no token: {path}");
+            assert!(!res.text().contains("gate-1\""), "no token leaked: {path}");
+            let res = request
+                .get(path)
+                .add_header("authorization", &format!("Bearer {forged}"))
+                .await;
+            assert_eq!(res.status_code(), 401, "forged token: {path}");
+        }
+        // The CapabilityStatement stays public: clients learn how to
+        // authenticate from it.
+        assert_eq!(request.get("/r5/metadata").await.status_code(), 200);
+    })
+    .await;
+    // Every refused attempt on a mounted version is still a disclosure row.
+    let after = disclosure_count().await;
+    assert!(
+        after >= before + 20,
+        "refused reads must still be logged: {before} -> {after}"
+    );
+}
+
+/// A read keeps the stored `meta` and adds `versionId` to it. It used to
+/// replace `meta` wholesale, so a security label written with the resource
+/// never came back. Mutation-verified: inserting a fresh `meta` in
+/// `stamp_version` fails the `security` assertion.
+#[tokio::test]
+#[serial]
+async fn a_read_keeps_stored_meta_and_adds_the_version() {
+    store_ready().await;
+    request::<App, _, _>(|request, _ctx| async move {
+        let res = request
+            .put("/r5/Patient/meta-1")
+            .add_header("content-type", FHIR_JSON)
+            .add_header("authorization", &bearer("dr-who"))
+            .json(&serde_json::json!({
+                "resourceType": "Patient", "id": "meta-1",
+                "meta": {"security": [{
+                    "system": "http://terminology.hl7.org/CodeSystem/v3-Confidentiality",
+                    "code": "R"
+                }]}
+            }))
+            .await;
+        assert!(res.status_code().is_success(), "{}", res.text());
+        let res = request
+            .get("/r5/Patient/meta-1")
+            .add_header("authorization", &bearer("dr-who"))
+            .await;
+        assert_eq!(res.status_code(), 200);
+        let etag = res
+            .headers()
+            .get("etag")
+            .map(|v| v.to_str().unwrap().to_string());
+        let body = body_of(&res.text());
+        assert_eq!(body["meta"]["security"][0]["code"], "R", "{body}");
+        let v = body["meta"]["versionId"]
+            .as_str()
+            .expect("versionId")
+            .to_string();
+        assert_eq!(
+            etag,
+            Some(format!("W/\"{v}\"")),
+            "body and ETag name one version"
+        );
+    })
+    .await;
 }
 
 /// Read the disclosure count straight from the store, not over HTTP: the point
@@ -1071,7 +1236,10 @@ async fn conditional_delete_serves_all_outcomes() {
             "one match must delete it: {}",
             res.text()
         );
-        let res = request.get(&format!("/r5/Patient/{id}")).await;
+        let res = request
+            .get(&format!("/r5/Patient/{id}"))
+            .add_header("authorization", &bearer("dr-who"))
+            .await;
         assert_eq!(
             res.status_code(),
             410,

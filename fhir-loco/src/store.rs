@@ -136,6 +136,28 @@ impl AnyStore {
         }
     }
 
+    /// The current resource and the version it was read at, from one store
+    /// call — so a caller never pairs a body with a version fetched
+    /// separately, which a concurrent update between the two would make
+    /// disagree (an older body under a newer ETag).
+    ///
+    /// PostgreSQL reads both in one snapshot. SQLite's `get_versioned` still
+    /// reads the body and the status in two statements; see `tasks.md`.
+    pub async fn get_versioned(
+        &self,
+        rtype: &str,
+        id: &str,
+    ) -> Result<Option<(Value, i64)>, StoreFailure> {
+        let got = match self {
+            Self::Sqlite(s) => s
+                .get_versioned(rtype, id)
+                .await
+                .map_err(StoreFailure::from)?,
+            Self::Postgres(s, _) => s.get(rtype, id).await.map_err(StoreFailure::from)?,
+        };
+        Ok(got.map(|g| (g.resource, g.version_id)))
+    }
+
     pub async fn vread(
         &self,
         rtype: &str,

@@ -448,4 +448,5 @@ pub fn routes() -> Routes {
         .add("/{version}/$export", get(kickoff))
         .add("/{version}/$export-status/{id}", get(status).delete(cancel))
         .add("/{version}/$export-file/{id}/{rtype}", get(file))
+        .layer(axum::middleware::from_fn(super::fhir::require_credential))
 }

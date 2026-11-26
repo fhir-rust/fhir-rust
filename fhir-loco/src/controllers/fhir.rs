@@ -63,6 +63,29 @@ fn fhir_json(
         .into_response()
 }
 
+/// Put the stored version into `meta.versionId`, keeping the rest of the
+/// stored `meta`.
+///
+/// Replacing `meta` wholesale dropped `meta.security`, `meta.tag` and
+/// `meta.profile` from every read — and a security label is exactly what a
+/// downstream access decision reads. A `meta` that is not an object is not
+/// valid FHIR and is replaced.
+fn stamp_version(body: &mut serde_json::Value, version_id: i64) {
+    let Some(obj) = body.as_object_mut() else {
+        return;
+    };
+    let meta = obj.entry("meta").or_insert_with(|| serde_json::json!({}));
+    if !meta.is_object() {
+        *meta = serde_json::json!({});
+    }
+    if let Some(m) = meta.as_object_mut() {
+        m.insert(
+            "versionId".to_string(),
+            serde_json::json!(version_id.to_string()),
+        );
+    }
+}
+
 /// Resolve a mounted version, or explain that it is not served.
 ///
 /// The error side is a whole `AxumResponse`, which clippy notes is large. That
@@ -104,20 +127,12 @@ async fn read(
         Err(r) => return r,
     };
 
-    match store.get(&rtype, &id).await {
-        Ok(Some(mut body)) => {
+    match store.get_versioned(&rtype, &id).await {
+        Ok(Some((mut body, v))) => {
             // The stored version travels in `meta.versionId` and the ETag; a
             // client cannot do optimistic concurrency without it.
-            let v = match store.status(&rtype, &id).await {
-                Ok(fhir_sqlite_store::ResourceStatus::Active(v)) => Some(v),
-                _ => None,
-            };
-            if let (Some(v), Some(obj)) = (v, body.as_object_mut()) {
-                obj.insert(
-                    "meta".to_string(),
-                    serde_json::json!({ "versionId": v.to_string() }),
-                );
-            }
+            stamp_version(&mut body, v);
+            let v = Some(v);
             disclose(
                 store,
                 &headers,
@@ -174,7 +189,10 @@ async fn vread(
         Ok(s) => s,
         Err(r) => return r,
     };
-    let found = matches!(store.vread(&rtype, &id, vid).await, Ok(Some(_)));
+    // One read, disclosed and then answered: reading twice could disclose
+    // one version and serve another.
+    let got = store.vread(&rtype, &id, vid).await;
+    let found = matches!(got, Ok(Some(_)));
     disclose(
         store,
         &headers,
@@ -186,7 +204,7 @@ async fn vread(
         Some(i64::from(found)),
     )
     .await;
-    match store.vread(&rtype, &id, vid).await {
+    match got {
         Ok(Some(entry)) => match entry.resource {
             Some(body) => fhir_json(StatusCode::OK, &body, Some(entry.version_id)),
             // A deletion is a real version with no content: 410, not 404.
@@ -495,18 +513,10 @@ async fn create(
             // through the same disclosure logging as `GET` — a returned
             // resource is a disclosure whichever verb carried it.
             Ok(fhir_sqlite_store::CondCreate::Existing(existing_id)) => {
-                match store.get(&rtype, &existing_id).await {
-                    Ok(Some(mut body)) => {
-                        let v = match store.status(&rtype, &existing_id).await {
-                            Ok(fhir_sqlite_store::ResourceStatus::Active(v)) => Some(v),
-                            _ => None,
-                        };
-                        if let (Some(v), Some(obj)) = (v, body.as_object_mut()) {
-                            obj.insert(
-                                "meta".to_string(),
-                                serde_json::json!({ "versionId": v.to_string() }),
-                            );
-                        }
+                match store.get_versioned(&rtype, &existing_id).await {
+                    Ok(Some((mut body, v))) => {
+                        stamp_version(&mut body, v);
+                        let v = Some(v);
                         disclose(
                             store,
                             &headers,
@@ -1260,9 +1270,57 @@ async fn system_post(Path(version): Path<String>, body: Bytes) -> AxumResponse {
     }
 }
 
+/// Refuse every FHIR request that lacks a verified credential (`SV3.1`),
+/// before any handler — and so any store read — runs.
+///
+/// A layer rather than a check in each handler: the read handlers once
+/// relied on `disclose` to look at the token, and `disclose` only *records*
+/// a rejected attempt, so an unauthenticated `GET` was answered with the
+/// resource. One gate over the whole router cannot be forgotten by the next
+/// handler someone adds. The mutating handlers still call
+/// `auth::audit_from` themselves, for the [`Audit`] they pass down.
+///
+/// The rejected attempt is still disclosure-logged (`PR12.5`) when the
+/// path names a mounted version: who tried to read what, unauthenticated,
+/// is exactly what an access review asks.
+///
+/// [`Audit`]: fhir_sqlite_store::Audit
+pub(crate) async fn require_credential(
+    request: axum::extract::Request,
+    next: axum::middleware::Next,
+) -> AxumResponse {
+    if let Err(refusal) = crate::auth::audit_from(request.headers()) {
+        let mut segments = request.uri().path().trim_start_matches('/').split('/');
+        if let Some(Ok(store)) = segments.next().map(version_of) {
+            let plain = |s: &&str| !s.is_empty() && !s.starts_with(['_', '$']);
+            let rtype = segments.next().filter(plain);
+            let id = rtype.and(segments.next()).filter(plain);
+            disclose(
+                store,
+                request.headers(),
+                "unauthenticated",
+                rtype,
+                id,
+                None,
+                "rejected",
+                Some(0),
+            )
+            .await;
+        }
+        return refusal;
+    }
+    next.run(request).await
+}
+
+/// `/metadata`, outside the credential gate: the CapabilityStatement holds
+/// no PHI, and clients discover how to authenticate from it (SMART). This
+/// is a narrower reading than `SV3.1`'s "every request"; see `tasks.md`.
+pub fn metadata_routes() -> Routes {
+    Routes::new().add("/{version}/metadata", get(metadata))
+}
+
 pub fn routes() -> Routes {
     Routes::new()
-        .add("/{version}/metadata", get(metadata))
         .add("/{version}", post(system_post))
         .add("/{version}/_history", get(system_history))
         .add(
@@ -1276,4 +1334,5 @@ pub fn routes() -> Routes {
         )
         .add("/{version}/{rtype}/{id}/_history", get(history))
         .add("/{version}/{rtype}/{id}/_history/{vid}", get(vread))
+        .layer(axum::middleware::from_fn(require_credential))
 }
