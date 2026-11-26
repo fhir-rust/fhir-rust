@@ -22,6 +22,11 @@ surface — it inherited the name `fhir-store` briefly before being renamed
   "every request" applies to the CapabilityStatement (owner decision
   2026-11-26).
 
+- A read whose disclosure cannot be recorded is refused with `503` and no
+  content (`PR12.5`), instead of being served with only an error log.
+  `FHIR_LOCO_DISCLOSURE_FAIL_OPEN=true` restores serving, read once at boot
+  and logged as a warning. A refused credential still answers `401`.
+
 ### Fixed
 
 - Exported NDJSON files no longer outlive a restart: at boot, job

@@ -61,6 +61,17 @@ impl Hooks for App {
         if let Err(e) = crate::auth::listener_posture(&ctx.config.server.binding, acknowledged) {
             return Err(loco_rs::Error::Message(e));
         }
+        // PR12.5: a read whose disclosure cannot be recorded is refused,
+        // unless the deployment has chosen otherwise, out loud.
+        let fail_open = crate::config::disclosure_fail_open().map_err(loco_rs::Error::Message)?;
+        if fail_open {
+            tracing::warn!(
+                "FHIR_LOCO_DISCLOSURE_FAIL_OPEN=true: content will be served even when its \
+                 disclosure cannot be recorded (PR12.5)"
+            );
+        }
+        crate::controllers::fhir::set_disclosure_fail_open(fail_open);
+
         // Establish how principals are proven, before anything can be written.
         //
         // This fails the boot when the key is missing or unusable, and that is

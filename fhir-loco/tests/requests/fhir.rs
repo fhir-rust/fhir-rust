@@ -971,6 +971,71 @@ async fn a_read_keeps_stored_meta_and_adds_the_version() {
     .await;
 }
 
+/// `PR12.5`: content is not served when its disclosure cannot be recorded.
+///
+/// A trigger on the access-log table makes every insert fail; a read of an
+/// existing resource must then answer 503 with no resource in the body, and
+/// succeed again once the log is writable. Fail-closed is the default (no
+/// `FHIR_LOCO_DISCLOSURE_FAIL_OPEN` in the test environment). Shown to fail
+/// (`T11.10`) with `disclose`'s refusal removed: the read returns 200.
+#[tokio::test]
+#[serial]
+async fn a_read_whose_disclosure_cannot_be_recorded_is_refused() {
+    store_ready().await;
+    let r5 = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("target/test-scratch/fhir-r5.sqlite");
+    let block = |on: bool| {
+        let c = rusqlite::Connection::open(&r5).expect("open r5 file");
+        c.busy_timeout(std::time::Duration::from_secs(5))
+            .expect("busy timeout");
+        let sql = if on {
+            "CREATE TRIGGER IF NOT EXISTS test_deny_access_log \
+             BEFORE INSERT ON fhir_sqlite_access_log \
+             BEGIN SELECT RAISE(ABORT, 'access log unavailable'); END;"
+        } else {
+            "DROP TRIGGER IF EXISTS test_deny_access_log;"
+        };
+        c.execute_batch(sql).expect("toggle trigger");
+    };
+    request::<App, _, _>(|request, _ctx| async move {
+        let res = request
+            .put("/r5/Patient/undisclosed-1")
+            .add_header("content-type", FHIR_JSON)
+            .add_header("authorization", &bearer("dr-who"))
+            .json(
+                &serde_json::json!({"resourceType": "Patient", "id": "undisclosed-1",
+                "name": [{"family": "Unrecorded"}]}),
+            )
+            .await;
+        assert!(res.status_code().is_success(), "{}", res.text());
+
+        block(true);
+        let res = request
+            .get("/r5/Patient/undisclosed-1")
+            .add_header("authorization", &bearer("dr-who"))
+            .await;
+        let (status, text) = (res.status_code(), res.text());
+        block(false);
+        assert_eq!(status, 503, "{text}");
+        assert!(
+            !text.contains("Unrecorded"),
+            "no content without a record: {text}"
+        );
+        assert!(text.contains("PR12.5"), "the refusal says why: {text}");
+
+        let res = request
+            .get("/r5/Patient/undisclosed-1")
+            .add_header("authorization", &bearer("dr-who"))
+            .await;
+        assert_eq!(
+            res.status_code(),
+            200,
+            "served again once the log is writable"
+        );
+    })
+    .await;
+}
+
 /// Read the disclosure count straight from the store, not over HTTP: the point
 /// is that the *service* recorded something, so asking the service would be
 /// circular.

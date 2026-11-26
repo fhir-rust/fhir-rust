@@ -133,7 +133,7 @@ async fn read(
             // client cannot do optimistic concurrency without it.
             stamp_version(&mut body, v);
             let v = Some(v);
-            disclose(
+            if let Err(r) = disclose(
                 store,
                 &headers,
                 "read",
@@ -143,11 +143,14 @@ async fn read(
                 "ok",
                 Some(1),
             )
-            .await;
+            .await
+            {
+                return r;
+            }
             fhir_json(StatusCode::OK, &body, v)
         }
         Ok(None) => {
-            disclose(
+            if let Err(r) = disclose(
                 store,
                 &headers,
                 "read",
@@ -157,7 +160,10 @@ async fn read(
                 "not-found",
                 Some(0),
             )
-            .await;
+            .await
+            {
+                return r;
+            }
             match store.status(&rtype, &id).await {
                 // Deleted and never-existed are different answers, and a caller
                 // that once held this record needs to be able to tell them apart.
@@ -193,7 +199,7 @@ async fn vread(
     // one version and serve another.
     let got = store.vread(&rtype, &id, vid).await;
     let found = matches!(got, Ok(Some(_)));
-    disclose(
+    if let Err(r) = disclose(
         store,
         &headers,
         "vread",
@@ -203,7 +209,10 @@ async fn vread(
         if found { "ok" } else { "not-found" },
         Some(i64::from(found)),
     )
-    .await;
+    .await
+    {
+        return r;
+    }
     match got {
         Ok(Some(entry)) => match entry.resource {
             Some(body) => fhir_json(StatusCode::OK, &body, Some(entry.version_id)),
@@ -406,14 +415,18 @@ fn bundle(kind: &str, entries: Vec<serde_json::Value>, total: Option<i64>) -> se
 /// which is the question an audit usually opens with — so this is a read-path
 /// obligation, and reads are where it is easiest to forget.
 ///
-/// A logging failure is reported but never fails the request: refusing to serve
-/// because the audit sink is unavailable is a trade some deployments want and
-/// most do not, and making that choice silently here would be wrong either way.
+/// A logging failure **fails the request** (`PR12.5`: every read appends an
+/// access record): the caller gets a 503 OperationOutcome and no content,
+/// because a disclosure nobody recorded is the thing an access review cannot
+/// recover from. A deployment that would rather serve than refuse sets
+/// `FHIR_LOCO_DISCLOSURE_FAIL_OPEN=true`, read once at boot and warned about;
+/// the failure is then logged and the request proceeds.
 // Eight parameters, which clippy dislikes. They are the columns of one access
 // log row; grouping them into a struct would mean building that struct at every
 // call site to satisfy a lint, and the call sites are where forgetting a field
 // would be easiest to miss.
-#[allow(clippy::too_many_arguments)]
+// `result_large_err`: the error is the response, as for `version_of`.
+#[allow(clippy::too_many_arguments, clippy::result_large_err)]
 pub(crate) async fn disclose(
     store: &store::AnyStore,
     headers: &HeaderMap,
@@ -423,7 +436,7 @@ pub(crate) async fn disclose(
     version_id: Option<i64>,
     outcome: &str,
     result_count: Option<i64>,
-) {
+) -> Result<(), AxumResponse> {
     // A disclosure is written even when the token is rejected: the read did
     // not happen, but the *attempt* is the thing PR12 wants recorded, and an
     // unattributable attempt is more interesting than a missing line.
@@ -444,7 +457,28 @@ pub(crate) async fn disclose(
     };
     if let Err(e) = store.log_access(&rec).await {
         tracing::error!(error = %e, interaction, "failed to record a disclosure");
+        if !disclosure_fails_open() {
+            return Err(self::outcome(
+                StatusCode::SERVICE_UNAVAILABLE,
+                "error",
+                "transient",
+                "the disclosure could not be recorded, so nothing is returned (PR12.5)",
+            ));
+        }
     }
+    Ok(())
+}
+
+static DISCLOSURE_FAIL_OPEN: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+
+/// Set once at boot from `FHIR_LOCO_DISCLOSURE_FAIL_OPEN`. Unset (and so in
+/// every test) is fail-closed.
+pub fn set_disclosure_fail_open(fail_open: bool) {
+    let _ = DISCLOSURE_FAIL_OPEN.set(fail_open);
+}
+
+fn disclosure_fails_open() -> bool {
+    DISCLOSURE_FAIL_OPEN.get().copied().unwrap_or(false)
 }
 
 /// `POST /{version}/{type}` — create.
@@ -517,7 +551,7 @@ async fn create(
                     Ok(Some((mut body, v))) => {
                         stamp_version(&mut body, v);
                         let v = Some(v);
-                        disclose(
+                        if let Err(r) = disclose(
                             store,
                             &headers,
                             "conditional-create",
@@ -527,7 +561,10 @@ async fn create(
                             "existing",
                             Some(1),
                         )
-                        .await;
+                        .await
+                        {
+                            return r;
+                        }
                         fhir_json(StatusCode::OK, &body, v)
                     }
                     Ok(None) => outcome(
@@ -1027,7 +1064,7 @@ async fn search(
             Err(e) => return store_error(e),
         }
     }
-    disclose(
+    if let Err(r) = disclose(
         store,
         &headers,
         "search",
@@ -1037,7 +1074,10 @@ async fn search(
         "ok",
         i64::try_from(entries.len()).ok(),
     )
-    .await;
+    .await
+    {
+        return r;
+    }
     fhir_json(
         StatusCode::OK,
         &bundle("searchset", entries, page.total),
@@ -1091,7 +1131,7 @@ async fn history(
                 })
                 .collect();
             let total = i64::try_from(out.len()).ok();
-            disclose(
+            if let Err(r) = disclose(
                 store,
                 &headers,
                 "history",
@@ -1101,7 +1141,10 @@ async fn history(
                 "ok",
                 total,
             )
-            .await;
+            .await
+            {
+                return r;
+            }
             fhir_json(StatusCode::OK, &bundle("history", out, total), None)
         }
         Err(e) => store_error(e),
@@ -1201,7 +1244,7 @@ async fn scoped_history(
         })
         .collect();
     let total = i64::try_from(out.len()).ok();
-    disclose(
+    if let Err(r) = disclose(
         store,
         &headers,
         "history",
@@ -1211,7 +1254,10 @@ async fn scoped_history(
         "ok",
         total,
     )
-    .await;
+    .await
+    {
+        return r;
+    }
     fhir_json(StatusCode::OK, &bundle("history", out, total), None)
 }
 
@@ -1305,7 +1351,10 @@ pub(crate) async fn require_credential(
                 "rejected",
                 Some(0),
             )
-            .await;
+            .await
+            // The refusal carries no content, so it stands even when the
+            // attempt could not be recorded.
+            .ok();
         }
         return refusal;
     }

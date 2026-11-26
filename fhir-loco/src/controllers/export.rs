@@ -486,7 +486,7 @@ async fn file(
         Ok(bytes) => {
             // The whole file is a disclosure — count says how large a one.
             // `None` (unknown) when the count has no `i64`, never a wrong number.
-            disclose(
+            if let Err(r) = disclose(
                 store,
                 &headers,
                 "export",
@@ -496,7 +496,10 @@ async fn file(
                 "ok",
                 i64::try_from(count).ok(),
             )
-            .await;
+            .await
+            {
+                return r;
+            }
             (StatusCode::OK, [(header::CONTENT_TYPE, NDJSON)], bytes).into_response()
         }
         Err(_) => outcome(

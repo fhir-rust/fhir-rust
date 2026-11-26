@@ -25,6 +25,12 @@ pub fn env_flag(name: &str) -> Result<bool, String> {
     flag(name, env_opt(name)?.as_deref())
 }
 
+/// `FHIR_LOCO_DISCLOSURE_FAIL_OPEN`: serve content even when its disclosure
+/// could not be recorded (`PR12.5`). Off unless set to `true`/`1`.
+pub fn disclosure_fail_open() -> Result<bool, String> {
+    env_flag("FHIR_LOCO_DISCLOSURE_FAIL_OPEN")
+}
+
 /// `FHIR_LOCO_EXPORT_TTL_SECS`: whole seconds, default 3600 when unset.
 pub fn export_ttl_secs() -> Result<u64, String> {
     ttl_secs(env_opt("FHIR_LOCO_EXPORT_TTL_SECS")?.as_deref())

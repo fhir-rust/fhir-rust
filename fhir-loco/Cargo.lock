@@ -893,6 +893,7 @@ dependencies = [
  "pasetors",
  "regex",
  "rstest",
+ "rusqlite",
  "serde",
  "serde_json",
  "serde_urlencoded",

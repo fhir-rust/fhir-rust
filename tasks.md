@@ -639,7 +639,17 @@ were not rerun for this triage.
       `routes()` asserting 401 without a token and with a wrong-key token,
       and fix the existing request test that reads without a credential.
       Mutation-verify by removing the layer (`T11.10`).
-- [ ] **P0 — no clinical content without a recorded disclosure (PR12.5).**
+- [~] **P0 — no clinical content without a recorded disclosure (PR12.5).**
+      *Decided and landed 2026-11-26: fail-closed by default. `disclose`
+      returns the 503 OperationOutcome; all eight content-returning call
+      sites (read ×2, vread, conditional create, search, history ×2,
+      export file) return it. Opt-out `FHIR_LOCO_DISCLOSURE_FAIL_OPEN=true`,
+      warned at boot. Test
+      `a_read_whose_disclosure_cannot_be_recorded_is_refused` (trigger
+      aborts access-log inserts → 503, no body; removed → 200),
+      mutation-verified. NOT done: per-site tests beyond read, the opt-out
+      path, a `fhir-loco/spec` line (spec files were being edited
+      concurrently).*
       `disclose` (`fhir.rs`, "A logging failure is reported but never
       fails the request") and the export file handler send PHI after
       `log_access` fails. That doc comment is a deliberate choice that
