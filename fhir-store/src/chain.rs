@@ -385,13 +385,25 @@ impl KeyRing {
         if let Some(k) = ChainKey::from_env(prefix)? {
             keys.push(k);
         }
-        if let Ok(retired) = std::env::var(format!("{prefix}_CHAIN_KEYS_RETIRED")) {
-            for entry in retired.split(',').map(str::trim).filter(|e| !e.is_empty()) {
-                let (id, hex) = entry
-                    .split_once('=')
-                    .ok_or_else(|| format!("retired key {entry:?} is not id=hex"))?;
-                keys.push(ChainKey::from_hex(id, hex)?);
-            }
+        let retired = std::env::var(format!("{prefix}_CHAIN_KEYS_RETIRED")).ok();
+        Self::push_retired(keys, retired.as_deref())
+    }
+
+    /// The retired-key half of [`Self::from_env`]: `id=hex` pairs,
+    /// comma-separated, appended after the signing key so they verify but
+    /// never sign. An entry that is not `id=hex`, or whose hex is unusable,
+    /// is an error rather than a skipped key.
+    fn push_retired(mut keys: Vec<ChainKey>, retired: Option<&str>) -> Result<Self, String> {
+        for entry in retired
+            .unwrap_or_default()
+            .split(',')
+            .map(str::trim)
+            .filter(|e| !e.is_empty())
+        {
+            let (id, hex) = entry
+                .split_once('=')
+                .ok_or_else(|| format!("retired key {entry:?} is not id=hex"))?;
+            keys.push(ChainKey::from_hex(id, hex)?);
         }
         Ok(Self { keys })
     }
@@ -524,11 +536,8 @@ mod tests {
         // The tag needs the secret. Guessing the format does not help, and
         // neither does guessing a plausible key.
         let real = mac(&key(), None, &pre);
-        for guess in ["changeme", "00", "secret"] {
-            if let Ok(k) = ChainKey::from_hex("kt", &"00".repeat(32)) {
-                assert_ne!(mac(&k, None, &pre), real, "guessed key {guess} matched");
-            }
-        }
+        let guess = ChainKey::from_hex("kt", &"00".repeat(32)).expect("guess key");
+        assert_ne!(mac(&guess, None, &pre), real, "an all-zero key matched");
         assert!(real.starts_with("kt:"), "the tag names its key: {real}");
     }
 
@@ -645,6 +654,58 @@ mod tests {
         );
 
         std::fs::remove_dir_all(&dir).ok();
+    }
+
+    /// A key path that passes the permission check but cannot be read as
+    /// text (here, a directory) is an error naming the path.
+    #[test]
+    #[cfg(unix)]
+    fn an_unreadable_key_path_is_an_error() {
+        use std::os::unix::fs::PermissionsExt as _;
+        let dir = std::env::temp_dir().join(format!("fhir-store-keydir-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).expect("dir");
+        std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o700)).expect("chmod");
+        let err = ChainKey::from_file("k", &dir).expect_err("a directory is not a key");
+        assert!(err.contains("fhir-store-keydir"), "names the path: {err}");
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    /// An unset prefix is unkeyed: no signing key, no retired keys. A
+    /// process-unique prefix keeps this independent of the real environment.
+    #[test]
+    fn an_unset_environment_is_unkeyed() {
+        let prefix = format!("FHIR_STORE_TEST_UNSET_{}", std::process::id());
+        assert!(
+            ChainKey::from_env(&prefix)
+                .expect("absent is fine")
+                .is_none()
+        );
+        let ring = KeyRing::from_env(&prefix).expect("absent is fine");
+        assert!(ring.signing().is_none());
+    }
+
+    /// Retired keys follow the signer in order, blank entries are ignored,
+    /// and a malformed entry is refused rather than skipped.
+    #[test]
+    fn retired_keys_parse_and_refuse_malformed_entries() {
+        let a = "aa".repeat(32);
+        let b = "bb".repeat(32);
+        let ring = KeyRing::push_retired(vec![key()], Some(&format!(" r1={a}, ,r2={b} ,")))
+            .expect("well-formed");
+        assert_eq!(ring.signing().map(ChainKey::id), Some("kt"));
+        let ids: Vec<&str> = ring.keys.iter().map(ChainKey::id).collect();
+        assert_eq!(ids, ["kt", "r1", "r2"]);
+
+        assert!(
+            KeyRing::push_retired(Vec::new(), None)
+                .expect("none")
+                .keys
+                .is_empty()
+        );
+
+        let err = KeyRing::push_retired(Vec::new(), Some(&a)).expect_err("no id=");
+        assert!(err.contains("not id=hex"), "{err}");
+        assert!(KeyRing::push_retired(Vec::new(), Some("r1=zz")).is_err());
     }
 
     /// A retired key that cannot be read is an error, not a silent omission.

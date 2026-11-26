@@ -94,10 +94,13 @@ impl Audit {
     /// A write by the operator running the CLI on this host.
     #[must_use]
     pub fn cli() -> Self {
-        let who = std::env::var("USER")
-            .or_else(|_| std::env::var("USERNAME"))
-            // RCA-IN-3: absent only (no USER/USERNAME: the actor is "unknown")
-            .unwrap_or_else(|_| "unknown".to_string());
+        Self::cli_as(std::env::var("USER").ok(), std::env::var("USERNAME").ok())
+    }
+
+    /// [`Self::cli`] given `USER` and `USERNAME`: the first present wins.
+    fn cli_as(user: Option<String>, username: Option<String>) -> Self {
+        // RCA-IN-3: absent only (no USER/USERNAME: the actor is "unknown")
+        let who = user.or(username).unwrap_or_else(|| "unknown".to_string());
         Audit {
             actor: format!("cli:{who}"),
             actor_source: Some("cli".to_string()),
@@ -299,4 +302,20 @@ pub struct HistEntry {
     /// 'C' create, 'U' update, 'D' delete.
     pub op: char,
     pub resource: Option<Value>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Audit;
+
+    /// `USER` wins over `USERNAME`; with neither, the actor is
+    /// `cli:unknown` rather than an empty or invented name.
+    #[test]
+    fn cli_actor_prefers_user_then_username_then_unknown() {
+        let a = Audit::cli_as(Some("u".into()), Some("n".into()));
+        assert_eq!(a.actor, "cli:u");
+        assert_eq!(a.actor_source.as_deref(), Some("cli"));
+        assert_eq!(Audit::cli_as(None, Some("n".into())).actor, "cli:n");
+        assert_eq!(Audit::cli_as(None, None).actor, "cli:unknown");
+    }
 }
