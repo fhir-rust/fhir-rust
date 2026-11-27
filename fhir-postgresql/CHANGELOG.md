@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.4 — 2026-11-27
+
+Version bump only, so the tree no longer claims the published 0.6.3 (`O10.11`).
+Since 0.6.3 the manifest gained `OGL-UK-3.0 OR CC-BY-SA-4.0` in `license` and
+`rust-version` moved 1.96 to 1.98, and the live corpus test now skips the
+published examples that `V9.1` rightly refuses (F-111). No library behaviour
+change.
+
 ## 0.6.3 — 2026-10-16
 
 Maintenance release; no behaviour change. Dependencies refreshed (`hmac` 0.13, `sha2` 0.11, `sha3` 0.12, `getrandom` 0.4, `serde_json` 1.0.154, `tokio`, `zeroize`).
