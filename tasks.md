@@ -560,10 +560,10 @@ Reproduced on SQLite and PostgreSQL 18.7, R4 and R5 maps, synthetic data.
       different-unit control. Unit conversion is a separate capability.
 - [~] **Enforce minimum cardinality at write (V9.1).** *Landed 2026-11-27 in all
       six ports (see **F-111**); `fhir-loco` returns 422 naming the element.
-      Live-verified on SQLite and PostgreSQL 18 after CI caught
+      Live-verified on all six engines after CI caught
       PostgreSQL's live corpus test (see F-111). NOT done: the read-only
-      inventory of existing rows, live runs on mysql/mariadb/mssql/oracle,
-      checks inside contained/inline/spilled subtrees.* An Observation without
+      inventory of existing rows, checks inside contained/inline/spilled
+      subtrees.* An Observation without
       `code` (1..1) is accepted. Carry min cardinality in the map, enforce in
       the shared shredder, HTTP 4xx OperationOutcome naming
       `Observation.code`, nothing committed on rejection. Fix the SQLite
