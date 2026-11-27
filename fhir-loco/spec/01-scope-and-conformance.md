@@ -28,6 +28,17 @@
   patient — is out of scope and MUST be stated as such wherever the trust
   boundary is documented.
 
+## Terminology
+
+- **SV1.11** *(added 2026-11-26)* This crate MAY also serve SNOMED CT®
+  terminology operations (`SV2.20`) from one RF2 release loaded into memory
+  at boot. That is not a second store and not a storage semantic: the
+  terminology semantics are the `snomed-fhir` crate's (snomed-rust's
+  `spec/11-fhir.md`), exactly as storage semantics are the store's
+  (`SV1.1`), and this crate only translates HTTP to those calls and their
+  outcomes back. The release is licensed content supplied by whoever
+  deploys the server; this crate ships none, and none is committed here.
+
 ## Conformance levels
 
 - **SV1.5** This crate conforms at exactly one of three levels. The level is a

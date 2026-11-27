@@ -41,7 +41,7 @@ pub(crate) fn outcome(status: StatusCode, severity: &str, code: &str, text: &str
         .into_response()
 }
 
-fn fhir_json(
+pub(crate) fn fhir_json(
     status: StatusCode,
     body: &serde_json::Value,
     version_id: Option<i64>,
@@ -291,6 +291,9 @@ async fn metadata(Path(version): Path<String>) -> AxumResponse {
         })
         .collect();
     types.sort_by(|a, b| a["type"].as_str().cmp(&b["type"].as_str()));
+    // SNOMED CT terminology operations, exactly when a release is loaded
+    // (SV2.20, SV2.9).
+    super::terminology::declare_operations(&mut types, crate::terminology::get().is_some());
 
     let body = serde_json::json!({
         "resourceType": "CapabilityStatement",

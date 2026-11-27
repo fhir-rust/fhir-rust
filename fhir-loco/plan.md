@@ -21,6 +21,12 @@ file records *why*, and drafts the decisions not yet made. Companion:
 - **D5 — the admin plane is a separate listener** (`SV4.3`,
   `FHIR_LOCO_ADMIN_BIND`), carries no FHIR route, and never may.
 
+- **D6 — SNOMED CT terminology lives here, as a dependency on
+  `snomed-fhir`** (`SV1.11`, `SV2.20`; 2026-11-26). snomed-rust's crates
+  have no dependencies, so its HTTP server was an open decision there; the
+  web stack already lives in this crate, so the dependency runs this way.
+  The release is held in memory in one `OnceLock`, like the stores.
+
 ## Open decision: `$export` (SV2.15, restating `M8`)
 
 The last substantial F-58 gap, and one of the three §13 compliance rows that

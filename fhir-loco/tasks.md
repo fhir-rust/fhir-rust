@@ -24,6 +24,16 @@ ports this service sits over.
 - [x] **`config/production.yaml` is real configuration**, not the empty file
   that refused to boot (**F-59**, three mutation-verified tests).
 
+- [x] **SNOMED CT® terminology operations** (`SV1.11`, `SV2.20`) — *done
+  2026-11-26*. `$lookup`, `$subsumes` and `$expand` by `GET`
+  (`src/controllers/terminology.rs`, release in `src/terminology.rs`), over
+  `snomed-fhir`. Six request tests against a hand-written RF2 fixture
+  (`tests/requests/terminology.rs`), plus unit tests for settings, parameter
+  refusals, concrete-value precision and declaration in both directions.
+  Not served yet: `POST` with a `Parameters` body, `coding`/`codingA`/
+  `codingB`, `displayLanguage` (a BCP-47 → language refset mapping is
+  policy), and `normalForm` (needs a whole-release classification at boot).
+
 ## Open
 
 - [x] **Conditional create over HTTP** (`SV2.14`) — *done 2026-08-07*.

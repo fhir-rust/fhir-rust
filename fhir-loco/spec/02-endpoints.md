@@ -15,6 +15,9 @@
   | `/{version}/$export` | `GET` (Bulk Data kick-off, `SV2.15`) |
   | `/{version}/$export-status/{job}` | `GET` (poll), `DELETE` (cancel) |
   | `/{version}/$export-file/{job}/{rtype}` | `GET` (NDJSON output) |
+  | `/{version}/CodeSystem/$lookup` | `GET` (SNOMED CT®, `SV2.20`) |
+  | `/{version}/CodeSystem/$subsumes` | `GET` (SNOMED CT, `SV2.20`) |
+  | `/{version}/ValueSet/$expand` | `GET` (SNOMED CT, `SV2.20`) |
 
 - **SV2.2** A request naming a version this process has not mounted MUST say
   **which versions are mounted**. "Not found" for an unmounted version is
@@ -307,6 +310,60 @@
   `fhir-postgresql` and `fhir-sqlite` (the two backends this crate can
   mount) with no route to it, the same shape `conditionalCreate`'s gap
   had before `SV2.14`.*
+
+## Terminology operations
+
+- **SV2.20** *(added 2026-11-26)* When a SNOMED CT® release is loaded
+  (`SV1.11`), `CodeSystem/$lookup`, `CodeSystem/$subsumes` and
+  `ValueSet/$expand` MUST be served by `GET` on every mounted version, in
+  exactly this slice — each edge stated rather than implied:
+
+  - **Configuration.** `FHIR_LOCO_SNOMED_RF2` names an extracted RF2
+    release directory, loaded as a Snapshot at boot. Unset, no release is
+    loaded: the three routes answer `404` `not-supported` naming the
+    setting, and the CapabilityStatement does not declare them (`SV2.9`).
+    Set but unloadable, or loading no concepts, MUST stop the boot — the
+    same rule as an unopenable store, since a terminology server answering
+    "unknown code" for everything looks like a working one.
+    `FHIR_LOCO_SNOMED_VERSION` (a version URI,
+    `http://snomed.info/sct/[edition]/version/[YYYYMMDD]`) and
+    `FHIR_LOCO_SNOMED_LANGUAGE_REFSET` (the language refset SCTID used for
+    `display` and designation `use`) are optional.
+  - **Version.** A `version` parameter, or a version-prefixed `$expand`
+    `url`, MUST equal the configured version, or be refused with `404`
+    `not-found`: answering from a different release without saying so is
+    the failure snomed-rust's spec/11 forbids. With no configured version,
+    every requested version is refused, because none can be verified.
+  - **Parameters.** `$lookup`: `system` and `code` (required), `version`,
+    `property` (repeatable). `$subsumes`: `system`, `codeA`, `codeB`
+    (required), `version`. `$expand`: `url` (required, an implicit value
+    set), `filter`, `count`, `offset`, `activeOnly`,
+    `includeDesignations`. Every other parameter — `coding`,
+    `displayLanguage`, `valueSet`, `context`, and anything unknown — is
+    **refused by name** with `400` (`SV2.13`'s principle), as is a
+    required parameter missing or a single-valued one repeated. A
+    malformed value (a code that is not an SCTID, a negative or
+    non-numeric `count`, a boolean other than `true`/`false`) is `400`,
+    never replaced by a default.
+  - **Outcomes.** A code that is not a concept in the release is `404`
+    `not-found`; an unsupported `system`, `property`, value set form or
+    unparseable ECL is `400`; an `offset` past the end of the expansion is
+    `400`. `normalForm`/`normalFormTerse` are refused (`400`): this
+    server computes no classification at boot. Per `SV2.7`, these
+    `OperationOutcome`s name the parameter, never the submitted value.
+  - **Responses.** `$lookup` and `$subsumes` answer a `Parameters`
+    resource; `$expand` answers a `ValueSet` with `expansion.total`,
+    `offset`, `timestamp` and `contains` (each entry carrying
+    `inactive`). Content is `snomed-fhir`'s, translated, not recomputed.
+  - **Trust.** The routes sit behind the same credential gate as every
+    FHIR route (`SV3.1`). They read no stored resource, so they write no
+    disclosure record (`PR12.5` covers stored data); terminology content
+    is not PHI.
+  - **POST** with a `Parameters` body is not served: unbuilt, not
+    rejected.
+  - The CapabilityStatement declares `lookup` and `subsumes` on the
+    `CodeSystem` resource entry and `expand` on `ValueSet` (`SV2.9`),
+    and a test asserts both directions (`SV2.10`).
 
 ---
 

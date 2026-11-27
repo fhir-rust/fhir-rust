@@ -118,6 +118,21 @@ impl Hooks for App {
             Err(e) => return Err(loco_rs::Error::Message(format!("opening FHIR store: {e}"))),
         }
 
+        // The SNOMED CT release behind the terminology operations (SV2.20):
+        // loaded before traffic, and a configured release that will not load
+        // stops the boot, for the store's reason above. Off the async
+        // workers: a full edition takes a while to read.
+        match tokio::task::spawn_blocking(crate::terminology::init_from_env)
+            .await
+            .map_err(|e| loco_rs::Error::Message(format!("loading SNOMED CT: {e}")))?
+        {
+            Ok(Some(concepts)) => tracing::info!(concepts, "SNOMED CT release loaded"),
+            Ok(None) => {
+                tracing::info!("no SNOMED CT release configured; terminology operations off")
+            }
+            Err(e) => return Err(loco_rs::Error::Message(e)),
+        }
+
         // The admin plane — /health, /ready, /metrics — on its own listener
         // (SV4.3): operational endpoints must be exposable to an operations
         // network without exposing the FHIR API's PHI to it. Off unless
@@ -140,6 +155,7 @@ impl Hooks for App {
             .add_route(controllers::home::routes())
             .add_route(controllers::fhir::routes())
             .add_route(controllers::export::routes())
+            .add_route(controllers::terminology::routes())
     }
 
     /// Time every request into the admin plane's latency histogram (SV4.3).

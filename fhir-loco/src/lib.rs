@@ -19,4 +19,5 @@ pub mod data;
 pub mod initializers;
 pub mod store;
 pub mod tasks;
+pub mod terminology;
 pub mod views;

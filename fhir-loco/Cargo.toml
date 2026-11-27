@@ -72,6 +72,11 @@ uuid = { version = "1", features = ["v4"] }
 # ever *verifies*, and never holds a key that could mint a token.
 pasetors = { version = "0.8", default-features = false, features = ["v4", "std"] }
 hex = "0.4"
+# SNOMED CT® terminology operations (SV1.11, SV2.20): the facade over
+# snomed-rust's zero-dependency crates — RF2 loading (snomed-store) and the
+# FHIR terminology semantics (snomed-fhir). It pulls in nothing else, and
+# the dependency runs one way: snomed-rust never depends on this crate.
+snomed = "0.56.1"
 
 [[bin]]
 name = "fhir_loco-cli"

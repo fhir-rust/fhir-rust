@@ -11,6 +11,15 @@ surface — it inherited the name `fhir-store` briefly before being renamed
 
 ## Unreleased
 
+### Added
+
+- SNOMED CT® terminology operations (`SV1.11`, `SV2.20`): `GET`
+  `CodeSystem/$lookup`, `CodeSystem/$subsumes` and `ValueSet/$expand` over an
+  RF2 release loaded at boot from `FHIR_LOCO_SNOMED_RF2`, with optional
+  `FHIR_LOCO_SNOMED_VERSION` and `FHIR_LOCO_SNOMED_LANGUAGE_REFSET`. Backed by
+  the `snomed` 0.56.1 crates, which have no dependencies of their own. Unset,
+  the routes answer `404` and the CapabilityStatement does not declare them.
+
 ### Security
 
 - Every FHIR and `$export` route now refuses a request without a verified

@@ -898,6 +898,7 @@ dependencies = [
  "serde_json",
  "serde_urlencoded",
  "serial_test",
+ "snomed",
  "tokio",
  "tokio-postgres",
  "tower",
@@ -2906,6 +2907,88 @@ name = "smallvec"
 version = "1.16.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3244542535d5de959d90ec55d1b5ff0fd2bb7b1310223907d5f11932847f7b59"
+
+[[package]]
+name = "snomed"
+version = "0.56.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "01a2d14f307d253043a7cbc3cb10034af5c17c543740e00e8804074b7cd3b126"
+dependencies = [
+ "snomed-classify",
+ "snomed-core",
+ "snomed-ecl",
+ "snomed-fhir",
+ "snomed-owl",
+ "snomed-rf2",
+ "snomed-store",
+]
+
+[[package]]
+name = "snomed-classify"
+version = "0.56.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e467d6191da4eb1c623820fcdaf57b8e7b40aa2251a0e75a3b8984540ae0aa43"
+dependencies = [
+ "snomed-core",
+ "snomed-owl",
+]
+
+[[package]]
+name = "snomed-core"
+version = "0.56.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a5cb323774cc0f360a509bef0b3a37318d11fb4c65cbfd6b37b1f4a6910b4e76"
+
+[[package]]
+name = "snomed-ecl"
+version = "0.56.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "05b32111d4cc432ba0022fae609abf5414268f783306a119b7d92e3196a229d7"
+dependencies = [
+ "snomed-core",
+ "snomed-rf2",
+ "snomed-store",
+]
+
+[[package]]
+name = "snomed-fhir"
+version = "0.56.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "aaf3e0d3b4770f98976a4b52f6c68d781adadb45b09cd34a65a35e98d462e62a"
+dependencies = [
+ "snomed-classify",
+ "snomed-core",
+ "snomed-ecl",
+ "snomed-store",
+]
+
+[[package]]
+name = "snomed-owl"
+version = "0.56.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dd20f6c1057818388207b7f700e51cbd8777dc0d0fae74f9a6782f4249d178c6"
+dependencies = [
+ "snomed-core",
+]
+
+[[package]]
+name = "snomed-rf2"
+version = "0.56.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2ad702d9048af7691c55931f356184d82b900f5cc772ff1bd8a324a9ab5fab65"
+dependencies = [
+ "snomed-core",
+]
+
+[[package]]
+name = "snomed-store"
+version = "0.56.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dda8ad23534842f44077d2acf381dd4546e0f9aa0be017a5341b0e34a17b70bd"
+dependencies = [
+ "snomed-core",
+ "snomed-rf2",
+]
 
 [[package]]
 name = "socket2"

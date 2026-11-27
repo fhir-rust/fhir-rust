@@ -71,6 +71,34 @@ nothing.
 Backends are selected by configuration rather than by Cargo feature, so a
 deployment can change engine without a rebuild.
 
+## Terminology (SNOMED CT®)
+
+Optional, and off unless configured (`SV1.11`, `SV2.20`). Point
+`FHIR_LOCO_SNOMED_RF2` at an extracted RF2 release directory and the server
+loads its Snapshot at boot and serves, by `GET` on every mounted version:
+
+| Route | Operation |
+| --- | --- |
+| `/{version}/CodeSystem/$lookup` | `system`, `code`, `version`, `property` |
+| `/{version}/CodeSystem/$subsumes` | `system`, `codeA`, `codeB`, `version` |
+| `/{version}/ValueSet/$expand` | `url` (an implicit value set: `?fhir_vs`, `isa/`, `refset`, `refset/`, `ecl/`), `filter`, `count`, `offset`, `activeOnly`, `includeDesignations` |
+
+```sh
+export FHIR_LOCO_SNOMED_RF2=/path/to/SnomedCT_InternationalRF2_PRODUCTION_20240101T120000Z
+# Optional: the release's version URI. A requested version must equal it.
+export FHIR_LOCO_SNOMED_VERSION=http://snomed.info/sct/900000000000207008/version/20240101
+# Optional: the language refset used for display (here US English).
+export FHIR_LOCO_SNOMED_LANGUAGE_REFSET=900000000000509007
+```
+
+The semantics are the [`snomed-fhir`](https://crates.io/crates/snomed-fhir)
+crate's; this server translates HTTP to it. A release that will not load, or
+loads no concepts, stops the boot. Any other parameter is refused by name.
+`normalForm` is not served, and neither is `POST` with a `Parameters` body.
+A full International Edition is held in memory, which takes several GB. The
+release is licensed content that whoever deploys the server supplies; none
+ships here.
+
 ## Authentication
 
 **PASETO v4.public, required.** There is no unauthenticated mode.
