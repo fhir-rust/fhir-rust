@@ -37,8 +37,10 @@ async fn seeded(schema: &str) -> Option<Store> {
         .await
         .expect("p1 v2");
     store
-        .put(&json!({"resourceType": "Observation", "id": "o1", "status": "final",
-            "code": {"text": "Synthetic assay"}}))
+        .put(
+            &json!({"resourceType": "Observation", "id": "o1", "status": "final",
+            "code": {"text": "Synthetic assay"}}),
+        )
         .await
         .expect("o1 v1");
     store.delete("Observation", "o1").await.expect("o1 del");

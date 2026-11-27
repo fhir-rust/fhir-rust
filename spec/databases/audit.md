@@ -6331,7 +6331,7 @@ synthetic data; filed here 2026-11-26 from `tasks.md`.
   `code`, `status`, `component.code`, `useContext.value[x]`;
   `_status`-only accepted), both checks shown to fail when removed; the
   `fhir-loco` test `a_resource_missing_a_required_element_is_refused_by_name`.
-  The full example corpus still round-trips: 354 R3/R4 examples that HL7
+  The full example corpus still round-trips: 354 R3/R4 examples that HL7®
   publishes in violation of their own release (generated `*-questionnaire`
   items without `linkId`; extension SearchParameters without `base`) are
   refused by name via `KNOWN_INVALID` in `corpus.rs` and round-trip through
