@@ -96,7 +96,7 @@ loco-rs = { workspace = true, features = ["testing"] }
 serial_test = { version = "4.0.1" }
 # Makes the access-log insert fail on demand (PR12.5 fail-closed test);
 # the same version and bundled SQLite fhir-sqlite-store already links.
-rusqlite = { version = "0.42", features = ["bundled"] }
+rusqlite = { version = "0.43", features = ["bundled"] }
 rstest = { version = "0.28" }
 insta = { version = "1.49", features = ["redactions", "yaml", "filters"] }
 
