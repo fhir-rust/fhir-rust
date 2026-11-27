@@ -1,6 +1,6 @@
 [package]
 name = "fhir"
-version = "4.2.4"
+version = "4.2.5"
 edition = "2024"
 authors = ["Joel Parker Henderson <joel@joelparkerhenderson.com>"]
 description = "Fast Healthcare Interoperability Resources (FHIR®) data model for Rust: the complete FHIR R2-R6 resources, datatypes, and code systems as serde-serializable types, plus cross-release conversion and a spec-driven code generator. HL7®, and FHIR® are the registered trademarks of Health Level Seven International and their use of these trademarks does not constitute an endorsement by HL7. This project is an independent work."

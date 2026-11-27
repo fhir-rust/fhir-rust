@@ -5,7 +5,9 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## 4.2.5 / 3.3.4 (fhir-core) / 1.6.2 (fhir-derive-macros) / 4.2.4 (fhir-r5, fhir-r6) / 4.2.3 (fhir-r2, r3, r4, r4b) / 0.0.5 (fhir-r1, r7–r10) — 2026-11-27
+
+Version bump to clear O10.11: the tree had diverged from the published versions (licence expression now includes `OGL-UK-3.0` and `CC-BY-SA-4.0`, MSRV 1.98, plus the fix below).
 
 ### Security (fhir-core, feature `client`)
 

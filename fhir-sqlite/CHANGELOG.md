@@ -12,7 +12,7 @@
 > releases, and because a changelog is a historical record. What is specific to
 > this port is stated where it differs.
 
-## Unreleased (0.6.5)
+## 0.6.5 — 2026-11-27
 
 Writes now enforce minimum cardinality (`V9.1`, **F-111**): a resource
 missing an element whose `ElementDefinition.min` is 1 or more is refused,

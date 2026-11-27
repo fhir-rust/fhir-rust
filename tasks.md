@@ -609,6 +609,10 @@ Reproduced on SQLite and PostgreSQL 18.7, R4 and R5 maps, synthetic data.
       belong to the deployer (SMART scopes). Privacy lead verifies reads,
       searches with includes, history and exports.
 
+## Release blocker: PostgreSQL crates diverge from crates.io (2026-11-27)
+
+- [ ] `fhir-postgresql CI` job "No version diverges from crates.io" (O10.11) is red on every `main` run back to 648bf92, before the F-111 work. Published `fhir-postgresql-gen` 0.6.3 differs from the tree (LICENSE.md, plus the F-111 `shred`/`model` changes). Fix: bump the affected crates' versions, changelog them, and publish. Owner release decision; not done. Confirm the other ports' crates are unpublished at their current versions (the SQLite check passes).
+
 ## Dependabot and review requests (2026-11-27)
 
 Handled by subagents in separate worktrees, then merged locally and re-verified together; **nothing pushed, no PR commented on, merged or closed** (that is yours to do):

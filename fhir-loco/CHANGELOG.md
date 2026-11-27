@@ -9,7 +9,7 @@ This file did not exist before 2026-08-29. This crate is the FHIR® REST
 surface — it inherited the name `fhir-store` briefly before being renamed
 (**F-37**), and had no changelog under either name.
 
-## Unreleased
+## 0.3.9 — 2026-11-27
 
 ### Added
 
@@ -57,7 +57,7 @@ surface — it inherited the name `fhir-store` briefly before being renamed
 - `read` and conditional create take body and version from one store call;
   `vread` reads once instead of twice.
 
-## 0.3.9 — 2026-11-24
+## 0.3.9 (earlier note) — 2026-11-24
 
 Version bump only: the tree had diverged from the published 0.3.8 (O10.11); no behaviour change beyond what is already in the source.
 

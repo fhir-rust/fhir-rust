@@ -12,7 +12,10 @@
 > releases, and because a changelog is a historical record. What is specific to
 > this port is stated where it differs.
 
-## Unreleased
+## 0.6.3 — 2026-11-27
+
+Also carried since 0.6.2: the licence expression gained `OGL-UK-3.0` and `CC-BY-SA-4.0`, MSRV is 1.98, release builds keep overflow checks, and the shared core's `ShredError` / `MISSING_REQUIRED` / `without_required` are new. Version bump to clear O10.11: the tree had diverged from published 0.6.2.
+
 
 Writes now enforce minimum cardinality (`V9.1`, **F-111**): a resource
 missing an element whose `ElementDefinition.min` is 1 or more is refused,

@@ -24,7 +24,7 @@
 > matrix](../spec/databases/conformance-matrix.md) and this port's own
 > `tasks.md` — not in any entry below, including *Unreleased*.
 
-## Unreleased
+## 0.6.3 — 2026-11-27
 
 Writes now enforce minimum cardinality (`V9.1`, **F-111**): a resource
 missing an element whose `ElementDefinition.min` is 1 or more is refused,

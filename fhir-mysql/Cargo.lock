@@ -249,7 +249,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-mysql-gen"
-version = "0.6.2"
+version = "0.6.3"
 dependencies = [
  "fhir-mysql-map",
  "flate2",
@@ -261,7 +261,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-mysql-map"
-version = "0.6.2"
+version = "0.6.3"
 dependencies = [
  "flate2",
  "fnv",
@@ -274,7 +274,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-mysql-store"
-version = "0.6.2"
+version = "0.6.3"
 dependencies = [
  "fhir-mysql-gen",
  "fhir-mysql-map",
@@ -295,7 +295,7 @@ dependencies = [
 
 [[package]]
 name = "fhir-store"
-version = "0.3.3"
+version = "0.3.4"
 dependencies = [
  "getrandom 0.4.3",
  "hmac",
