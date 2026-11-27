@@ -112,6 +112,19 @@ fn num_eq(a: &str, b: &str) -> bool {
     matches!((norm(a), norm(b)), (Some(x), Some(y)) if x == y)
 }
 
+/// Published examples that violate their own release's minimum cardinality
+/// (`V9.1`), which the store now refuses: `(release, file-name fragment,
+/// missing path)`. The same four rules as `fhir-postgresql-gen/tests/
+/// corpus.rs`, which also proves these round-trip through a map with the
+/// flags cleared; a live store cannot be told to skip validation, so here
+/// they are skipped, counted, and each rule must match at least one example.
+const KNOWN_INVALID: &[(&str, &str, &str)] = &[
+    ("r3", "-questionnaire(qs1).json", "item.item.linkId"),
+    ("r4", "-questionnaire.json", "item.item.linkId"),
+    ("r3", "-extensions-", "base"),
+    ("r4", "-extensions-", "base"),
+];
+
 #[tokio::test]
 async fn live_roundtrip_corpus() {
     let Some(_db) = common::test_db() else {
@@ -128,6 +141,7 @@ async fn live_roundtrip_corpus() {
 
     let mut failures: Vec<String> = Vec::new();
     let mut total = 0usize;
+    let mut rule_hits = vec![0usize; KNOWN_INVALID.len()];
     for (cdir, sdir) in [("stu3", "r3"), ("r4", "r4"), ("r5", "r5")] {
         let defs = spec.join(sdir).join("fhir-definitions-json");
         let ex = corpus.join(cdir);
@@ -169,7 +183,21 @@ async fn live_roundtrip_corpus() {
             let put = match store.put(&v).await {
                 Ok(p) => p,
                 Err(e) => {
-                    failures.push(format!("[{sdir}] {name}: put: {e}"));
+                    let msg = e.to_string();
+                    let rule = KNOWN_INVALID.iter().position(|(r, frag, path)| {
+                        *r == sdir
+                            && name.contains(frag)
+                            && msg.contains(&format!(
+                                "{path}: {}",
+                                fhir_postgresql_map::shred::MISSING_REQUIRED
+                            ))
+                    });
+                    if let Some(rule) = rule {
+                        rule_hits[rule] += 1;
+                        count -= 1;
+                    } else {
+                        failures.push(format!("[{sdir}] {name}: put: {e}"));
+                    }
                     continue;
                 }
             };
@@ -198,6 +226,17 @@ async fn live_roundtrip_corpus() {
         }
     }
     assert!(total > 0, "no examples ran");
+    // A rule that matched nothing excuses nothing; the limit can hide the
+    // files a rule names, so only check when the whole corpus ran.
+    if limit == 0 {
+        for (rule, hits) in KNOWN_INVALID.iter().zip(&rule_hits) {
+            assert!(
+                *hits > 0,
+                "KNOWN_INVALID rule {rule:?} matched nothing: remove it"
+            );
+        }
+    }
+    eprintln!("known-invalid examples skipped: {rule_hits:?}");
     let shown: Vec<_> = failures.iter().take(60).cloned().collect();
     assert!(
         failures.is_empty(),

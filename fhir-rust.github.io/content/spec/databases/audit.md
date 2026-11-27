@@ -206,7 +206,7 @@ type-/system-level history, multi-port wiring, is tracked in that crate's
 | [F-108](#f-108-to-f-111) | **High** | Reference search ignored the parameter's target type: `Observation?patient=shared` matched `subject = Group/shared` (generator dropped `where(resolve() is Patient)`; bare ids compared id alone, cf. F-38) | **fixed** 2026-11-25 in all six ports (R4, R5 maps); SQLite mutation-verified 2026-11-26; R3, HTTP-level and five live engines open |
 | [F-109](#f-108-to-f-111) | **High** | A modifier on a token/number/date/quantity target was dropped silently: `status:not=entered-in-error` returned exactly the `entered-in-error` records | **fixed** (refused as `Unsupported`, HTTP 400) 2026-11-25 in all six ports; SQLite mutation-verified 2026-11-26; `:not` itself unimplemented |
 | [F-110](#f-108-to-f-111) | **High** | Number/Quantity `eq`/`ne` compared exactly instead of over the query's precision: `5.0|ucum|mg` missed 5.04 mg | **fixed** 2026-11-25 in all six ports; SQLite mutation-verified 2026-11-26; live engines other than SQLite open |
-| [F-111](#f-108-to-f-111) | **High** | Minimum cardinality is not enforced at write (V9.1): an Observation without `code` (1..1) is accepted | **fixed** 2026-11-27 in the shared core of all six ports (maps regenerated, `fhir-loco` answers 422); live engines other than SQLite not run; no inventory of existing rows yet |
+| [F-111](#f-108-to-f-111) | **High** | Minimum cardinality is not enforced at write (V9.1): an Observation without `code` (1..1) is accepted | **fixed** 2026-11-27 in the shared core of all six ports (maps regenerated, `fhir-loco` answers 422); live-verified on SQLite and PostgreSQL 18 (see the regression note in the entry); the other four engines' live suites not run; no inventory of existing rows yet |
 | [F-107](#f-107) | Medium | `fhir-sqlite` `status` turned any SQL error into `Unknown` (`.ok()`) and ran outside the transaction its comment claimed | **fixed** 2026-11-26 — one deferred transaction, `.optional()`; fault-injection test mutation-verified |
 
 ## What remains, and why
@@ -6336,6 +6336,17 @@ synthetic data; filed here 2026-11-26 from `tasks.md`.
   items without `linkId`; extension SearchParameters without `base`) are
   refused by name via `KNOWN_INVALID` in `corpus.rs` and round-trip through
   a map with the flags cleared. R5: 0 such examples.
+  **Regression found by CI, 2026-11-27:** the first push turned
+  `fhir-postgresql CI` red. `tests/live.rs` `live_roundtrip_corpus` puts the
+  same example files through the real store, and only the offline corpus test
+  had been taught the 354 known-invalid examples. The live test now skips
+  them under the same four named rules (each must match when the whole
+  corpus runs); the offline test still proves they round-trip. Lesson, as
+  F-95 had it: a change to the shared core needs every port's live suite,
+  not only the ones that run on a laptop. Afterwards the whole PostgreSQL
+  18 store suite (`scripts/db.sh test`) and `fhir-loco`'s `pg_backend` test
+  were run live and pass. mysql, mariadb, mssql and oracle have no live
+  corpus test, so they carry no such rule; their live suites were not run.
   **Not covered:** contained resources and inline resources
   (`Bundle.entry.resource`) are stored whole and not checked; nor is a
   subtree past a type-recursion cut (`Spill`). Not run: the five server
