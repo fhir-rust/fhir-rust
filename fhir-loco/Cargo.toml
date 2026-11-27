@@ -43,7 +43,7 @@ serde = { version = "1", features = ["derive"] }
 # See spec/serde-json-float-roundtrip-arbitrary-precision/.
 serde_json = { version = "1", features = ["arbitrary_precision", "float_roundtrip", "preserve_order"] }
 # Timestamps the Bulk Data manifest's transactionTime (SV2.15). Migrated from chrono to jiff.
-jiff = { version = "0.2", default-features = false, features = ["std"] }
+jiff = { version = "1.0", default-features = false, features = ["std"] }
 # Parses the If-None-Exist header's query-string criteria (SV2.14). Already in
 # the dependency tree via axum; declared so the controller can name it.
 serde_urlencoded = "0.7"
