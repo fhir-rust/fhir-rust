@@ -55,7 +55,7 @@
 use std::sync::OnceLock;
 
 use axum::http::{HeaderMap, StatusCode};
-use axum::response::{IntoResponse, Response as AxumResponse};
+use axum::response::Response as AxumResponse;
 use fhir_sqlite_store::Audit;
 use pasetors::claims::ClaimsValidationRules;
 use pasetors::keys::AsymmetricPublicKey;
@@ -121,15 +121,21 @@ fn verifier() -> Option<&'static Verifier> {
     VERIFIER.get()
 }
 
-/// `401`, with a body that names what was wrong with the *request* and never
-/// what is stored — the same rule the store's `Unsupported` error follows.
+/// `401`, with an `OperationOutcome` (`SV2.6`) as `application/fhir+json`
+/// (`SV2.3`) that names what was wrong with the *request* and never what is
+/// stored (`SV2.7`) — the same rule the store's `Unsupported` error follows.
+/// `WWW-Authenticate: Bearer` says how to authenticate.
+///
+/// Every refusal — the `require_credential` gate, the mutating handlers' own
+/// `audit_from`, and the export routes — comes through here.
 fn unauthorized(detail: &str) -> AxumResponse {
-    (
-        StatusCode::UNAUTHORIZED,
-        [("www-authenticate", "Bearer")],
-        detail.to_string(),
-    )
-        .into_response()
+    let mut res =
+        crate::controllers::fhir::outcome(StatusCode::UNAUTHORIZED, "error", "login", detail);
+    res.headers_mut().insert(
+        axum::http::header::WWW_AUTHENTICATE,
+        axum::http::HeaderValue::from_static("Bearer"),
+    );
+    res
 }
 
 /// The bearer token, if the header is well-formed.
@@ -243,6 +249,32 @@ mod tests {
         claims.subject(sub).expect("sub");
         let token = public::sign(&kp.secret, &claims, None, None).expect("sign");
         (kp, token)
+    }
+
+    /// SV2.6 + SV2.3: every refusal `audit_from` produces is a 401 with an
+    /// OperationOutcome as FHIR JSON and `WWW-Authenticate: Bearer`, whether
+    /// the verifier is configured or not. Called directly, as the mutating
+    /// handlers and export routes call it.
+    #[tokio::test]
+    async fn a_refusal_from_audit_from_is_an_operation_outcome() {
+        let mut headers = HeaderMap::new();
+        for h in [None, Some("Basic dXNlcjpwYXNz"), Some("Bearer v4.public.x")] {
+            if let Some(h) = h {
+                headers.insert(axum::http::header::AUTHORIZATION, h.parse().expect("hv"));
+            }
+            let res = audit_from(&headers).expect_err("no valid credential");
+            assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
+            assert_eq!(res.headers()["www-authenticate"], "Bearer");
+            assert_eq!(res.headers()["content-type"], "application/fhir+json");
+            let body = axum::body::to_bytes(res.into_body(), usize::MAX)
+                .await
+                .expect("body");
+            let v: serde_json::Value = serde_json::from_slice(&body).expect("json");
+            assert_eq!(v["resourceType"], "OperationOutcome");
+            assert_eq!(v["issue"][0]["severity"], "error");
+            assert_eq!(v["issue"][0]["code"], "login");
+            assert!(!String::from_utf8_lossy(&body).contains("x\""), "no echo");
+        }
     }
 
     #[test]

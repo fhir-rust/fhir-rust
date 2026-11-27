@@ -42,6 +42,12 @@ surface — it inherited the name `fhir-store` briefly before being renamed
 
 ### Fixed
 
+- A refused credential (`401`) now carries an `OperationOutcome` as
+  `application/fhir+json` (`SV2.6`, `SV2.3`) instead of a `text/plain` body,
+  from the `require_credential` gate, the mutating handlers and the export
+  routes alike; `WWW-Authenticate: Bearer` is unchanged and the body names
+  only what was wrong with the request (`SV2.7`). Thanks to maxfunke (#142).
+
 - Exported NDJSON files no longer outlive a restart: at boot, job
   directories left by a previous process are deleted (UUID-named ones
   only), and expired jobs are swept on a timer rather than only at the next
