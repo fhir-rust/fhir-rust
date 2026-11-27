@@ -609,6 +609,17 @@ Reproduced on SQLite and PostgreSQL 18.7, R4 and R5 maps, synthetic data.
       belong to the deployer (SMART scopes). Privacy lead verifies reads,
       searches with includes, history and exports.
 
+## Dependabot and review requests (2026-11-27)
+
+Handled by subagents in separate worktrees, then merged locally and re-verified together; **nothing pushed, no PR commented on, merged or closed** (that is yours to do):
+
+- [x] **#142 fhir-loco 401 carries an OperationOutcome** (maxfunke) — conflicted with the credential gate; ported onto main (`unauthorized()` now builds `outcome()`, keeps `WWW-Authenticate: Bearer`), author's test kept and extended to gated reads, `/metadata` and `$export-status`; mutation-verified. Close #142 in favour of the merged commit, crediting the author.
+- [x] **#134 + #135 rusqlite 0.43** — merge only together (both link bundled SQLite; loco also has a rusqlite dev-dependency). Taken as one change in fhir-sqlite and fhir-loco; no source change; same bundled SQLite 3.54.1; full sqlite store suite and loco suite green.
+- [x] **#133 jiff 1.0.1 (oracle), #138 (loco)** — taken. **#137 (mssql) is broken as proposed** (mssql 2.1's `jiff` feature implements `FromSql` for jiff 0.2 only, E0277); the working change is mssql driver 2.1 → 3.0.0 together with jiff 1.0. Only oracle, mssql and loco use jiff. Verified: fmt, clippy, MSRV `--locked`, offline suites, and the SQL Server (`azure-sql-edge`) live suite.
+- [x] #136 serde_with and #141 README (docs draft) were already closed; nothing to do.
+- [ ] **Flaky deadlock in the mssql upgrade tests.** `fhir-mssql-store/tests/upgrade.rs` shares one database across tests; under the default parallel test threads it fails about 1 run in 4–6 with error 1205 ("deadlock victim") in a different test each time, on driver 2.1 **and** 3.0 (baseline `ead4480`: 1 of 6; merged: 1 of 4 and 1 earlier; 0 of 4 with `--test-threads=1`). Not introduced by the bump. CI should run that suite with `--test-threads=1` (the oracle port's guide already says to) or give each test its own database.
+- [ ] **Local `cargo deny` reports `chrono` unmaintained** (RUSTSEC-2026-0543, via loco-rs) and two stale `deny.toml` ignores (RUSTSEC-2026-0194/0195 no longer match). CI's log did not show the chrono error; re-check with CI's cargo-deny version before touching `deny.toml`.
+
 ## Production and quality audits (imported 2026-11-26)
 
 Two external audits, both deleted from `docs/audits/` and recorded here.
