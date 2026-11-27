@@ -34,7 +34,7 @@ fn issuer() -> &'static pasetors::keys::AsymmetricKeyPair<pasetors::version4::V4
 }
 
 /// `Authorization` value for a principal.
-fn bearer(subject: &str) -> String {
+pub(super) fn bearer(subject: &str) -> String {
     use pasetors::claims::Claims;
     let mut claims = Claims::new().expect("claims");
     claims.subject(subject).expect("subject");
@@ -91,7 +91,7 @@ pub(super) async fn store_ready() {
 /// Parse a response body. Generic over the response type so this does not have
 /// to name `axum_test`'s type, which Loco re-exports but does not expose by
 /// name in its prelude.
-fn body_of(text: &str) -> serde_json::Value {
+pub(super) fn body_of(text: &str) -> serde_json::Value {
     serde_json::from_str(text).expect("response is JSON")
 }
 
@@ -220,6 +220,7 @@ async fn create_read_update_delete_round_trip() {
             .add_header("authorization", &bearer("dr-who"))
             .text(
                 r#"{"resourceType":"Observation","status":"final",
+                    "code":{"text":"Synthetic assay"},
                     "valueQuantity":{"value":9.60,"unit":"mg/dL"}}"#,
             )
             .await;
@@ -260,7 +261,7 @@ async fn create_read_update_delete_round_trip() {
             .add_header("authorization", &bearer("dr-who"))
             .add_header("if-match", "W/\"1\"")
             .text(format!(
-                r#"{{"resourceType":"Observation","id":"{id}","status":"amended"}}"#
+                r#"{{"resourceType":"Observation","id":"{id}","status":"amended","code":{{"text":"Synthetic assay"}}}}"#
             ))
             .await;
         assert_eq!(res.status_code(), 200);
@@ -352,7 +353,7 @@ async fn history_shows_every_version_including_the_deletion() {
                 .add_header("content-type", FHIR_JSON)
                 .add_header("authorization", &bearer("dr-who"))
                 .text(format!(
-                    r#"{{"resourceType":"Observation","id":"{id}","status":"{status}"}}"#
+                    r#"{{"resourceType":"Observation","id":"{id}","status":"{status}","code":{{"text":"Synthetic assay"}}}}"#
                 ))
                 .await;
             assert!(res.status_code().is_success());
@@ -472,7 +473,7 @@ async fn search_returns_a_bundle_and_respects_paging() {
                 .add_header("content-type", FHIR_JSON)
                 .add_header("authorization", &bearer("dr-who"))
                 .text(format!(
-                    r#"{{"resourceType":"Observation","id":"srch-{i}","status":"registered"}}"#
+                    r#"{{"resourceType":"Observation","id":"srch-{i}","status":"registered","code":{{"text":"Synthetic assay"}}}}"#
                 ))
                 .await;
             assert!(res.status_code().is_success());
@@ -1032,6 +1033,37 @@ async fn a_read_whose_disclosure_cannot_be_recorded_is_refused() {
             200,
             "served again once the log is writable"
         );
+    })
+    .await;
+}
+
+/// `V9.1`/`V9.3`: a resource missing a required element is refused with 422
+/// and an OperationOutcome naming the element, and nothing is stored. It used
+/// to be accepted (audit **F-111**). Shown to fail with the shredder's check
+/// removed (201) and with `StoreFailure::Invalid` unmapped (500).
+#[tokio::test]
+#[serial]
+async fn a_resource_missing_a_required_element_is_refused_by_name() {
+    store_ready().await;
+    request::<App, _, _>(|request, _ctx| async move {
+        let res = request
+            .put("/r5/Observation/no-code-1")
+            .add_header("content-type", FHIR_JSON)
+            .add_header("authorization", &bearer("dr-who"))
+            .text(r#"{"resourceType":"Observation","id":"no-code-1","status":"final"}"#)
+            .await;
+        let (status, text) = (res.status_code(), res.text());
+        assert_eq!(status, 422, "{text}");
+        assert!(
+            text.contains("OperationOutcome") && text.contains("code"),
+            "{text}"
+        );
+        assert!(text.contains("V9.1"), "the refusal names its rule: {text}");
+        let res = request
+            .get("/r5/Observation/no-code-1")
+            .add_header("authorization", &bearer("dr-who"))
+            .await;
+        assert_eq!(res.status_code(), 404, "nothing was stored");
     })
     .await;
 }

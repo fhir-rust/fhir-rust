@@ -12,7 +12,7 @@ use std::collections::HashMap;
 
 use fhir_oracle_map::model::{Elem, ElemKind, Prim, ResourceMap};
 use fhir_oracle_map::reconstruct::{InRow, ReconIn, reconstruct};
-use fhir_oracle_map::shred::{SqlVal, shred};
+use fhir_oracle_map::shred::{SqlVal, shred, without_required};
 use serde_json::{Map, Value};
 
 // ---------- deterministic rng (SplitMix64) ----------
@@ -444,7 +444,12 @@ fn property_roundtrip_random_resources() {
     let mut failures = Vec::new();
     for seed in 0..cases {
         let rt = types[(seed % types.len() as u64) as usize];
-        let rm = map.resources.get(rt).expect("type");
+        // Fidelity of arbitrary shapes, not validation: the generator picks
+        // elements at random and stops at depth 5, so it cannot promise every
+        // required element (V9.1). Cardinality is tested where it is decided,
+        // in `tests/min_cardinality.rs`.
+        let relaxed = without_required(map.resources.get(rt).expect("type"));
+        let rm = &relaxed;
         let v = gen_resource(rm, seed.wrapping_mul(0x2545F4914F6CDD1D) + seed);
         let out = match shred(rm, &v) {
             Ok(o) => o,

@@ -27,6 +27,10 @@ surface — it inherited the name `fhir-store` briefly before being renamed
   `FHIR_LOCO_DISCLOSURE_FAIL_OPEN=true` restores serving, read once at boot
   and logged as a warning. A refused credential still answers `401`.
 
+- A resource missing a required element (`V9.1`) is refused with `422` and
+  an OperationOutcome naming the element (`V9.3`), instead of being stored
+  (SQLite and PostgreSQL maps now carry minimum cardinality, **F-111**).
+
 ### Fixed
 
 - Exported NDJSON files no longer outlive a restart: at boot, job

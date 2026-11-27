@@ -362,6 +362,12 @@ mapping* (HIPAA, GDPR, ONC/HTI, IEC 62304).
 
 ## Unreleased — 2.0.0-dev (ground-up rewrite, 2026-07)
 
+Writes now enforce minimum cardinality (`V9.1`, **F-111**): a resource
+missing an element whose `ElementDefinition.min` is 1 or more is refused,
+naming the path, before anything is written. Bundled maps regenerated (R3,
+R4, R5) to carry the new `required` flag; an older map carries none and
+enforces nothing.
+
 A complete rewrite: FHIR resources now live in **fully normalized
 relational tables** (typed columns, child tables per repeating element,
 `ords smallint[]` ordinal paths) instead of jsonb bodies. The prior

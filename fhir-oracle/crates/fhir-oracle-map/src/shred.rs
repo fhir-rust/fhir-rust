@@ -71,6 +71,36 @@ pub struct ShredOut {
     pub contained: Vec<(i16, Value)>,
 }
 
+/// A required element (`Elem::required`, min cardinality ≥ 1) that is absent:
+/// `V9.1`'s cardinality check, naming the path (`V9.3`, `R4.3`).
+fn missing(jpath: &str, name: &str) -> ShredError {
+    ShredError::at(jp(jpath, name), MISSING_REQUIRED)
+}
+
+/// The message of a [`ShredError::At`] raised for a missing required
+/// element, so callers and tests can tell a cardinality refusal from a
+/// malformed value without a new error variant every store would have to map.
+pub const MISSING_REQUIRED: &str = "required element is missing (minimum cardinality 1, V9.1)";
+
+/// A copy of `rm` that enforces no minimum cardinality — for checking the
+/// round-trip fidelity of input that `V9.1` rightly refuses (published
+/// examples that violate their own release, `R13.2`'s known exceptions).
+/// Never used on a write path.
+#[must_use]
+pub fn without_required(rm: &ResourceMap) -> ResourceMap {
+    fn clear(e: &mut Elem) {
+        e.required = false;
+        if let ElemKind::Choice(vs) = &mut e.kind {
+            vs.iter_mut().for_each(clear);
+        }
+    }
+    let mut rm = rm.clone();
+    for n in &mut rm.nodes {
+        n.elems.iter_mut().for_each(clear);
+    }
+    rm
+}
+
 pub fn shred(rm: &ResourceMap, v: &Value) -> Result<ShredOut, ShredError> {
     let obj = v
         .as_object()
@@ -339,7 +369,13 @@ impl<'a> Sh<'a> {
                     found = Some(var);
                 }
             }
-            let Some(var) = found else { return Ok(()) };
+            let Some(var) = found else {
+                return if elem.required {
+                    Err(missing(jpath, &format!("{}[x]", elem.json)))
+                } else {
+                    Ok(())
+                };
+            };
             // A force-split choice owns a table; its variants' columns live
             // in that table's row.
             let (t, o): (u32, Vec<i16>) = match elem.table {
@@ -357,7 +393,11 @@ impl<'a> Sh<'a> {
         let pext_key = format!("_{}", elem.json);
         let pext = obj.get(pext_key.as_str());
         if v.is_none() && pext.is_none() {
-            return Ok(());
+            return if elem.required {
+                Err(missing(jpath, &elem.json))
+            } else {
+                Ok(())
+            };
         }
         if v.is_some() {
             let (k, _) = obj

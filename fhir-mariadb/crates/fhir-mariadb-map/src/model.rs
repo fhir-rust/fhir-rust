@@ -291,6 +291,14 @@ pub struct Elem {
     /// ordinals so every path stays unambiguous.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub neg_lane: bool,
+    /// Minimum cardinality is at least 1 (`ElementDefinition.min`), so the
+    /// shredder refuses an object of this node that lacks the element (`V9.1`).
+    /// A primitive present only as its `_name` extension sibling counts as
+    /// present, as FHIR allows. For a choice it is the choice that is
+    /// required: any one variant satisfies it. Absent from pre-`V9.1` assets,
+    /// which therefore enforce nothing — exactly what their stores did.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub required: bool,
     pub kind: ElemKind,
 }
 

@@ -50,7 +50,17 @@ static STORES: OnceLock<Versions> = OnceLock::new();
 #[derive(Debug)]
 pub enum StoreFailure {
     Unsupported(String),
-    Conflict { expected: i64, found: i64 },
+    Conflict {
+        expected: i64,
+        found: i64,
+    },
+    /// The resource itself is invalid against the map — a missing required
+    /// element (`V9.1`), an unknown element, a malformed value. `path` and
+    /// `msg` describe the caller's own input, so both may be returned.
+    Invalid {
+        path: String,
+        msg: String,
+    },
     Other(String),
 }
 
@@ -61,6 +71,7 @@ impl std::fmt::Display for StoreFailure {
             Self::Conflict { expected, found } => {
                 write!(f, "version conflict: expected {expected}, found {found}")
             }
+            Self::Invalid { path, msg } => write!(f, "{path}: {msg}"),
             Self::Other(m) => write!(f, "{m}"),
         }
     }
@@ -72,6 +83,7 @@ impl From<fhir_sqlite_store::StoreError> for StoreFailure {
         match e {
             E::Unsupported(m) => Self::Unsupported(m),
             E::Conflict { expected, found } => Self::Conflict { expected, found },
+            E::Shred(fhir_sqlite_map::ShredError::At { path, msg }) => Self::Invalid { path, msg },
             other => Self::Other(other.to_string()),
         }
     }
@@ -83,6 +95,9 @@ impl From<fhir_postgresql_store::StoreError> for StoreFailure {
         match e {
             E::Unsupported(m) => Self::Unsupported(m),
             E::Conflict { expected, found } => Self::Conflict { expected, found },
+            E::Shred(fhir_postgresql_map::ShredError::At { path, msg }) => {
+                Self::Invalid { path, msg }
+            }
             other => Self::Other(other.to_string()),
         }
     }

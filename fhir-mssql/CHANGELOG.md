@@ -26,6 +26,12 @@
 
 ## Unreleased
 
+Writes now enforce minimum cardinality (`V9.1`, **F-111**): a resource
+missing an element whose `ElementDefinition.min` is 1 or more is refused,
+naming the path, before anything is written. Bundled maps regenerated (R3,
+R4, R5) to carry the new `required` flag; an older map carries none and
+enforces nothing.
+
 **0.6.3** (workspace version): bumped because `fhir-mssql-map`, `-gen` and `-store` had diverged from the published 0.6.2 (O10.11).
 
 **Behaviour change: corrupt stored values now fail the read (RCA-IN-6).** The

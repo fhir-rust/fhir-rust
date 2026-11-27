@@ -95,7 +95,7 @@ column is `ColTy::Bool`.
 | search: reference target type (**F-108**) | ~ | • | ~ | ~ | ~ | ~ | landed in all six 2026-11-25 (R4, R5 maps; R3 open). sqlite `•`: end-to-end test, mutation-verified 2026-11-26. Elsewhere `~`: lib-tested, no live-engine run |
 | search: unsupported modifier refused (**F-109**) | ~ | • | ~ | ~ | ~ | ~ | refused as `Unsupported` (HTTP 400) rather than ignored; `:not` itself unimplemented. Evidence as the row above |
 | search: number/quantity `eq`/`ne` at query precision (**F-110**) | ~ | • | ~ | ~ | ~ | ~ | `5.0` means `[4.95, 5.05)`; ordering prefixes and exponent notation unchanged. Evidence as above |
-| minimum cardinality enforced at write (V9.1, **F-111**) | — | — | — | — | — | — | open: an Observation without `code` is accepted on every port |
+| minimum cardinality enforced at write (V9.1, **F-111**) | ~ | • | ~ | ~ | ~ | ~ | shared shredder, 2026-11-27. sqlite `•`: full suite. Elsewhere `~`: map/gen tests pass, live suites not run. Contained, inline and spilled subtrees are not checked; no inventory of existing rows |
 | `transact_audited` | • | ~ | — | — | — | — |
 | `conditional_create` | • | • | — | — | — | — |
 | `conditional_delete` | • | • | — | — | — | — |

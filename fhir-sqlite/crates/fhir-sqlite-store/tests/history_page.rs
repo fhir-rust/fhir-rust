@@ -46,7 +46,8 @@ async fn seeded(name: &str) -> Option<SqliteStore> {
         .expect("p1 v2");
     store
         .put(
-            &json!({"resourceType": "Observation", "id": "o1", "status": "final"}),
+            &json!({"resourceType": "Observation", "id": "o1", "status": "final",
+                "code": {"text": "Synthetic assay"}}),
             &a,
         )
         .await

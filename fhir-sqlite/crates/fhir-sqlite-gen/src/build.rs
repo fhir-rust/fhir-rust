@@ -317,13 +317,15 @@ impl<'s> ResourceBuilder<'s> {
                     repeats: true,
                     table: None,
                     neg_lane: false,
+                    required: false,
                     kind: ElemKind::Contained,
                 };
                 self.nodes[index(node)].elems.push(elem);
                 continue;
             }
             let child_res_path = format!("{res_path}.{}", e.name);
-            let elem = self.build_elem(e, def, table, prefix, &child_res_path, stack)?;
+            let mut elem = self.build_elem(e, def, table, prefix, &child_res_path, stack)?;
+            elem.required = e.required;
             self.nodes[index(node)].elems.push(elem);
         }
         Ok(())
@@ -424,6 +426,7 @@ impl<'s> ResourceBuilder<'s> {
             repeats: e.repeats,
             table: t,
             neg_lane: false,
+            required: false,
             kind: ElemKind::Group(node),
         })
     }
@@ -471,6 +474,7 @@ impl<'s> ResourceBuilder<'s> {
                 repeats: e.repeats,
                 table: Some(t),
                 neg_lane,
+                required: false,
                 kind: ElemKind::Group(node),
             });
         }
@@ -516,6 +520,7 @@ impl<'s> ResourceBuilder<'s> {
             repeats: e.repeats,
             table: t,
             neg_lane: false,
+            required: false,
             kind: ElemKind::Group(node),
         })
     }
@@ -576,6 +581,7 @@ impl<'s> ResourceBuilder<'s> {
             repeats: false,
             table: t,
             neg_lane: false,
+            required: false,
             kind: ElemKind::Choice(variants),
         })
     }
@@ -624,6 +630,7 @@ impl<'s> ResourceBuilder<'s> {
                     repeats,
                     table: Some(t),
                     neg_lane: false,
+                    required: false,
                     kind: ElemKind::Prim(pc),
                 });
             }
@@ -634,6 +641,7 @@ impl<'s> ResourceBuilder<'s> {
                 repeats,
                 table: None,
                 neg_lane: false,
+                required: false,
                 kind: ElemKind::Prim(pc),
             });
         }
@@ -650,6 +658,7 @@ impl<'s> ResourceBuilder<'s> {
                 repeats,
                 table: None,
                 neg_lane: false,
+                required: false,
                 kind: ElemKind::ResourceValue(col),
             });
         }
@@ -661,6 +670,7 @@ impl<'s> ResourceBuilder<'s> {
                 repeats,
                 table: None,
                 neg_lane: false,
+                required: false,
                 kind: ElemKind::Spill,
             });
         }
@@ -696,6 +706,7 @@ impl<'s> ResourceBuilder<'s> {
             repeats,
             table: t,
             neg_lane: false,
+            required: false,
             kind: ElemKind::Group(node),
         })
     }
@@ -740,6 +751,7 @@ impl<'s> ResourceBuilder<'s> {
                     repeats: false,
                     table: None,
                     neg_lane: false,
+                    required: false,
                     kind: ElemKind::RefStr(RefCols {
                         c_type,
                         c_id,
@@ -747,7 +759,8 @@ impl<'s> ResourceBuilder<'s> {
                     }),
                 });
             } else {
-                let elem = self.build_elem(e, tdef, table, prefix, &child_res_path, stack)?;
+                let mut elem = self.build_elem(e, tdef, table, prefix, &child_res_path, stack)?;
+                elem.required = e.required;
                 self.nodes[index(node)].elems.push(elem);
             }
         }

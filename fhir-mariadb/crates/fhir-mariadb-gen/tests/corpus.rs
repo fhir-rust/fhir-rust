@@ -6,8 +6,9 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
+use fhir_mariadb_map::error::ShredError;
 use fhir_mariadb_map::reconstruct::{InRow, ReconIn, reconstruct};
-use fhir_mariadb_map::shred::{SqlVal, shred};
+use fhir_mariadb_map::shred::{MISSING_REQUIRED, SqlVal, shred, without_required};
 use serde_json::Value;
 
 /// Where the FHIR example corpus lives, if it has been fetched.
@@ -144,6 +145,27 @@ fn sem_eq(a: &Value, b: &Value, path: &str, diffs: &mut Vec<String>) {
     }
 }
 
+/// Published examples that violate their own release's minimum cardinality,
+/// which `V9.1` therefore refuses: `(release, file-name fragment, missing
+/// path)`. Each rule names a whole generated family rather than 354 files,
+/// and each must still match at least one rejection, so a rule cannot
+/// outlive the examples it excuses. Their round-trip fidelity is still
+/// checked, through a map with the cardinality flags cleared.
+///
+/// - HL7's generated `*-questionnaire` examples (R3, R4) nest items with no
+///   `linkId` (`Questionnaire.item.linkId` is 1..1).
+/// - The SearchParameter examples generated for core extensions
+///   (`*-extensions-<Type>-<name>.json`: CodeSystem, ValueSet, Location,
+///   Organization; R3, R4) have no `base` (`SearchParameter.base` is 1..*).
+///
+/// Verified 2026-11-26 by reading the files: the elements really are absent.
+const KNOWN_INVALID: &[(&str, &str, &str)] = &[
+    ("r3", "-questionnaire(qs1).json", "item.item.linkId"),
+    ("r4", "-questionnaire.json", "item.item.linkId"),
+    ("r3", "-extensions-", "base"),
+    ("r4", "-extensions-", "base"),
+];
+
 #[test]
 fn roundtrip_full_corpus() {
     let (Some(corpus), Some(spec)) = (corpus_root(), spec_root()) else {
@@ -152,6 +174,7 @@ fn roundtrip_full_corpus() {
     };
     let mut all_failures: Vec<String> = Vec::new();
     let mut total = 0usize;
+    let mut rule_hits = vec![0usize; KNOWN_INVALID.len()];
     for (cdir, sdir, schema) in [("stu3", "r3", "r3"), ("r4", "r4", "r4"), ("r5", "r5", "r5")] {
         // Two layouts. A fetched corpus uses `stu3/`, `r4/`, `r5/` holding raw
         // JSON; this monorepo nests them as `<ver>/fhir-examples-json`. The
@@ -196,8 +219,29 @@ fn roundtrip_full_corpus() {
                 .expect("name")
                 .to_string_lossy()
                 .to_string();
-            let out = match shred(rm, &v) {
-                Ok(o) => o,
+            let relaxed;
+            let (rm, out) = match shred(rm, &v) {
+                Ok(o) => (rm, o),
+                Err(ShredError::At { path, msg }) if msg == MISSING_REQUIRED => {
+                    let rule = KNOWN_INVALID
+                        .iter()
+                        .position(|(r, frag, p)| *r == sdir && name.contains(frag) && *p == path);
+                    let Some(rule) = rule else {
+                        failures.push(format!(
+                            "{name}: shred: {path}: {msg} (not a known-invalid example)"
+                        ));
+                        continue;
+                    };
+                    rule_hits[rule] += 1;
+                    relaxed = without_required(rm);
+                    match shred(&relaxed, &v) {
+                        Ok(o) => (&relaxed, o),
+                        Err(e) => {
+                            failures.push(format!("{name}: shred (cardinality relaxed): {e}"));
+                            continue;
+                        }
+                    }
+                }
                 Err(e) => {
                     failures.push(format!("{name}: shred: {e}"));
                     continue;
@@ -257,4 +301,11 @@ fn roundtrip_full_corpus() {
         "round-trip failures:\n{}",
         all_failures.join("\n")
     );
+    for (rule, hits) in KNOWN_INVALID.iter().zip(&rule_hits) {
+        eprintln!("known-invalid {rule:?}: {hits} example(s)");
+        assert!(
+            *hits > 0,
+            "KNOWN_INVALID rule {rule:?} matched nothing: the examples it excused are gone or fixed, so remove it"
+        );
+    }
 }

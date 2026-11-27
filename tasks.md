@@ -558,7 +558,11 @@ Reproduced on SQLite and PostgreSQL 18.7, R4 and R5 maps, synthetic data.
       4.95 <= v < 5.05 (5.04 mg). SQLite casts to REAL, PostgreSQL uses
       numeric `=`; both miss. Tests for `5`, `5.0`, `5.00`, exact endpoints,
       different-unit control. Unit conversion is a separate capability.
-- [ ] **Enforce minimum cardinality at write (V9.1).** An Observation without
+- [~] **Enforce minimum cardinality at write (V9.1).** *Landed 2026-11-27 in all
+      six ports (see **F-111**); `fhir-loco` returns 422 naming the element.
+      NOT done: the read-only inventory of existing rows, live-engine runs
+      on the five server ports, checks inside contained/inline/spilled
+      subtrees.* An Observation without
       `code` (1..1) is accepted. Carry min cardinality in the map, enforce in
       the shared shredder, HTTP 4xx OperationOutcome naming
       `Observation.code`, nothing committed on rejection. Fix the SQLite

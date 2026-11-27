@@ -206,7 +206,7 @@ type-/system-level history, multi-port wiring, is tracked in that crate's
 | [F-108](#f-108-to-f-111) | **High** | Reference search ignored the parameter's target type: `Observation?patient=shared` matched `subject = Group/shared` (generator dropped `where(resolve() is Patient)`; bare ids compared id alone, cf. F-38) | **fixed** 2026-11-25 in all six ports (R4, R5 maps); SQLite mutation-verified 2026-11-26; R3, HTTP-level and five live engines open |
 | [F-109](#f-108-to-f-111) | **High** | A modifier on a token/number/date/quantity target was dropped silently: `status:not=entered-in-error` returned exactly the `entered-in-error` records | **fixed** (refused as `Unsupported`, HTTP 400) 2026-11-25 in all six ports; SQLite mutation-verified 2026-11-26; `:not` itself unimplemented |
 | [F-110](#f-108-to-f-111) | **High** | Number/Quantity `eq`/`ne` compared exactly instead of over the query's precision: `5.0|ucum|mg` missed 5.04 mg | **fixed** 2026-11-25 in all six ports; SQLite mutation-verified 2026-11-26; live engines other than SQLite open |
-| [F-111](#f-108-to-f-111) | **High** | Minimum cardinality is not enforced at write (V9.1): an Observation without `code` (1..1) is accepted | **open** — shared-core change in all six ports, awaiting go-ahead |
+| [F-111](#f-108-to-f-111) | **High** | Minimum cardinality is not enforced at write (V9.1): an Observation without `code` (1..1) is accepted | **fixed** 2026-11-27 in the shared core of all six ports (maps regenerated, `fhir-loco` answers 422); live engines other than SQLite not run; no inventory of existing rows yet |
 | [F-107](#f-107) | Medium | `fhir-sqlite` `status` turned any SQL error into `Unknown` (`.ok()`) and ran outside the transaction its comment claimed | **fixed** 2026-11-26 — one deferred transaction, `.optional()`; fault-injection test mutation-verified |
 
 ## What remains, and why
@@ -6317,10 +6317,30 @@ synthetic data; filed here 2026-11-26 from `tasks.md`.
   `precision_bounds`/`numeric_pred` widen `eq` to `[4.95, 5.05)` and `ne`
   to its complement; `lt`/`gt`/`ge`/`le` and exponent notation unchanged.
   Open: live-engine tests per port.
-- **F-111 — minimum cardinality not enforced (V9.1).** Open. Needs min
-  cardinality in the map, enforcement in the shared shredder in all six
-  ports, a 4xx naming the element, nothing committed on rejection, and a
-  read-only inventory of existing rows; never invent a value.
+- **F-111 — minimum cardinality not enforced (V9.1).** Fixed 2026-11-27.
+  The generator records `ElementDefinition.min ≥ 1` as `Elem::required`
+  (absent from older assets, which therefore enforce nothing); the shared
+  shredder refuses an object of a node that lacks a required element —
+  `_name`-only primitives count as present, any variant satisfies a
+  required choice, and a required child of an optional backbone binds only
+  when the backbone is there. The error names the path
+  (`shred::MISSING_REQUIRED`); `fhir-loco` answers 422 with an
+  OperationOutcome. Shredding precedes every statement, so nothing is
+  written. Maps regenerated in all six ports (R3, R4, R5); shared-core gate
+  OK (115 files). Evidence: `gen/tests/min_cardinality.rs` (missing
+  `code`, `status`, `component.code`, `useContext.value[x]`;
+  `_status`-only accepted), both checks shown to fail when removed; the
+  `fhir-loco` test `a_resource_missing_a_required_element_is_refused_by_name`.
+  The full example corpus still round-trips: 354 R3/R4 examples that HL7
+  publishes in violation of their own release (generated `*-questionnaire`
+  items without `linkId`; extension SearchParameters without `base`) are
+  refused by name via `KNOWN_INVALID` in `corpus.rs` and round-trip through
+  a map with the flags cleared. R5: 0 such examples.
+  **Not covered:** contained resources and inline resources
+  (`Bundle.entry.resource`) are stored whole and not checked; nor is a
+  subtree past a type-recursion cut (`Spill`). Not run: the five server
+  engines' live suites (four store fixtures were given a `code`). Not done:
+  a read-only inventory of rows already stored without a required element.
 
 **Evidence for F-108–F-110 (SQLite, 2026-11-26).**
 `tests/sqlite_store.rs`

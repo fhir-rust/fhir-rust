@@ -282,6 +282,7 @@ async fn extensions_get_distinct_surrogate_keys() {
             "resourceType": "Observation",
             "id": "ext-1",
             "status": "final",
+            "code": { "text": "extension fixture" },
             "extension": [
                 { "url": "http://example.org/a", "valueString": "one" },
                 { "url": "http://example.org/b", "valueString": "two" },

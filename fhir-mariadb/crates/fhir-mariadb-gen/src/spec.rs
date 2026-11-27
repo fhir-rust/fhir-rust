@@ -40,6 +40,8 @@ pub struct SpecElem {
     pub repeats: bool,
     /// max = "0": element removed.
     pub omitted: bool,
+    /// min ≥ 1 (`V9.1`).
+    pub required: bool,
     /// Type codes, deduplicated, in order.
     pub types: Vec<String>,
     /// "#Path" targets with the '#' stripped.
@@ -148,6 +150,7 @@ fn parse_def(name: &str, sd: &Value) -> Result<Def, GenError> {
             .ok_or_else(|| GenError::Spec(format!("{name}: element without path")))?
             .to_string();
         let max = el.get("max").and_then(Value::as_str).unwrap_or("1");
+        let min = el.get("min").and_then(Value::as_u64).unwrap_or(0);
         let seg = path.rsplit('.').next().unwrap_or(&path);
         let choice = seg.ends_with("[x]");
         let ename = seg.trim_end_matches("[x]").to_string();
@@ -172,6 +175,7 @@ fn parse_def(name: &str, sd: &Value) -> Result<Def, GenError> {
             choice,
             repeats: max != "0" && max != "1",
             omitted: max == "0",
+            required: min >= 1 && max != "0",
             types,
             content_ref,
         });

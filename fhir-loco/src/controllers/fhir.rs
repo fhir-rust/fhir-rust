@@ -333,6 +333,13 @@ fn store_error(e: store::StoreFailure) -> AxumResponse {
             "conflict",
             &format!("version conflict: expected {expected}, found {found}"),
         ),
+        // V9.3: the failing path, in the caller's own terms; nothing stored.
+        E::Invalid { path, msg } => outcome(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "error",
+            "structure",
+            &format!("{path}: {msg}"),
+        ),
         other => {
             tracing::error!(error = %other, "store failure");
             outcome(
