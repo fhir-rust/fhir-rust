@@ -274,7 +274,10 @@ fn target_pred(
     // (clinical-safety audit 2026-11-25). Refuse it instead; `:not` can be
     // implemented later as a whole-resource complement.
     if let Some(m) = modifier
-        && !matches!(t.kind, TargetKind::Str { .. } | TargetKind::Reference { .. })
+        && !matches!(
+            t.kind,
+            TargetKind::Str { .. } | TargetKind::Reference { .. }
+        )
     {
         return Err(StoreError::Unsupported(format!(
             "unsupported modifier :{m}"
@@ -386,13 +389,9 @@ fn target_pred(
             let sys = parts.next();
             let unit = parts.next();
             let (op, num) = num_prefix(num)?;
-            let mut pred = numeric_pred(
-                &format!("«c».\"{vcol}\""),
-                op,
-                num,
-                binds,
-                |n| format!("(${n}::text)::numeric"),
-            );
+            let mut pred = numeric_pred(&format!("«c».\"{vcol}\""), op, num, binds, |n| {
+                format!("(${n}::text)::numeric")
+            });
             if let (Some(sys), Some(sc)) = (sys.filter(|s| !s.is_empty()), system) {
                 pred = format!("({pred} AND «c».\"{sc}\" = {})", b(binds, sys));
             }

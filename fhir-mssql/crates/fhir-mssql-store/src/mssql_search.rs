@@ -334,7 +334,10 @@ fn target_pred(
     // (clinical-safety audit 2026-11-25). Refuse it instead; `:not` can be
     // implemented later as a whole-resource complement.
     if let Some(m) = modifier
-        && !matches!(t.kind, TargetKind::Str { .. } | TargetKind::Reference { .. })
+        && !matches!(
+            t.kind,
+            TargetKind::Str { .. } | TargetKind::Reference { .. }
+        )
     {
         return Err(StoreError::Unsupported(format!(
             "unsupported modifier :{m}"
